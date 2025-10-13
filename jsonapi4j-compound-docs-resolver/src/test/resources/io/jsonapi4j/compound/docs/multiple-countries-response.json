@@ -1,0 +1,131 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "Fake Country With Null Relationships",
+        "region": "Europe"
+      },
+      "links": {
+        "self": "/countries/QQ"
+      },
+      "id": "QQ",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Fake Country With Null Relationship",
+        "region": "Europe"
+      },
+      "relationships": {},
+      "links": {
+        "self": "/countries/RR"
+      },
+      "id": "RR",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Fake Country With Null Currencies",
+        "region": "Europe"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/XX/relationships/currencies",
+            "related": {
+              "currencies": "/currencies?filter[id]=XX"
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/XX"
+      },
+      "id": "XX",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Fake Country With Empty Currencies",
+        "region": "Europe"
+      },
+      "relationships": {
+        "currencies": {
+          "data": [],
+          "links": {
+            "self": "/countries/TG/relationships/currencies",
+            "related": {
+              "currencies": "/currencies?filter[id]=TT"
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/TT"
+      },
+      "id": "TT",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Togo",
+        "region": "Africa"
+      },
+      "relationships": {
+        "currencies": {
+          "data": [
+            {
+              "id": "XOF",
+              "type": "currencies"
+            }
+          ],
+          "links": {
+            "self": "/countries/TG/relationships/currencies",
+            "related": {
+              "currencies": "/currencies?filter[id]=XOF"
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/TG"
+      },
+      "id": "TG",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Mayotte",
+        "region": "Africa"
+      },
+      "relationships": {
+        "currencies": {
+          "data": [
+            {
+              "id": "EUR",
+              "type": "currencies"
+            },
+            {
+              "id": "USD",
+              "type": "currencies"
+            }
+          ],
+          "links": {
+            "self": "/countries/YT/relationships/currencies",
+            "related": {
+              "currencies": "/currencies?filter[id]=EUR"
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/YT"
+      },
+      "id": "YT",
+      "type": "countries"
+    }
+  ],
+  "links": {
+    "self": "/countries?include=currencies&filter%5Bid%5D=TG%2CYT"
+  }
+}

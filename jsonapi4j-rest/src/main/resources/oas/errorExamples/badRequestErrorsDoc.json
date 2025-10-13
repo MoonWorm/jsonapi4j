@@ -1,0 +1,22 @@
+{
+  "errors": [
+    {
+      "id": "550e8401-e29b-41d4-a716-446655440000",
+      "status": "400",
+      "code": "INVALID_ENUM_VALUE",
+      "detail": "countryCca2 must be a valid ISO2 string",
+      "source": {
+        "parameter": "countryCca2"
+      }
+    },
+    {
+      "id": "770e8402-e29b-41d4-a716-446655440000",
+      "status": "400",
+      "code": "VALUE_INVALID_FORMAT",
+      "detail": "region should be a valid region string: ['europe', 'asia', 'africa', etc.]",
+      "source": {
+        "parameter": "filter[region]"
+      }
+    }
+  ]
+}

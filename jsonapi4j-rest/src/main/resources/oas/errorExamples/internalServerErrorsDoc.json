@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "120e8403-e29b-41d4-a716-446655440000",
+      "status": "500",
+      "code": "INTERNAL_SERVER_ERROR",
+      "detail": "The service encountered an error"
+    }
+  ]
+}

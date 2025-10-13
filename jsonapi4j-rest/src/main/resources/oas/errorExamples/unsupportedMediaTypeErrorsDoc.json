@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "880e8407-e29b-41d4-a716-446655440000",
+      "status": "415",
+      "code": "UNSUPPORTED_MEDIA_TYPE",
+      "detail": "Unsupported Media Type: application/json. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - application/vnd.api+json."
+    }
+  ]
+}

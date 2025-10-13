@@ -1,0 +1,6 @@
+{
+  "data": null,
+  "links": {
+    "self": "/countries?include=currencies&filter%5Bid%5D=TG%2CYT"
+  }
+}

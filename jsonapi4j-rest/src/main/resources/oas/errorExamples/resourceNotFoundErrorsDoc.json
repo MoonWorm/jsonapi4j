@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "770e8406-e29b-41d4-a716-446655440000",
+      "status": "404",
+      "code": "NOT_FOUND",
+      "detail": "'users' resource of a given id (43023048) is not found"
+    }
+  ]
+}

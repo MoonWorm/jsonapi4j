@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "ddc96100-efe7-4217-b9d5-e36877c6197a",
+      "status": "405",
+      "code": "METHOD_NOT_SUPPORTED",
+      "detail": "HTTP method is not supported: PATCH. Ensure a proper HTTP method for an HTTP request is used: GET, POST"
+    }
+  ]
+}

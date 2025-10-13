@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "e9e3c771-f8fb-4f36-a01e-713d2f98dd43",
+      "status": "406",
+      "code": "NOT_ACCEPTABLE",
+      "detail": "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+    }
+  ]
+}
