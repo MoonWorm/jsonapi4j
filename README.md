@@ -807,4 +807,4 @@ I welcome issues and pull requests! See [CONTRIBUTING.md](./CONTRIBUTING.md) for
 
 ## License 
 
-Choose Open-Source license
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
