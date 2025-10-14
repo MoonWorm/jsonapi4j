@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>jsonapi4j</artifactId>
-        <groupId>io.jsonapi4j</groupId>
+        <groupId>pro.api4</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -22,12 +22,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.jsonapi4j</groupId>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.jsonapi4j</groupId>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
             <version>${project.version}</version>
         </dependency>
