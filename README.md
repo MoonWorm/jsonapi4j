@@ -1,4 +1,4 @@
-# JSON:API for Java
+![Logo](/docs/jsonapi4j-logo-fullres.png)
 
 Welcome to **JsonApi4j** — a lightweight API framework for Java for building [JSON:API](https://jsonapi.org/format/)-compliant web services with minimal configuration.
 
@@ -25,13 +25,13 @@ Here is an example how can you integrate JsonApi4j framework into your [Spring B
 ### 1. Add Dependency (Maven)
 ```xml
 <dependency>
-    <groupId>io.jsonapi4j</groupId>
-    <artifactId>jsonapi4j-rest-springboot</artifactId>
-    <version>${com.jsonapi4j.version}</version>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest-springboot</artifactId>
+  <version>${jsonapi4j.version}</version>
 </dependency>
 ```
 
-It's supposed to be available in Maven central. Check for the latest versions.
+It's supposed to be available in Maven Central. Check for the latest versions [here](https://central.sonatype.com/artifact/pro.api4/jsonapi4j-rest-springboot).
 
 ### 2. Declare your first JSON:API resource and related classes
 
@@ -451,7 +451,7 @@ Now we can finally play around with some more exciting HTTP requests. Check out 
 
 ### Fetch a user citizenships linkages
 
-Request: [/users/1/relationshipNames/citizenships](http://localhost:8080/jsonapi/users/1/relationshipNames/citizenships)
+Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
 
 <details>
   <summary>Response</summary>
@@ -469,21 +469,28 @@ Request: [/users/1/relationshipNames/citizenships](http://localhost:8080/jsonapi
       }
     ],
     "links": {
-      "self": "/users/1/relationshipNames/citizenships",
+      "self": "/users/1/relationships/citizenships",
       "related": {
-        "countries": "/countries?filter[id]=FI,NO"
+        "countries": {
+          "href": "/countries?filter[id]=FI,NO", 
+          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
+          "meta": {
+            "ids": ["FI", "NO"]
+          }
+        }
       },
-      "next": "/users/1/relationshipNames/citizenships?page%5Bcursor%5D=DoJu"
+      "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
     }
   }
   ```
 </details>
 
-It's worth noticing that relationshipName section has its own pagination. You can find the link pointing to the next page in `links` -> `next` field in the response. So try [/users/1/relationshipNames/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationshipNames/citizenships?page%5Bcursor%5D=DoJu) to read the second page.
+It's worth noticing that relationshipName section has its own pagination. You can find the link pointing to the next page in `links` -> `next` field in the response. So try [/users/1/relationships
+/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu) to read the second page.
 
 ### Fetch a user citizenships linkages with the corresponding Country resources
 
-Request: [/users/1/relationshipNames/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationshipNames/citizenships?include=citizenships)
+Request: [/users/1/relationships/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships?include=citizenships)
 
 <details>
   <summary>Response</summary>
@@ -501,11 +508,17 @@ Request: [/users/1/relationshipNames/citizenships?include=citizenships](http://l
       }
     ],
     "links": {
-      "self": "/users/1/relationshipNames/citizenships?include=citizenships",
+      "self": "/users/1/relationships/citizenships?include=citizenships",
       "related": {
-        "countries": "/countries?filter[id]=FI,NO"
+        "countries": {
+          "href": "/countries?filter[id]=FI,NO",
+          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+          "meta": {
+            "ids": ["FI", "NO"]
+          }  
+        }
       },
-      "next": "/users/1/relationshipNames/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+      "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
     },
     "included": [
       {
@@ -591,10 +604,10 @@ Request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cur
           "lastName": "Doe",
           "email": "jack@doe.com"
         },
-        "relationshipNames": {
+        "relationships": {
           "citizenships": {
             "links": {
-              "self": "/users/3/relationshipNames/citizenships"
+              "self": "/users/3/relationships/citizenships"
             }
           }
         },
@@ -610,10 +623,10 @@ Request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cur
           "lastName": "Doe",
           "email": "jessy@doe.com"
         },
-        "relationshipNames": {
+        "relationships": {
           "citizenships": {
             "links": {
-              "self": "/users/4/relationshipNames/citizenships"
+              "self": "/users/4/relationships/citizenships"
             }
           }
         },
@@ -648,7 +661,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
           "lastName": "Doe",
           "email": "jack@doe.com"
         },
-        "relationshipNames": {
+        "relationships": {
           "citizenships": {
             "data": [
               {
@@ -661,9 +674,15 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
               }
             ],
             "links": {
-              "self": "/users/3/relationshipNames/citizenships",
+              "self": "/users/3/relationships/citizenships",
               "related": {
-                "countries": "/countries?filter[id]=FI,US"
+                "countries": {
+                  "href": "/countries?filter[id]=FI,US",
+                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                  "meta": {
+                    "ids": ["FI", "US"]
+                  }
+                }
               }
             }
           }
@@ -680,7 +699,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
           "lastName": "Doe",
           "email": "jessy@doe.com"
         },
-        "relationshipNames": {
+        "relationships": {
           "citizenships": {
             "data": [
               {
@@ -693,9 +712,15 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
               }
             ],
             "links": {
-              "self": "/users/4/relationshipNames/citizenships",
+              "self": "/users/4/relationships/citizenships",
               "related": {
-                "countries": "/countries?filter[id]=NO,US"
+                "countries": {
+                  "href": "/countries?filter[id]=NO,US",
+                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                  "meta": {
+                    "ids": ["NO", "US"]
+                  }
+                }
               }
             }
           }
@@ -793,13 +818,12 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 
 ## JSON:API Specification deviations
 
-1. flat structure only (subset of the spec)
-2. No support for nested links in related links
-3. No support for sparsed fieldsets (maybe later)
-4. No support for 'lid'
-5. JSON API is agnostic about the pagination strategy (e.g. 'page[number]' and 'page[size]' for limit-offset), while the framework currently prefers Cursor pagination ('page[cursor]')
-6. Doesn't support JSON:API Profiles and Extensions
-7. Default relationships concept, no 'data' resolution by default to have more control under extra +N requests per each existing relationship
+1. JsonApi4j encourages flat resource structure e.g. '/users' and '/articles' instead of '/users/{userId}/articles'. This approach fully automates constantly valid 'links' for JSON:API resources.
+2. No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (maybe later)
+3. No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) ('lid') -> use 'id' field and set client-generated id there.
+4. JSON:API spec is agnostic about the pagination strategy (e.g. 'page[number]' and 'page[size]' for limit-offset), while the framework encourages Cursor pagination ('page[cursor]')
+5. Doesn't support JSON:API Profiles and Extensions (maybe later)
+6. Default relationships concept, no 'relationships'->'{relName}'->'data' resolution by default to have more control under extra +N requests per each existing relationship
 
 ## Contributing 
 
