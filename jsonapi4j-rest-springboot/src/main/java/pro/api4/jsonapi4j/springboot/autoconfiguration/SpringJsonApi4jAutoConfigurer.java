@@ -42,7 +42,7 @@ import java.util.concurrent.Executors;
         SpringJsonApi4jOasConfig.class,
         SpringJsonApi4jCompoundDocsConfig.class,
 })
-@ComponentScan(basePackages = {"io.jsonapi4j.springboot.autoconfiguration"})
+@ComponentScan(basePackages = {"pro.api4.jsonapi4j.springboot.autoconfiguration"})
 public class SpringJsonApi4jAutoConfigurer {
 
     @Bean
