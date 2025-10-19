@@ -5,9 +5,38 @@
 
     <groupId>pro.api4</groupId>
     <artifactId>jsonapi4j</artifactId>
-    <name>jsonapi4j</name>
     <version>${revision}</version>
     <packaging>pom</packaging>
+
+    <name>JsonApi4j - Parent Module</name>
+    <description>Parent POM module</description>
+    <url>https://api4.pro</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>MoonWorm</id>
+            <name>Aliaksei Taliuk</name>
+            <email>aliaksei.taliuk@gmail.com</email>
+            <url>https://github.com/MoonWorm</url>
+            <roles>
+                <role>Author</role>
+                <role>Project Maintainer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/MoonWorm/jsonapi4j.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MoonWorm/jsonapi4j.git</developerConnection>
+        <url>https://github.com/MoonWorm/jsonapi4j</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>jsonapi4j-rest</module>
@@ -281,6 +310,36 @@
             <id>deploy-to-central</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <source>17</source>
+                            <failOnError>false</failOnError>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>

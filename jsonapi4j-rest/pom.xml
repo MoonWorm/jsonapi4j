@@ -11,6 +11,36 @@
 
     <artifactId>jsonapi4j-rest</artifactId>
 
+    <name>JsonApi4j - Rest Module</name>
+    <description>Servlet API framework base. Can be used as is or for integrations with other frameworks e.g. Spring Boot, Quarkus, etc</description>
+    <url>https://api4.pro</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>MoonWorm</id>
+            <name>Aliaksei Taliuk</name>
+            <email>aliaksei.taliuk@gmail.com</email>
+            <url>https://github.com/MoonWorm</url>
+            <roles>
+                <role>Author</role>
+                <role>Project Maintainer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/MoonWorm/jsonapi4j.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MoonWorm/jsonapi4j.git</developerConnection>
+        <url>https://github.com/MoonWorm/jsonapi4j</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
