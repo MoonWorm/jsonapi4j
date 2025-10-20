@@ -102,6 +102,8 @@ public class UserDbEntity {
 
 ### 3. Declare your first JSON:API operation (read all users): 
 
+Let's implement the first operation for reading multiple users (available by accessing `GET /users`)
+
 ```java
 @Component
 public class ReadAllUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
@@ -777,27 +779,105 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 
 ## What's next
 - Refer [jsonapi4j-sampleapp](https://github.com/MoonWorm/jsonapi4j-sampleapp) to get more insights and inspiration
+- Implement `placeOfBirth` relationship that connects a particular 'user' with a 'country'. Unlike `citizenships` - this relationship must implement `ToOneRelationship` since every person can have only one place of birth. 
 - Explore more operations by implementing: 
   - Resource operations: 
-    - `CreateResourceOperation`
-    - `UpdateResourceOperation`
-    - `DeleteResourceOperation`, 
-  - Relationship operations: 
-    - `ReadToOneRelationshipOperation`
-    - `UpdateToOneRelationshipOperation`
-    - `UpdateToManyRelationshipOperation` 
+    - `CreateResourceOperation` e.g. `POST /users (/w payload)` for creating a new resources
+    - `UpdateResourceOperation` e.g. `PATCH /users/123 (/w payload)` for updating the existing resources
+    - `DeleteResourceOperation`, e.g. `DELETE /uesrs/123` for deletion of the existing resources
+  - Relationship operations:
+    - `UpdateToOneRelationshipOperation` e.g. `PATCH /users/123/citizenships/placeOfBirth` for updating/removal of the existing to-one relationship linkages
+    - `UpdateToManyRelationshipOperation` e.g. `PATCH /users/123/citizenships/citizenships` for updating/removal of the existing to-many relationship linkages
 - Implement some other filters for `ReadMultipleResourcesOperation` and soring options operations, for example 'read countries by region' 
 - [Explore](https://github.com/MoonWorm/jsonapi4j#access-control) authentication, authorization, and anonymization capabilities if you need a fain grained mechanism of which data is visible based on access tier, OAuth2 scopes, and resource ownership
 - [Explore](https://github.com/MoonWorm/jsonapi4j#openapi-specification) how to tune your [OpenAPI Specification](https://swagger.io/specification/)
 - Find out how multi-level-includes work in the scope of [Compound Documents](https://jsonapi.org/format/#document-compound-documents)
+- Add more validations
 - Tune performance by using batch read relationship operations, custom executor service, tuning some jsonApi4j properties 
 - Try to fork, submit a PR or create a ticket if you've found any issues or just have any recommendations
 
 ## Access Control
 
-- Image that explains Inbound / Outbound rules and evaluation
-- Requirement types: Access Control, OAuth2 scopes, and ownership concepts
-- Examples: 1. attributes section, 2. attributes fields 3. resource level 4. relationship level 
+Access control evaluation is executed twice for request lifecycle - for **inbound** and **outbound** stage. 
+
+![Access Control Evaluation Stages](/docs/access-control-evaluation-stages.png)
+
+During the **inbound** stage JsonApi4j application just received a request, but hasn't triggered data fetching from a downstream data source. Access control rules are evaluated for `JsonApiRequest` since there no other data available yet. 
+If access control requirements are not met there will be no any further data fetching stages and **data** field will be fully anonymized. 
+
+**Outbound** stage is executed after gathering data from a data source, composing response document, and right before sending it to the client. Access control rules are evaluated for each resource/resource identifier withing a generated JSON:API Document. Resource documents usually contain full [JSON:API Resource Objects](https://jsonapi.org/format/#document-resource-objects) while Relationship documents consist of [Resource Identifier Objects](https://jsonapi.org/format/#document-resource-identifier-objects) only.
+In case of **Resource Documents** access control requirements can be set for either: 
+- Entire JSON:API Resource. If access control requirements are not met - entire resource will be anonymized.
+- Any member of the JSON:API Resource (e.g. 'attributes', 'meta'). If access control requirements are not met - only this particular field will be anonymized.
+- Entire 'attributes' member of the JSON:API Resource. If access control requirements are not met - entire 'attributes' section will be anonymized.
+- Any member of the 'attributes' abject. If access control requirements are not met - only this particular field will be anonymized.
+- Any relationship. If access control requirements are not met for the relationship - relationship data fetching process will not be triggered and the relationship data will be anonymized.
+
+In case of **Relationship Documents** access control requirements can be set for either:
+- Entire JSON:API Resource Identifier object. If access control requirements are not met - entire resource identifier will be anonymized.
+- Any member of the JSON:API Resource Identifier (e.g. 'meta'). If access control requirements are not met - only this particular field will be anonymized.
+
+By default, JsonApi4j allows everything (no Access Control evaluations), but it's always possible to enforce rules for either both or just one of these stage. 
+
+There are four requirements that can be assigned in any combination:
+- **Authentication requirement** - checks if request is sent on behalf of authenticated client/user. Can be used to restrict anonymous access.
+- **Access tier requirement** - checks whether the client/user that originated the request belongs to a particular group e.g. 'Admin', 'Internal API consumers', 'Public API consumers'. This helps to organize access to your APIs based on so-called tiers.
+- **OAuth2 Scope(s) requirement** - checks if request was authorised to access user data protected by a certain OAuth2 scope(s). Usually, this information is carried within JWT Access Token.
+- **Ownership requirement** - checks if requested resource belongs to a client/user that triggered this request. This is used for those APIs where user can view only its own data, but not others data.
+
+If any of specified requirements are not met - the marked section or the entire object will be anonymized.
+
+Example 1: Outbound Access Control
+
+Let's hide user's credit card number for everyone but the owner. By achieving that `@AccessControlOwnership(ownerIdFieldPath = "id")` must be placed on top of `creditCardNumber` field.
+We can also put `@AccessControlAuthenticated` to ensure the user is authenticated and `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` if we want to protect access to this field by checking whether the client has gotten a user grant for this data.  
+
+```java
+public class UserAttributes {
+    
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    
+    @AccessControlAuthenticated
+    @AccessControlScopes(requiredScopes = {"users.sensitive.read"})
+    @AccessControlOwnership(ownerIdFieldPath = "id")
+    private final String creditCardNumber;
+    
+    // constructors, getters and setters
+
+}
+```
+
+Example 2: Inbound Access Control
+
+Let's only allow a new user creation for the admin clients. 
+
+```java
+@Component
+public class CreateUserOperation implements CreateResourcesOperation<UserDbEntity> {
+
+    // methods implementations
+
+    @Override
+    public List<OperationPlugin<?>> plugins() {
+      return List.of(
+        OperationInboundAccessControlPlugin.builder()
+          .requestAccessControl(
+            AccessControlRequirements.builder()
+              .requiredAccessTier(
+                AccessControlAccessTierModel.builder()
+                  .requiredAccessTier(TierAdmin.ADMIN_ACCESS_TIER)
+                  .build()
+              )
+              .build()
+          )
+          .build()
+      );
+    }
+
+}
+```
 
 ## OpenAPI Specification
 
