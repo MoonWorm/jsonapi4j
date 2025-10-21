@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.plugin;
 
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.domain.plugin.ac.AttributesOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.plugin.ac.ResourceOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.plugin.oas.ResourceOasPlugin;
 
@@ -15,7 +14,6 @@ import java.util.List;
  * functionality, for example various <a href="https://swagger.io/specification/">Open API</a>
  * {@link ResourceOasPlugin} and Access Control
  * {@link ResourceOutboundAccessControlPlugin} /
- * {@link AttributesOutboundAccessControlPlugin}
  * plugins.
  * <p>
  * These plugins carry some extra static information (declarative approach) that is needed for various

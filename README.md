@@ -1,4 +1,4 @@
-![Logo](/docs/jsonapi4j-logo-fullres.png)
+![Logo](/docs/jsonapi4j-logo-medium.png)
 
 Welcome to **JsonApi4j** — a lightweight API framework for Java for building [JSON:API](https://jsonapi.org/format/)-compliant web services with minimal configuration.
 
@@ -798,9 +798,11 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 
 ## Access Control
 
+### Evaluation stages 
+
 Access control evaluation is executed twice for request lifecycle - for **inbound** and **outbound** stage. 
 
-![Access Control Evaluation Stages](/docs/access-control-evaluation-stages.png)
+![Access Control Evaluation Stages](/docs/access-control-evaluation-stages-medium.png)
 
 During the **inbound** stage JsonApi4j application just received a request, but hasn't triggered data fetching from a downstream data source. Access control rules are evaluated for `JsonApiRequest` since there no other data available yet. 
 If access control requirements are not met there will be no any further data fetching stages and **data** field will be fully anonymized. 
@@ -819,6 +821,8 @@ In case of **Relationship Documents** access control requirements can be set for
 
 By default, JsonApi4j allows everything (no Access Control evaluations), but it's always possible to enforce rules for either both or just one of these stage. 
 
+### Access Control Requirements
+
 There are four requirements that can be assigned in any combination:
 - **Authentication requirement** - checks if request is sent on behalf of authenticated client/user. Can be used to restrict anonymous access.
 - **Access tier requirement** - checks whether the client/user that originated the request belongs to a particular group e.g. 'Admin', 'Internal API consumers', 'Public API consumers'. This helps to organize access to your APIs based on so-called tiers.
@@ -826,6 +830,30 @@ There are four requirements that can be assigned in any combination:
 - **Ownership requirement** - checks if requested resource belongs to a client/user that triggered this request. This is used for those APIs where user can view only its own data, but not others data.
 
 If any of specified requirements are not met - the marked section or the entire object will be anonymized.
+
+### Setting Principal Context
+
+By default, the framework uses `DefaultPrincipalResolver` which relies on the next HTTP headers in order to resolve the current auth context: 
+
+1. `X-Authenticated-User-Id` - to check if request is sent on behalf of authenticated client/user, considers as true if not null/blank. Is also used for ownership checks.
+2. `X-Authenticated-Client-Access-Tier` - for principal's Access Tier. By default, supports the next values: 'NO_ACCESS', 'PUBLIC', 'PARTNER', 'ADMIN', 'ROOT_ADMIN'. It's possible to declare your own tiers by implementing `AccessTierRegistry`.  
+3. `X-Authenticated-User-Granted-Scopes` - for getting OAuth2 Scopes which user has granted the client, space-separated string
+
+It is also possible to implement your own `PrincipalResolver` that tells the framework how to retrieve Principal-related info from an incoming HTTP request. 
+
+Later, the framework will use this info for Inbound/Outbound evaluations.
+
+### Setting Access Requirements
+
+How and where to declare your Access Control requirements? 
+
+There are two main approaches: 
+1. Via Java annotations. If you are working with **jsonapi4j-core** it's possible to place Access Control annotations on either a custom `ResourceObject`, or a custom `Attributes` object. Annotations can be placed both on class and field levels. If you're working with modules that operates higher abstractions - **jsonapi4j-rest** or **jsonapi4j-rest-springboot** - you can place annotations only for an Attributes Object. Here is the list of annotations that can be used: `@AccessControlAuthenticated`, `@AccessControlScopes`, `@AccessControlAccessTier`, `@AccessControlOwnership`. This approach is preferable for setting Access Control requirements for Attributes.
+2. Via **JsonApi4j** plugin system. You can use `OperationInboundAccessControlPlugin` plugin for your Operations - that will be used for the Inbound Access Control evaluations. `ResourceOutboundAccessControlPlugin` can be used for the `Resource` implementations and be applied for JSON:API Resource Objects during the Outbound Access Control evaluations. `RelationshipsOutboundAccessControlPlugin` can be used for the `Relationship` implementations and be applied for JSON:API Resource Identifier Objects during the Outbound Access Control evaluations. This is approach is preferable for all other cases.
+
+If the system detects a mix of settings it merges them giving priority to ones that were set programmatically via Plugins.  
+
+### Examples
 
 Example 1: Outbound Access Control
 
@@ -881,6 +909,19 @@ public class CreateUserOperation implements CreateResourcesOperation<UserDbEntit
 
 ## OpenAPI Specification
 
+Since JSON:API has predetermined list of operations and schemas Open API Spec generation can be fully automated. 
+
+JsonApi4j can generate an instance of `io.swagger.v3.oas.models.OpenApi` model and then expose it either through a Maven Exec Plugin or via dedicated endpoint.
+
+Here is two examples of how to generate an Open API Specification for you APIs:
+
+1. Via Maven Exec Plugin. 
+
+Declare the plugin in 'plugins' sections of your `pom.xml`:
+```xml
+
+```
+
 - Demonstrate the default behaviour
 - List of config properties
 - Extensions
@@ -904,6 +945,7 @@ public class CreateUserOperation implements CreateResourcesOperation<UserDbEntit
 4. JSON:API spec is agnostic about the pagination strategy (e.g. 'page[number]' and 'page[size]' for limit-offset), while the framework encourages Cursor pagination ('page[cursor]')
 5. Doesn't support JSON:API Profiles and Extensions (maybe later)
 6. Default relationships concept, no 'relationships'->'{relName}'->'data' resolution by default to have more control under extra +N requests per each existing relationship
+7. The framework enforces the requirement for implementing either 'Filter By Id' ('/users?filter[id]=123') operation or 'Read By Id' ('/users/123') operation because Compound Docs Resolver uses them to compose 'included' section.
 
 ## Contributing 
 

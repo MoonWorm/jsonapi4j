@@ -11,6 +11,8 @@ public class ResourceOutboundAccessControlPlugin implements ResourcePlugin<Resou
 
     @Builder.Default
     private AccessControlRequirementsForObject resourceAccessControl = null;
+    @Builder.Default
+    private AccessControlRequirementsForObject attributesAccessControl = null;
 
     @Override
     public Class<ResourceOutboundAccessControlPlugin> getPluginClass() {

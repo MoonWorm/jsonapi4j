@@ -7,7 +7,6 @@ import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.domain.ToOneRelationship;
-import pro.api4.jsonapi4j.domain.plugin.ac.AttributesOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.plugin.ac.RelationshipsOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.plugin.ac.ResourceOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
@@ -476,23 +475,21 @@ public class JsonApi4j {
         ) {
             return resourceConfig != null
                     ? getOutboundAccessControlSettingsForResource(
-                            resourceConfig.getPlugin(ResourceOutboundAccessControlPlugin.class),
-                            resourceConfig.getPlugin(AttributesOutboundAccessControlPlugin.class)
+                            resourceConfig.getPlugin(ResourceOutboundAccessControlPlugin.class)
                     )
                     : OutboundAccessControlSettingsForResource.DEFAULT;
         }
 
         private OutboundAccessControlSettingsForResource getOutboundAccessControlSettingsForResource(
-                ResourceOutboundAccessControlPlugin resourceAcPlugin,
-                AttributesOutboundAccessControlPlugin attributesAcPlugin
+                ResourceOutboundAccessControlPlugin resourceAcPlugin
         ) {
             return OutboundAccessControlSettingsForResource.builder()
                     .forResource(resourceAcPlugin == null || resourceAcPlugin.getResourceAccessControl() == null
                             ? AccessControlRequirementsForObject.DEFAULT
                             : resourceAcPlugin.getResourceAccessControl())
-                    .forAttributes(attributesAcPlugin == null || attributesAcPlugin.getAttributesAccessControl() == null
+                    .forAttributes(resourceAcPlugin == null || resourceAcPlugin.getAttributesAccessControl() == null
                             ? AccessControlRequirementsForObject.DEFAULT
-                            : attributesAcPlugin.getAttributesAccessControl())
+                            : resourceAcPlugin.getAttributesAccessControl())
                     .build();
         }
 
