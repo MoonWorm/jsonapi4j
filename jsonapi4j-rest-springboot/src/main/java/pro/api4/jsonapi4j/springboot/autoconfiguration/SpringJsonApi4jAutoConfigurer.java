@@ -10,6 +10,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.oas.OasServlet;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
@@ -168,6 +169,33 @@ public class SpringJsonApi4jAutoConfigurer {
             //Configuring Tomcat to allow '[' and ']' chars in query params
             connector.setProperty("relaxedQueryChars", "[]");
         });
+    }
+
+    @Bean(name = "jsonApi4jOasServlet")
+    public ServletRegistrationBean<?> jsonApi4jOasServlet(
+            JsonApi4jProperties properties,
+            DomainRegistry domainRegistry,
+            OperationsRegistry operationsRegistry
+    ) {
+        String jsonapi4jRootPath = properties.getRootPath();
+
+        String effectiveServletUrlMapping;
+        if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {
+            effectiveServletUrlMapping = "/oas/*";
+        } else {
+            effectiveServletUrlMapping = jsonapi4jRootPath + "/oas/*";
+        }
+
+        ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
+                new OasServlet(
+                        domainRegistry,
+                        operationsRegistry,
+                        properties
+                ),
+                effectiveServletUrlMapping
+        );
+        servletRegistration.setLoadOnStartup(2);
+        return servletRegistration;
     }
 
 }

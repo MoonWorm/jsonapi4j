@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.oas.OasServlet;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
@@ -40,6 +42,7 @@ import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUN
 public class JsonApi4jServletContainerInitializer implements ServletContainerInitializer {
 
     public static final String JSONAPI4J_DISPATCHER_SERVLET_NAME = "jsonApi4jDispatcherServlet";
+    public static final String JSONAPI4J_OAS_SERVLET_NAME = "jsonApi4jOasServlet";
     public static final String JSONAPI4J_ACCESS_CONTROL_FILTER_NAME = "jsonapi4jAccessControlFilter";
     public static final String JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME = "jsonapi4jRequestBodyCachingFilter";
     public static final String JSONAPI4J_COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
@@ -47,7 +50,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_INIT_PARAM_NAME = "jsonapi4jCompoundDocsMaxHops";
     public static final String JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_INIT_PARAM_NAME = "jsonapi4jCompoundDocsErrorStrategy";
 
-    public static final String JSONAPI4J_ROOT_PATH_ATT_NAME = "jsonapi4jRootPath";
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
@@ -59,29 +61,67 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonApi4jServletContainerInitializer.class);
 
-    @Override
-    public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
-        String rootPath = getRootPath(servletContext);
-
-        ObjectMapper objectMapper = initObjectMapper(servletContext);
-        ExecutorService executorService = initExecutorService(servletContext);
-
-        // dispatcher servlet
-        registerDispatcherServlet(servletContext, rootPath, objectMapper, executorService);
-
-        // filters
-        registerAccessControlFilter(servletContext, rootPath);
-        registerRequestBodyCachingFilter(servletContext, rootPath);
-        registerCompoundDocsFilter(servletContext, rootPath, objectMapper, executorService);
+    /**
+     * Priority:
+     * 1. System property (jsonapi4j.config)
+     * 2. Environment variable (JSONAPI4J_CONFIG)
+     * 3. Servlet Context Init Parameter (jsonapi4j.config)
+     * 4. Classpath ("jsonapi4j.yaml" or "jsonapi4j.json")
+     * @param servletContext
+     * @return
+     */
+    private JsonApi4jProperties loadConfig(ServletContext servletContext) {
+        try {
+            String path = System.getProperty("jsonapi4j.config");
+            if (path == null) {
+                path = System.getenv("JSONAPI4J_CONFIG");
+            }
+            if (path == null) {
+                path = servletContext.getInitParameter("jsonapi4j.config");
+            }
+            if (path != null) {
+                return JsonApi4jConfigReader.readConfig(path);
+            }
+            return JsonApi4jConfigReader.readConfigFromClasspath(
+                    "jsonapi4j.yaml",
+                    "jsonapi4j.json"
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load JsonApi4jConfig", e);
+        }
     }
 
-    private String getRootPath(ServletContext servletContext) {
-        String rootPath = (String) servletContext.getAttribute(JSONAPI4J_ROOT_PATH_ATT_NAME);
-        if (rootPath == null) {
-            LOG.info("JsonApiRootPath not found in servlet context. Setting the default value: {}", JSONAPI4J_ROOT_PATH_ATT_NAME);
-            rootPath = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/*";
-        }
-        return rootPath;
+    @Override
+    public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
+        JsonApi4jProperties properties = loadConfig(servletContext);
+        ObjectMapper objectMapper = initObjectMapper(servletContext);
+        ExecutorService executorService = initExecutorService(servletContext);
+        DomainRegistry domainRegistry = initDomainRegistry(servletContext);
+        OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
+
+        // dispatcher servlet
+        String dispatcherServletMapping = properties.getRootPath() + "/*";
+        registerDispatcherServlet(
+                servletContext,
+                dispatcherServletMapping,
+                domainRegistry,
+                operationsRegistry,
+                objectMapper,
+                executorService
+        );
+
+        // oas servlet
+        registerOasServlet(
+                servletContext,
+                properties,
+                domainRegistry,
+                operationsRegistry
+        );
+
+        // filters
+        registerAccessControlFilter(servletContext, dispatcherServletMapping);
+        registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
+        registerCompoundDocsFilter(servletContext, dispatcherServletMapping, objectMapper, executorService);
     }
 
     private void registerAccessControlFilter(ServletContext servletContext, String rootPath) {
@@ -157,15 +197,15 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     }
 
     private void registerDispatcherServlet(ServletContext servletContext,
-                                           String rootPath,
+                                           String servletMapping,
+                                           DomainRegistry domainRegistry,
+                                           OperationsRegistry operationsRegistry,
                                            ObjectMapper objectMapper,
                                            ExecutorService executorService) {
-        DomainRegistry domainRegistry = initDomainRegistry(servletContext);
-        OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
         AccessControlEvaluator accessControlEvaluator = initAccessControlEvaluator(servletContext);
         ErrorHandlerFactoriesRegistry errorHandlerFactory = initErrorHandlerFactory(servletContext);
 
-        ServletRegistration.Dynamic myServlet = servletContext.addServlet(
+        ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet(
                 JSONAPI4J_DISPATCHER_SERVLET_NAME,
                 new JsonApi4jDispatcherServlet(
                         domainRegistry,
@@ -176,7 +216,22 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                         objectMapper
                 )
         );
-        myServlet.addMapping(rootPath);
+        dispatcherServlet.addMapping(servletMapping);
+    }
+
+    private void registerOasServlet(ServletContext servletContext,
+                                    JsonApi4jProperties properties,
+                                    DomainRegistry domainRegistry,
+                                    OperationsRegistry operationsRegistry) {
+        ServletRegistration.Dynamic oasServlet = servletContext.addServlet(
+                JSONAPI4J_OAS_SERVLET_NAME,
+                new OasServlet(
+                        domainRegistry,
+                        operationsRegistry,
+                        properties
+                )
+        );
+        oasServlet.addMapping(properties.getOas().getOasRootPath() + "/*");
     }
 
     private ExecutorService initExecutorService(ServletContext servletContext) {

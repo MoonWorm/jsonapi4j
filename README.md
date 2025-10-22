@@ -913,18 +913,12 @@ Since JSON:API has predetermined list of operations and schemas Open API Spec ge
 
 JsonApi4j can generate an instance of `io.swagger.v3.oas.models.OpenApi` model and then expose it either through a Maven Exec Plugin or via dedicated endpoint.
 
-Here is two examples of how to generate an Open API Specification for you APIs:
+Here is two ways of how to generate an Open API Specification for you APIs:
 
-1. Via Maven Exec Plugin. 
+1. Access via HTTP endpoint. By default, you can access either JSON or YAML version of the Open API Specification by accessing [/jsonapi/oas](http://localhost:8080/jsonapi/oas) endpoint. It supports 'format' query parameter that can be either 'json' or 'yaml'. Always fallbacks to JSON format. 
+2. Via Maven Exec Plugin. TBD
 
-Declare the plugin in 'plugins' sections of your `pom.xml`:
-```xml
-
-```
-
-- Demonstrate the default behaviour
-- List of config properties
-- Extensions
+By default, JsonApi4j generate all schemas and operations for you. But if you need to enrich it with more data e.g. 'info', 'components' -> 'securitySchemes' or custom HTTP headers you need to explicitly configure that in `JsonApi4jProperties` ('oas' section) via `application.yaml` if you're using 'jsonapi4j-rest-springboot' or via proper `JsonApi4jServletContainerInitializer` bootstrapping if you're relying on Servlet API only from 'jsonapi4j-rest'.
 
 ## Compound docs
 - High-level info, benefits, pitfalls (performance)

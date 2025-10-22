@@ -66,6 +66,9 @@ public class JsonApiOperationsCustomizer {
     private final Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders;
 
     public void customise(OpenAPI openApi) {
+        if (openApi.getPaths() == null) {
+            openApi.setPaths(new Paths());
+        }
         createAndRegisterOperations(openApi.getPaths());
     }
 

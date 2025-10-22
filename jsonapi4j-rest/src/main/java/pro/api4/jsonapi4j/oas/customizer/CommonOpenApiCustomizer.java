@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.oas.customizer;
 
 import pro.api4.jsonapi4j.config.OasProperties;
 import pro.api4.jsonapi4j.config.OasProperties.OAuth2GrantFlow;
+import pro.api4.jsonapi4j.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -130,7 +131,7 @@ public class CommonOpenApiCustomizer {
     private void enrichTags(OpenAPI openApi) {
         List<Tag> jsonApiTags = operationsRegistry.getResourceTypesWithAnyOperationConfigured()
                 .stream()
-                .map(r -> StringUtils.capitalize(r.getType()))
+                .map(OasOperationInfoUtil::resolveOperationTag)
                 .sorted()
                 .map(t -> new Tag().name(t))
                 .toList();

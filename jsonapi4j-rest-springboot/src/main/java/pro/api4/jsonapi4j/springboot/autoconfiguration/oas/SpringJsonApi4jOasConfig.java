@@ -50,10 +50,8 @@ public class SpringJsonApi4jOasConfig {
     }
 
     @Bean
-    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry) {
-        return new JsonApiRequestBodySchemaCustomizer(domainRegistry, operationsRegistry);
+    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(OperationsRegistry operationsRegistry) {
+        return new JsonApiRequestBodySchemaCustomizer(operationsRegistry);
     }
 
     @Bean

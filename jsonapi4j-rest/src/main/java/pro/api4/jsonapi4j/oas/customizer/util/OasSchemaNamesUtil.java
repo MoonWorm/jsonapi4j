@@ -41,56 +41,56 @@ public final class OasSchemaNamesUtil {
     }
 
     public static String singleResourceDocSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_Single_Resource_Doc";
+        return capitalize(resourceType.getType()) + "SingleResourceDoc";
     }
 
     public static String multipleResourcesDocSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_Multiple_Resources_Doc";
+        return capitalize(resourceType.getType()) + "MultipleResourcesDoc";
     }
 
     public static String toManyRelationshipsDocSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_To_Many_Relationships_Doc";
+        return capitalize(resourceType.getType()) + "ToManyRelationshipsDoc";
     }
 
     public static String toOneRelationshipDocSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_To_One_Relationship_Doc";
+        return capitalize(resourceType.getType()) + "ToOneRelationshipDoc";
     }
 
     public static String customToManyRelationshipDocSchemaName(ResourceType resourceType,
                                                                RelationshipName relationshipName) {
-        return capitalize(resourceType.getType()) + "_" + capitalize(relationshipName.getName()) + "_To_Many_Relationships_Doc";
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ToManyRelationshipsDoc";
     }
 
     public static String customToOneRelationshipDocSchemaName(ResourceType resourceType,
                                                               RelationshipName relationshipName) {
-        return capitalize(resourceType.getType()) + "_" + capitalize(relationshipName.getName()) + "_To_One_Relationship_Doc";
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ToOneRelationshipDoc";
 
     }
 
     public static String attributesSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_Attributes";
+        return capitalize(resourceType.getType()) + "Attributes";
     }
 
     public static String relationshipsSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_Relationships";
+        return capitalize(resourceType.getType()) + "Relationships";
     }
 
     public static String resourceSchemaName(ResourceType resourceType) {
-        return capitalize(resourceType.getType()) + "_Resource";
+        return capitalize(resourceType.getType()) + "Resource";
     }
 
     public static String customResourceIdentifierSchemaName(ResourceType resourceType,
                                                             RelationshipName relationshipName) {
-        return capitalize(resourceType.getType()) + "_" + capitalize(relationshipName.getName()) + "_Resource_Identifier";
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ResourceIdentifier";
 
     }
 
     public static String customResourceIdentifierMetaSchemaName(ResourceType resourceType, RelationshipName relationshipName) {
-        return capitalize(resourceType.getType()) + "_" + capitalize(relationshipName.getName()) + "_Resource_Identifier_Meta";
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ResourceIdentifierMeta";
     }
 
     public static String errorsDocSchemaName() {
-        return "Errors_Doc";
+        return "ErrorsDoc";
     }
 
 }

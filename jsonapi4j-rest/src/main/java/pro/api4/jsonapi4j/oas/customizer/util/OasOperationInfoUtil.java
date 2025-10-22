@@ -40,7 +40,7 @@ public final class OasOperationInfoUtil {
                 customResourceNameSingle,
                 customResourceNamePlural
         );
-        String operationTag = capitalize(resourceType.getType());
+        String operationTag = resolveOperationTag(resourceType);
         String operationSummary = resolveOperationSummary(
                 operationType,
                 resourceType,
@@ -71,6 +71,10 @@ public final class OasOperationInfoUtil {
                 responseType,
                 supportedHttpErrorCodes
         );
+    }
+
+    public static String resolveOperationTag(ResourceType resourceType) {
+        return capitalize(resourceType.getType());
     }
 
     private static String resolveOperationDescription(OperationType operationType,

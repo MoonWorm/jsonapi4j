@@ -9,6 +9,9 @@ import java.util.Map;
 @Data
 public class OasProperties {
 
+    public static final String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
+
+    private String oasRootPath = DEFAULT_OAS_ROOT_PATH;
     private Info info;
     private ExternalDocumentation externalDocumentation;
     private OAuth2 oauth2;

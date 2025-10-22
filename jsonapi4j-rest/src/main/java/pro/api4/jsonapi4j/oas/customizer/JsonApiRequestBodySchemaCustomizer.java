@@ -1,13 +1,11 @@
 package pro.api4.jsonapi4j.oas.customizer;
 
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.domain.ResourceType;
+import io.swagger.v3.oas.models.OpenAPI;
+import lombok.Data;
 import pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.plugin.OperationOasPlugin;
 import pro.api4.jsonapi4j.plugin.OperationPluginAware;
-import io.swagger.v3.oas.models.OpenAPI;
-import lombok.Data;
 
 import static pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.generateAllSchemasFromType;
 import static pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.registerSchemaIfNotExists;
@@ -15,7 +13,6 @@ import static pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.registe
 @Data
 public class JsonApiRequestBodySchemaCustomizer {
 
-    private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
     public void customise(OpenAPI openApi) {
@@ -23,11 +20,10 @@ public class JsonApiRequestBodySchemaCustomizer {
     }
 
     private void registerCreateAndUpdateOperationPayloadSchemas(OpenAPI openApi) {
-        domainRegistry.getResources()
+        operationsRegistry.getResourceTypesWithAnyOperationConfigured()
                 .stream()
                 .sorted()
-                .forEach(r -> {
-                    ResourceType resourceType = r.resourceType();
+                .forEach(resourceType -> {
                     registerPayloadSchemas(operationsRegistry.getCreateResourceOperation(resourceType, false), openApi);
                     registerPayloadSchemas(operationsRegistry.getUpdateResourceOperation(resourceType, false), openApi);
                     operationsRegistry.getUpdateToOneRelationshipOperations(resourceType).forEach(o -> registerPayloadSchemas(o, openApi));
