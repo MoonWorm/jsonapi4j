@@ -1,6 +1,7 @@
 [![Build](https://github.com/moonworm/jsonapi4j/actions/workflows/build.yml/badge.svg)](https://github.com/moonworm/jsonapi4j/actions/workflows/build.yml/badge.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/pro.api4/jsonapi4j.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/pro.api4/jsonapi4j)
 [![Last Commit](https://img.shields.io/github/last-commit/moonworm/jsonapi4j)](https://img.shields.io/github/last-commit/moonworm/jsonapi4j)
+[![codecov](https://codecov.io/gh/moonworm/jsonapi4j/branch/main/graph/badge.svg)](https://codecov.io/gh/moonworm/jsonapi4j)
 [![Issues](https://img.shields.io/github/issues/moonworm/jsonapi4j)](https://github.com/moonworm/jsonapi4j/issues)
 [![License](https://img.shields.io/github/license/moonworm/jsonapi4j)](LICENSE)
 
@@ -784,7 +785,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 </details>
 
 ## What's next
-- Refer [jsonapi4j-sampleapp](https://github.com/MoonWorm/jsonapi4j-sampleapp) to get more insights and inspiration
+- Refer [jsonapi4j-springboot-sampleapp](/examples/jsonapi4j-springboot-sampleapp) to get more insights and inspiration
 - Implement `placeOfBirth` relationship that connects a particular 'user' with a 'country'. Unlike `citizenships` - this relationship must implement `ToOneRelationship` since every person can have only one place of birth. 
 - Explore more operations by implementing: 
   - Resource operations: 
