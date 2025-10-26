@@ -791,7 +791,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 - Implement some other filters for `ReadMultipleResourcesOperation` and soring options operations, for example 'read countries by region' 
 - [Explore](https://github.com/MoonWorm/jsonapi4j#access-control) authentication, authorization, and anonymization capabilities if you need a fain grained mechanism of which data is visible based on access tier, OAuth2 scopes, and resource ownership
 - [Explore](https://github.com/MoonWorm/jsonapi4j#openapi-specification) how to tune your [OpenAPI Specification](https://swagger.io/specification/)
-- Find out how multi-level-includes work in the scope of [Compound Documents](https://jsonapi.org/format/#document-compound-documents)
+- Find out how multi-level-includes work for the [Compound Documents](https://github.com/MoonWorm/jsonapi4j#compound-documents)
 - Add more validations
 - Tune performance by using batch read relationship operations, custom executor service, tuning some jsonApi4j properties 
 - Try to fork, submit a PR or create a ticket if you've found any issues or just have any recommendations
@@ -920,25 +920,38 @@ Here is two ways of how to generate an Open API Specification for you APIs:
 
 By default, JsonApi4j generate all schemas and operations for you. But if you need to enrich it with more data e.g. 'info', 'components' -> 'securitySchemes' or custom HTTP headers you need to explicitly configure that in `JsonApi4jProperties` ('oas' section) via `application.yaml` if you're using 'jsonapi4j-rest-springboot' or via proper `JsonApi4jServletContainerInitializer` bootstrapping if you're relying on Servlet API only from 'jsonapi4j-rest'.
 
-## Compound docs
-- High-level info, benefits, pitfalls (performance)
-- self-hosted or API-GW-hosted, cache, diagrams
-- how to configure max hops and max elements in batch
+## Compound documents
+
+[Compound Documents](https://jsonapi.org/format/#document-compound-documents) is a part of JSON:API specification that describes the way to include related resources in one request. For example, if you want to request some 'users' you can also ask the server to include related resources to these users. It's worth mentioning that you can only ask for those resources that enabled via relationships. All resolved resourced are placed as a flat structure into a top-level "included" field. In order to request related resources "include" query parameter must be used, for example `/users?page[cursor]=xxx&include=citizenships`. 
+
+It is allowed to request multiple relationships in one go - just specify relationship names using comma ',' as a separator, for example `include=citizenships,placeOfBirth`
+
+Compound Documents feature also supports multi-level relationship resolution. That means that client can request a chain of relationships, f.e. `include=placeOfBirth.currency`. The relationships sequence is a dot-separated string that must be a valid chain of relationships - meaning they must exist for the resources on each stage. This particular example would trigger the process that resolves related resources in two stages - firstly, JsonApi4j will resolve 'placeOfBirth' relationship which is represented by Country resource. Then, as a second stage, the framework will resolve 'currency' of the previously resolved countries. 'currency' relationship must exist for Country resource. 
+
+Since every level generates a new wave of requests it's important to remember that and use these feature carefully. JsonApi4j relies on batch operations (e.g. `filter[id]=1,2,3,4,5`) that's why it's important to implement this operation for all resources that can be requested as someone's relationship. If the operation is not implemented the framework tries to fallback on sequential 'read by id' operation if it exists. 
+
+Let's define what does resolution stage means in terms of how framework resolves Compound Documents. For example, `include=citizenships,placeOfBirth.currency` would be parsed into two stages - first stage includes 'citizenships' and 'placeOfBirth' relationships. The second stage includes 'currency' relationship. Within each stage the framework groups all related resources by their types and associated list of identifiers and sends as many parallel request as many resource types were detected. 
+
+In order to be able to control the amount of these extra requests the framework provides some settings and guardrails to control the limits. Refer `CompoundDocsProperties` for more details, for example `maxHops` settings allows to define how many levels your system supposed to support. 
+
+Compound Documents resolver is part of a dedicated module 'jsonapi4j-compound-docs-resolver'. By default, this feature is disabled on the application server, but it can be enabled by setting `enabled` property to `true`. Since the logic is part of a separate independent module it opens multiple options where to host this logic. There are at least two the most obvious options: on the same application server or on the API Gateway level. 
+
+- Compound docs works as a post processor. First main request is executed.
+- Sequence diagram - stages
 - Point the difference in 'includes' for Primary Resources and Relationship requests (how relationship request refers self).
-- CacheControlPropagator examples
-- How to configure an external Cache that relies on HTTP Cache Control headers
+- CacheControlPropagator examples, how to configure an external Cache that relies on HTTP Cache Control headers
 
 ## Register custom error handlers
 - Example of how to declare a custom error handler
 
 ## JSON:API Specification deviations
 
-1. JsonApi4j encourages flat resource structure e.g. '/users' and '/articles' instead of '/users/{userId}/articles'. This approach fully automates constantly valid 'links' for JSON:API resources.
+1. JsonApi4j encourages flat resource structure e.g. '/users' and '/articles' instead of '/users/{userId}/articles'. This approach fully automates default 'links' generation and enables the gates for automatic Compound Documents resolution.
 2. No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (maybe later)
 3. No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) ('lid') -> use 'id' field and set client-generated id there.
 4. JSON:API spec is agnostic about the pagination strategy (e.g. 'page[number]' and 'page[size]' for limit-offset), while the framework encourages Cursor pagination ('page[cursor]')
 5. Doesn't support JSON:API Profiles and Extensions (maybe later)
-6. Default relationships concept, no 'relationships'->'{relName}'->'data' resolution by default to have more control under extra +N requests per each existing relationship
+6. Default relationships concept, no 'relationships'->'{relName}'->'data' resolution by default. This is done to have more control under extra +N requests per each existing relationship
 7. The framework enforces the requirement for implementing either 'Filter By Id' ('/users?filter[id]=123') operation or 'Read By Id' ('/users/123') operation because Compound Docs Resolver uses them to compose 'included' section.
 
 ## Contributing 
