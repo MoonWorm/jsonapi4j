@@ -1,0 +1,1 @@
+Main-Class: pro.api4.jsonapi4j.sampleapp.Jsonapi4jSampleApp

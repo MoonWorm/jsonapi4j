@@ -1,0 +1,22 @@
+[
+  {
+    "name": {
+      "common": "Togo",
+      "official": "Togolese Republic",
+      "nativeName": {
+        "fra": {
+          "official": "République togolaise",
+          "common": "Togo"
+        }
+      }
+    },
+    "cca2": "TG",
+    "currencies": {
+      "XOF": {
+        "name": "West African CFA franc",
+        "symbol": "Fr"
+      }
+    },
+    "region": "Africa"
+  }
+]

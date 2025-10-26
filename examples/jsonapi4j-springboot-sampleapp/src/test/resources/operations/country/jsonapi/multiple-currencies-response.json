@@ -1,0 +1,20 @@
+{
+  "links": {
+    "self": "/countries/TG/relationships/currencies?include=currencies",
+    "related": {
+      "currencies": {
+        "href": "/currencies?filter[id]=XOF",
+        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": ["XOF"]
+        }
+      }
+    }
+  },
+  "data": [
+    {
+      "id": "XOF",
+      "type": "currencies"
+    }
+  ]
+}

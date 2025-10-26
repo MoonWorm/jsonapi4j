@@ -51,20 +51,34 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     @Override
     public JsonApiRequest from(HttpServletRequest servletRequest) {
-        if (!JsonApiMediaType.isMatches(servletRequest.getContentType())) {
-            throw new UnsupportedMediaTypeException(servletRequest.getContentType(), JsonApiMediaType.MEDIA_TYPE);
-        }
         if (!JsonApiMediaType.isAccepted(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()))) {
             throw new NotAcceptableException(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()), JsonApiMediaType.MEDIA_TYPE);
         }
+
         if (!isSupportedMethod(servletRequest.getMethod())) {
             throw new MethodNotSupportedException(
                     servletRequest.getMethod(),
                     Arrays.stream(OperationType.Method.values()).map(Enum::name).collect(Collectors.joining(", "))
             );
         }
-        String path = getPath(servletRequest);
+
         String method = servletRequest.getMethod();
+
+        byte[] payload;
+        try {
+            payload = IOUtils.toByteArray(servletRequest.getInputStream());
+        } catch (IOException e) {
+            log.error("Error while reading request body", e);
+            throw new RuntimeException(e);
+        }
+
+        if (isMethodSupportBody(method)
+                && payload.length > 0
+                && !JsonApiMediaType.isMatches(servletRequest.getContentType())) {
+            throw new UnsupportedMediaTypeException(servletRequest.getContentType(), JsonApiMediaType.MEDIA_TYPE);
+        }
+
+        String path = getPath(servletRequest);
         log.info("Received JSON:API request for the path {} and method {}", path, method);
         log.info("Converting HttpServletRequest to JsonApiRequest...");
         String resourceId = parseResourceIdFromThePath(path);
@@ -76,13 +90,6 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         Map<String, List<String>> customQueryParams = parseCustomQueryParams(params);
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
 
-        byte[] payload;
-        try {
-            payload = IOUtils.toByteArray(servletRequest.getInputStream());
-        } catch (IOException e) {
-            log.error("Error while reading request body", e);
-            throw new RuntimeException(e);
-        }
         OperationDetailsResolver.OperationDetails operationDetails = operationDetailsResolver.fromUrlAndMethod(
                 path,
                 method
@@ -130,6 +137,10 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setPayload(payload);
         log.info("Composed JsonApiRequest: {}", jsonApiRequest);
         return jsonApiRequest;
+    }
+
+    private boolean isMethodSupportBody(String method) {
+        return !"GET".equals(method) && !"HEAD".equals(method) && !"TRACE".equals(method);
     }
 
     private String getPath(HttpServletRequest request) {

@@ -1,0 +1,42 @@
+[
+  {
+    "name": {
+      "common": "Togo",
+      "official": "Togolese Republic",
+      "nativeName": {
+        "fra": {
+          "official": "République togolaise",
+          "common": "Togo"
+        }
+      }
+    },
+    "cca2": "TG",
+    "currencies": {
+      "XOF": {
+        "name": "West African CFA franc",
+        "symbol": "Fr"
+      }
+    },
+    "region": "Africa"
+  },
+  {
+    "name": {
+      "common": "Mayotte",
+      "official": "Department of Mayotte",
+      "nativeName": {
+        "fra": {
+          "official": "Département de Mayotte",
+          "common": "Mayotte"
+        }
+      }
+    },
+    "cca2": "YT",
+    "currencies": {
+      "EUR": {
+        "name": "Euro",
+        "symbol": "€"
+      }
+    },
+    "region": "Africa"
+  }
+]

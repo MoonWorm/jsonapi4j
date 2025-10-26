@@ -43,6 +43,7 @@
         <module>jsonapi4j-core</module>
         <module>jsonapi4j-rest-springboot</module>
         <module>jsonapi4j-compound-docs-resolver</module>
+        <module>examples/jsonapi4j-springboot-sampleapp</module>
     </modules>
 
     <properties>

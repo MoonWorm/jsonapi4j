@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: jsonapi4j-sampleapp
+  jackson:
+    default-property-inclusion: NON_NULL
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+
+integrations:
+  rest-countries:
+    url: https://restcountries.com/v3.1
+
+jsonapi4j:
+  root-path: '/jsonapi'
+  compound-docs:
+    enabled: true
+    mapping:
+      users: 'http://localhost:8080/jsonapi'
+      countries: 'http://localhost:8080/jsonapi'
+      currencies: 'http://localhost:8080/jsonapi'
+  oas:
+    enabled: true
+    info:
+      title: 'JSON:API Users & Countries'
+      version: 1.0.0
+    oauth2:
+      client-credentials:
+        name: 'Client_Credentials'
+        description: 'Use this grant flow to access non-personalized data.'
+        scopes: { }
+    servers:
+      server-local:
+        name: Localhost
+        url: 'http://localhost:8080'
+      server-staging:
+        name: Staging
+        url: 'https://api.stage.com'
+      server-prod:
+        name: Production
+        url: 'https://api.com'
+    #custom-response-headers:
+      #'429':
+        #X-RateLimit-Remaining:
+          #description: 'Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.'
+          #required: true
+          #schema: 'integer'
+          #example: '5'
+        #X-RateLimit-Burst-Capacity:
+          #description: 'Initial number of tokens, and max number of tokens that can be replenished.'
+          #required: true
+          #schema: 'integer'
+          #example: '20'
+        #X-RateLimit-Replenish-Rate:
+          #description: 'Number of tokens replenished per second.'
+          #required: true
+          #schema: 'integer'
+          #example: '5'
+        #X-RateLimit-Requested-Tokens:
+          #description: 'Request cost in tokens.'
+          #required: true
+          #schema: 'integer'
+          #example: '5'
+
+logging:
+  level:
+    root: INFO

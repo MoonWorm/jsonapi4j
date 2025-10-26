@@ -1,0 +1,73 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "name": "Togo",
+        "region": "Africa"
+      },
+      "relationships": {
+        "currencies": {
+          "data": [
+            {
+              "id": "XOF",
+              "type": "currencies"
+            }
+          ],
+          "links": {
+            "self": "/countries/TG/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=XOF",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": ["XOF"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/TG"
+      },
+      "id": "TG",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Mayotte",
+        "region": "Africa"
+      },
+      "relationships": {
+        "currencies": {
+          "data": [
+            {
+              "id": "EUR",
+              "type": "currencies"
+            }
+          ],
+          "links": {
+            "self": "/countries/YT/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=EUR",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": ["EUR"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/YT"
+      },
+      "id": "YT",
+      "type": "countries"
+    }
+  ],
+  "links": {
+    "self": "/countries?include=currencies&filter%5Bid%5D=TG%2CYT"
+  }
+}
