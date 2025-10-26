@@ -1,5 +1,6 @@
 [![Build](https://github.com/moonworm/jsonapi4j/actions/workflows/build.yml/badge.svg)](https://github.com/moonworm/jsonapi4j/actions/workflows/build.yml/badge.svg)
 [![Maven Central](https://img.shields.io/maven-central/v/pro.api4/jsonapi4j.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/pro.api4/jsonapi4j)
+[![Last Commit](https://img.shields.io/github/last-commit/moonworm/jsonapi4j)](https://img.shields.io/github/last-commit/moonworm/jsonapi4j)
 [![Issues](https://img.shields.io/github/issues/moonworm/jsonapi4j)](https://github.com/moonworm/jsonapi4j/issues)
 [![License](https://img.shields.io/github/license/moonworm/jsonapi4j)](LICENSE)
 
