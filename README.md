@@ -785,7 +785,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
 </details>
 
 ## What's next
-- Refer [jsonapi4j-springboot-sampleapp](/examples/jsonapi4j-springboot-sampleapp) to get more insights and inspiration
+- Refer [jsonapi4j-springboot-sampleapp](/examples/jsonapi4j-springboot-sampleapp) to get more insights and inspiration. In order to run an example just run `mvn -f examples/jsonapi4j-springboot-sampleapp spring-boot:run` and then open http://localhost:8080/jsonapi/users
 - Implement `placeOfBirth` relationship that connects a particular 'user' with a 'country'. Unlike `citizenships` - this relationship must implement `ToOneRelationship` since every person can have only one place of birth. 
 - Explore more operations by implementing: 
   - Resource operations: 
