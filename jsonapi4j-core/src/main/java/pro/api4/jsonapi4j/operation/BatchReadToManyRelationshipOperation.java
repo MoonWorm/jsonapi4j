@@ -25,6 +25,7 @@ public interface BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP
 
     /**
      * Reads a resource linkage objects that relates to this relationship in batch.
+     * If no relationship exist returns <code>null</code> {@link CursorPageableResponse}
      *
      * @param originalRequest incoming {@link JsonApiRequest}
      * @param resourceDtos    contextual list of primary resource's {@link RESOURCE_DTO}

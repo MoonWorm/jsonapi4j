@@ -1,9 +1,11 @@
 package pro.api4.jsonapi4j.sampleapp.config.datasource.userdb;
 
-import pro.api4.jsonapi4j.request.pagination.LimitOffsetToCursorAdapter;
 import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.processor.util.CustomCollectors;
+import pro.api4.jsonapi4j.request.pagination.LimitOffsetToCursorAdapter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,30 +18,40 @@ import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 @Component
 public class UserDb {
 
-    private static final AtomicInteger COUNTER = new AtomicInteger(1);
+    private static AtomicInteger ID_COUNTER;
 
     private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
-    private Map<String, List<String>> userIdToCountryCca2 = new ConcurrentHashMap<>();
+    private Map<String, List<String>> userCitizenships = new ConcurrentHashMap<>();
+    private Map<String, String> userPlaceOfBirth = new ConcurrentHashMap<>();
+    private Map<String, List<String>> userRalatives = new ConcurrentHashMap<>();
+
     {
-        String id = String.valueOf(COUNTER.getAndIncrement());
-        users.put(id, new UserDbEntity(id, "John Doe", "john@doe.com", "123456789"));
-        userIdToCountryCca2.put(id, List.of("NO", "FI", "US"));
+        users.put("1", new UserDbEntity("1", "John Doe", "john@doe.com", "123456789"));
+        userCitizenships.put("1", List.of("NO", "FI", "US"));
+        userPlaceOfBirth.put("1", "US");
+        userRalatives.put("1", List.of("2", "3"));
 
-        id = String.valueOf(COUNTER.getAndIncrement());
-        users.put(id, new UserDbEntity(id, "Jane Doe", "jane@doe.com", "222456789"));
-        userIdToCountryCca2.put("2", List.of("US"));
+        users.put("2", new UserDbEntity("2", "Jane Doe", "jane@doe.com", "222456789"));
+        userCitizenships.put("2", List.of("US"));
+        userPlaceOfBirth.put("2", "FI");
+        userRalatives.put("2", List.of("1", "4"));
 
-        id = String.valueOf(COUNTER.getAndIncrement());
-        users.put(id, new UserDbEntity(id, "Jack Doe", "jack@doe.com", "333456789"));
-        userIdToCountryCca2.put(id, List.of("US", "FI"));
+        users.put("3", new UserDbEntity("3", "Jack Doe", "jack@doe.com", "333456789"));
+        userCitizenships.put("3", List.of("US", "FI"));
+        userPlaceOfBirth.put("3", "NO");
+        userRalatives.put("3", Collections.emptyList());
 
-        id = String.valueOf(COUNTER.getAndIncrement());
-        users.put(id, new UserDbEntity(id, "Jessy Doe", "jessy@doe.com", "444456789"));
-        userIdToCountryCca2.put(id, List.of("NO", "US"));
+        users.put("4", new UserDbEntity("4", "Jessy Doe", "jessy@doe.com", "444456789"));
+        userCitizenships.put("4", List.of("NO", "US"));
+        userPlaceOfBirth.put("4", "US");
+        userRalatives.put("4", List.of("1"));
 
-        id = String.valueOf(COUNTER.getAndIncrement());
-        users.put(id, new UserDbEntity(id, "Jared Doe", "jared@doe.com", "555456789"));
-        userIdToCountryCca2.put(id, List.of("US"));
+        users.put("5", new UserDbEntity("5", "Jared Doe", "jared@doe.com", "555456789"));
+        userCitizenships.put("5", List.of("US"));
+        userPlaceOfBirth.put("5", "NO");
+        userRalatives.put("5", List.of("1", "2", "3", "4"));
+
+        ID_COUNTER = new AtomicInteger(6);
     }
 
     public UserDbEntity readById(String id) {
@@ -56,7 +68,7 @@ public class UserDb {
                                    String email,
                                    String creditCardNumber) {
         UserDbEntity newUser = new UserDbEntity(
-                String.valueOf(COUNTER.getAndIncrement()),
+                String.valueOf(ID_COUNTER.getAndIncrement()),
                 firstName + " " + lastName,
                 email,
                 creditCardNumber
@@ -71,26 +83,52 @@ public class UserDb {
                                    String creditCardNumber,
                                    List<String> cca2s) {
         UserDbEntity result = createUser(firstName, lastName, email, creditCardNumber);
-        userIdToCountryCca2.put(result.getId(), cca2s);
+        userCitizenships.put(result.getId(), cca2s);
         return result;
     }
 
     public List<String> getUserCitizenships(String userId) {
-        return userIdToCountryCca2.get(userId);
+        return userCitizenships.get(userId);
+    }
+
+    public List<String> getUserRelatives(String userId) {
+        return userRalatives.get(userId);
+    }
+
+    public void updateUserCitizenships(String userId, List<String> cca2s) {
+        userCitizenships.remove(userId);
+        userCitizenships.put(userId, cca2s);
     }
 
     public Map<String, List<String>> getUsersCitizenships(Set<String> userIds) {
         return userIds.stream().collect(
                 Collectors.toMap(
                         userId -> userId,
-                        userId -> emptyIfNull(userIdToCountryCca2.get(userId))
+                        userId -> emptyIfNull(userCitizenships.get(userId))
                 )
         );
     }
 
-    public void updateUserCitizenships(String userId, List<String> cca2s) {
-        userIdToCountryCca2.remove(userId);
-        userIdToCountryCca2.put(userId, cca2s);
+    public Map<String, List<String>> getUsersRelatives(Set<String> userIds) {
+        return userIds.stream().collect(
+                Collectors.toMap(
+                        userId -> userId,
+                        userId -> emptyIfNull(userRalatives.get(userId))
+                )
+        );
+    }
+
+    public String getUserPlaceOfBirth(String userId) {
+        return userPlaceOfBirth.get(userId);
+    }
+
+    public Map<String, String> getUsersPlaceOfBirth(Set<String> userIds) {
+        return userIds.stream().collect(
+                CustomCollectors.toMapThatSupportsNullValues(
+                        userId -> userId,
+                        userId -> userPlaceOfBirth.get(userId)
+                )
+        );
     }
 
     public DbPage<UserDbEntity> readAllUsers(String cursor) {

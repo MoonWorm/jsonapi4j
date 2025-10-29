@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,7 +62,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             // top-level meta
             Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, null);
             // compose doc
-            return docSupplier.get(null, docLinks, docMeta);
+            return docSupplier.get(Collections.emptyList(), docLinks, docMeta);
         }
 
         // top-level links

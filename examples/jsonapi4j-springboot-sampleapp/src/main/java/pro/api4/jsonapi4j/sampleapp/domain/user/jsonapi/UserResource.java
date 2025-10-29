@@ -5,7 +5,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.plugin.oas.ResourceOasPlugin;
 import pro.api4.jsonapi4j.plugin.ResourcePlugin;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.domain.country.jsonapi.CountryJsonApiResource;
+import pro.api4.jsonapi4j.sampleapp.domain.country.jsonapi.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +14,7 @@ import java.util.List;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 
 @Component
-public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntity> {
+public class UserResource implements Resource<UserAttributes, UserDbEntity> {
 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {
@@ -42,7 +42,7 @@ public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntit
                 ResourceOasPlugin.builder()
                         .attributes(UserAttributes.class)
                         .includes(List.of(
-                                CountryJsonApiResource.class
+                                CountryResource.class
                         )).build()
         );
     }

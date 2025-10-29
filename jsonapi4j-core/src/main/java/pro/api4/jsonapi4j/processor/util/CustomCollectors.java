@@ -38,6 +38,16 @@ public final class CustomCollectors {
                 Collector.Characteristics.IDENTITY_FINISH);
     }
 
+    public static <T, K, U>
+    Collector<T, ?, Map<K, U>> toOrderedMapThatSupportsNullValues(Function<? super T, ? extends K> keyMapper,
+                                                                  Function<? super T, ? extends U> valueMapper) {
+        return Collector.of(
+                LinkedHashMap::new,
+                uniqKeysMapAccumulator(keyMapper, valueMapper),
+                uniqKeysMapMerger(),
+                Collector.Characteristics.IDENTITY_FINISH);
+    }
+
     private static <T, K, V>
     BiConsumer<Map<K, V>, T> uniqKeysMapAccumulator(Function<? super T, ? extends K> keyMapper,
                                                     Function<? super T, ? extends V> valueMapper) {

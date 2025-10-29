@@ -17,7 +17,7 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.C
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryRelationshipsRegistry.COUNTRY_CURRENCIES;
 
 @Component
-public class CountryCurrenciesJsonApiRelationship implements ToManyRelationship<DownstreamCountry, DownstreamCurrencyWithCode> {
+public class CountryCurrenciesRelationship implements ToManyRelationship<DownstreamCountry, DownstreamCurrencyWithCode> {
 
     @Override
     public RelationshipName relationshipName() {

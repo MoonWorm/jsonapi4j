@@ -4,57 +4,51 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.plugin.OperationOasPlugin;
 import pro.api4.jsonapi4j.plugin.OperationPlugin;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.RestCountriesFeignClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.sampleapp.config.oas.CommonOasSettingsFactory.commonSecurityConfig;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
-import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_PLACE_OF_BIRTH;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.oas.UserOasSettingsFactory.userIdPathParam;
 
 @RequiredArgsConstructor
 @Component
-public class ReadUserCitizenshipsRelationshipOperation implements BatchReadToManyRelationshipOperation<UserDbEntity, DownstreamCountry> {
+public class ReadUserPlaceOfBirthRelationshipOperation implements BatchReadToOneRelationshipOperation<UserDbEntity, DownstreamCountry> {
 
     private final RestCountriesFeignClient client;
     private final UserDb userDb;
 
     @Override
-    public CursorPageableResponse<DownstreamCountry> read(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
-                ReadMultipleCountriesOperation.readCountriesByIds(
-                        userDb.getUserCitizenships(request.getResourceId()),
-                        client
-                ),
-                request.getCursor(),
-                2 // set limit to 2
+    public DownstreamCountry read(JsonApiRequest request) {
+        return ReadCountryByIdOperation.readCountryById(
+                userDb.getUserPlaceOfBirth(request.getResourceId()),
+                client
         );
     }
 
     @Override
-    public Map<UserDbEntity, CursorPageableResponse<DownstreamCountry>> readBatches(JsonApiRequest request,
-                                                                                    List<UserDbEntity> users) {
+    public Map<UserDbEntity, DownstreamCountry> readBatches(JsonApiRequest request,
+                                                            List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
-        Map<String, List<String>> usersCitizenshipsMap = userDb.getUsersCitizenships(userIds);
-        List<String> countryIds = usersCitizenshipsMap.values()
+        Map<String, String> usersPlaceOfBirthMap = userDb.getUsersPlaceOfBirth(userIds);
+        List<String> countryIds = usersPlaceOfBirthMap.values()
                 .stream()
-                .flatMap(Collection::stream)
                 .distinct()
                 .toList();
         Map<String, DownstreamCountry> countries = ReadMultipleCountriesOperation.readCountriesByIds(countryIds, client)
@@ -66,19 +60,17 @@ public class ReadUserCitizenshipsRelationshipOperation implements BatchReadToMan
                                 list -> list.get(0)
                         )
                 ));
-        return usersCitizenshipsMap.entrySet().stream().collect(
-                Collectors.toMap(
+        return usersPlaceOfBirthMap.entrySet().stream().collect(
+                CustomCollectors.toMapThatSupportsNullValues(
                         userId -> usersGroupedById.get(userId.getKey()),
-                        e -> CursorPageableResponse.fromItemsPageable(
-                                e.getValue().stream().map(countries::get).filter(Objects::nonNull).toList()
-                        )
+                        e -> countries.get(e.getValue())
                 )
         );
     }
 
     @Override
     public RelationshipName relationshipName() {
-        return USER_CITIZENSHIPS;
+        return USER_PLACE_OF_BIRTH;
     }
 
     @Override
@@ -96,5 +88,4 @@ public class ReadUserCitizenshipsRelationshipOperation implements BatchReadToMan
                         .build()
         );
     }
-
 }

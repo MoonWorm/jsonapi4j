@@ -24,12 +24,13 @@ public interface BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_
 
     /**
      * Reads a resource linkage objects that relates to this relationship in batch.
+     * If no relationship exist returns <code>null</code> {@link RELATIONSHIP_DTO}
      *
      * @param originalRequest incoming {@link JsonApiRequest}
      * @param resourceDtos    contextual list of primary resource's {@link RESOURCE_DTO}
      * @return map of {@link RESOURCE_DTO} - {@link RELATIONSHIP_DTO} pairs
      */
     Map<RESOURCE_DTO, RELATIONSHIP_DTO> readBatches(JsonApiRequest originalRequest,
-                                                    List<RESOURCE_DTO> resourceDtos);
+                                                              List<RESOURCE_DTO> resourceDtos);
 
 }
