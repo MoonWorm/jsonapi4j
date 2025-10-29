@@ -17,7 +17,7 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.U
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
 
 @Component
-public class UserCitizenshipsJsonApiRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
+public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
 
     @Override
     public RelationshipName relationshipName() {

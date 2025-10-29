@@ -1,5 +1,12 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
@@ -10,14 +17,8 @@ import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluato
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
-import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -72,12 +73,13 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                         return null;
                     }
                     return Stream.concat(
-                            toManyRelationshipsDocMap.entrySet().stream(),
-                            toOneRelationshipDocMap.entrySet().stream()
-                    ).collect(CustomCollectors.toMapThatSupportsNullValues(
-                            e -> e.getKey().getName(),
-                            Map.Entry::getValue
-                    ));
+                                    toManyRelationshipsDocMap.entrySet().stream(),
+                                    toOneRelationshipDocMap.entrySet().stream()
+                            ).sorted(Comparator.comparing(e -> e.getKey().getName()))
+                            .collect(CustomCollectors.toOrderedMapThatSupportsNullValues(
+                                    e -> e.getKey().getName(),
+                                    Map.Entry::getValue
+                            ));
                 },
                 (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) ResourceObject::new,
                 (SingleResourceDocSupplier<ResourceObject<ATTRIBUTES, Map<String, Object>>, SingleResourceDoc<ResourceObject<ATTRIBUTES, Map<String, Object>>>>) SingleResourceDoc::new

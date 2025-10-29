@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.plugin.ac.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.plugin.ac.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -88,7 +89,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
 
         return dtos.stream()
                 .collect(
-                        Collectors.toMap(
+                        CustomCollectors.toMapThatSupportsNullValues(
                                 dto -> dto,
                                 dto -> relationshipsSupplier.get(
                                         toManyRelationshipsByDto.get(dto),
@@ -230,8 +231,8 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                     log.info("Processing '{}' relationship. Relationship was requested in 'include'. Batch To-many-relationship resolver is found. Executing.", relName);
                     Map<DATA_SOURCE_DTO, ToManyRelationshipsDoc> docsMap = batchFutures.get(relName).join();
                     for (DATA_SOURCE_DTO dto : dtos) {
-                        ToManyRelationshipsDoc multiRelationshipsDoc = docsMap.get(dto);
-                        toManyRelationshipDocMap.get(dto).put(relName, multiRelationshipsDoc);
+                        ToManyRelationshipsDoc toManyRelationshipsDoc = docsMap.get(dto);
+                        toManyRelationshipDocMap.get(dto).put(relName, toManyRelationshipsDoc);
                     }
                 } else {
                     for (DATA_SOURCE_DTO dto : dtos) {

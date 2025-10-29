@@ -217,7 +217,9 @@ class BatchToManyRelationshipsProcessor {
             }
 
             Map<RESOURCE_DTO, ToManyRelationshipsDoc> result = new HashMap<>();
-            responseMap.forEach((resourceDto, cursorPageableResponse) -> {
+
+            resourceDtos.forEach(resourceDto -> {
+                CursorPageableResponse<RELATIONSHIP_DTO> cursorPageableResponse = responseMap.get(resourceDto);
                 if (cursorPageableResponse != null && CollectionUtils.isNotEmpty(cursorPageableResponse.getItems())) {
 
                     REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
@@ -273,8 +275,11 @@ class BatchToManyRelationshipsProcessor {
                             : null;
                     // compose doc and add to the result map
                     result.put(resourceDto, new ToManyRelationshipsDoc(data, docLinks, docMeta));
+                } else {
+                    result.put(resourceDto, null);
                 }
             });
+
             return Collections.unmodifiableMap(result);
         }
 

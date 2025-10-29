@@ -215,53 +215,57 @@ class BatchToOneRelationshipProcessor {
             }
 
             Map<RESOURCE_DTO, ToOneRelationshipDoc> result = new HashMap<>();
-            responseMap.forEach((resourceDto, relationshipDto) -> {
+            resourceDtos.forEach(resourceDto -> {
+                RELATIONSHIP_DTO relationshipDto = responseMap.get(resourceDto);
+                if (relationshipDto != null) {
+                    REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
 
-                REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
-
-                OutboundAccessControlRequirementsEvaluatorForRelationship outboundAcEvaluator
-                        = new OutboundAccessControlRequirementsEvaluatorForRelationship(
-                        this.accessControlEvaluator,
-                        this.outboundAccessControlSettings
-                );
-
-                // id and type
-                IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
-
-                ResourceIdentifierObject resourceIdentifier;
-
-                if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
-                    log.warn(
-                            "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
-                            relationshipDto
+                    OutboundAccessControlRequirementsEvaluatorForRelationship outboundAcEvaluator
+                            = new OutboundAccessControlRequirementsEvaluatorForRelationship(
+                            this.accessControlEvaluator,
+                            this.outboundAccessControlSettings
                     );
-                    resourceIdentifier = null;
-                } else {
-                    // resource meta
-                    Object resourceMeta = resourceMetaResolver != null
-                            ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
+
+                    // id and type
+                    IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
+
+                    ResourceIdentifierObject resourceIdentifier;
+
+                    if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
+                        log.warn(
+                                "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
+                                relationshipDto
+                        );
+                        resourceIdentifier = null;
+                    } else {
+                        // resource meta
+                        Object resourceMeta = resourceMetaResolver != null
+                                ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
+                                : null;
+                        // compose resource identifier
+                        resourceIdentifier = new ResourceIdentifierObject(
+                                idAndType.getId(),
+                                idAndType.getType().getType(),
+                                resourceMeta
+                        );
+                    }
+
+                    // anonymize if needed
+                    resourceIdentifier = outboundAcEvaluator.anonymizeResourceIdentifierIfNeeded(resourceIdentifier);
+
+                    // doc-level links
+                    LinksObject docLinks = topLevelLinksResolver != null
+                            ? topLevelLinksResolver.resolve(relationshipRequest, relationshipDto)
                             : null;
-                    // compose resource identifier
-                    resourceIdentifier = new ResourceIdentifierObject(
-                            idAndType.getId(),
-                            idAndType.getType().getType(),
-                            resourceMeta
-                    );
+                    // doc-level meta
+                    Object docMeta = topLevelMetaResolver != null
+                            ? topLevelMetaResolver.resolve(relationshipRequest, relationshipDto)
+                            : null;
+                    // compose doc and add to the result map
+                    result.put(resourceDto, new ToOneRelationshipDoc(resourceIdentifier, docLinks, docMeta));
+                } else {
+                    result.put(resourceDto, null);
                 }
-
-                // anonymize if needed
-                resourceIdentifier = outboundAcEvaluator.anonymizeResourceIdentifierIfNeeded(resourceIdentifier);
-
-                // doc-level links
-                LinksObject docLinks = topLevelLinksResolver != null
-                        ? topLevelLinksResolver.resolve(relationshipRequest, relationshipDto)
-                        : null;
-                // doc-level meta
-                Object docMeta = topLevelMetaResolver != null
-                        ? topLevelMetaResolver.resolve(relationshipRequest, relationshipDto)
-                        : null;
-                // compose doc and add to the result map
-                result.put(resourceDto, new ToOneRelationshipDoc(resourceIdentifier, docLinks, docMeta));
             });
             return Collections.unmodifiableMap(result);
         }

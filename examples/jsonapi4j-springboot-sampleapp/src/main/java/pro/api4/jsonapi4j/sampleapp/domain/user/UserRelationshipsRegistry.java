@@ -8,7 +8,12 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserRelationshipsRegistry implements RelationshipName {
 
-    USER_CITIZENSHIPS("citizenships");
+    // to-one
+    USER_PLACE_OF_BIRTH("placeOfBirth"),
+
+    // to-many
+    USER_CITIZENSHIPS("citizenships"),
+    USER_RELATIVES("relatives");
 
     private final String relationship;
 
