@@ -1,18 +1,20 @@
-# JsonApi4j Spring Boot Sample App
+# JsonApi4j Sample Apps
 
-This is a sample app of how to use JsonApi4j with Spring Boot
+This folder consist of samples of how to use JsonApi4j with various Java framework e.g. Spring Boot, Quarkus, etc.
 
 ## Domain
 
-The app implements an imaginable and very simple domain:
+Applications implements an imaginable and very simple domain:
 
-![Domain graph](../docs/domain-graph.png)
+![Domain graph](docs/domain-graph.png)
 
 ## How to run
 
-`mvn -f examples/jsonapi4j-springboot-sampleapp spring-boot:run`
+### Spring Boot example
 
-## Examples
+`mvn -f jsonapi4j-springboot-sampleapp spring-boot:run`
+
+## API Requests
 
 1. Reads first page of users: http://localhost:8080/jsonapi/users 
 2. Reads the next page of users: http://localhost:8080/jsonapi/users?page[cursor]=DoJu
