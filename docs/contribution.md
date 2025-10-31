@@ -1,1 +1,0 @@
-I welcome issues and pull requests! See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
