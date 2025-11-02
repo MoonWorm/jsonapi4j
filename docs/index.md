@@ -20,32 +20,804 @@ The following features and design principles will help you determine whether **J
 Modern systems often consist of multiple services that need to expose and consume consistent data structures.  
 **JsonApi4j** helps achieve this by:
 
-- 🧩 Implements the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format — eliminating the need for custom, company-wide API guidelines.
+- 🧩 Implements the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format - eliminating the need for custom, company-wide API guidelines.
 - 📘 Generates [OpenAPI specifications](https://swagger.io/specification/) out of the box, enabling clear and transparent API documentation across the organization.
 
 ### Engineering Motivation
 
-Whether you’re standardizing your organization’s API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
+Whether you’re standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
 
-- ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks — including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
+- ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks - including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
   The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
 
 - 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
 
 - 🔐 **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership.
 
-- 🚀 **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently — from relationship resolution to compound document processing — and supports advanced concurrency optimizations, including virtual threads.
+- 🚀 **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently - from relationship resolution to compound document processing - and supports advanced concurrency optimizations, including virtual threads.
 
 - 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.  
   The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
 
 - 🔌 **Pluggable architecture.** Designed for extensibility with rich customization capabilities and support for user-defined plugins.
 
-- 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules — the framework handles the rest.
+- 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
 
-## Sample apps
+## Sample Apps
 
-## Starting guide
+Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory — check them out for practical guidance on using the framework.
+
+## Getting Started
+
+Let’s take a quick look at what a typical JsonApi4j-based service looks like in code.  
+As an example, we’ll integrate JsonApi4j into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
+
+### 1. Add Dependency
+
+#### Maven
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest-springboot</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+#### Gradle
+```groovy
+implementation "pro.api4:jsonapi4j-rest-springboot:${jsonapi4jVersion}"
+```
+
+The library is published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
+
+### 2. Declare your first JSON:API resource and related classes
+
+Let’s start by describing your domain model and defining the first JSON:API resource.
+
+```java
+@Component
+public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntity> {
+
+    @Override
+    public String resolveResourceId(UserDbEntity userDbEntity) {
+      return userDbEntity.getId();
+    }
+  
+    @Override
+    public ResourceType resourceType() {
+      return () -> "users";
+    }
+  
+    @Override
+    public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
+      return new UserAttributes(
+              userDbEntity.getFullName().split("\\s+")[0],
+              userDbEntity.getFullName().split("\\s+")[1],
+              userDbEntity.getEmail(),
+              userDbEntity.getCreditCardNumber()
+      );
+    }
+}
+```
+
+What’s happening Here:
+
+* `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
+* `ResourceType resourceType()` defines a unique resource type name ("users" in this case). Each resource in your API must have a distinct type.
+* `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (UserDbEntity) to the public API-facing representation (UserAttributes)
+
+Each resource is parametrized with two types: 
+
+* `UserAttributes` is what is exposed via API, and 
+* `UserDbEntity` is how data is represented internally.
+
+Here’s a draft implementation of both classes:
+
+```java
+public class UserAttributes {
+    
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    private final String creditCardNumber;
+    
+    // constructors, getters and setters
+
+}
+```
+
+```java
+public class UserDbEntity {
+
+    private final String id;
+    private final String fullName;
+    private final String email;
+    private final String creditCardNumber;
+    
+    // constructors, getters and setters
+
+}
+```
+
+Internal models (like `UserDbEntity` in this case) often differ from UserAttributes. They may encapsulate database-specific details (for example, a Hibernate entity or a JOOQ record), represent a DTO from an external service, or even aggregate data from multiple sources.
+
+### 3. Declare Your First JSON:API Operation — Read All Users
+
+Now that we've defined our resource and attributes, let's implement the first operation to read all users.
+This operation will be available under `GET /users`.
+
+```java
+@Component
+public class ReadAllUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
+
+    private final UserDb userDb;
+    
+    public ReadAllUsersOperation(UserDb userDb) {
+        this.userDb = userDb;
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return () -> "users";
+    }
+
+    @Override
+    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+        UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
+        return new CursorPageableResponse.fromItemsAndCursor(
+                pagedResult.getEntities(),
+                pagedResult.getCursor()
+        );
+    }
+
+}
+```
+
+Here’s a simple in-memory data source to support the above operation:
+
+```java
+@Component
+public class UserDb {
+
+    private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
+    {
+        users.put("1", new UserDbEntity("1", "John Doe", "john@doe.com", "123456789"));
+        users.put("2", new UserDbEntity("2", "Jane Doe", "jane@doe.com", "222456789"));
+        users.put("3", new UserDbEntity("3", "Jack Doe", "jack@doe.com", "333456789"));
+        users.put("4", new UserDbEntity("4", "Jessy Doe", "jessy@doe.com", "444456789"));
+        users.put("5", new UserDbEntity("5", "Jared Doe", "jared@doe.com", "555456789"));
+    }
+
+    public DbPage<UserDbEntity> readAllUsers(String cursor) {
+        LimitOffsetToCursorAdapter adapter = new LimitOffsetToCursorAdapter(cursor).withDefaultLimit(2); // let's say our page size is 2
+        LimitOffsetToCursorAdapter.LimitAndOffset limitAndOffset = adapter.decodeLimitAndOffset();
+
+        int effectiveFrom = limitAndOffset.getOffset() < users.size() ? limitAndOffset.getOffset() : users.size() - 1;
+        int effectiveTo = Math.min(effectiveFrom + limitAndOffset.getLimit(), users.size());
+
+        List<UserDbEntity> result = new ArrayList<>(users.values()).subList(effectiveFrom, effectiveTo);
+        String nextCursor = adapter.nextCursor(users.size());
+        return new DbPage<>(nextCursor, result);
+    }
+
+    public static class DbPage<E> {
+
+        private final String cursor;
+        private final List<E> entities;
+
+        public DbPage(String cursor, List<E> entities) {
+            this.cursor = cursor;
+            this.entities = entities;
+        }
+
+        public String getCursor() {
+            return cursor;
+        }
+
+        public List<E> getEntities() {
+            return entities;
+        }
+    }
+}
+```
+
+You can now run your application (for example, on port `8080` by setting Spring Boot's property to `server.port=8080`) and send the next HTTP request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cursor]=DoJu).
+
+And then you should receive a paginated, JSON:API-compliant response such as:
+```json
+{
+  "data": [
+    {
+      "attributes": {
+        "firstName": "Jack",
+        "lastName": "Doe",
+        "email": "jack@doe.com",
+        "creditCardNumber": "333456789"
+      },
+      "links": {
+        "self": "/users/3"
+      },
+      "id": "3",
+      "type": "users"
+    },
+    {
+      "attributes": {
+        "firstName": "Jessy",
+        "lastName": "Doe",
+        "email": "jessy@doe.com",
+        "creditCardNumber": "444456789"
+      },
+      "links": {
+        "self": "/users/4"
+      },
+      "id": "4",
+      "type": "users"
+    }
+  ],
+  "links": {
+    "self": "/users?page%5Bcursor%5D=DoJu",
+    "next": "/users?page%5Bcursor%5D=DoJw"
+  }
+}
+```
+
+Try to remove `page[cursor]=xxx` query parameter - it will just start reading user resources from the very beginning.
+
+### 4. Adding your first JSON:API relationship
+
+Let's declare our first relationship to our JSON:API.
+
+We can introduce a new relationship like `relatives` that be a self-pointing relationship (each relationship item will be represented by a `users` resource itself). But let's better introduce more representative relationship, for example user's `citizenships`.
+
+First, we need to declare a dedicated JSON:API resource that represents a citizenship. In our case it's a `country`.
+
+```java
+@Component
+public class CountryJsonApiResource implements Resource<CountryAttributes, DownstreamCountry> {
+
+    @Override
+    public String resolveResourceId(DownstreamCountry downstreamCountry) {
+        return downstreamCountry.getCca2(); // let's use CCA2 errorCode as a unique country identifier
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return () -> "countries";
+    }
+
+    @Override
+    public CountryAttributes map(DownstreamCountry downstreamCountry) {
+        return new CountryAttributes(
+                downstreamCountry.getName().getCommon(),
+                downstreamCountry.getRegion()
+        );
+    }
+  
+}
+```
+
+Similar to what we've done for the User resource declaration here are `CountryAttributes` and `DownstreamCountry`:
+
+```java
+public class CountryAttributes {
+    
+    private final String name;
+    private final String region;
+  
+    // constructors, getters and setters
+
+}
+```
+
+let's say we want to expose only `name` and `region` in our API. And let's use `.getName().getCommon()` for a name.
+
+```java
+public class DownstreamCountry {
+
+    private final String cca2;
+    private final Name name;
+    private final String region;
+    
+    // constructors, getters and setters
+
+    public static class Name {
+  
+        private final String common;
+        private final String official;
+
+        // constructors, getters and setters
+  
+    }
+
+}
+```
+
+Now we're finally can set a relationship between `UserJsonApiResource` and `CountryJsonApiResource` resources. User might have multiple `citizenships` which means the relationship should have a to-many nature (represented by an array of resource identifier objects). That means we need to implement `ToManyRelationship` interface:
+
+```java
+@Component
+public class UserCitizenshipsJsonApiRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
+
+    @Override
+    public Relationship relationshipName() {
+        return () -> "citizenships";
+    }
+  
+    @Override
+    public ResourceType parentResourceType() {
+        return () -> "users";
+    }
+  
+    @Override
+    public ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
+        return () -> "countries";
+    }
+  
+    @Override
+    public String resolveResourceIdentifierId(DownstreamCountry downstreamCountry) {
+        return downstreamCountry.getCca2();
+    }
+
+}
+```
+
+`Relationship relationshipName()` - returns the name of the relationship
+
+`ResourceType parentResourceType()` - returns the name of the resource this relationship belongs to
+
+`ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - resolves the relationship resource type. There might be cases where one relationship might consist a mix of different resource types. For example, `userProperty` might be a mix of resources like `cars`, `apartment`, `yachts` etc.
+
+`String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves relationship resource id
+
+So now we have the domain graph that looks like:
+
+![Simple Domain Graph](docs/simple-domain-graph.png "Simple Domain Graph")
+
+### 5. Add missing relationship operations
+
+The only missing piece of puzzle is to teach the framework how to resolve the declared relationship data. That usually requires two things:
+1. Implement `ReadToManyRelationshipOperation<DownstreamCountry>` to tell the framework how to find the corresponding country ids for a user where they basically have passports of
+2. Optional. Implement `ReadMultipleResourcesOperation<DownstreamCountry>` for the `id` filter so the framework will know how to resolve [Compound Documents](https://jsonapi.org/format/#document-compound-documents) when it's requested in the `include` parameter. It's also possible to implement `ReadByIdOperation<DownstreamCountry>` but this would be less efficient because in that case compound docs are resolved sequentially one by one instead of a single batch request using `filter[id]=x,y,z` JSON:API query parameter.
+
+`ReadMultiDataRelationshipOperation` to resolve the relationship between a user and a country:
+```java
+@Component
+public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry> {
+
+    private final RestCountriesFeignClient client;
+    private final UserDb userDb;
+    
+    public ReadUserCitizenshipsRelationshipOperation(RestCountriesFeignClient client,
+                                                     UserDb userDb) {
+        this.client = client;
+        this.userDb = userDb;
+    }
+    
+
+    @Override
+    public CursorAwareResponse<DownstreamCountry> read(JsonApiRequest request) {
+        return CursorPageableResponse.fromItemsPageable(
+                client.readCountriesByIds(userDb.getUserCitizenships(request.getResourceId())),
+                request.getCursor(), 
+                2 // set limit to 2
+        );
+    }
+
+    @Override
+    public RelationshipName relationshipName() {
+        return () -> "citizenships";
+    }
+
+    @Override
+    public ResourceType parentResourceType() {
+        return () -> "users";
+    }
+    
+}
+```
+
+`RestCountriesFeignClient` could be a FeignClient that represents some 3rd party API, for example [restcountries](https://restcountries.com/). But let's keep it simple at this moment:
+```java
+@Component
+public class RestCountriesFeignClient {
+
+  private static final Map<String, DownstreamCountry> COUNTRIES = Map.of(
+          "NO", new DownstreamCountry("NO", new Name("Norway", "Kingdom of Norway"), "Europe"),
+          "FI", new DownstreamCountry("FI", new Name("Finland", "Republic of Finland"), "Europe"),
+          "US", new DownstreamCountry("US", new Name("United States", "United States of America"), "Americas")
+  );
+
+  public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
+    return countryIds.stream().map(COUNTRIES::get).toList();
+  }
+
+}
+```
+
+We also need to extend our existing `UserDb` to let it know which are these cca2 country codes the user has passports from.
+`UserDb` (updated):
+```java
+
+public class UserDb {
+    
+    //  ...
+    
+    private Map<String, List<String>> userIdToCountryCca2 = new ConcurrentHashMap<>();
+    {
+        userIdToCountryCca2.put("1", List.of("NO", "FI", "US"));
+        userIdToCountryCca2.put("2", List.of("US"));
+        userIdToCountryCca2.put("3", List.of("US", "FI"));
+        userIdToCountryCca2.put("4", List.of("NO", "US"));
+        userIdToCountryCca2.put("5", List.of("US"));
+    }
+
+    public List<String> getUserCitizenships(String userId) {
+        return userIdToCountryCca2.get(userId);
+    }
+
+    // ...
+
+}
+```
+
+Optional. If we want to use Compound Documents feature of the JSON:API we also need to implement `ReadMultipleResourcesOperation<DownstreamCountry>` operation that can read countries by their ids.  
+`ReadMultipleResourcesOperation<DownstreamCountry>`:
+```java
+@Component
+public class ReadCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
+
+    private final RestCountriesFeignClient client;
+    
+    public ReadAllCountriesOperation(RestCountriesFeignClient client) {
+        this.client = client;
+    }
+
+    @Override
+    public ResourceType resourceType() {
+        return () -> "countries";
+    }
+
+    @Override
+    public CursorPageableResponse<DownstreamCountry> readPage(JsonApiRequest request) {
+        if (request.getFilters().containsKey(ID_FILTER_NAME)) {
+            return CursorPageableResponse.byItems(client.readCountriesByIds(request.getFilters().get(ID_FILTER_NAME)));
+        } else {
+            throw new JsonApi4jException(400, CommonCodes.MISSING_REQUIRED_PARAMETER, "Operation supports 'id' filter only");
+        }
+    }
+
+}
+```
+
+Now we can finally play around with some more exciting HTTP requests. Check out the next section for some examples!
+
+### 6. Request/response examples
+
+#### Fetch a user citizenships linkages
+
+Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
+
+<details>
+  <summary>Response</summary>
+
+  ```json
+  {
+    "data": [
+      {
+        "id": "NO",
+        "type": "countries"
+      },
+      {
+        "id": "FI",
+        "type": "countries"
+      }
+    ],
+    "links": {
+      "self": "/users/1/relationships/citizenships",
+      "related": {
+        "countries": {
+          "href": "/countries?filter[id]=FI,NO", 
+          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
+          "meta": {
+            "ids": ["FI", "NO"]
+          }
+        }
+      },
+      "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
+    }
+  }
+  ```
+</details>
+
+It's worth noticing that relationshipName section has its own pagination. You can find the link pointing to the next page in `links` -> `next` field in the response. So try [/users/1/relationships
+/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu) to read the second page.
+
+#### Fetch a user citizenships linkages with the corresponding Country resources
+
+Request: [/users/1/relationships/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships?include=citizenships)
+
+<details>
+  <summary>Response</summary>
+
+  ```json
+  {
+    "data": [
+      {
+        "id": "NO",
+        "type": "countries"
+      },
+      {
+        "id": "FI",
+        "type": "countries"
+      }
+    ],
+    "links": {
+      "self": "/users/1/relationships/citizenships?include=citizenships",
+      "related": {
+        "countries": {
+          "href": "/countries?filter[id]=FI,NO",
+          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+          "meta": {
+            "ids": ["FI", "NO"]
+          }  
+        }
+      },
+      "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+    },
+    "included": [
+      {
+        "attributes": {
+          "name": "Norway",
+          "region": "Europe"
+        },
+        "links": {
+          "self": "/countries/NO"
+        },
+        "id": "NO",
+        "type": "countries"
+      },
+      {
+        "attributes": {
+          "name": "Finland",
+          "region": "Europe"
+        },
+        "links": {
+          "self": "/countries/FI"
+        },
+        "id": "FI",
+        "type": "countries"
+      }
+    ]
+  }
+  ```
+</details>
+
+#### Fetch multiple Countries by ids
+
+Request: [/countries?filter[id]=US,NO](http://localhost:8080/jsonapi/countries?filter[id]=US,NO)
+
+<details>
+  <summary>Response</summary>
+
+  ```json
+  {
+  "data": [
+      {
+        "attributes": {
+          "name": "Norway",
+          "region": "Europe"
+        },
+        "links": {
+          "self": "/countries/NO"
+        },
+        "id": "NO",
+        "type": "countries"
+      },
+      {
+        "attributes": {
+          "name": "United States",
+          "region": "Americas"
+        },
+        "links": {
+          "self": "/countries/US"
+        },
+        "id": "US",
+        "type": "countries"
+      }
+    ],
+    "links": {
+      "self": "/countries?filter%5Bid%5D=US%2CNO"
+    }
+  }
+  ```
+</details>
+
+#### Fetch a particular page of users with their citizenships linkage objects
+
+Request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cursor]=DoJu)
+
+<details>
+  <summary>Response</summary>
+
+  ```json
+  {
+    "data": [
+      {
+        "attributes": {
+          "firstName": "Jack",
+          "lastName": "Doe",
+          "email": "jack@doe.com"
+        },
+        "relationships": {
+          "citizenships": {
+            "links": {
+              "self": "/users/3/relationships/citizenships"
+            }
+          }
+        },
+        "links": {
+          "self": "/users/3"
+        },
+        "id": "3",
+        "type": "users"
+      },
+      {
+        "attributes": {
+          "firstName": "Jessy",
+          "lastName": "Doe",
+          "email": "jessy@doe.com"
+        },
+        "relationships": {
+          "citizenships": {
+            "links": {
+              "self": "/users/4/relationships/citizenships"
+            }
+          }
+        },
+        "links": {
+          "self": "/users/4"
+        },
+        "id": "4",
+        "type": "users"
+      }
+    ],
+    "links": {
+      "self": "/users?page%5Bcursor%5D=DoJu",
+      "next": "/users?page%5Bcursor%5D=DoJw"
+    }
+  }
+  ```
+</details>
+
+#### Fetch a particular page of users with their citizenships linkage objects and resolved Country resources
+
+Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=citizenships)
+
+<details>
+  <summary>Response</summary>
+
+  ```json
+  {
+    "data": [
+      {
+        "attributes": {
+          "firstName": "Jack",
+          "lastName": "Doe",
+          "email": "jack@doe.com"
+        },
+        "relationships": {
+          "citizenships": {
+            "data": [
+              {
+                "id": "US",
+                "type": "countries"
+              },
+              {
+                "id": "FI",
+                "type": "countries"
+              }
+            ],
+            "links": {
+              "self": "/users/3/relationships/citizenships",
+              "related": {
+                "countries": {
+                  "href": "/countries?filter[id]=FI,US",
+                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                  "meta": {
+                    "ids": ["FI", "US"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "links": {
+          "self": "/users/3"
+        },
+        "id": "3",
+        "type": "users"
+      },
+      {
+        "attributes": {
+          "firstName": "Jessy",
+          "lastName": "Doe",
+          "email": "jessy@doe.com"
+        },
+        "relationships": {
+          "citizenships": {
+            "data": [
+              {
+                "id": "NO",
+                "type": "countries"
+              },
+              {
+                "id": "US",
+                "type": "countries"
+              }
+            ],
+            "links": {
+              "self": "/users/4/relationships/citizenships",
+              "related": {
+                "countries": {
+                  "href": "/countries?filter[id]=NO,US",
+                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                  "meta": {
+                    "ids": ["NO", "US"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "links": {
+          "self": "/users/4"
+        },
+        "id": "4",
+        "type": "users"
+      }
+    ],
+    "links": {
+      "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
+      "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
+    },
+    "included": [
+      {
+        "attributes": {
+          "name": "Norway",
+          "region": "Europe"
+        },
+        "links": {
+          "self": "/countries/NO"
+        },
+        "id": "NO",
+        "type": "countries"
+      },
+      {
+        "attributes": {
+          "name": "Finland",
+          "region": "Europe"
+        },
+        "links": {
+          "self": "/countries/FI"
+        },
+        "id": "FI",
+        "type": "countries"
+      },
+      {
+        "attributes": {
+          "name": "United States",
+          "region": "Americas"
+        },
+        "links": {
+          "self": "/countries/US"
+        },
+        "id": "US",
+        "type": "countries"
+      }
+    ]
+  }
+  ```
+</details>
 
 ## Framework internals
 
