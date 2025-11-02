@@ -1,28 +1,63 @@
-![Logo](jsonapi4j-logo-medium.png)
-
 # Introduction
 
-Welcome to **JsonApi4j** — a lightweight API framework for Java for building [JSON:API](https://jsonapi.org/format/)-compliant APIs with minimal configuration.
-There are some application examples available in [examples/](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) folder. Please check it out for more insights on how to use the framework.
+**JsonApi4j** is a modern, lightweight Java framework for building well-structured, scalable, and production-ready RESTful APIs.  
+It streamlines the API design and development process by enforcing a consistent data format, eliminating repetitive boilerplate, and providing clear extension points for advanced use cases.
 
-# Features
+Unlike generic REST frameworks, **JsonApi4j** is purpose-built around the [JSON:API specification](https://jsonapi.org), which promotes best practices and addresses common pain points in designing and maintaining mature APIs.  
 
-- 🔌 JSON:API-compliant request/response handling. Automatic error handling according to the JSON:API spec
-- ⚙️ Servlet-level architecture. Natively integrates with [Spring Boot](https://spring.io/projects/spring-boot) but works with any Java web framework thanks to its foundation on the Servlet API.
-- 📦 Compound Documents. Supports multi-level includes (e.g., `include=comments.authors.followers`) for complex client-driven requests. Available as an embedded module that can also run elsewhere (f.e. at the API Gateway level), using a shared resource cache to reduce latency and improve performance.
-- 📘 [OpenAPI Specification](https://swagger.io/specification/) generation out of the box. Comprehensive enough by default, but can be configured if needed.
-- 🔐 Flexible Auth Model. Extensive support for authentication and authorization customization, including per-field data anonymization based on client access tier, user scopes, and resource ownership.
-- 🚀 Optimized for Concurrency. Everything that can be parallelized is parallelized. You can configure execution using virtual threads (Java Loom) or any [ExecutorService](https://download.java.net/java/early_access/loom/docs/api/java.base/java/util/concurrent/ExecutorService.html) implementation.
-- 🧠 Declarative approach with minimal boilerplate. Just describe your domain models (resources and relationships), supported operations, and authorization rules — the framework handles the rest for you.
+This approach helps **organizations** drastically simplify API governance at scale.
+
+By abstracting the repetitive parts of RESTful design, **JsonApi4j** enables **developers** to focus on business logic instead of API plumbing.
+
+# Why JsonApi4j?
+
+The following features and design principles will help you determine whether **JsonApi4j** fits your use case.
+
+## Organizational & Business Motivation
+
+Modern systems often consist of multiple services that need to expose and consume consistent data structures.  
+**JsonApi4j** helps achieve this by:
+
+- 🧩 Implements the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format — eliminating the need for custom, company-wide API guidelines.
+- 📘 Generates [OpenAPI specifications](https://swagger.io/specification/) out of the box, enabling clear and transparent API documentation across the organization.
+
+## Engineering Motivation
+
+Whether you’re standardizing your organization’s API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
+
+- ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks — including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
+  The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
+
+- 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
+
+- 🔐 **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership.
+
+- 🚀 **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently — from relationship resolution to compound document processing — and supports advanced concurrency optimizations, including virtual threads.
+
+- 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.  
+  The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
+
+- 🔌 **Pluggable architecture.** Designed for extensibility with rich customization capabilities and support for user-defined plugins.
+
+- 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules — the framework handles the rest.
+
+# Sample apps
+
+# Starting guide
+
+# Framework internals
+
+## Project structure
+
 - 🔧 Modular & Embeddable — use parts independently depending on the context:
-    - 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor ideal for embedding into non-web services, f.e. CLI tools that need to handle JSON:API input/output but without a need to carry all HTTP dependencies and specifics.
-    - 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — Servlet API HTTP base for integration with other popular Web Frameworks. Can also be used for a plain Servlet API web application.
-    - 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto configurable integration.
-    - 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone compound documents resolver that automatically fetches and populates the `included` section of a JSON:API response — perfect for API Gateway-level use or microservice response composition layers.
+  - 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor ideal for embedding into non-web services, f.e. CLI tools that need to handle JSON:API input/output but without a need to carry all HTTP dependencies and specifics.
+  - 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — Servlet API HTTP base for integration with other popular Web Frameworks. Can also be used for a plain Servlet API web application.
+  - 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto configurable integration.
+  - 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone compound documents resolver that automatically fetches and populates the `included` section of a JSON:API response — perfect for API Gateway-level use or microservice response composition layers.
 
-# Access Control
+## Access Control
 
-## Evaluation stages
+### Evaluation stages
 
 Access control evaluation is executed twice for request lifecycle - for **inbound** and **outbound** stage.
 
@@ -45,7 +80,7 @@ In case of **Relationship Documents** access control requirements can be set for
 
 By default, JsonApi4j allows everything (no Access Control evaluations), but it's always possible to enforce rules for either both or just one of these stage.
 
-## Access Control Requirements
+### Access Control Requirements
 
 There are four requirements that can be assigned in any combination:
 - **Authentication requirement** - checks if request is sent on behalf of authenticated client/user. Can be used to restrict anonymous access.
@@ -55,7 +90,7 @@ There are four requirements that can be assigned in any combination:
 
 If any of specified requirements are not met - the marked section or the entire object will be anonymized.
 
-## Setting Principal Context
+### Setting Principal Context
 
 By default, the framework uses `DefaultPrincipalResolver` which relies on the next HTTP headers in order to resolve the current auth context:
 
@@ -67,7 +102,7 @@ It is also possible to implement your own `PrincipalResolver` that tells the fra
 
 Later, the framework will use this info for Inbound/Outbound evaluations.
 
-## Setting Access Requirements
+### Setting Access Requirements
 
 How and where to declare your Access Control requirements?
 
@@ -77,7 +112,7 @@ There are two main approaches:
 
 If the system detects a mix of settings it merges them giving priority to ones that were set programmatically via Plugins.
 
-## Examples
+### Examples
 
 Example 1: Outbound Access Control
 
@@ -131,11 +166,11 @@ public class CreateUserOperation implements CreateResourcesOperation<UserDbEntit
 }
 ```
 
-# Request Validation
+## Request Validation
 
 Examples of how to add custom validation logic
 
-# OpenAPI Specification
+## OpenAPI Specification
 
 Since JSON:API has predetermined list of operations and schemas Open API Spec generation can be fully automated.
 
@@ -148,7 +183,7 @@ Here is two ways of how to generate an Open API Specification for you APIs:
 
 By default, JsonApi4j generate all schemas and operations for you. But if you need to enrich it with more data e.g. 'info', 'components' -> 'securitySchemes' or custom HTTP headers you need to explicitly configure that in `JsonApi4jProperties` ('oas' section) via `application.yaml` if you're using 'jsonapi4j-rest-springboot' or via proper `JsonApi4jServletContainerInitializer` bootstrapping if you're relying on Servlet API only from 'jsonapi4j-rest'.
 
-# Compound documents
+## Compound documents
 
 [Compound Documents](https://jsonapi.org/format/#document-compound-documents) is a part of JSON:API specification that describes the way to include related resources in one request. For example, if you want to request some 'users' you can also ask the server to include related resources to these users. It's worth mentioning that you can only ask for those resources that enabled via relationships. All resolved resourced are placed as a flat structure into a top-level "included" field. In order to request related resources "include" query parameter must be used, for example `/users?page[cursor]=xxx&include=citizenships`.
 
@@ -169,10 +204,10 @@ Compound Documents resolver is part of a dedicated module 'jsonapi4j-compound-do
 - Point the difference in 'includes' for Primary Resources and Relationship requests (how relationship request refers self).
 - CacheControlPropagator examples, how to configure an external Cache that relies on HTTP Cache Control headers
 
-# Register custom error handlers
+## Register custom error handlers
 - Example of how to declare a custom error handler
 
-# Performance tunings
+## Performance tunings
 
 - batch read relationship operations
 - custom executor service, 
