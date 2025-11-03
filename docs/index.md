@@ -25,7 +25,7 @@ Modern systems often consist of multiple services that need to expose and consum
 
 ### Engineering Motivation
 
-Whether you’re standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
+Whether you're standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
 
 - ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks - including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
   The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
@@ -49,8 +49,8 @@ Example applications are available in the [examples](https://github.com/MoonWorm
 
 ## Getting Started
 
-Let’s take a quick look at what a typical JsonApi4j-based service looks like in code.  
-As an example, we’ll integrate JsonApi4j into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
+Let's take a quick look at what a typical JsonApi4j-based service looks like in code.  
+As an example, we'll integrate JsonApi4j into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
 
 ### 1. Add Dependency
 
@@ -68,15 +68,23 @@ As an example, we’ll integrate JsonApi4j into a clean or existing [Spring Boot
 implementation "pro.api4:jsonapi4j-rest-springboot:${jsonapi4jVersion}"
 ```
 
-The library is published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
+The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
 
-### 2. Declare your first JSON:API resource and related classes
+### 2. Declare the Domain
 
-Let’s start by describing your domain model and defining the first JSON:API resource.
+Let's implement a simple application that exposes two resources - `users` and `countries` - and defines a relationship between them, representing which `citizenships` (or passports) each user holds.
+
+![Simple Domain Graph](simple-domain-graph.png "Simple Domain Graph")
+
+Then, let's implement a few operations for these resources - reading multiple users and countries by their IDs, and retrieving which citizenships each user has. 
+
+### 3. Define the JSON:API Resource for Users
+
+As mentioned above, let's start by defining our first JSON:API resource - `user` resource.
 
 ```java
 @Component
-public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntity> {
+public class UserResource implements Resource<UserAttributes, UserDbEntity> {
 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {
@@ -91,8 +99,7 @@ public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntit
     @Override
     public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
       return new UserAttributes(
-              userDbEntity.getFullName().split("\\s+")[0],
-              userDbEntity.getFullName().split("\\s+")[1],
+              userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
               userDbEntity.getEmail(),
               userDbEntity.getCreditCardNumber()
       );
@@ -100,7 +107,7 @@ public class UserJsonApiResource implements Resource<UserAttributes, UserDbEntit
 }
 ```
 
-What’s happening Here:
+What's happening here:
 
 * `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
 * `ResourceType resourceType()` defines a unique resource type name ("users" in this case). Each resource in your API must have a distinct type.
@@ -111,7 +118,7 @@ Each resource is parametrized with two types:
 * `UserAttributes` is what is exposed via API, and 
 * `UserDbEntity` is how data is represented internally.
 
-Here’s a draft implementation of both classes:
+Here's a draft implementation of both classes:
 
 ```java
 public class UserAttributes {
@@ -141,14 +148,14 @@ public class UserDbEntity {
 
 Internal models (like `UserDbEntity` in this case) often differ from UserAttributes. They may encapsulate database-specific details (for example, a Hibernate entity or a JOOQ record), represent a DTO from an external service, or even aggregate data from multiple sources.
 
-### 3. Declare Your First JSON:API Operation — Read All Users
+### 4. Declare the JSON:API Operation — Read Multiple Users
 
 Now that we've defined our resource and attributes, let's implement the first operation to read all users.
 This operation will be available under `GET /users`.
 
 ```java
 @Component
-public class ReadAllUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
+public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
 
     private final UserDb userDb;
     
@@ -173,7 +180,11 @@ public class ReadAllUsersOperation implements ReadMultipleResourcesOperation<Use
 }
 ```
 
-Here’s a simple in-memory data source to support the above operation:
+* `resourceType()` - identify which resource this operation belongs to (`users`).
+
+* The `UserDb` class doesn't depend on any JsonApi4j-specific interfaces or components — it simply represents your data source.
+In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism.
+For the sake of this demo, here’s a simple in-memory implementation to support the operation above:
 
 ```java
 @Component
@@ -229,8 +240,7 @@ And then you should receive a paginated, JSON:API-compliant response such as:
   "data": [
     {
       "attributes": {
-        "firstName": "Jack",
-        "lastName": "Doe",
+        "fullName": "Jack Doe",
         "email": "jack@doe.com",
         "creditCardNumber": "333456789"
       },
@@ -242,8 +252,7 @@ And then you should receive a paginated, JSON:API-compliant response such as:
     },
     {
       "attributes": {
-        "firstName": "Jessy",
-        "lastName": "Doe",
+        "fullName": "Jessy Doe",
         "email": "jessy@doe.com",
         "creditCardNumber": "444456789"
       },
@@ -263,17 +272,13 @@ And then you should receive a paginated, JSON:API-compliant response such as:
 
 Try to remove `page[cursor]=xxx` query parameter - it will just start reading user resources from the very beginning.
 
-### 4. Adding your first JSON:API relationship
+### 5. Define the JSON:API Resource for Countries
 
-Let's declare our first relationship to our JSON:API.
-
-We can introduce a new relationship like `relatives` that be a self-pointing relationship (each relationship item will be represented by a `users` resource itself). But let's better introduce more representative relationship, for example user's `citizenships`.
-
-First, we need to declare a dedicated JSON:API resource that represents a citizenship. In our case it's a `country`.
+Similar to the `users` resource, we need to declare a dedicated JSON:API resource representing a `citizenship` - in this case, a resource of type `country`.
 
 ```java
 @Component
-public class CountryJsonApiResource implements Resource<CountryAttributes, DownstreamCountry> {
+public class CountryResource implements Resource<CountryAttributes, DownstreamCountry> {
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
@@ -296,7 +301,7 @@ public class CountryJsonApiResource implements Resource<CountryAttributes, Downs
 }
 ```
 
-Similar to what we've done for the User resource declaration here are `CountryAttributes` and `DownstreamCountry`:
+This resource is parametrized with two types: `CountryAttributes` and `DownstreamCountry`.
 
 ```java
 public class CountryAttributes {
@@ -309,7 +314,7 @@ public class CountryAttributes {
 }
 ```
 
-let's say we want to expose only `name` and `region` in our API. And let's use `.getName().getCommon()` for a name.
+In this example, we expose only the `name` and `region` fields through the **attributes**, using `.getName().getCommon()` for the country name. While `cca2` is used as a country ID. 
 
 ```java
 public class DownstreamCountry {
@@ -332,11 +337,18 @@ public class DownstreamCountry {
 }
 ```
 
-Now we're finally can set a relationship between `UserJsonApiResource` and `CountryJsonApiResource` resources. User might have multiple `citizenships` which means the relationship should have a to-many nature (represented by an array of resource identifier objects). That means we need to implement `ToManyRelationship` interface:
+### 6. Add a JSON:API Relationship - User Citizenships
+
+Now that we've defined our first resources, let's establish a relationship between them.
+
+We'll define a relationship called `citizenships` between the `UserJsonApiResource` and `CountryJsonApiResource`.
+Each user can have multiple `citizenships`, which makes this a **to-many** relationship (represented by an array of resource identifier objects).
+
+To implement this, we'll create a class that implements the ToManyRelationship interface:
 
 ```java
 @Component
-public class UserCitizenshipsJsonApiRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
+public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
 
     @Override
     public Relationship relationshipName() {
@@ -361,25 +373,20 @@ public class UserCitizenshipsJsonApiRelationship implements ToManyRelationship<U
 }
 ```
 
-`Relationship relationshipName()` - returns the name of the relationship
+* `Relationship relationshipName()` -  defines the name of the relationship (`citizenships`).
 
-`ResourceType parentResourceType()` - returns the name of the resource this relationship belongs to
+* `ResourceType parentResourceType()` - identifies which resource this relationship belongs to (`users`).
 
-`ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - resolves the relationship resource type. There might be cases where one relationship might consist a mix of different resource types. For example, `userProperty` might be a mix of resources like `cars`, `apartment`, `yachts` etc.
+* `ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
 
-`String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves relationship resource id
+* `String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves the unique identifier of each related resource (e.g., the country's CCA2 code).
 
-So now we have the domain graph that looks like:
+### 7. Add the Missing Relationship Operation
 
-![Simple Domain Graph](docs/simple-domain-graph.png "Simple Domain Graph")
+The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.  
 
-### 5. Add missing relationship operations
+To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells JsonApi4j how to find the related country resources (i.e., which passports or `citizenships` each user has).
 
-The only missing piece of puzzle is to teach the framework how to resolve the declared relationship data. That usually requires two things:
-1. Implement `ReadToManyRelationshipOperation<DownstreamCountry>` to tell the framework how to find the corresponding country ids for a user where they basically have passports of
-2. Optional. Implement `ReadMultipleResourcesOperation<DownstreamCountry>` for the `id` filter so the framework will know how to resolve [Compound Documents](https://jsonapi.org/format/#document-compound-documents) when it's requested in the `include` parameter. It's also possible to implement `ReadByIdOperation<DownstreamCountry>` but this would be less efficient because in that case compound docs are resolved sequentially one by one instead of a single batch request using `filter[id]=x,y,z` JSON:API query parameter.
-
-`ReadMultiDataRelationshipOperation` to resolve the relationship between a user and a country:
 ```java
 @Component
 public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry> {
@@ -416,7 +423,11 @@ public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRela
 }
 ```
 
-`RestCountriesFeignClient` could be a FeignClient that represents some 3rd party API, for example [restcountries](https://restcountries.com/). But let's keep it simple at this moment:
+* `relationshipName()` and `parentResourceType()` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
+
+* `RestCountriesFeignClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
+For simplicity, let's keep it local for now and simulate its behavior with an in-memory implementation:
+
 ```java
 @Component
 public class RestCountriesFeignClient {
@@ -434,8 +445,7 @@ public class RestCountriesFeignClient {
 }
 ```
 
-We also need to extend our existing `UserDb` to let it know which are these cca2 country codes the user has passports from.
-`UserDb` (updated):
+We also need to extend our existing `UserDb` to include information about which countries each user holds passports from (identified by their CCA2 codes).
 ```java
 
 public class UserDb {
@@ -460,11 +470,15 @@ public class UserDb {
 }
 ```
 
-Optional. If we want to use Compound Documents feature of the JSON:API we also need to implement `ReadMultipleResourcesOperation<DownstreamCountry>` operation that can read countries by their ids.  
-`ReadMultipleResourcesOperation<DownstreamCountry>`:
+### 8. Enable Compound Documents (Optional)
+
+To support [Compound Documents](https://jsonapi.org/format/#document-compound-documents), implement `ReadMultipleResourcesOperation<DownstreamCountry>` with an `id` filter. This allows the framework to resolve included resources efficiently when requested via the include query parameter.
+
+While you could also implement `ReadByIdOperation<DownstreamCountry>`, this approach is less efficient because compound documents would be resolved sequentially, one by one, instead of using a single batch request via `filter[id]=x,y,z`.
+
 ```java
 @Component
-public class ReadCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
+public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
 
     private final RestCountriesFeignClient client;
     
@@ -489,11 +503,15 @@ public class ReadCountriesOperation implements ReadMultipleResourcesOperation<Do
 }
 ```
 
-Now we can finally play around with some more exciting HTTP requests. Check out the next section for some examples!
+* `resourceType()` - identify which resource this operation belongs to (`countries`).
 
-### 6. Request/response examples
+* `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.  
 
-#### Fetch a user citizenships linkages
+Now we can finally start exploring some more exciting HTTP requests. Check out the next section for hands-on examples!
+
+### 9. Request/Response Examples
+
+#### Fetch a User's Citizenship Relationships
 
 Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
 
@@ -529,10 +547,12 @@ Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/use
   ```
 </details>
 
-It's worth noticing that relationshipName section has its own pagination. You can find the link pointing to the next page in `links` -> `next` field in the response. So try [/users/1/relationships
-/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu) to read the second page.
+It's worth noting that each relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
 
-#### Fetch a user citizenships linkages with the corresponding Country resources
+For example, to fetch the second page of a user's citizenships relationship, try:
+/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu)
+
+#### Fetch a User's Citizenship Relationships Along with Corresponding Country Resources
 
 Request: [/users/1/relationships/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships?include=citizenships)
 
@@ -592,7 +612,7 @@ Request: [/users/1/relationships/citizenships?include=citizenships](http://local
   ```
 </details>
 
-#### Fetch multiple Countries by ids
+#### Fetch Multiple Countries by IDs
 
 Request: [/countries?filter[id]=US,NO](http://localhost:8080/jsonapi/countries?filter[id]=US,NO)
 
@@ -632,64 +652,7 @@ Request: [/countries?filter[id]=US,NO](http://localhost:8080/jsonapi/countries?f
   ```
 </details>
 
-#### Fetch a particular page of users with their citizenships linkage objects
-
-Request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cursor]=DoJu)
-
-<details>
-  <summary>Response</summary>
-
-  ```json
-  {
-    "data": [
-      {
-        "attributes": {
-          "firstName": "Jack",
-          "lastName": "Doe",
-          "email": "jack@doe.com"
-        },
-        "relationships": {
-          "citizenships": {
-            "links": {
-              "self": "/users/3/relationships/citizenships"
-            }
-          }
-        },
-        "links": {
-          "self": "/users/3"
-        },
-        "id": "3",
-        "type": "users"
-      },
-      {
-        "attributes": {
-          "firstName": "Jessy",
-          "lastName": "Doe",
-          "email": "jessy@doe.com"
-        },
-        "relationships": {
-          "citizenships": {
-            "links": {
-              "self": "/users/4/relationships/citizenships"
-            }
-          }
-        },
-        "links": {
-          "self": "/users/4"
-        },
-        "id": "4",
-        "type": "users"
-      }
-    ],
-    "links": {
-      "self": "/users?page%5Bcursor%5D=DoJu",
-      "next": "/users?page%5Bcursor%5D=DoJw"
-    }
-  }
-  ```
-</details>
-
-#### Fetch a particular page of users with their citizenships linkage objects and resolved Country resources
+#### Fetch a Specific Page of Users with Citizenship Linkage Objects and Resolved Country Resources
 
 Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=citizenships)
 
@@ -701,8 +664,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
     "data": [
       {
         "attributes": {
-          "firstName": "Jack",
-          "lastName": "Doe",
+          "fullName": "Jack Doe",
           "email": "jack@doe.com"
         },
         "relationships": {
@@ -739,8 +701,7 @@ Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/j
       },
       {
         "attributes": {
-          "firstName": "Jessy",
-          "lastName": "Doe",
+          "fullName": "Jessy Doe",
           "email": "jessy@doe.com"
         },
         "relationships": {
@@ -980,6 +941,7 @@ Compound Documents resolver is part of a dedicated module 'jsonapi4j-compound-do
 
 ### Register custom error handlers
 - Example of how to declare a custom error handler
+- Examples for JsonApi4jException and ResourceNotFoundException
 
 ### Performance tunings
 

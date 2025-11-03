@@ -38,8 +38,8 @@ public class CreateUserOperation implements CreateResourceOperation<UserDbEntity
         CreateResourceOperation.super.validate(request);
         var payload = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
         UserAttributes att = payload.getData().getAttributes();
-        userValidator.validateFirstName(att.getFirstName());
-        userValidator.validateLastName(att.getLastName());
+        userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
+        userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
         userValidator.validateEmail(att.getEmail());
         var rel = payload.getData().getRelationships();
         if (rel != null && rel.getCitizenships() != null) {
@@ -61,16 +61,16 @@ public class CreateUserOperation implements CreateResourceOperation<UserDbEntity
                     .map(ResourceIdentifierObject::getId)
                     .toList();
             return userDb.createUser(
-                    att.getFirstName(),
-                    att.getLastName(),
+                    att.getFullName().split("\\s+")[0],
+                    att.getFullName().split("\\s+")[1],
                     att.getEmail(),
                     att.getCreditCardNumber(),
                     countryIds
             );
         } else {
             return userDb.createUser(
-                    att.getFirstName(),
-                    att.getLastName(),
+                    att.getFullName().split("\\s+")[0],
+                    att.getFullName().split("\\s+")[1],
                     att.getEmail(),
                     att.getCreditCardNumber()
             );

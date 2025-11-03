@@ -29,8 +29,7 @@ public class UserResource implements Resource<UserAttributes, UserDbEntity> {
     @Override
     public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
         return new UserAttributes(
-                userDbEntity.getFullName().split("\\s+")[0],
-                userDbEntity.getFullName().split("\\s+")[1],
+                userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
                 userDbEntity.getEmail(),
                 userDbEntity.getCreditCardNumber()
         );

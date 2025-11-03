@@ -26,27 +26,27 @@ public class UserDb {
     private Map<String, List<String>> userRalatives = new ConcurrentHashMap<>();
 
     {
-        users.put("1", new UserDbEntity("1", "John Doe", "john@doe.com", "123456789"));
+        users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789"));
         userCitizenships.put("1", List.of("NO", "FI", "US"));
         userPlaceOfBirth.put("1", "US");
         userRalatives.put("1", List.of("2", "3"));
 
-        users.put("2", new UserDbEntity("2", "Jane Doe", "jane@doe.com", "222456789"));
+        users.put("2", new UserDbEntity("2", "Jane",  "Doe", "jane@doe.com", "222456789"));
         userCitizenships.put("2", List.of("US"));
         userPlaceOfBirth.put("2", "FI");
         userRalatives.put("2", List.of("1", "4"));
 
-        users.put("3", new UserDbEntity("3", "Jack Doe", "jack@doe.com", "333456789"));
+        users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789"));
         userCitizenships.put("3", List.of("US", "FI"));
         userPlaceOfBirth.put("3", "NO");
         userRalatives.put("3", Collections.emptyList());
 
-        users.put("4", new UserDbEntity("4", "Jessy Doe", "jessy@doe.com", "444456789"));
+        users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789"));
         userCitizenships.put("4", List.of("NO", "US"));
         userPlaceOfBirth.put("4", "US");
         userRalatives.put("4", List.of("1"));
 
-        users.put("5", new UserDbEntity("5", "Jared Doe", "jared@doe.com", "555456789"));
+        users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789"));
         userCitizenships.put("5", List.of("US"));
         userPlaceOfBirth.put("5", "NO");
         userRalatives.put("5", List.of("1", "2", "3", "4"));
@@ -69,7 +69,8 @@ public class UserDb {
                                    String creditCardNumber) {
         UserDbEntity newUser = new UserDbEntity(
                 String.valueOf(ID_COUNTER.getAndIncrement()),
-                firstName + " " + lastName,
+                firstName,
+                lastName,
                 email,
                 creditCardNumber
         );

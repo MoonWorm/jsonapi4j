@@ -22,7 +22,7 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.oas.UserOasSettingsFactor
 
 @RequiredArgsConstructor
 @Component
-public class ReadAllUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
+public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
 
     private final UserDb userDb;
 
