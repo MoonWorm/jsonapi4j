@@ -519,34 +519,34 @@ Now we can finally start exploring some more exciting HTTP requests. Check out t
 
 Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
 
-<button onclick="this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='none')?'block':'none'">Response</button>
-<pre style="display:none;">
-  {
-    "data": [
-      {
-        "id": "NO",
-        "type": "countries"
-      },
-      {
-        "id": "FI",
-        "type": "countries"
-      }
-    ],
-    "links": {
-      "self": "/users/1/relationships/citizenships",
-      "related": {
-        "countries": {
-          "href": "/countries?filter[id]=FI,NO", 
-          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
-          "meta": {
-            "ids": ["FI", "NO"]
-          }
-        }
-      },
-      "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
+Response:
+```json
+{
+  "data": [
+    {
+      "id": "NO",
+      "type": "countries"
+    },
+    {
+      "id": "FI",
+      "type": "countries"
     }
+  ],
+  "links": {
+    "self": "/users/1/relationships/citizenships",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=FI,NO", 
+        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
+        "meta": {
+          "ids": ["FI", "NO"]
+        }
+      }
+    },
+    "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
   }
-</pre>
+}
+```
 
 It's worth noting that each relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
 
@@ -557,229 +557,221 @@ For example, to fetch the second page of a user's citizenships relationship, try
 
 Request: [/users/1/relationships/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships?include=citizenships)
 
-<details>
-  <summary>Response</summary>
+Response:
 
-  ```json
-  {
-    "data": [
-      {
-        "id": "NO",
-        "type": "countries"
-      },
-      {
-        "id": "FI",
-        "type": "countries"
-      }
-    ],
-    "links": {
-      "self": "/users/1/relationships/citizenships?include=citizenships",
-      "related": {
-        "countries": {
-          "href": "/countries?filter[id]=FI,NO",
-          "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
-          "meta": {
-            "ids": ["FI", "NO"]
-          }  
-        }
-      },
-      "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+```json
+{
+  "data": [
+    {
+      "id": "NO",
+      "type": "countries"
     },
-    "included": [
-      {
-        "attributes": {
-          "name": "Norway",
-          "region": "Europe"
-        },
-        "links": {
-          "self": "/countries/NO"
-        },
-        "id": "NO",
-        "type": "countries"
-      },
-      {
-        "attributes": {
-          "name": "Finland",
-          "region": "Europe"
-        },
-        "links": {
-          "self": "/countries/FI"
-        },
-        "id": "FI",
-        "type": "countries"
+    {
+      "id": "FI",
+      "type": "countries"
+    }
+  ],
+  "links": {
+    "self": "/users/1/relationships/citizenships?include=citizenships",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=FI,NO",
+        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": ["FI", "NO"]
+        }  
       }
-    ]
-  }
-  ```
-</details>
+    },
+    "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+  },
+  "included": [
+    {
+      "attributes": {
+        "name": "Norway",
+        "region": "Europe"
+      },
+      "links": {
+        "self": "/countries/NO"
+      },
+      "id": "NO",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Finland",
+        "region": "Europe"
+      },
+      "links": {
+        "self": "/countries/FI"
+      },
+      "id": "FI",
+      "type": "countries"
+    }
+  ]
+}
+```
 
 #### Fetch Multiple Countries by IDs
 
 Request: [/countries?filter[id]=US,NO](http://localhost:8080/jsonapi/countries?filter[id]=US,NO)
 
-<details>
-  <summary>Response</summary>
-
-  ```json
-  {
-  "data": [
-      {
-        "attributes": {
-          "name": "Norway",
-          "region": "Europe"
-        },
-        "links": {
-          "self": "/countries/NO"
-        },
-        "id": "NO",
-        "type": "countries"
+Response:
+```json
+{
+"data": [
+    {
+      "attributes": {
+        "name": "Norway",
+        "region": "Europe"
       },
-      {
-        "attributes": {
-          "name": "United States",
-          "region": "Americas"
-        },
-        "links": {
-          "self": "/countries/US"
-        },
-        "id": "US",
-        "type": "countries"
-      }
-    ],
-    "links": {
-      "self": "/countries?filter%5Bid%5D=US%2CNO"
+      "links": {
+        "self": "/countries/NO"
+      },
+      "id": "NO",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "United States",
+        "region": "Americas"
+      },
+      "links": {
+        "self": "/countries/US"
+      },
+      "id": "US",
+      "type": "countries"
     }
+  ],
+  "links": {
+    "self": "/countries?filter%5Bid%5D=US%2CNO"
   }
-  ```
-</details>
+}
+```
 
 #### Fetch a Specific Page of Users with Citizenship Linkage Objects and Resolved Country Resources
 
 Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=citizenships)
 
-<details>
-  <summary>Response</summary>
-
-  ```json
-  {
-    "data": [
-      {
-        "attributes": {
-          "fullName": "Jack Doe",
-          "email": "jack@doe.com"
-        },
-        "relationships": {
-          "citizenships": {
-            "data": [
-              {
-                "id": "US",
-                "type": "countries"
-              },
-              {
-                "id": "FI",
-                "type": "countries"
-              }
-            ],
-            "links": {
-              "self": "/users/3/relationships/citizenships",
-              "related": {
-                "countries": {
-                  "href": "/countries?filter[id]=FI,US",
-                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
-                  "meta": {
-                    "ids": ["FI", "US"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "links": {
-          "self": "/users/3"
-        },
-        "id": "3",
-        "type": "users"
+Response:
+```json
+{
+  "data": [
+    {
+      "attributes": {
+        "fullName": "Jack Doe",
+        "email": "jack@doe.com"
       },
-      {
-        "attributes": {
-          "fullName": "Jessy Doe",
-          "email": "jessy@doe.com"
-        },
-        "relationships": {
-          "citizenships": {
-            "data": [
-              {
-                "id": "NO",
-                "type": "countries"
-              },
-              {
-                "id": "US",
-                "type": "countries"
-              }
-            ],
-            "links": {
-              "self": "/users/4/relationships/citizenships",
-              "related": {
-                "countries": {
-                  "href": "/countries?filter[id]=NO,US",
-                  "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
-                  "meta": {
-                    "ids": ["NO", "US"]
-                  }
+      "relationships": {
+        "citizenships": {
+          "data": [
+            {
+              "id": "US",
+              "type": "countries"
+            },
+            {
+              "id": "FI",
+              "type": "countries"
+            }
+          ],
+          "links": {
+            "self": "/users/3/relationships/citizenships",
+            "related": {
+              "countries": {
+                "href": "/countries?filter[id]=FI,US",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": ["FI", "US"]
                 }
               }
             }
           }
-        },
-        "links": {
-          "self": "/users/4"
-        },
-        "id": "4",
-        "type": "users"
-      }
-    ],
-    "links": {
-      "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
-      "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
+        }
+      },
+      "links": {
+        "self": "/users/3"
+      },
+      "id": "3",
+      "type": "users"
     },
-    "included": [
-      {
-        "attributes": {
-          "name": "Norway",
-          "region": "Europe"
-        },
-        "links": {
-          "self": "/countries/NO"
-        },
-        "id": "NO",
-        "type": "countries"
+    {
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com"
       },
-      {
-        "attributes": {
-          "name": "Finland",
-          "region": "Europe"
-        },
-        "links": {
-          "self": "/countries/FI"
-        },
-        "id": "FI",
-        "type": "countries"
+      "relationships": {
+        "citizenships": {
+          "data": [
+            {
+              "id": "NO",
+              "type": "countries"
+            },
+            {
+              "id": "US",
+              "type": "countries"
+            }
+          ],
+          "links": {
+            "self": "/users/4/relationships/citizenships",
+            "related": {
+              "countries": {
+                "href": "/countries?filter[id]=NO,US",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": ["NO", "US"]
+                }
+              }
+            }
+          }
+        }
       },
-      {
-        "attributes": {
-          "name": "United States",
-          "region": "Americas"
-        },
-        "links": {
-          "self": "/countries/US"
-        },
-        "id": "US",
-        "type": "countries"
-      }
-    ]
-  }
-  ```
-</details>
+      "links": {
+        "self": "/users/4"
+      },
+      "id": "4",
+      "type": "users"
+    }
+  ],
+  "links": {
+    "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
+    "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
+  },
+  "included": [
+    {
+      "attributes": {
+        "name": "Norway",
+        "region": "Europe"
+      },
+      "links": {
+        "self": "/countries/NO"
+      },
+      "id": "NO",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "Finland",
+        "region": "Europe"
+      },
+      "links": {
+        "self": "/countries/FI"
+      },
+      "id": "FI",
+      "type": "countries"
+    },
+    {
+      "attributes": {
+        "name": "United States",
+        "region": "Americas"
+      },
+      "links": {
+        "self": "/countries/US"
+      },
+      "id": "US",
+      "type": "countries"
+    }
+  ]
+}
+```
 
 ## Framework internals
 
