@@ -110,7 +110,7 @@ public class UserResource implements Resource<UserAttributes, UserDbEntity> {
 What's happening here:
 
 * `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
-* `ResourceType resourceType()` defines a unique resource type name ("users" in this case). Each resource in your API must have a distinct type.
+* `ResourceType resourceType()` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
 * `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (UserDbEntity) to the public API-facing representation (UserAttributes)
 
 Each resource is parametrized with two types: 
@@ -146,7 +146,7 @@ public class UserDbEntity {
 }
 ```
 
-Internal models (like `UserDbEntity` in this case) often differ from UserAttributes. They may encapsulate database-specific details (for example, a Hibernate entity or a JOOQ record), represent a DTO from an external service, or even aggregate data from multiple sources.
+Internal models (like `UserDbEntity` in this case) often differ from `UserAttributes`. They may encapsulate database-specific details (for example, a Hibernate entity or a JOOQ record), represent a DTO from an external service, or even aggregate data from multiple sources.
 
 ### 4. Declare the JSON:API Operation — Read Multiple Users
 
@@ -470,6 +470,8 @@ public class UserDb {
 }
 ```
 
+Finally, this operation will be available under `GET /users/{userId}/relationships/citizenships`.
+
 ### 8. Enable Compound Documents (Optional)
 
 To support [Compound Documents](https://jsonapi.org/format/#document-compound-documents), implement `ReadMultipleResourcesOperation<DownstreamCountry>` with an `id` filter. This allows the framework to resolve included resources efficiently when requested via the include query parameter.
@@ -507,6 +509,8 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
 
 * `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.  
 
+This operation will be available under `GET /countries?filter[id]=x,y,z`.
+
 Now we can finally start exploring some more exciting HTTP requests. Check out the next section for hands-on examples!
 
 ### 9. Request/Response Examples
@@ -515,10 +519,8 @@ Now we can finally start exploring some more exciting HTTP requests. Check out t
 
 Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
 
-<details>
-  <summary>Response</summary>
-
-  ```json
+<button onclick="this.nextElementSibling.style.display=(this.nextElementSibling.style.display==='none')?'block':'none'">Response</button>
+<pre style="display:none;">
   {
     "data": [
       {
@@ -544,8 +546,7 @@ Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/use
       "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
     }
   }
-  ```
-</details>
+</pre>
 
 It's worth noting that each relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
 
