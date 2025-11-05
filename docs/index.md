@@ -49,8 +49,8 @@ Example applications are available in the [examples](https://github.com/MoonWorm
 
 ## Getting Started
 
-Let's take a quick look at what a typical JsonApi4j-based service looks like in code.  
-As an example, we'll integrate JsonApi4j into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
+Let's take a quick look at what a typical **JsonApi4j**-based service looks like in code.  
+As an example, we'll integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
 
 ### 1. Add Dependency
 
@@ -182,7 +182,7 @@ public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperatio
 
 * `resourceType()` - identify which resource this operation belongs to (`users`).
 
-* The `UserDb` class doesn't depend on any JsonApi4j-specific interfaces or components — it simply represents your data source.
+* The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source.
 In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism.
 For the sake of this demo, here’s a simple in-memory implementation to support the operation above:
 
@@ -385,7 +385,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
 
 The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.  
 
-To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells JsonApi4j how to find the related country resources (i.e., which passports or `citizenships` each user has).
+To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells **JsonApi4j** how to find the related country resources (i.e., which passports or `citizenships` each user has).
 
 ```java
 @Component
@@ -777,11 +777,141 @@ Response:
 
 ### Project structure
 
-- 🔧 Modular & Embeddable — use parts independently depending on the context:
-  - 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor ideal for embedding into non-web services, f.e. CLI tools that need to handle JSON:API input/output but without a need to carry all HTTP dependencies and specifics.
-  - 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — Servlet API HTTP base for integration with other popular Web Frameworks. Can also be used for a plain Servlet API web application.
-  - 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto configurable integration.
-  - 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone compound documents resolver that automatically fetches and populates the `included` section of a JSON:API response — perfect for API Gateway-level use or microservice response composition layers.
+**JsonApi4j** is designed to be **modular and embeddable**, allowing you to use only the parts you need depending on your application context.
+Each module is published as a separate artifact in Maven Central.
+
+- 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor, ideal for embedding into non-web services (e.g., CLI tools) that need to handle JSON:API input/output without bringing in HTTP-related dependencies.
+- 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — the Servlet API–based HTTP layer for integration with any Java web framework. Can be used directly in plain Servlet applications or as a foundation for building native integrations for frameworks like Spring Boot, Quarkus, etc.
+- 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto-configuration module that integrates **JsonApi4j** seamlessly into a Spring environment.
+- 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone **compound documents resolver** that automatically fetches and populates the `included` section of JSON:API responses. Perfect for API Gateway-level use or microservice response composition layers.
+
+Here's how transitive dependencies between modules are structured in the framework:
+
+```text
+jsonapi4j-core
+│
+├── jsonapi4j-compound-docs-resolver
+│
+└── jsonapi4j-rest
+    ├── depends on → jsonapi4j-core
+    └── depends on → jsonapi4j-compound-docs-resolver
+        │
+        └── jsonapi4j-rest-springboot
+            └── depends on → jsonapi4j-rest
+```
+
+In short - if you're integrating **JsonApi4j** with a Spring Boot application, you only need to include a single dependency:
+`jsonapi4j-rest-springboot`.
+
+### Designing the Domain
+
+As highlighted earlier in the **Getting Started** guide, designing your domain model is one of the most important steps - and typically the first one - when building APIs with **JsonApi4j**. A well-structured domain design ensures clear resource boundaries, consistent data representation, and smoother integration with the JSON:API specification.
+
+There are a few extension points that are important to understand when working with **JsonApi4j**.
+In most cases, you'll simply implement one or more predefined interfaces that allow the framework to recognize and apply your domain configuration automatically.
+
+All domain-related interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.domain` package.
+
+Here are the most essential ones:
+
+* `Resource<ATTRIBUTES, RESOURCE_DTO>` - implement this interface to declare a new **JSON:API resource**
+* `ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-one relationship**
+* `ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-many relationship**
+
+#### Resource<ATTRIBUTES, RESOURCE_DTO>
+
+This is the primary interface for defining a JSON:API resource. It describes how your internal model is going to be represented by JSON:API documents. 
+
+Think about resources as of vertices (or nodes) in a graph.
+
+Type parameters:
+* `ATTRIBUTES` - the class representing the resource's exposed **attributes** in the API (`UserAttributes`, `CountryAttributes`, etc.).
+* `RESOURCE_DTO` - the internal data object or DTO from your domain or persistence layer (`UserDbEntity`, `DownstreamCountry`, etc.).
+
+Mandatory / Key Responsibilities:
+* Provide a unique resource ID. Implement `resolveResourceId(RESOURCE_DTO dataSourceDto)`). This is mandatory for every resource and ensures each object can be uniquely identified.
+* Define the resource type. Implement `resolveResourceId()`). This is mandatory to differentiate resource types across your APIs.
+* Map internal objects to API-facing attributes. Implement `resolveAttributes(RESOURCE_DTO dataSourceDto)`). By default, **attributes** are `null`, but most resources should define this as it represents the core domain information.  
+
+Optional / Advanced Capabilities:
+* Top-level **links** for single resource documents. Implement `resolveTopLevelLinksForSingleResourceDoc(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`). By default, generates "self" member only.
+* Top-level **links** for multi-resource documents. Implement `resolveTopLevelLinksForMultiResourcesDoc(JsonApiRequest request, List<RESOURCE_DTO> dataSourceDtos, String nextCursor)`). By default, generates "self" and "next" members if applicable.
+* Top-level **meta** for single resource documents. Implement `resolveTopLevelMetaForSingleResourceDoc(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`. By default, generates `null`.
+* Top-level **meta** for multi-resource documents. Implement `resolveTopLevelMetaForMultiResourcesDoc(JsonApiRequest request, List<RESOURCE_DTO> dataSourceDtos)`. By default, generates `null`.
+* Resource-level **links**. Implement `resolveResourceLinks(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`. By default, generates a "self" link.
+* Resource-level **meta**. Implement `resolveResourceMeta(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`). By default, generates `null`.
+
+#### ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
+
+This interface is used to define a **To-One relationship** between a JSON:API resource and another related resource. It allows the framework to map and expose single-valued relationships in a JSON:API-compliant response.
+
+Think of this relationship as a 1-to-1 edge in a graph, where one parent resource can reference a single related resource.
+
+Type parameters:
+* `RESOURCE_DTO` - the internal data object or DTO representing the parent resource (e.g., `UserDbEntity`).
+* `RELATIONSHIP_DTO` - the internal data object or DTO representing the related resource (e.g., `DownstreamCountry`).
+
+Mandatory / Key Responsibilities:
+* Define the relationship name. Implement `relationshipName()`. This identifies the relationship field in the JSON:API document.
+* Specify the parent resource type. Implement `parentResourceType()`. This tells the framework which resource the relationship belongs to.
+* Resolve the related resource type. Implement `resolveResourceIdentifierType(RELATIONSHIP_DTO relationshipDto)`. This defines the type of the related resource in the JSON:API document.
+* Resolve the related resource ID. Implement `resolveResourceIdentifierId(RELATIONSHIP_DTO relationshipDto)`. This should return a unique identifier for the related resource.
+
+Optional / Advanced Capabilities:
+* Customize relationship links. Implement `resolveRelationshipLinks(JsonApiRequest request, RESOURCE_DTO resourceDto, RELATIONSHIP_DTO relationshipDto)`. By default, generates "self" and "related" links for the relationship.
+* Customize relationship meta. Implement `resolveRelationshipMeta(JsonApiRequest request, RESOURCE_DTO resourceDto, RELATIONSHIP_DTO relationshipDto)`. By default, generates `null`.
+
+Notes:
+* A To-One relationship always resolves to a single resource identifier object (or `null`) in the JSON:API response.
+* Multiple relationships can be defined for the same resource by implementing multiple `ToOneRelationship` instances.
+
+#### ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
+
+This interface is used to define a **To-Many relationship** between a JSON:API resource and another related resource. It allows the framework to map and expose multivalued relationships in a JSON:API-compliant response.
+
+Think of this relationship as a 1-to-N edge in a graph, where one parent resource can reference multiple related resources.
+
+Refer to the **ToOneRelationship** section for additional details, as the key concepts and advanced capabilities are largely the same.
+
+### Implementing Operations
+
+Operations focus on retrieving internal models, which are then converted into JSON:API-compliant responses. Operations that modify data accept JSON:API-compliant payloads and update the internal data accordingly. 
+
+The JSON:API specification defines a limited set of standard operations. Some variations with JSON:API specification are acceptable, but the framework selects the one that makes the most sense for a given context. 
+
+All operation interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.operation` package. 
+
+Here is the list of available interfaces: 
+
+Resource-related operations:
+* `ReadResourceByIdOperation<RESOURCE_DTO>`
+  * `RESOURCE_DTO readById(JsonApiRequest request)` - reads a single internal object representing a JSON:API resource of the specified type.
+* `ReadMultipleResourcesOperation<RESOURCE_DTO>`
+  * `CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request)` - reads multiple internal objects representing JSON:API resources of the specified type. 
+* `CreateResourceOperation<RESOURCE_DTO>` 
+  * `RESOURCE_DTO create(JsonApiRequest request)` - creates a single object in the backend system and returns its internal representation. 
+* `UpdateResourceOperation` 
+  * `void update(JsonApiRequest request)` - updates a single object in the backend system.
+* `DeleteResourceOperation`
+  * `void delete(JsonApiRequest request)` - deletes a single object in the backend system.
+
+Relationship-related operations:
+* `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>`
+  * `read(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
+  * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation. 
+* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` 
+  * `CursorPageableResponse<RELATIONSHIP_DTO> read(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+* `UpdateToOneRelationshipOperation`
+  * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend. 
+* `UpdateToManyRelationshipOperation`
+  * `void update(JsonApiRequest request)` - updates or deletes all resource linkages representing a To-Many JSON:API relationship in the backend.
+
+Validation. 
+* Every operation has an optional `validate(JsonApiRequest request)` method sometimes with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method. 
+  * If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method.
+  * For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. 
+  * See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
 
 ### Access Control
 
@@ -894,10 +1024,6 @@ public class CreateUserOperation implements CreateResourcesOperation<UserDbEntit
 }
 ```
 
-### Request Validation
-
-Examples of how to add custom validation logic
-
 ### OpenAPI Specification
 
 Since JSON:API has predetermined list of operations and schemas Open API Spec generation can be fully automated.
@@ -934,7 +1060,7 @@ Compound Documents resolver is part of a dedicated module 'jsonapi4j-compound-do
 
 ### Register custom error handlers
 - Example of how to declare a custom error handler
-- Examples for JsonApi4jException and ResourceNotFoundException
+- Examples for JsonApi4jException and ResourceNotFoundException, throwResourceNotFoundException - IN OPERATIONS
 
 ### Performance tunings
 
