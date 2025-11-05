@@ -879,38 +879,40 @@ Operations focus on retrieving internal models, which are then converted into JS
 
 The JSON:API specification defines a limited set of standard operations. Some variations with JSON:API specification are acceptable, but the framework selects the one that makes the most sense for a given context. 
 
-All operation interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.operation` package. 
+All operation interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.operation` package.
 
-Here is the list of available interfaces: 
+By default, all **JsonApi4j** operations are exposed under the `/jsonapi` root path. This prevents conflicts when integrating JSON:API endpoints into an existing application that may have other REST endpoints. To change the root path, simply set the `jsonapi4j.root-path` property.
+
+Here is the list of available operations: 
 
 Resource-related operations:
-* `ReadResourceByIdOperation<RESOURCE_DTO>`
+* `ReadResourceByIdOperation<RESOURCE_DTO>` - available under `GET /{resource-type}/{resource-id}`, supports compound documents JSON:API feature
   * `RESOURCE_DTO readById(JsonApiRequest request)` - reads a single internal object representing a JSON:API resource of the specified type.
-* `ReadMultipleResourcesOperation<RESOURCE_DTO>`
+* `ReadMultipleResourcesOperation<RESOURCE_DTO>` - available under `GET /{resource-type}`, supports compound documents, filtering, and ordering JSON:API features 
   * `CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request)` - reads multiple internal objects representing JSON:API resources of the specified type. 
-* `CreateResourceOperation<RESOURCE_DTO>` 
+* `CreateResourceOperation<RESOURCE_DTO>` - available under `POST /{resource-type}`, accepts valid JSON:API Document as a payload. 
   * `RESOURCE_DTO create(JsonApiRequest request)` - creates a single object in the backend system and returns its internal representation. 
-* `UpdateResourceOperation` 
+* `UpdateResourceOperation` - available under `PATCH /{resource-type}/{resource-id}`, accepts valid JSON:API Document as a payload.
   * `void update(JsonApiRequest request)` - updates a single object in the backend system.
-* `DeleteResourceOperation`
+* `DeleteResourceOperation` - available under `DELETE /{resource-type}/{resource-id}`.
   * `void delete(JsonApiRequest request)` - deletes a single object in the backend system.
 
 Relationship-related operations:
-* `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>`
+* `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents JSON:API feature
   * `read(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
   * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation. 
-* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` 
+* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features
   * `CursorPageableResponse<RELATIONSHIP_DTO> read(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
   * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
-* `UpdateToOneRelationshipOperation`
+* `UpdateToOneRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
   * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend. 
-* `UpdateToManyRelationshipOperation`
+* `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
   * `void update(JsonApiRequest request)` - updates or deletes all resource linkages representing a To-Many JSON:API relationship in the backend.
 
 Validation. 
 * Every operation has an optional `validate(JsonApiRequest request)` method sometimes with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method. 
-  * If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method.
-  * For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. 
+  * If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method. This will generate a JSON:API compliant error response.
+  * For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. This will generate a JSON:API compliant error response.
   * See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
 
 ### Access Control
