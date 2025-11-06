@@ -439,7 +439,7 @@ public class RestCountriesFeignClient {
   );
 
   public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
-    return countryIds.stream().map(COUNTRIES::get).toList();
+    return countryIds.stream().filter(COUNTRIES::containsKey).map(COUNTRIES::get).toList();
   }
 
 }
@@ -915,69 +915,93 @@ Validation.
   * For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. This will generate a JSON:API compliant error response.
   * See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
 
+### Register custom error handlers
+
+It's also possible to declare a custom `ErrorHandlerFactory` and register it in the `JsonApi4jErrorHandlerFactoriesRegistry`. This allows you to extend the default error-handling behavior. 
+
+Two error handler factories are registered by default: 
+
+* `DefaultErrorHandlerFactory` - encapsulates the logic for mapping framework-specific exceptions (such as `JsonApi4jException`, `ResourceNotFoundException`, and other technical exceptions) into JSON:API-compliant error documents    
+* `Jsr380ErrorHandlers` - encapsulates the logic for mapping `jakarta.validation.ConstraintViolationException` exception (JSR-380) into JSON:API error documents.
+
 ### Access Control
 
 #### Evaluation stages
 
-Access control evaluation is executed twice for request lifecycle - for **inbound** and **outbound** stage.
+Access control evaluation is performed twice during the request lifecycle - during the **inbound** and **outbound** stages.
 
 ![Access Control Evaluation Stages](access-control-evaluation-stages-medium.png)
 
-During the **inbound** stage JsonApi4j application just received a request, but hasn't triggered data fetching from a downstream data source. Access control rules are evaluated for `JsonApiRequest` since there no other data available yet.
-If access control requirements are not met there will be no any further data fetching stages and **data** field will be fully anonymized.
+##### Inbound Evaluation Stage
 
-**Outbound** stage is executed after gathering data from a data source, composing response document, and right before sending it to the client. Access control rules are evaluated for each resource/resource identifier withing a generated JSON:API Document. Resource documents usually contain full [JSON:API Resource Objects](https://jsonapi.org/format/#document-resource-objects) while Relationship documents consist of [Resource Identifier Objects](https://jsonapi.org/format/#document-resource-identifier-objects) only.
-In case of **Resource Documents** access control requirements can be set for either:
-- Entire JSON:API Resource. If access control requirements are not met - entire resource will be anonymized.
-- Any member of the JSON:API Resource (e.g. 'attributes', 'meta'). If access control requirements are not met - only this particular field will be anonymized.
-- Entire 'attributes' member of the JSON:API Resource. If access control requirements are not met - entire 'attributes' section will be anonymized.
-- Any member of the 'attributes' abject. If access control requirements are not met - only this particular field will be anonymized.
-- Any relationship. If access control requirements are not met for the relationship - relationship data fetching process will not be triggered and the relationship data will be anonymized.
+During the **inbound** stage, the **JsonApi4j** application has received a request but has not yet fetched any data from downstream sources.
+Access control rules are evaluated against the `JsonApiRequest` since no other data is available at this point.
+If access control requirements are not met, data fetching is skipped, and the `data` field in the response will be fully anonymized.
 
-In case of **Relationship Documents** access control requirements can be set for either:
-- Entire JSON:API Resource Identifier object. If access control requirements are not met - entire resource identifier will be anonymized.
-- Any member of the JSON:API Resource Identifier (e.g. 'meta'). If access control requirements are not met - only this particular field will be anonymized.
+##### Outbound Evaluation Stage
 
-By default, JsonApi4j allows everything (no Access Control evaluations), but it's always possible to enforce rules for either both or just one of these stage.
+The **outbound** stage occurs after data has been fetched from the data source, the response document has been composed, and right before it is sent to the client.
+At this point, access control rules are evaluated for each [JSON:API Resource Object](https://jsonapi.org/format/#document-resource-objects) or [Resource Identifier Object](https://jsonapi.org/format/#document-resource-identifier-objects) within the generated JSON:API document.
+
+###### Resource Documents
+
+Resource documents typically contain full [JSON:API Resource Objects](https://jsonapi.org/format/#document-resource-objects).
+
+Access control requirements can be defined for:
+* Entire Resource Object - if requirements are not met, the whole resource is anonymized.
+* Specific members (e.g., `attributes`, `meta`) - if requirements are not met, only those members are anonymized.
+* Entire `attributes` section - if requirements are not met, all `attributes` are anonymized.
+* Individual `attribute` fields - if requirements are not met, only the affected fields are anonymized.
+* Relationships - if requirements are not met, relationship data fetching will not be triggered, and the relationship section will be anonymized.
+
+###### Relationship Documents
+
+Relationship documents contain only [Resource Identifier Objects](https://jsonapi.org/format/#document-resource-identifier-objects).
+Access control rules can be defined for:
+* Entire **Resource Identifier Object** - if requirements are not met, the entire resource identifier will be anonymized.
+* Specific members (e.g., `meta`) - if requirements are not met, only those members will be anonymized.
+
+By default, **JsonApi4j** does not enforce any access control (i.e., all requests are allowed).
+However, you can configure and enforce access control rules for either or both stages - inbound and outbound - depending on your security and data exposure requirements.
 
 #### Access Control Requirements
 
-There are four requirements that can be assigned in any combination:
-- **Authentication requirement** - checks if request is sent on behalf of authenticated client/user. Can be used to restrict anonymous access.
-- **Access tier requirement** - checks whether the client/user that originated the request belongs to a particular group e.g. 'Admin', 'Internal API consumers', 'Public API consumers'. This helps to organize access to your APIs based on so-called tiers.
-- **OAuth2 Scope(s) requirement** - checks if request was authorised to access user data protected by a certain OAuth2 scope(s). Usually, this information is carried within JWT Access Token.
-- **Ownership requirement** - checks if requested resource belongs to a client/user that triggered this request. This is used for those APIs where user can view only its own data, but not others data.
+There are four types of access control requirements, which can be combined in any way as needed:
+* **Authentication requirement** - verifies whether the request is made on behalf of an authenticated client or user. This can be used to restrict anonymous access.
+* **Access tier requirement** - verifies whether the client or user belongs to a specific access tier or group. The recommended default set of tiers includes: Root Admin, Admin, Partner, Internal, and Public. This structure helps organize access policies by predefined privilege levels. You don’t need to use all tiers - just rely on the ones that fit your needs. It's also possible to define a custom set of access tiers. See more details below.
+* **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token.
+* **Ownership requirement** - ensures that the requested resource belongs to the client or user making the request. This is typically used for APIs where users are only allowed to view their own data, but not others'.
 
-If any of specified requirements are not met - the marked section or the entire object will be anonymized.
+If any of the specified requirements are not met, the corresponding section - or the entire object - will be anonymized.
 
 #### Setting Principal Context
 
-By default, the framework uses `DefaultPrincipalResolver` which relies on the next HTTP headers in order to resolve the current auth context:
+By default, the framework uses the `DefaultPrincipalResolver`, which relies on the following HTTP headers to resolve the current authentication context:
 
-1. `X-Authenticated-User-Id` - to check if request is sent on behalf of authenticated client/user, considers as true if not null/blank. Is also used for ownership checks.
-2. `X-Authenticated-Client-Access-Tier` - for principal's Access Tier. By default, supports the next values: 'NO_ACCESS', 'PUBLIC', 'PARTNER', 'ADMIN', 'ROOT_ADMIN'. It's possible to declare your own tiers by implementing `AccessTierRegistry`.
-3. `X-Authenticated-User-Granted-Scopes` - for getting OAuth2 Scopes which user has granted the client, space-separated string
+1. `X-Authenticated-User-Id` - identifies whether the request is sent on behalf of an authenticated client or user. Considered authenticated if the value is not null or blank. Also used for ownership checks.
+2. `X-Authenticated-Client-Access-Tier` - defines the principal's access tier. By default, the framework supports the following values: **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN**, and **ROOT_ADMIN**. Custom tiers can be registered by implementing the `AccessTierRegistry` interface.
+3. `X-Authenticated-User-Granted-Scopes` - specifies the OAuth2 scopes granted to the client by the user. This should be a space-separated string.
 
-It is also possible to implement your own `PrincipalResolver` that tells the framework how to retrieve Principal-related info from an incoming HTTP request.
+You can also implement a custom `PrincipalResolver` to define how the framework retrieves principal-related information from incoming HTTP requests.
 
-Later, the framework will use this info for Inbound/Outbound evaluations.
+The resolved principal context is then used by the framework during both **inbound** and **outbound** access control evaluations.
 
 #### Setting Access Requirements
 
-How and where to declare your Access Control requirements?
+How and where should you declare your access control requirements?
 
-There are two main approaches:
-1. Via Java annotations. If you are working with **jsonapi4j-core** it's possible to place Access Control annotations on either a custom `ResourceObject`, or a custom `Attributes` object. Annotations can be placed both on class and field levels. If you're working with modules that operates higher abstractions - **jsonapi4j-rest** or **jsonapi4j-rest-springboot** - you can place annotations only for an Attributes Object. Here is the list of annotations that can be used: `@AccessControlAuthenticated`, `@AccessControlScopes`, `@AccessControlAccessTier`, `@AccessControlOwnership`. This approach is preferable for setting Access Control requirements for Attributes.
-2. Via **JsonApi4j** plugin system. You can use `OperationInboundAccessControlPlugin` plugin for your Operations - that will be used for the Inbound Access Control evaluations. `ResourceOutboundAccessControlPlugin` can be used for the `Resource` implementations and be applied for JSON:API Resource Objects during the Outbound Access Control evaluations. `RelationshipsOutboundAccessControlPlugin` can be used for the `Relationship` implementations and be applied for JSON:API Resource Identifier Objects during the Outbound Access Control evaluations. This is approach is preferable for all other cases.
+There are two main approaches in **JsonApi4j**:
+1. Via Java annotations. If you are working with **jsonapi4j-core** you can place access control annotations on either a custom `ResourceObject`, or an `Attributes` object. Annotations can be applied at both the class and field levels. When using higher-level modules such as **jsonapi4j-rest** or **jsonapi4j-rest-springboot**, annotations can only be applied to the **Attributes** object. Available annotations include: `@AccessControlAuthenticated`, `@AccessControlScopes`, `@AccessControlAccessTier`, `@AccessControlOwnership`. This approach is **recommended** for setting access control rules on resource attributes.
+2. Via **JsonApi4j** plugin system. For more advanced or dynamic access control scenarios, you can use the plugin system. `OperationInboundAccessControlPlugin ` - apply access control during **inbound** request evaluation at the operation level. `ResourceOutboundAccessControlPlugin` - apply access control to **JSON:API Resource Objects** during **outbound** evaluation. `RelationshipsOutboundAccessControlPlugin` - apply access control to **JSON:API Resource Identifier Objects** during **outbound** evaluation. 
 
-If the system detects a mix of settings it merges them giving priority to ones that were set programmatically via Plugins.
+If both annotation-based and plugin-based configurations are detected, the framework automatically merges them, giving priority to the rules defined programmatically via plugins.
 
 #### Examples
 
 Example 1: Outbound Access Control
 
-Let's hide user's credit card number for everyone but the owner. By achieving that `@AccessControlOwnership(ownerIdFieldPath = "id")` must be placed on top of `creditCardNumber` field.
-We can also put `@AccessControlAuthenticated` to ensure the user is authenticated and `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` if we want to protect access to this field by checking whether the client has gotten a user grant for this data.
+Let's hide the user's credit card number from everyone except the owner. To achieve this, place the `@AccessControlOwnership(ownerIdFieldPath = "id")` annotation on the `creditCardNumber` field.
+We can also add `@AccessControlAuthenticated` to ensure that the request is made by an authenticated user, and `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` to restrict access only to clients that have been granted the `users.sensitive.read` scope.
 
 ```java
 public class UserAttributes {
@@ -998,7 +1022,9 @@ public class UserAttributes {
 
 Example 2: Inbound Access Control
 
-Let's only allow a new user creation for the admin clients.
+Let's allow new user creation only for clients with the `ADMIN` access tier.
+
+In this case, we'll use the `OperationInboundAccessControlPlugin` to enforce the access rule at the operation level.
 
 ```java
 @Component
@@ -1028,45 +1054,82 @@ public class CreateUserOperation implements CreateResourcesOperation<UserDbEntit
 
 ### OpenAPI Specification
 
-Since JSON:API has predetermined list of operations and schemas Open API Spec generation can be fully automated.
+Since JSON:API defines a predictable set of operations and schemas, OpenAPI specification generation can be fully automated.
 
-JsonApi4j can generate an instance of `io.swagger.v3.oas.models.OpenApi` model and then expose it either through a Maven Exec Plugin or via dedicated endpoint.
+**JsonApi4j** can generate an instance of the `io.swagger.v3.oas.models.OpenAPI` model and expose it through a dedicated endpoint.
 
-Here is two ways of how to generate an Open API Specification for you APIs:
+By default, you can access both the JSON and YAML versions of the generated specification via the [/jsonapi/oas](http://localhost:8080/jsonapi/oas) endpoint. 
+It supports an optional `format` query parameter (`json` or `yaml`) - defaulting to `json` if not provided.
 
-1. Access via HTTP endpoint. By default, you can access either JSON or YAML version of the Open API Specification by accessing [/jsonapi/oas](http://localhost:8080/jsonapi/oas) endpoint. It supports 'format' query parameter that can be either 'json' or 'yaml'. Always fallbacks to JSON format.
-2. Via Maven Exec Plugin. TBD
-
-By default, JsonApi4j generate all schemas and operations for you. But if you need to enrich it with more data e.g. 'info', 'components' -> 'securitySchemes' or custom HTTP headers you need to explicitly configure that in `JsonApi4jProperties` ('oas' section) via `application.yaml` if you're using 'jsonapi4j-rest-springboot' or via proper `JsonApi4jServletContainerInitializer` bootstrapping if you're relying on Servlet API only from 'jsonapi4j-rest'.
+Out of the box, **JsonApi4j** generates all schemas and operations automatically.
+However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml` configuration.
 
 ### Compound documents
 
-[Compound Documents](https://jsonapi.org/format/#document-compound-documents) is a part of JSON:API specification that describes the way to include related resources in one request. For example, if you want to request some 'users' you can also ask the server to include related resources to these users. It's worth mentioning that you can only ask for those resources that enabled via relationships. All resolved resourced are placed as a flat structure into a top-level "included" field. In order to request related resources "include" query parameter must be used, for example `/users?page[cursor]=xxx&include=citizenships`.
+#### Overview
 
-It is allowed to request multiple relationships in one go - just specify relationship names using comma ',' as a separator, for example `include=citizenships,placeOfBirth`
+[Compound Documents](https://jsonapi.org/format/#document-compound-documents) is a core feature of the JSON:API specification that enable clients to include related resources within a single request.
+For example, when fetching users, you can ask the server to include each user's related `citizenships` by calling:
+`GET /users?page[cursor]=xxx&include=citizenships`.
+Only relationships explicitly exposed through your resource definitions can be included.
+All resolved related resources are placed in the top-level `included` array.
 
-Compound Documents feature also supports multi-level relationship resolution. That means that client can request a chain of relationships, f.e. `include=placeOfBirth.currency`. The relationships sequence is a dot-separated string that must be a valid chain of relationships - meaning they must exist for the resources on each stage. This particular example would trigger the process that resolves related resources in two stages - firstly, JsonApi4j will resolve 'placeOfBirth' relationship which is represented by Country resource. Then, as a second stage, the framework will resolve 'currency' of the previously resolved countries. 'currency' relationship must exist for Country resource.
+#### Multiple and Nested Includes
 
-Since every level generates a new wave of requests it's important to remember that and use these feature carefully. JsonApi4j relies on batch operations (e.g. `filter[id]=1,2,3,4,5`) that's why it's important to implement this operation for all resources that can be requested as someone's relationship. If the operation is not implemented the framework tries to fallback on sequential 'read by id' operation if it exists.
+You can request multiple relationships in a single call using commas - e.g. `include=relatives,placeOfBirth`.
 
-Let's define what does resolution stage means in terms of how framework resolves Compound Documents. For example, `include=citizenships,placeOfBirth.currency` would be parsed into two stages - first stage includes 'citizenships' and 'placeOfBirth' relationships. The second stage includes 'currency' relationship. Within each stage the framework groups all related resources by their types and associated list of identifiers and sends as many parallel request as many resource types were detected.
+JSON:API defines that relationship endpoints themselves (`/users/1/relationships/...`) return only linkage objects (type + id), not the related resources.
+If you also want to include the full related resources, use the `include` parameter: `GET /users/1/relationships/placeOfBirth?include=placeOfBirth`.
 
-In order to be able to control the amount of these extra requests the framework provides some settings and guardrails to control the limits. Refer `CompoundDocsProperties` for more details, for example `maxHops` settings allows to define how many levels your system supposed to support.
+Compound documents also support multi-level includes, allowing chained relationships such as `include=placeOfBirth.currencies`.
+Each level in the chain must represent a valid relationship on the corresponding resource.
+For instance, this example first resolves each user's `placeOfBirth` (a Country resource), and then resolves each country's `currencies`.
 
-Compound Documents resolver is part of a dedicated module 'jsonapi4j-compound-docs-resolver'. By default, this feature is disabled on the application server, but it can be enabled by setting `enabled` property to `true`. Since the logic is part of a separate independent module it opens multiple options where to host this logic. There are at least two the most obvious options: on the same application server or on the API Gateway level.
+The same applies to relationship endpoints - e.g. a relationship request may include nested relationships that start from the relationship name itself, f.e. `/users/{id}/relationships/relatives?include=relatives.relatives` will resolve user's relatives and relatives of his relatives in one go.
 
-- Compound docs works as a post processor. First main request is executed.
-- Sequence diagram - stages
-- Point the difference in 'includes' for Primary Resources and Relationship requests (how relationship request refers self).
-- CacheControlPropagator examples, how to configure an external Cache that relies on HTTP Cache Control headers
+#### Resolution Process
 
-### Register custom error handlers
-- Example of how to declare a custom error handler
-- Examples for JsonApi4jException and ResourceNotFoundException, throwResourceNotFoundException - IN OPERATIONS
+The Compound Documents Resolver operates as a post-processor: it inspects the original response and, if necessary, enriches it with the `included` section.
+
+**JsonApi4j** resolves includes in stages.
+For example, `/users/{id}?include=relatives,placeOfBirth.currencies,placeOfBirth.economy` is parsed into:
+* **Stage 1**: resolve list of `relatives` and a country that is a `placeOfBirth` for the requested user
+* **Stage 2**: resolve `currencies` and `economy` for a country resolved in Stage 1
+
+Within each stage, resources are grouped by type and their IDs; then, parallel batch requests (e.g. using `filter[id]=1,2,3,4,5`) are made for each resource type.
+If a bulk operation isn't implemented, the framework falls back to sequential "read-by-id" calls. 
+That's why it's important to implement either "filter[id]" or "read-by-id" operations giving the priority to the first one.
+
+Since each additional level may trigger new batches of requests, it's important to use this feature judiciously.
+You can control and limit the depth and breadth of includes using the `CompoundDocsProperties` configuration - for example, the `maxHops` property defines the maximum allowed relationship depth.
+
+#### Deployment & Configuration
+
+The Compound Documents Resolver is provided by a separate module: `jsonapi4j-compound-docs-resolver`.
+By default, this feature is disabled on the application server. 
+To enable it, set: `jsonapi4j.compound-docs.enabled=true`. 
+
+Because it's a standalone module, you can host this logic either:
+* within your application server, or
+* at an **API Gateway** level (for example, for centralized response composition).
+
+#### Performance and Caching
+
+Since JSON:API defines a clear way to uniquely identify resources using the "type" + "id" pair, a cache layer can be integrated - internally or externally - to store resources based on these identifiers.
+You can respect TTLs from HTTP `Cache-Control` headers to manage freshness.
+
+To propagate downstream cache settings upstream, use: `CacheControlPropagator#propagateCacheControl(String cacheSettings)`.
+This method forwards cache headers so that the Compound Documents Resolver (or an upstream cache) can reuse them appropriately. 
+
+#### Sequence Overview
+
+Here's a high-level sequence diagram for the Compound Documents resolution process:
+![Compound Docs Sequence Diagram](compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")
 
 ### Performance tunings
 
 - batch read relationship operations
+- Implement filter[id] even if {resourceType}/{id} operation is implemented
 - custom executor service, 
 - jsonApi4j properties, e.g. maxHops
 

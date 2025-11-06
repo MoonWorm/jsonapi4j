@@ -407,7 +407,7 @@ public class RestCountriesFeignClient {
   );
 
   public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
-    return countryIds.stream().map(COUNTRIES::get).toList();
+      return countryIds.stream().filter(COUNTRIES::containsKey).map(COUNTRIES::get).toList();
   }
 
 }
