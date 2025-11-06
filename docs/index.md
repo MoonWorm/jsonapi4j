@@ -1126,19 +1126,31 @@ This method forwards cache headers so that the Compound Documents Resolver (or a
 Here's a high-level sequence diagram for the Compound Documents resolution process:
 ![Compound Docs Sequence Diagram](compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")
 
-### Performance tunings
+### Performance Tuning
 
-- batch read relationship operations
-- Implement filter[id] even if {resourceType}/{id} operation is implemented
-- custom executor service, 
-- jsonApi4j properties, e.g. maxHops
+Here are some practical tips for optimizing your **JsonApi4j** application: 
+* **Implement bulk reads using `filter[id]=x,y,z`**. Always implement bulk resource fetching by ID. If the framework can't find a bulk operation, it will fall back to sequential "read-by-id" calls - which can significantly increase response time.
+* **Use batch relationship operations**. Improve relationship resolution performance by implementing `BatchReadToManyRelationshipOperation<...>` or `BatchReadToOneRelationshipOperation<...>`. When available, these are preferred over basic operations. For example, when reading multiple users and resolving their relationships, the framework will issue a single batched request instead of N (one per user).
+* **Leverage in-house relationship resolution**. Whenever possible, resolve relationships directly from your existing in-memory resource models to avoid unnecessary downstream requests. This optimization applies to read resource operations when relationship linkages can be derived directly from the internal data model. To enable it, implement `ReadToOneRelationshipOperation#readForResource(...)` or `ReadToManyRelationshipOperation#readForResource(...)` where applicable.   
+* **Tune the `ExecutorService`**. **JsonApi4j** uses a shared `ExecutorService` for parallel execution. You can configure your own implementation depending on your workload characteristics - for example:
+  * `Executors.newCachedThreadPool()` for dynamic scaling
+  * `Executors.newFixedThreadPool(10)` for predictable concurrency
+  * `Executors.newVirtualThreadPerTaskExecutor()` to experiment with Project Loom virtual threads
+* **Adjust JsonApi4j configuration properties**. Some properties can significantly influence performance, especially for Compound Documents:
+  * `jsonapi4j.compound-docs.maxHops=1` - limits relationship nesting depth to one level
+  * `jsonapi4j.compound-docs.maxIncludedResources=100` - caps the total number of included resources resolved per request
+  * Otherwise, granting overly broad access can generate an unsustainable load on the backend system.
 
-## JSON:API Specification deviations
+Fine-tuning these areas can help you balance performance, resource usage, and response time according to your system's scale and complexity.
 
-1. JsonApi4j encourages flat resource structure e.g. '/users' and '/articles' instead of '/users/{userId}/articles'. This approach fully automates default 'links' generation and enables the gates for automatic Compound Documents resolution.
-2. No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (maybe later)
-3. No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) ('lid') -> use 'id' field and set client-generated id there.
-4. JSON:API spec is agnostic about the pagination strategy (e.g. 'page[number]' and 'page[size]' for limit-offset), while the framework encourages Cursor pagination ('page[cursor]')
-5. Doesn't support JSON:API Profiles and Extensions (maybe later)
-6. Default relationships concept, no 'relationships'->'{relName}'->'data' resolution by default. This is done to have more control under extra +N requests per each existing relationship
-7. The framework enforces the requirement for implementing either 'Filter By Id' ('/users?filter[id]=123') operation or 'Read By Id' ('/users/123') operation because Compound Docs Resolver uses them to compose 'included' section.
+## JSON:API Specification Deviations
+
+While **JsonApi4j** adheres closely to the JSON:API specification, it introduces a few deliberate deviations and simplifications aimed at improving performance, maintainability, and developer experience:
+1.	Flat resource structure - encourages top-level resources like `/users` and `/articles` instead of nested structures such as `/users/{userId}/articles`. This design enables automatic link generation and simplifies Compound Document resolution.
+2.	No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (planned for a future release).
+3.	No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) (lid). Use the standard id field for client-generated identifiers instead.
+4.	Pagination strategy - while the JSON:API spec is agnostic about pagination style (e.g. `page[number]` / `page[size]`), **JsonApi4j** standardizes on cursor-based pagination (`page[cursor]`).
+5.	No support for JSON:API Profiles or Extensions (may be added later).
+6.	Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
+7.	Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.
+
