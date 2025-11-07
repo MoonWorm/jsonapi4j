@@ -7,6 +7,13 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.plugin.OperationOasPlugin;
 import pro.api4.jsonapi4j.plugin.OperationPlugin;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
+import pro.api4.jsonapi4j.plugin.ac.tier.TierAdmin;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCountry;
@@ -27,6 +34,12 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.U
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.oas.UserOasSettingsFactory.userIdPathParam;
 
+@AccessControl(
+        authenticated = Authenticated.AUTHENTICATED,
+        scopes = @AccessControlScopes(requiredScopes = {"user.citizenships.read"}),
+        tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER),
+        ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
+)
 @RequiredArgsConstructor
 @Component
 public class ReadUserCitizenshipsRelationshipOperation implements BatchReadToManyRelationshipOperation<UserDbEntity, DownstreamCountry> {

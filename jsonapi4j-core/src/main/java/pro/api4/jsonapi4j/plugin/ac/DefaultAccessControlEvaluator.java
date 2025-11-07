@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.ac;
 
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
 import pro.api4.jsonapi4j.plugin.ac.scope.ScopesUtils;
@@ -35,7 +36,7 @@ public class DefaultAccessControlEvaluator implements AccessControlEvaluator {
 
         String ownerId = getOwnerIdFromRequest(accessControlRequirements, request);
 
-        return checkIsAuthenticated(accessControlRequirements.getRequireAuthenticatedUser())
+        return checkIsAuthenticated(accessControlRequirements.getAuthenticated())
                 && evaluateAccessTier(accessControlRequirements.getRequiredAccessTier())
                 && evaluateScopes(accessControlRequirements.getRequiredScopes())
                 && evaluateOwnership(ownerId);
@@ -48,13 +49,14 @@ public class DefaultAccessControlEvaluator implements AccessControlEvaluator {
         if (accessControlRequirements == null) {
             return true;
         }
-        return checkIsAuthenticated(accessControlRequirements.getRequireAuthenticatedUser())
+        return checkIsAuthenticated(accessControlRequirements.getAuthenticated())
                 && evaluateAccessTier(accessControlRequirements.getRequiredAccessTier())
                 && evaluateScopes(accessControlRequirements.getRequiredScopes())
                 && evaluateOwnershipAgainstObject(ownerIdHolder, accessControlRequirements.getRequiredOwnership());
     }
 
-    private <REQUEST> String getOwnerIdFromRequest(AccessControlRequirements accessControlRequirements, REQUEST request) {
+    private <REQUEST> String getOwnerIdFromRequest(AccessControlRequirements accessControlRequirements,
+                                                   REQUEST request) {
         OwnerIdExtractor<REQUEST> ownerIdExtractor = getOwnerIdExtractor(accessControlRequirements);
         if (ownerIdExtractor != null) {
             return ownerIdExtractor.fromRequest(request);
@@ -88,7 +90,7 @@ public class DefaultAccessControlEvaluator implements AccessControlEvaluator {
     }
 
     private static boolean checkIsAuthenticated(AccessControlAuthenticatedModel ac) {
-        if (ac == null || !ac.isRequireAuthentication()) {
+        if (ac == null || ac.getAuthenticated() == Authenticated.ANONYMOUS) {
             return true;
         }
         return checkIsAuthenticated();

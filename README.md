@@ -250,7 +250,7 @@ public class CountryResource implements Resource<CountryAttributes, DownstreamCo
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2(); // let's use CCA2 errorCode as a unique country identifier
+        return downstreamCountry.getCca2(); // let's use CCA2 code as a unique country identifier
     }
 
     @Override

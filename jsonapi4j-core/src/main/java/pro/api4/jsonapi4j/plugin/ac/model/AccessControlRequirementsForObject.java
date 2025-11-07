@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.ac.model;
 
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAnnotationExtractorUtils;
 import lombok.Builder;
 import lombok.Data;
@@ -25,9 +26,7 @@ public class AccessControlRequirementsForObject {
             .build();
 
     public static AccessControlRequirementsForObject fromAnnotationsForClass(Class<?> clazz) {
-        if (clazz == null) {
-            throw new IllegalArgumentException("Annotated type should not be null");
-        }
+        Validate.notNull(clazz);
         AccessControlRequirements classLevelAccessControl
                 = JsonApiAnnotationExtractorUtils.extractAccessControlInfo(clazz);
         Map<String, AccessControlRequirements> fieldLevelAccessControl
@@ -37,7 +36,7 @@ public class AccessControlRequirementsForObject {
 
     public static AccessControlRequirementsForObject merge(AccessControlRequirementsForObject master,
                                                            AccessControlRequirementsForObject other) {
-        AccessControlRequirements classLevelAccessControl = merge(
+        AccessControlRequirements classLevelAccessControl = AccessControlRequirements.merge(
                 master != null ? master.getObjectLevel() : null,
                 other != null ? other.getObjectLevel() : null
         );
@@ -50,7 +49,7 @@ public class AccessControlRequirementsForObject {
         ).collect(
                 Collectors.toMap(
                         field -> field,
-                        field -> merge(
+                        field -> AccessControlRequirements.merge(
                                 isNotNull(master, field) ? master.getFieldLevel().get(field) : null,
                                 isNotNull(other, field) ? other.getFieldLevel().get(field) : null
                         )
@@ -59,62 +58,6 @@ public class AccessControlRequirementsForObject {
         fieldLevelAccessControl = MapUtils.isEmpty(fieldLevelAccessControl) ? null : fieldLevelAccessControl;
 
         return new AccessControlRequirementsForObject(classLevelAccessControl, fieldLevelAccessControl);
-    }
-
-    private static AccessControlRequirements merge(AccessControlRequirements master, AccessControlRequirements other) {
-        if (master == null && other == null) {
-            return null;
-        }
-        AccessControlRequirements result = new AccessControlRequirements();
-        if (other != null && other.getRequireAuthenticatedUser() != null) {
-            result.setRequireAuthenticatedUser(
-                    new AccessControlAuthenticatedModel(other.getRequireAuthenticatedUser().isRequireAuthentication())
-            );
-        } else if (master != null && master.getRequireAuthenticatedUser() != null) {
-            result.setRequireAuthenticatedUser(
-                    new AccessControlAuthenticatedModel(master.getRequireAuthenticatedUser().isRequireAuthentication())
-            );
-        }
-        if (other != null && other.getRequiredAccessTier() != null) {
-            result.setRequiredAccessTier(
-                    new AccessControlAccessTierModel(other.getRequiredAccessTier().getRequiredAccessTier())
-            );
-        } else if (master != null && master.getRequiredAccessTier() != null) {
-            result.setRequiredAccessTier(
-                    new AccessControlAccessTierModel(master.getRequiredAccessTier().getRequiredAccessTier())
-            );
-        }
-        if (other != null && other.getRequiredScopes() != null) {
-            result.setRequiredScopes(
-                    new AccessControlScopesModel(
-                            other.getRequiredScopes().getRequiredScopes(),
-                            other.getRequiredScopes().getRequiredScopesExpression()
-                    )
-            );
-        } else if (master != null && master.getRequiredScopes() != null) {
-            result.setRequiredScopes(
-                    new AccessControlScopesModel(
-                            master.getRequiredScopes().getRequiredScopes(),
-                            master.getRequiredScopes().getRequiredScopesExpression()
-                    )
-            );
-        }
-        if (other != null && other.getRequiredOwnership() != null) {
-            result.setRequiredOwnership(
-                    new AccessControlOwnershipModel(
-                            other.getRequiredOwnership().getOwnerIdFieldPath(),
-                            other.getRequiredOwnership().getOwnerIdExtractor()
-                    )
-            );
-        } else if (master != null && master.getRequiredOwnership() != null) {
-            result.setRequiredOwnership(
-                    new AccessControlOwnershipModel(
-                            master.getRequiredOwnership().getOwnerIdFieldPath(),
-                            master.getRequiredOwnership().getOwnerIdExtractor()
-                    )
-            );
-        }
-        return result;
     }
 
     private static boolean isNotNull(AccessControlRequirementsForObject accessControlRequirementsForObject, String fieldName) {

@@ -1,18 +1,13 @@
 package pro.api4.jsonapi4j.plugin.ac;
 
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAuthenticated;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAccessTierModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAuthenticatedModel;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlOwnershipModel;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -23,50 +18,41 @@ public final class JsonApiAnnotationExtractorUtils {
     }
 
     public static AccessControlRequirements extractAccessControlInfo(Class<?> object) {
-        AccessControlInfo classAnnotations = new AccessControlInfo(
-                object.getAnnotation(AccessControlAuthenticated.class),
-                object.getAnnotation(AccessControlAccessTier.class),
-                object.getAnnotation(AccessControlScopes.class),
-                object.getAnnotation(AccessControlOwnership.class)
-        );
-
         AccessControlRequirements classLevelAccessControl = new AccessControlRequirements();
-        AccessControlAuthenticatedModel.fromAnnotation(classAnnotations.getAccessControlAuthenticated())
-                .ifPresent(classLevelAccessControl::setRequireAuthenticatedUser);
-        AccessControlAccessTierModel.fromAnnotation(classAnnotations.getAccessControlAccessTier())
+
+        AccessControl accessControl = object.getAnnotation(AccessControl.class);
+        if (accessControl == null) {
+            return classLevelAccessControl;
+        }
+
+        AccessControlAuthenticatedModel.fromAnnotation(accessControl.authenticated())
+                .ifPresent(classLevelAccessControl::setAuthenticated);
+        AccessControlAccessTierModel.fromAnnotation(accessControl.tier())
                 .ifPresent(classLevelAccessControl::setRequiredAccessTier);
-        AccessControlScopesModel.fromAnnotation(classAnnotations.getAccessControlScopes())
+        AccessControlScopesModel.fromAnnotation(accessControl.scopes())
                 .ifPresent(classLevelAccessControl::setRequiredScopes);
-        AccessControlOwnershipModel.fromAnnotation(classAnnotations.getAccessControlOwnership())
+        AccessControlOwnershipModel.fromAnnotation(accessControl.ownership())
                 .ifPresent(classLevelAccessControl::setRequiredOwnership);
         return classLevelAccessControl;
     }
 
     public static Map<String, AccessControlRequirements> extractAccessControlAnnotationsForFields(Class<?> object) {
-        Map<String, AccessControlAuthenticated> acessControlAuthenticatedUserMap
-                = ReflectionUtils.fetchAnnotationForFields(object, AccessControlAuthenticated.class);
-        Map<String, AccessControlAccessTier> acessControlAccessTierMap
-                = ReflectionUtils.fetchAnnotationForFields(object, AccessControlAccessTier.class);
-        Map<String, AccessControlScopes> acessControlScopesMap
-                = ReflectionUtils.fetchAnnotationForFields(object, AccessControlScopes.class);
-        Map<String, AccessControlOwnership> accessControlOwnershipMap
-                = ReflectionUtils.fetchAnnotationForFields(object, AccessControlOwnership.class);
-        return Stream.of(
-                        acessControlAuthenticatedUserMap.keySet(),
-                        acessControlAccessTierMap.keySet(),
-                        acessControlScopesMap.keySet(),
-                        accessControlOwnershipMap.keySet()
-                ).flatMap(Set::stream)
-                .distinct()
-                .collect(toMap(
-                        f -> f,
-                        f -> new AccessControlRequirements(
-                                AccessControlAuthenticatedModel.fromAnnotation(acessControlAuthenticatedUserMap.get(f)).orElse(null),
-                                AccessControlAccessTierModel.fromAnnotation(acessControlAccessTierMap.get(f)).orElse(null),
-                                AccessControlScopesModel.fromAnnotation(acessControlScopesMap.get(f)).orElse(null),
-                                AccessControlOwnershipModel.fromAnnotation(accessControlOwnershipMap.get(f)).orElse(null)
-                        )
-                ));
+        Map<String, AccessControl> accessControlAnnotationPerField
+                = ReflectionUtils.fetchAnnotationForFields(object, AccessControl.class);
+        return accessControlAnnotationPerField.entrySet().stream()
+                .collect(
+                        toMap(
+                                Map.Entry::getKey,
+                                e -> {
+                                    AccessControl accessControl = e.getValue();
+                                    return new AccessControlRequirements(
+                                            AccessControlAuthenticatedModel.fromAnnotation(accessControl.authenticated()).orElse(null),
+                                            AccessControlAccessTierModel.fromAnnotation(accessControl.tier()).orElse(null),
+                                            AccessControlScopesModel.fromAnnotation(accessControl.scopes()).orElse(null),
+                                            AccessControlOwnershipModel.fromAnnotation(accessControl.ownership()).orElse(null)
+                                    );
+                                }
+                        ));
     }
 
 }

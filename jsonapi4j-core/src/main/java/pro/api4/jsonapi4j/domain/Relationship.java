@@ -4,7 +4,7 @@ import pro.api4.jsonapi4j.plugin.RelationshipPluginAware;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.plugin.ac.ownership.DefaultOwnerIdExtractor;
+import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
 
 /**
@@ -79,7 +79,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * from an ownership perspective. See {@link DefaultAccessControlEvaluator#evaluateInboundRequirements(Object, AccessControlRequirements)}
      * for more details. Owner id is extracted from the relationship request {@link JsonApiRequest}.
      * It's possible to implement your own {@link OwnerIdExtractor}.
-     * (default impl - {@link DefaultOwnerIdExtractor} assuming owner id is coming as a parent resource id).
+     * (default impl - {@link ResourceIdFromUrlPathExtractor} assuming owner id is coming as a parent resource id).
      *
      * @param originalRequest     original JsonApiRequest
      * @param resourceDto downstream DTO that represents parent resource

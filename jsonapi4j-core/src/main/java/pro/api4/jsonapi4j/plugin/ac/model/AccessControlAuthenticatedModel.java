@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.plugin.ac.model;
 
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAuthenticated;
 import lombok.Builder;
 import lombok.Getter;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 
 import java.util.Optional;
 
@@ -13,12 +13,12 @@ public class AccessControlAuthenticatedModel {
     public static final AccessControlAuthenticatedModel DEFAULT = AccessControlAuthenticatedModel.builder().build();
 
     @Builder.Default
-    private boolean requireAuthentication = false;
+    private Authenticated authenticated = Authenticated.ANONYMOUS;
 
-    public static Optional<AccessControlAuthenticatedModel> fromAnnotation(AccessControlAuthenticated annotation) {
-        return Optional.ofNullable(annotation)
+    public static Optional<AccessControlAuthenticatedModel> fromAnnotation(Authenticated authenticated) {
+        return Optional.ofNullable(authenticated)
                 .map(au -> AccessControlAuthenticatedModel.builder()
-                        .requireAuthentication(true)
+                        .authenticated(authenticated)
                         .build()
                 );
     }
