@@ -28,7 +28,9 @@ import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.plugin.OperationInboundAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.OperationPluginAware;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAnnotationExtractorUtils;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirementsForObject;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
@@ -103,36 +105,6 @@ public class JsonApi4j {
         return new ResourceTypeStepSelected(resourceType);
     }
 
-    private Object executeRelationshipOperations(JsonApiRequest request) {
-        switch (request.getOperationType()) {
-            case READ_TO_ONE_RELATIONSHIP -> {
-                return forResourceType(request.getTargetResourceType())
-                        .forToOneRelationship(request.getTargetRelationshipName())
-                        .readToOneRelationship(request);
-            }
-            case READ_TO_MANY_RELATIONSHIP -> {
-                return forResourceType(request.getTargetResourceType())
-                        .forToManyRelationship(request.getTargetRelationshipName())
-                        .readToManyRelationship(request);
-            }
-            case UPDATE_TO_ONE_RELATIONSHIP -> {
-                forResourceType(request.getTargetResourceType())
-                        .forToOneRelationship(request.getTargetRelationshipName())
-                        .updateToOneRelationship(request);
-                return null;
-            }
-            case UPDATE_TO_MANY_RELATIONSHIP -> {
-                forResourceType(request.getTargetResourceType())
-                        .forToManyRelationship(request.getTargetRelationshipName())
-                        .updateToManyRelationship(request);
-                return null;
-            }
-            default -> throw new IllegalArgumentException(
-                    "Unsupported JSON:API request, unknown operation type: " + request.getOperationType()
-            );
-        }
-    }
-
     private Object executeResourceOperation(JsonApiRequest request) {
         switch (request.getOperationType()) {
             case READ_RESOURCE_BY_ID -> {
@@ -163,12 +135,42 @@ public class JsonApi4j {
         }
     }
 
+    private Object executeRelationshipOperations(JsonApiRequest request) {
+        switch (request.getOperationType()) {
+            case READ_TO_ONE_RELATIONSHIP -> {
+                return forResourceType(request.getTargetResourceType())
+                        .forToOneRelationship(request.getTargetRelationshipName())
+                        .readToOneRelationship(request);
+            }
+            case READ_TO_MANY_RELATIONSHIP -> {
+                return forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .readToManyRelationship(request);
+            }
+            case UPDATE_TO_ONE_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToOneRelationship(request.getTargetRelationshipName())
+                        .updateToOneRelationship(request);
+                return null;
+            }
+            case UPDATE_TO_MANY_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .updateToManyRelationship(request);
+                return null;
+            }
+            default -> throw new IllegalArgumentException(
+                    "Unsupported JSON:API request, unknown operation type: " + request.getOperationType()
+            );
+        }
+    }
+
     private <RELATIONSHIP_DTO> ToOneRelationshipDoc resolveToOneRelationshipDocCommon(
             ResourceType resourceType,
             RelationshipName relationshipName,
             JsonApiRequest relationshipRequest,
             SingleDataItemSupplier<JsonApiRequest, ?> executable,
-            OperationInboundAccessControlPlugin operationAcPlugin
+            InboundAccessControlSettings inboundAccessControlSettings
     ) {
 
         @SuppressWarnings("unchecked")
@@ -178,9 +180,6 @@ public class JsonApi4j {
         @SuppressWarnings("unchecked")
         SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> executableCasted
                 = (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
-
-        InboundAccessControlSettings inboundAccessControlSettings
-                = getInboundAccessControlSettings(operationAcPlugin);
 
         OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
                 = getOutboundAccessControlSettingsForRelationship(relationshipConfig.getPlugin(RelationshipsOutboundAccessControlPlugin.class));
@@ -206,7 +205,7 @@ public class JsonApi4j {
             RelationshipName relationshipName,
             JsonApiRequest relationshipRequest,
             MultipleDataItemsSupplier<JsonApiRequest, ?> executable,
-            OperationInboundAccessControlPlugin operationAcPlugin
+            InboundAccessControlSettings inboundAccessControlSettings
     ) {
 
         @SuppressWarnings("unchecked")
@@ -216,9 +215,6 @@ public class JsonApi4j {
         @SuppressWarnings("unchecked")
         MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO> executableCasted
                 = (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
-
-        InboundAccessControlSettings inboundAccessControlSettings
-                = getInboundAccessControlSettings(operationAcPlugin);
 
         OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
                 = getOutboundAccessControlSettingsForRelationship(relationshipConfig.getPlugin(RelationshipsOutboundAccessControlPlugin.class));
@@ -239,17 +235,24 @@ public class JsonApi4j {
                 .toToManyRelationshipsDoc();
     }
 
-    private InboundAccessControlSettings getInboundAccessControlSettings(
-            OperationInboundAccessControlPlugin operationAcPlugin
+    private InboundAccessControlSettings getEffectiveInboundAccessControlSettings(
+            OperationPluginAware operation
     ) {
-        return InboundAccessControlSettings
-                .builder()
+        AccessControlRequirements fromOperationAnnotation
+                = JsonApiAnnotationExtractorUtils.extractAccessControlInfo(operation.getClass());
+
+        OperationInboundAccessControlPlugin operationAcPlugin
+                = operation.getPlugin(OperationInboundAccessControlPlugin.class);
+        AccessControlRequirements fromPlugin
+                = operationAcPlugin != null ? operationAcPlugin.getRequestAccessControl() : null;
+        InboundAccessControlSettings effectiveInboundAccessControlSettings = InboundAccessControlSettings.builder()
                 .forRequest(
-                        operationAcPlugin == null ?
-                                AccessControlRequirements.DEFAULT :
-                                operationAcPlugin.getRequestAccessControl()
-                )
-                .build();
+                        AccessControlRequirements.merge(fromPlugin, fromOperationAnnotation)
+                ).build();
+        if (effectiveInboundAccessControlSettings == null) {
+            return InboundAccessControlSettings.DEFAULT;
+        }
+        return effectiveInboundAccessControlSettings;
     }
 
     private OutboundAccessControlSettingsForRelationship getOutboundAccessControlSettingsForRelationship(
@@ -281,6 +284,14 @@ public class JsonApi4j {
         );
     }
 
+    public void setAccessControlEvaluator(AccessControlEvaluator accessControlEvaluator) {
+        this.accessControlEvaluator = accessControlEvaluator;
+    }
+
+    public void setExecutor(Executor executor) {
+        this.executor = executor;
+    }
+
     public class ResourceTypeStepSelected {
 
         private final ResourceType resourceType;
@@ -302,10 +313,11 @@ public class JsonApi4j {
             ReadResourceByIdOperation<RESOURCE_DTO> executable
                     = (ReadResourceByIdOperation<RESOURCE_DTO>) operationsRegistry.getReadResourceByIdOperation(resourceType, true);
             executable.validate(request);
+
             return processSingleResource(
                     request,
                     executable::readById,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -317,7 +329,7 @@ public class JsonApi4j {
             return processSingleResource(
                     request,
                     executable::create,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -328,7 +340,7 @@ public class JsonApi4j {
             processSingleResourceNoResponse(
                     request,
                     executable::update,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -339,14 +351,14 @@ public class JsonApi4j {
             processSingleResourceNoResponse(
                     request,
                     executable::delete,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
         private <ATTRIBUTES, RESOURCE_DTO> SingleResourceDoc<?> processSingleResource(
                 JsonApiRequest request,
                 SingleDataItemSupplier<JsonApiRequest, RESOURCE_DTO> dataSupplier,
-                OperationInboundAccessControlPlugin operationAcPlugin
+                InboundAccessControlSettings inboundAccessControlSettings
         ) {
             @SuppressWarnings("unchecked")
             Resource<ATTRIBUTES, RESOURCE_DTO> resourceConfig
@@ -356,7 +368,7 @@ public class JsonApi4j {
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
                     .accessControlEvaluator(accessControlEvaluator)
-                    .inboundAccessControlSettings(getInboundAccessControlSettings(operationAcPlugin))
+                    .inboundAccessControlSettings(inboundAccessControlSettings)
                     .outboundAccessControlSettings(getOutboundAccessControlSettingsForResource(resourceConfig))
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
@@ -376,13 +388,15 @@ public class JsonApi4j {
         private void processSingleResourceNoResponse(
                 JsonApiRequest request,
                 Consumer<JsonApiRequest> executable,
-                OperationInboundAccessControlPlugin operationAcPlugin
+                InboundAccessControlSettings inboundAccessControlSettings
         ) {
-            processSingleResource(request, req -> {
+            processSingleResource(request,
+                    req -> {
                         executable.accept(req);
                         return null;
                     },
-                    operationAcPlugin);
+                    inboundAccessControlSettings
+            );
         }
 
         public <RESOURCE_DTO> MultipleResourcesDoc<?> readMultipleResources(JsonApiRequest request) {
@@ -395,7 +409,7 @@ public class JsonApi4j {
                 return processMultipleResources(
                         request,
                         readAllExecutable::readPage,
-                        readAllExecutable.getPlugin(OperationInboundAccessControlPlugin.class)
+                        getEffectiveInboundAccessControlSettings(readAllExecutable)
                 );
             } else if (request.getFilters().size() == 1
                     && request.getFilters().containsKey(ReadMultipleResourcesOperation.ID_FILTER_NAME)) {
@@ -408,7 +422,7 @@ public class JsonApi4j {
                     return processMultipleResources(
                             request,
                             mimickedReadAllExecutable::readPage,
-                            readByIdExecutable.getPlugin(OperationInboundAccessControlPlugin.class)
+                            getEffectiveInboundAccessControlSettings(readByIdExecutable)
                     );
                 }
             }
@@ -443,7 +457,7 @@ public class JsonApi4j {
         private <ATTRIBUTES, DATA_SOURCE_DTO> MultipleResourcesDoc<?> processMultipleResources(
                 JsonApiRequest request,
                 MultipleDataItemsSupplier<JsonApiRequest, DATA_SOURCE_DTO> dataSupplier,
-                OperationInboundAccessControlPlugin operationAcPlugin
+                InboundAccessControlSettings inboundAccessControlSettings
         ) {
             @SuppressWarnings("unchecked")
             Resource<ATTRIBUTES, DATA_SOURCE_DTO> resourceConfig
@@ -453,7 +467,7 @@ public class JsonApi4j {
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
                     .accessControlEvaluator(accessControlEvaluator)
-                    .inboundAccessControlSettings(getInboundAccessControlSettings(operationAcPlugin))
+                    .inboundAccessControlSettings(inboundAccessControlSettings)
                     .outboundAccessControlSettings(getOutboundAccessControlSettingsForResource(resourceConfig))
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
@@ -475,8 +489,8 @@ public class JsonApi4j {
         ) {
             return resourceConfig != null
                     ? getOutboundAccessControlSettingsForResource(
-                            resourceConfig.getPlugin(ResourceOutboundAccessControlPlugin.class)
-                    )
+                    resourceConfig.getPlugin(ResourceOutboundAccessControlPlugin.class)
+            )
                     : OutboundAccessControlSettingsForResource.DEFAULT;
         }
 
@@ -558,7 +572,7 @@ public class JsonApi4j {
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -600,7 +614,7 @@ public class JsonApi4j {
                     = (BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
 
             InboundAccessControlSettings inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable.getPlugin(OperationInboundAccessControlPlugin.class));
+                    = getEffectiveInboundAccessControlSettings(executable);
 
             OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
                     = getOutboundAccessControlSettingsForRelationship(relationshipConfig.getPlugin(RelationshipsOutboundAccessControlPlugin.class));
@@ -675,7 +689,7 @@ public class JsonApi4j {
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -717,7 +731,7 @@ public class JsonApi4j {
                     = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
 
             InboundAccessControlSettings inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable.getPlugin(OperationInboundAccessControlPlugin.class));
+                    = getEffectiveInboundAccessControlSettings(executable);
 
             OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
                     = getOutboundAccessControlSettingsForRelationship(relationshipConfig.getPlugin(RelationshipsOutboundAccessControlPlugin.class));
@@ -797,7 +811,7 @@ public class JsonApi4j {
                     relationshipName,
                     relationshipRequest,
                     (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -813,14 +827,14 @@ public class JsonApi4j {
             executeCastedNoResponse(
                     relationshipRequest,
                     executable::update,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
         private void executeCastedNoResponse(
                 JsonApiRequest relationshipRequest,
                 Consumer<JsonApiRequest> executable,
-                OperationInboundAccessControlPlugin operationAcPlugin
+                InboundAccessControlSettings inboundAccessControlSettings
         ) {
             resolveToManyRelationshipsDocCommon(
                     resourceType,
@@ -830,7 +844,7 @@ public class JsonApi4j {
                         executable.accept(req);
                         return null;
                     },
-                    operationAcPlugin
+                    inboundAccessControlSettings
             );
         }
     }
@@ -861,7 +875,7 @@ public class JsonApi4j {
                     relationshipName,
                     relationshipRequest,
                     (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
@@ -878,14 +892,14 @@ public class JsonApi4j {
             executeCastedNoResponse(
                     relationshipRequest,
                     executable::update,
-                    executable.getPlugin(OperationInboundAccessControlPlugin.class)
+                    getEffectiveInboundAccessControlSettings(executable)
             );
         }
 
         private void executeCastedNoResponse(
                 JsonApiRequest relationshipRequest,
                 Consumer<JsonApiRequest> executable,
-                OperationInboundAccessControlPlugin operationAcPlugin
+                InboundAccessControlSettings inboundAccessControlSettings
         ) {
             resolveToOneRelationshipDocCommon(
                     resourceType,
@@ -895,16 +909,8 @@ public class JsonApi4j {
                         executable.accept(req);
                         return null;
                     },
-                    operationAcPlugin
+                    inboundAccessControlSettings
             );
         }
-    }
-
-    public void setAccessControlEvaluator(AccessControlEvaluator accessControlEvaluator) {
-        this.accessControlEvaluator = accessControlEvaluator;
-    }
-
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
     }
 }

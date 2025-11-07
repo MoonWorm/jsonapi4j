@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.processor.resource;
 
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAuthenticated;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.AuthenticatedPrincipalContextHolder;
@@ -222,21 +222,26 @@ public class SingleResourceProcessorAccessControlTests {
         private final String lastName;
     }
 
-    @AccessControlAccessTier(TierPartner.PARTNER_ACCESS_TIER)
-    @AccessControlScopes(requiredScopes = {"groups.write"})
-    @AccessControlOwnership(ownerIdFieldPath = "id")
+    @AccessControl(
+            tier = @AccessControlAccessTier(TierPartner.PARTNER_ACCESS_TIER),
+            scopes = @AccessControlScopes(requiredScopes = {"groups.write"}),
+            ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+    )
     @Data
     public static class Attributes {
 
         private final String id;
 
-        @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER)
-        @AccessControlScopes(requiredScopes = {"groups.read"})
-        @AccessControlOwnership(ownerIdFieldPath = "id")
+        @AccessControl(
+                tier = @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER),
+                scopes = @AccessControlScopes(requiredScopes = {"groups.read"}),
+                ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+        )
         private final String firstName;
 
-        @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER)
-        @AccessControlAuthenticated
+        @AccessControl(
+                tier = @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER)
+        )
         private final String lastName;
 
         private final String customOwnerId;
@@ -273,9 +278,11 @@ public class SingleResourceProcessorAccessControlTests {
 
     }
 
-    @AccessControlScopes(requiredScopes = {"users.read"})
-    @AccessControlOwnership(ownerIdFieldPath = "id")
-    @AccessControlAccessTier(TierPublic.PUBLIC_TIER)
+    @AccessControl(
+            tier = @AccessControlAccessTier(TierPublic.PUBLIC_TIER),
+            scopes = @AccessControlScopes(requiredScopes = {"users.read"}),
+            ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+    )
     public static class JsonApiResourceObjectWithRelationships extends ResourceObject<Attributes, Relationships> {
 
         public JsonApiResourceObjectWithRelationships(String id,

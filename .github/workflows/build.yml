@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ gh-pages-tests ]
+    branches: [ main ]
   pull_request:
-    branches: [ gh-pages-tests ]
+    branches: [ main ]
 
 jobs:
   build:

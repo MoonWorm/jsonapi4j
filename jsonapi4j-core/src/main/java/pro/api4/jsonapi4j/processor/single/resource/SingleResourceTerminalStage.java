@@ -125,6 +125,14 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 processorContext.getAccessControlEvaluator(),
                 processorContext.getInboundAccessControlSettings()
         );
+
+        // apply settings from annotations if any
+        if (request != null) {
+            inboundAcEvaluator.calculateEffectiveAccessControlSettings(
+                    request.getClass()
+            );
+        }
+
         DATA_SOURCE_DTO dataSourceDto = inboundAcEvaluator.retrieveDataAndEvaluateInboundAcReq(
                 request,
                 () -> DataRetrievalUtil.retrieveDataLenient(() -> dataSupplier.get(request))

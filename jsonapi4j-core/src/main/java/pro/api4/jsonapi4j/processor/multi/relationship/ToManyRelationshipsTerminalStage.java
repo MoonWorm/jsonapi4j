@@ -50,6 +50,12 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 processorContext.getAccessControlEvaluator(),
                 processorContext.getInboundAccessControlSettings()
         );
+        // apply settings from annotations if any
+        if (request != null) {
+            inboundAcEvaluator.calculateEffectiveAccessControlSettings(
+                    request.getClass()
+            );
+        }
         CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = inboundAcEvaluator.retrieveDataAndEvaluateInboundAcReq(
                 request,
                 () -> DataRetrievalUtil.retrieveDataLenient(() -> dataSupplier.get(request))

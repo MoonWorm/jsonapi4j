@@ -282,7 +282,7 @@ public class CountryResource implements Resource<CountryAttributes, DownstreamCo
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2(); // let's use CCA2 errorCode as a unique country identifier
+        return downstreamCountry.getCca2(); // let's use CCA2 code as a unique country identifier
     }
 
     @Override
@@ -938,6 +938,8 @@ During the **inbound** stage, the **JsonApi4j** application has received a reque
 Access control rules are evaluated against the `JsonApiRequest` since no other data is available at this point.
 If access control requirements are not met, data fetching is skipped, and the `data` field in the response will be fully anonymized.
 
+Inbound access control requirements can be defined on an operation level either via plugin system or via annotations.
+
 ##### Outbound Evaluation Stage
 
 The **outbound** stage occurs after data has been fetched from the data source, the response document has been composed, and right before it is sent to the client.
@@ -990,18 +992,55 @@ The resolved principal context is then used by the framework during both **inbou
 
 How and where should you declare your access control requirements?
 
-There are two main approaches in **JsonApi4j**:
-1. Via Java annotations. If you are working with **jsonapi4j-core** you can place access control annotations on either a custom `ResourceObject`, or an `Attributes` object. Annotations can be applied at both the class and field levels. When using higher-level modules such as **jsonapi4j-rest** or **jsonapi4j-rest-springboot**, annotations can only be applied to the **Attributes** object. Available annotations include: `@AccessControlAuthenticated`, `@AccessControlScopes`, `@AccessControlAccessTier`, `@AccessControlOwnership`. This approach is **recommended** for setting access control rules on resource attributes.
-2. Via **JsonApi4j** plugin system. For more advanced or dynamic access control scenarios, you can use the plugin system. `OperationInboundAccessControlPlugin ` - apply access control during **inbound** request evaluation at the operation level. `ResourceOutboundAccessControlPlugin` - apply access control to **JSON:API Resource Objects** during **outbound** evaluation. `RelationshipsOutboundAccessControlPlugin` - apply access control to **JSON:API Resource Identifier Objects** during **outbound** evaluation. 
+There are two main approaches in **JsonApi4j**: via **annotations** and via **Plugin System**.
 
-If both annotation-based and plugin-based configurations are detected, the framework automatically merges them, giving priority to the rules defined programmatically via plugins.
+##### Annotations
+
+There is one annotation that defines all access control requirement in one place - `@AccessControl`. 
+It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `tier`, and `ownership`. Just populate you requirements there.
+This annotation can be applied at both the **class** and **field** levels.
+This approach is **recommended** for setting access control rules for both **inbound** and **outbound** stages since it's more readable for other developers.
+
+##### Plugin System
+
+Alternative option is to configure access requirements via **JsonApi4j** **Plugin System**.
+Use `OperationInboundAccessControlPlugin ` to apply access control during **inbound** request evaluation. Must be defined on the operation level. 
+Use `ResourceOutboundAccessControlPlugin` to apply access control to **JSON:API Resource Objects** during **outbound** evaluation for resource operations. Must be defined on the JSON:API `Resource` level. 
+Use `RelationshipsOutboundAccessControlPlugin` to apply access control to **JSON:API Resource Identifier Objects** during **outbound** evaluation for relationship operations. Must be defined on either `ToOneRelationship` or `ToManyRelationship` level.
+
+##### Notes
+1. If both annotation-based and plugin-based configurations are detected, the framework automatically merges them, giving priority to the rules defined programmatically via plugins.
+2. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value. 
+3. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
 
 #### Examples
 
-Example 1: Outbound Access Control
+##### Example 1: Inbound Access Control
 
-Let's hide the user's credit card number from everyone except the owner. To achieve this, place the `@AccessControlOwnership(ownerIdFieldPath = "id")` annotation on the `creditCardNumber` field.
-We can also add `@AccessControlAuthenticated` to ensure that the request is made by an authenticated user, and `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` to restrict access only to clients that have been granted the `users.sensitive.read` scope.
+Let's allow new user creation only for authenticated clients with the `ADMIN` access tier.
+
+In this case, we'll use the `@AccessControl` annotation to enforce the access rule at the operation level.
+
+```java
+@AccessControl(
+        authenticated = Authenticated.AUTHENTICATED,
+        tier = @AccessControlAccessTier(ADMIN_ACCESS_TIER)
+)
+@Component
+public class CreateUserOperation implements CreateResourcesOperation<UserDbEntity> {
+
+    // ...
+
+}
+```
+
+##### Example 2: Outbound Access Control
+
+Let's hide the user's credit card number from everyone except the owner. To achieve this, place the `@AccessControl` annotation on the `creditCardNumber` field.
+Notes:
+1. `authenticated = Authenticated.AUTHENTICATED` - requires the framework to check whether the client that initiated this request is authenticated. 
+2. `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` - forces the framework to check if client initiated this request has got permissions from the resource owner to access their sensitive data.
+3. `@AccessControlOwnership(ownerIdFieldPath = "id")` - tells the framework that the owner id is located in the `id` field of the JSON:API Resource Object. That is true because we deal with users and user id represents who own this data. 
 
 ```java
 public class UserAttributes {
@@ -1009,45 +1048,16 @@ public class UserAttributes {
     private final String firstName;
     private final String lastName;
     private final String email;
-    
-    @AccessControlAuthenticated
-    @AccessControlScopes(requiredScopes = {"users.sensitive.read"})
-    @AccessControlOwnership(ownerIdFieldPath = "id")
+
+    @AccessControl(
+            authenticated = Authenticated.AUTHENTICATED,
+            scopes = @AccessControlScopes(requiredScopes = {"users.sensitive.read"}),
+            tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER),
+            ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+    )
     private final String creditCardNumber;
     
     // constructors, getters and setters
-
-}
-```
-
-Example 2: Inbound Access Control
-
-Let's allow new user creation only for clients with the `ADMIN` access tier.
-
-In this case, we'll use the `OperationInboundAccessControlPlugin` to enforce the access rule at the operation level.
-
-```java
-@Component
-public class CreateUserOperation implements CreateResourcesOperation<UserDbEntity> {
-
-    // methods implementations
-
-    @Override
-    public List<OperationPlugin<?>> plugins() {
-      return List.of(
-        OperationInboundAccessControlPlugin.builder()
-          .requestAccessControl(
-            AccessControlRequirements.builder()
-              .requiredAccessTier(
-                AccessControlAccessTierModel.builder()
-                  .requiredAccessTier(TierAdmin.ADMIN_ACCESS_TIER)
-                  .build()
-              )
-              .build()
-          )
-          .build()
-      );
-    }
 
 }
 ```
