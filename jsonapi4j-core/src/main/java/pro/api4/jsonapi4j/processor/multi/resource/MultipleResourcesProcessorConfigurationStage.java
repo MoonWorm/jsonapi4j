@@ -1,12 +1,12 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForResource;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiConfigurationStage;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
 import java.util.concurrent.Executor;
@@ -21,7 +21,7 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
 
     MultipleResourcesProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = ResourceProcessorContext.DEFAULT;
+        this.processorContext =  new ResourceProcessorContext();
     }
 
     /**
@@ -48,14 +48,14 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
     }
 
     public MultipleResourcesProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlSettingsForResource outboundAccessControlSettings
+            OutboundAccessControlForJsonApiResource outboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
         return this;
     }
 
     public MultipleResourcesProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            InboundAccessControlSettings inboundAccessControlSettings
+            AccessControlModel inboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
         return this;

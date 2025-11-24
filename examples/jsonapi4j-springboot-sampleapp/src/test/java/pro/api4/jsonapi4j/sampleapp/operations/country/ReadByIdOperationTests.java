@@ -42,7 +42,7 @@ public class ReadByIdOperationTests {
 
     @AfterEach
     void teardown() {
-        if (wiremockServer != null) {
+        if (wiremockServer != null && wiremockServer.isRunning()) {
             wiremockServer.stop();
         }
     }

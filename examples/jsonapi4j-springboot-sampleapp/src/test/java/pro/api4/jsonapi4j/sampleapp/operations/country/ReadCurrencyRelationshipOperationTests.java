@@ -40,7 +40,7 @@ public class ReadCurrencyRelationshipOperationTests {
 
     @AfterEach
     void teardown() {
-        if (wiremockServer != null) {
+        if (wiremockServer != null && wiremockServer.isRunning()) {
             wiremockServer.stop();
         }
     }

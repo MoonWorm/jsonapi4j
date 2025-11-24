@@ -1,13 +1,13 @@
 package pro.api4.jsonapi4j.processor.single.relationship;
 
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForRelationship;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
-public class ToOneRelationshipProcessorConfigurationStage<REQUEST> {
+public class  ToOneRelationshipProcessorConfigurationStage<REQUEST> {
 
     private final REQUEST request;
 
@@ -15,7 +15,7 @@ public class ToOneRelationshipProcessorConfigurationStage<REQUEST> {
 
     ToOneRelationshipProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = RelationshipProcessorContext.DEFAULT;
+        this.processorContext = new RelationshipProcessorContext();
     }
 
     public ToOneRelationshipProcessorConfigurationStage<REQUEST> accessControlEvaluator(
@@ -26,14 +26,14 @@ public class ToOneRelationshipProcessorConfigurationStage<REQUEST> {
     }
 
     public ToOneRelationshipProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
+            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
         return this;
     }
 
     public ToOneRelationshipProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            InboundAccessControlSettings inboundAccessControlSettings
+            AccessControlModel inboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
         return this;

@@ -11,6 +11,10 @@ import lombok.ToString;
 @ToString(of = {"id", "type"})
 public class ResourceIdentifierObject {
 
+    public static final String ID_FIELD = "id";
+    public static final String TYPE_FIELD = "type";
+    public static final String META_FIELD = "meta";
+
     private final String id;
     private final String type;
     private Object meta;

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;

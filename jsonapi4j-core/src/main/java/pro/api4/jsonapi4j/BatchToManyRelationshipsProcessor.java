@@ -1,42 +1,37 @@
 package pro.api4.jsonapi4j;
 
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluatorForRelationship;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForRelationship;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocLinksResolver;
 import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocMetaResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceMetaResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
-import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 class BatchToManyRelationshipsProcessor {
 
-    private AccessControlEvaluator accessControlEvaluator
-            = ResourceProcessorContext.DEFAULT_ACCESS_CONTROL_EVALUATOR;
-    private InboundAccessControlSettings inboundAccessControlSettings
-            = InboundAccessControlSettings.DEFAULT;
-    private OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
-            = OutboundAccessControlSettingsForRelationship.DEFAULT;
+    private AccessControlEvaluator accessControlEvaluator;
+    private AccessControlModel inboundAccessControlSettings;
+    private OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings;
 
     <REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> BatchToManyRelationshipsJsonApiConfigurationStage<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier(
             BatchMultipleResourcesDataSupplier<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier
@@ -55,14 +50,14 @@ class BatchToManyRelationshipsProcessor {
     }
 
     public BatchToManyRelationshipsProcessor inboundAccessControlSettings(
-            InboundAccessControlSettings inboundAccessControlSettings
+            AccessControlModel inboundAccessControlSettings
     ) {
         this.inboundAccessControlSettings = inboundAccessControlSettings;
         return this;
     }
 
     public BatchToManyRelationshipsProcessor outboundAccessControlSettings(
-            OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
+            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
     ) {
         this.outboundAccessControlSettings = outboundAccessControlSettings;
         return this;
@@ -136,8 +131,8 @@ class BatchToManyRelationshipsProcessor {
         private final BatchMultipleResourcesDataSupplier<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier;
 
         private final AccessControlEvaluator accessControlEvaluator;
-        private final InboundAccessControlSettings inboundAccessControlSettings;
-        private final OutboundAccessControlSettingsForRelationship outboundAccessControlSettings;
+        private final AccessControlModel inboundAccessControlSettings;
+        private final OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings;
 
         private final MultipleDataItemsDocLinksResolver<REQUEST, RELATIONSHIP_DTO> topLevelLinksResolver;
         private final MultipleDataItemsDocMetaResolver<REQUEST, RELATIONSHIP_DTO> topLevelMetaResolver;
@@ -166,7 +161,7 @@ class BatchToManyRelationshipsProcessor {
                 List<RESOURCE_DTO> resourceDtos,
                 RelationshipRequestSupplier<REQUEST, RESOURCE_DTO> relationshipRequestSupplier
         ) {
-            if (resourceDtos == null || resourceDtos.isEmpty()) {
+            if (CollectionUtils.isEmpty(resourceDtos)) {
                 return Collections.emptyMap();
             }
 
@@ -174,30 +169,35 @@ class BatchToManyRelationshipsProcessor {
             Validate.notNull(dataSupplier);
             Validate.notNull(resourceIdentifierTypeAndIdResolver);
 
-            //
-            // Inbound Access Control checks + retrieve data
-            //
-            List<RESOURCE_DTO> resourceDtosFiltered = new ArrayList<>();
-            Map<RESOURCE_DTO, REQUEST> resourceDtosToRelationshipRequestMap = new HashMap<>();
-            for (RESOURCE_DTO resourceDto : resourceDtos) {
-                REQUEST relationshipRequest = relationshipRequestSupplier.create(
-                        originalRequest,
-                        resourceDto
-                );
-                if (accessControlEvaluator.evaluateInboundRequirements(
-                        relationshipRequest,
-                        inboundAccessControlSettings.getForRequest())
-                ) {
-                    resourceDtosToRelationshipRequestMap.put(resourceDto, relationshipRequest);
-                    resourceDtosFiltered.add(resourceDto);
-                } else {
-                    log.warn(
-                            "Inbound Access control evaluation for relationship request [{}] and [{}] resource dto is failed. Restricting access.",
-                            relationshipRequest,
-                            resourceDto
-                    );
-                }
+            // compose relationship requests
+            Map<RESOURCE_DTO, REQUEST> resourceDtosToRelationshipRequestMap = resourceDtos
+                    .stream()
+                    .collect(Collectors.toMap(
+                            dto -> dto,
+                            dto -> relationshipRequestSupplier.create(
+                                    originalRequest,
+                                    dto
+                            )
+                    ));
+
+            // filter out dtos that are not allowed based on the corresponding request
+            final List<RESOURCE_DTO> resourceDtosFiltered;
+            if (accessControlEvaluator != null && inboundAccessControlSettings != null) {
+                resourceDtosFiltered = resourceDtosToRelationshipRequestMap.entrySet()
+                        .stream()
+                        .map(e ->
+                                accessControlEvaluator.retrieveDataIfAllowed(
+                                        e.getValue(),
+                                        e::getKey,
+                                        inboundAccessControlSettings
+                                )
+                        )
+                        .filter(Objects::nonNull)
+                        .toList();
+            } else {
+                resourceDtosFiltered = resourceDtos;
             }
+
             if (CollectionUtils.isEmpty(resourceDtosFiltered)) {
                 log.debug("Inbound Access control evaluation is failed for all relationship requests. Returning empty map.");
                 return Collections.emptyMap();
@@ -207,7 +207,7 @@ class BatchToManyRelationshipsProcessor {
             // Resolve relationships in batch
             //
             Map<RESOURCE_DTO, CursorPageableResponse<RELATIONSHIP_DTO>> responseMap =
-                    DataRetrievalUtil.retrieveDataLenient(
+                    DataRetrievalUtil.retrieveDataNullable(
                             () -> dataSupplier.get(originalRequest, resourceDtosFiltered)
                     );
 
@@ -217,53 +217,15 @@ class BatchToManyRelationshipsProcessor {
             }
 
             Map<RESOURCE_DTO, ToManyRelationshipsDoc> result = new HashMap<>();
-
-            resourceDtos.forEach(resourceDto -> {
+            for (RESOURCE_DTO resourceDto : resourceDtos) {
                 CursorPageableResponse<RELATIONSHIP_DTO> cursorPageableResponse = responseMap.get(resourceDto);
-                if (cursorPageableResponse != null && CollectionUtils.isNotEmpty(cursorPageableResponse.getItems())) {
-
+                if (!responseMap.containsKey(resourceDto)) {
+                    //
+                    // Is not allowed
+                    //
+                    result.put(resourceDto, null);
+                } else {
                     REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
-
-                    OutboundAccessControlRequirementsEvaluatorForRelationship outboundAcEvaluator
-                            = new OutboundAccessControlRequirementsEvaluatorForRelationship(
-                            this.accessControlEvaluator,
-                            this.outboundAccessControlSettings
-                    );
-
-                    List<ResourceIdentifierObject> data = cursorPageableResponse
-                            .getItems()
-                            .stream()
-                            .map(relationshipDto -> {
-
-                                // id and type
-                                IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
-
-                                if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
-                                    log.warn(
-                                            "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
-                                            relationshipDto
-                                    );
-                                    return null;
-                                }
-
-                                // resource meta
-                                Object resourceMeta = resourceMetaResolver != null
-                                        ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
-                                        : null;
-
-                                // compose resource identifier
-                                ResourceIdentifierObject resourceIdentifier = new ResourceIdentifierObject(
-                                        idAndType.getId(),
-                                        idAndType.getType().getType(),
-                                        resourceMeta
-                                );
-
-                                // anonymize if needed
-                                return outboundAcEvaluator.anonymizeResourceIdentifierIfNeeded(resourceIdentifier);
-
-                            })
-                            .filter(Objects::nonNull)
-                            .toList();
 
                     // doc-level links
                     LinksObject docLinks = topLevelLinksResolver != null
@@ -273,12 +235,59 @@ class BatchToManyRelationshipsProcessor {
                     Object docMeta = topLevelMetaResolver != null
                             ? topLevelMetaResolver.resolve(relationshipRequest, cursorPageableResponse.getItems())
                             : null;
-                    // compose doc and add to the result map
-                    result.put(resourceDto, new ToManyRelationshipsDoc(data, docLinks, docMeta));
-                } else {
-                    result.put(resourceDto, null);
+
+                    if (cursorPageableResponse == null) {
+                        result.put(resourceDto, new ToManyRelationshipsDoc(null, docLinks, docMeta));
+                    } else if (CollectionUtils.isEmpty(cursorPageableResponse.getItems())) {
+                        result.put(resourceDto, new ToManyRelationshipsDoc(Collections.emptyList(), docLinks, docMeta));
+                    } else {
+                        List<ResourceIdentifierObject> data = cursorPageableResponse
+                                .getItems()
+                                .stream()
+                                .map(relationshipDto -> {
+                                    // id and type
+                                    IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
+
+                                    if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
+                                        log.warn(
+                                                "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
+                                                relationshipDto
+                                        );
+                                        return null;
+                                    }
+
+                                    // resource meta
+                                    Object resourceMeta = resourceMetaResolver != null
+                                            ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
+                                            : null;
+
+                                    // compose resource identifier
+                                    return new ResourceIdentifierObject(
+                                            idAndType.getId(),
+                                            idAndType.getType().getType(),
+                                            resourceMeta
+                                    );
+                                })
+                                .filter(Objects::nonNull)
+                                .map(resourceIdentifier -> {
+                                    // anonymize if needed
+                                    if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
+                                        resourceIdentifier = accessControlEvaluator.anonymizeObjectIfNeeded(
+                                                resourceIdentifier,
+                                                resourceIdentifier,
+                                                outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
+                                        ).targetObject();
+                                    }
+                                    return resourceIdentifier;
+                                })
+                                .filter(Objects::nonNull)
+                                .toList();
+
+                        // compose doc and add to the result map
+                        result.put(resourceDto, new ToManyRelationshipsDoc(data, docLinks, docMeta));
+                    }
                 }
-            });
+            }
 
             return Collections.unmodifiableMap(result);
         }

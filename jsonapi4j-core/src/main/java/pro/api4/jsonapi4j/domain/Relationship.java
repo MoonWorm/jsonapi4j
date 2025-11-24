@@ -1,11 +1,11 @@
 package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.plugin.RelationshipPluginAware;
-import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
+import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
+import pro.api4.jsonapi4j.ac.ownership.ResourceIdFromUrlPathExtractor;
+import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
 
 /**
  * Base interface for {@link ToManyRelationship} and {@link ToOneRelationship}. Encapsulates common logic of any type of
@@ -67,6 +67,19 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
     String resolveResourceIdentifierId(RELATIONSHIP_DTO relationshipDto);
 
     /**
+     * Customization point for the
+     * <a href="<a href="https://jsonapi.org/format/#document-meta">'meta'</a>
+     * member of the
+     * <a href="https://jsonapi.org/format/#document-resource-identifier-objects">JSON:API Resource Identifier Object</a>
+     *
+     * @param relationshipRequest the corresponding relationship request
+     * @param relationshipDto     relationship dto that represents the
+     *                            <a href="https://jsonapi.org/format/#document-resource-object-linkage">Resource Linkage</a>
+     * @return any custom Java object that represents JSON:API meta object
+     */
+    Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, RELATIONSHIP_DTO relationshipDto);
+
+    /**
      * Composes a new instance of {@link JsonApiRequest} that represents a nested request for reading relationship data for the
      * parent resource. That is only used for a Compound Documents scenarios when relationship was requested in 'include' query parameter
      * while dealing with resources.
@@ -76,7 +89,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * Can be overridden here.
      * <p/>
      * In addition to a data fetching this request can be also used in order to evaluate access to relationship data
-     * from an ownership perspective. See {@link DefaultAccessControlEvaluator#evaluateInboundRequirements(Object, AccessControlRequirements)}
+     * from an ownership perspective. See {@link DefaultAccessControlEvaluator#evaluateInboundRequirements(Object, AccessControlModel)}
      * for more details. Owner id is extracted from the relationship request {@link JsonApiRequest}.
      * It's possible to implement your own {@link OwnerIdExtractor}.
      * (default impl - {@link ResourceIdFromUrlPathExtractor} assuming owner id is coming as a parent resource id).

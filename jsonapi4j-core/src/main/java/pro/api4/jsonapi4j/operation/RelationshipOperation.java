@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 /**
  * Base interface for all relationship operations: both ToOne* and ToMany*.
  */
-public interface RelationshipOperation extends OperationPluginAware {
+public interface RelationshipOperation extends Operation, OperationPluginAware {
 
     /**
      * @return name of the given relationship
@@ -41,6 +41,7 @@ public interface RelationshipOperation extends OperationPluginAware {
      *
      * @param request incoming {@link JsonApiRequest}
      */
+    @Override
     default void validate(JsonApiRequest request) {
         new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
     }

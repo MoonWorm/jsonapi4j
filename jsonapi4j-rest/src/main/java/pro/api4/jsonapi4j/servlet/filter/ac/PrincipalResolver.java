@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.servlet.filter.ac;
 
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTier;
+import pro.api4.jsonapi4j.ac.tier.AccessTier;
 import jakarta.servlet.ServletRequest;
 
 import java.util.Set;

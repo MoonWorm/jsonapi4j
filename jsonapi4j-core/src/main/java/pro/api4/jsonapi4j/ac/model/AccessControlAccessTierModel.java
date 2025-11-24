@@ -1,0 +1,27 @@
+package pro.api4.jsonapi4j.ac.model;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlAccessTier;
+
+@EqualsAndHashCode
+@ToString
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PACKAGE)
+public class AccessControlAccessTierModel {
+
+    private String requiredAccessTier;
+
+    static AccessControlAccessTierModel fromAnnotation(AccessControlAccessTier annotation) {
+        if (annotation == null) {
+            return null;
+        }
+        return AccessControlAccessTierModel.builder().requiredAccessTier(annotation.value()).build();
+    }
+
+}

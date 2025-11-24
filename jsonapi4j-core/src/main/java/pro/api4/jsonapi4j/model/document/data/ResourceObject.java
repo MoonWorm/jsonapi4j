@@ -11,6 +11,10 @@ import lombok.ToString;
 @EqualsAndHashCode(exclude = {"links"}, callSuper = true)
 public class ResourceObject<A, R> extends ResourceIdentifierObject {
 
+    public static final String ATTRIBUTES_FIELD = "attributes";
+    public static final String RELATIONSHIPS_FIELD = "relationships";
+    public static final String LINKS_FIELD = "links";
+
     private A attributes;
     private R relationships;
     private LinksObject links;

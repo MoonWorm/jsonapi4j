@@ -2,6 +2,9 @@ package pro.api4.jsonapi4j.processor.single.resource;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
@@ -11,16 +14,17 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.ResourceSupplier;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlRequerementsEvaluator;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluatorForResource;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluatorForResource.ResourceAnonymizationResult;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemsRetrievalStage;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
-import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
+import static pro.api4.jsonapi4j.processor.util.AccessControlUtil.getEffectiveOutboundAccessControlSettings;
 
 public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
@@ -118,25 +122,13 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         Validate.notNull(resourceSupplier);
         Validate.notNull(docSupplier);
 
-        //
-        // Inbound Access Control checks + retrieve data source dto
-        //
-        InboundAccessControlRequerementsEvaluator inboundAcEvaluator = new InboundAccessControlRequerementsEvaluator(
-                processorContext.getAccessControlEvaluator(),
+        AccessControlEvaluator accessControlEvaluator
+                = processorContext.getAccessControlEvaluator();
+
+        DATA_SOURCE_DTO dataSourceDto = new SingleDataItemsRetrievalStage(
+                accessControlEvaluator,
                 processorContext.getInboundAccessControlSettings()
-        );
-
-        // apply settings from annotations if any
-        if (request != null) {
-            inboundAcEvaluator.calculateEffectiveAccessControlSettings(
-                    request.getClass()
-            );
-        }
-
-        DATA_SOURCE_DTO dataSourceDto = inboundAcEvaluator.retrieveDataAndEvaluateInboundAcReq(
-                request,
-                () -> DataRetrievalUtil.retrieveDataLenient(() -> dataSupplier.get(request))
-        );
+        ).retrieveData(request, dataSupplier);
 
         // top-level links
         LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, dataSourceDto);
@@ -171,41 +163,33 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
             return docSupplier.get(null, docLinks, docMeta);
         }
 
-        //
-        // Outbound Access Control checks + relationships resolution
-        //
-        OutboundAccessControlRequirementsEvaluatorForResource outboundAcEvaluator = new OutboundAccessControlRequirementsEvaluatorForResource(
-                processorContext.getAccessControlEvaluator(),
+        // apply settings from annotations if any
+        OutboundAccessControlForCustomClass outboundAccessControlSettings = getEffectiveOutboundAccessControlSettings(
+                resource,
                 processorContext.getOutboundAccessControlSettings()
         );
 
-        // apply settings from annotations if any
-        outboundAcEvaluator.calculateEffectiveAccessControlSettings(
-                resource.getClass(),
-                att != null ? att.getClass() : null
-        );
-
         // anonymize resource if needed
-        ResourceAnonymizationResult<RESOURCE, ATTRIBUTES, RELATIONSHIPS> resourceAnonymizationResult
-                = outboundAcEvaluator.anonymizeResourceIfNeeded(resource);
+        AnonymizationResult<RESOURCE> resourceAnonymizationResult = anonymizeObjectIfNeeded(
+                accessControlEvaluator,
+                resource,
+                resource,
+                outboundAccessControlSettings
+        );
 
         if (resourceAnonymizationResult.isFullyAnonymized()) {
             return docSupplier.get(null, docLinks, docMeta);
         }
 
-        // resolve and anonymize resource relationships if needed
-        outboundAcEvaluator.resolveAndAnonymizeRelationshipsIfNeeded(
-                resourceAnonymizationResult,
-                () -> jsonApiMembersResolver.resolveResourceRelationshipsInParallel(
-                        request,
-                        dataSourceDto,
-                        relationshipsSupplier
-                )
+        // resolve and set relationships
+        RELATIONSHIPS relationships = jsonApiMembersResolver.resolveResourceRelationshipsInParallel(
+                request,
+                dataSourceDto,
+                relationshipsSupplier
         );
+        resource.setRelationships(relationships);
 
-        // anonymize resource attributes if needed
-        outboundAcEvaluator.anonymizeAttributesIfNeeded(resourceAnonymizationResult);
-
+        // compose doc
         return docSupplier.get(resource, docLinks, docMeta);
     }
 

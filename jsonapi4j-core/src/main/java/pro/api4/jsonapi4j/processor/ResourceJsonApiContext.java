@@ -19,7 +19,6 @@ import java.util.Map;
 @Getter
 public abstract class ResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
-
     // resource type and id supplier
     private final ResourceTypeAndIdResolver<DATA_SOURCE_DTO> resourceTypeAndIdResolver;
 
