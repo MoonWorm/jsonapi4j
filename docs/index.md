@@ -84,7 +84,7 @@ As mentioned above, let's start by defining our first JSON:API resource - `user`
 
 ```java
 @Component
-public class UserResource implements Resource<UserAttributes, UserDbEntity> {
+public class UserResource implements Resource<UserDbEntity> {
 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {
@@ -113,10 +113,10 @@ What's happening here:
 * `ResourceType resourceType()` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
 * `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (UserDbEntity) to the public API-facing representation (UserAttributes)
 
-Each resource is parametrized with two types: 
+Each resource is parametrized with a type: 
+* `UserDbEntity` - is represented internally.
 
-* `UserAttributes` is what is exposed via API, and 
-* `UserDbEntity` is how data is represented internally.
+While `UserAttributes` represents what is exposed via API.
 
 Here's a draft implementation of both classes:
 
@@ -278,7 +278,7 @@ Similar to the `users` resource, we need to declare a dedicated JSON:API resourc
 
 ```java
 @Component
-public class CountryResource implements Resource<CountryAttributes, DownstreamCountry> {
+public class CountryResource implements Resource<DownstreamCountry> {
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
@@ -301,20 +301,7 @@ public class CountryResource implements Resource<CountryAttributes, DownstreamCo
 }
 ```
 
-This resource is parametrized with two types: `CountryAttributes` and `DownstreamCountry`.
-
-```java
-public class CountryAttributes {
-    
-    private final String name;
-    private final String region;
-  
-    // constructors, getters and setters
-
-}
-```
-
-In this example, we expose only the `name` and `region` fields through the **attributes**, using `.getName().getCommon()` for the country name. While `cca2` is used as a country ID. 
+This resource is parametrized with a type: `DownstreamCountry`.
 
 ```java
 public class DownstreamCountry {
@@ -336,6 +323,20 @@ public class DownstreamCountry {
 
 }
 ```
+
+And here is a custom `CountryAttributes` that represents an API-facing version of a country:
+```java
+public class CountryAttributes {
+    
+    private final String name;
+    private final String region;
+  
+    // constructors, getters and setters
+
+}
+```
+
+In this example, we expose only the `name` and `region` fields through the **attributes**, using `.getName().getCommon()` for the country name. While `cca2` is used as a country ID.
 
 ### 6. Add a JSON:API Relationship - User Citizenships
 
@@ -814,18 +815,17 @@ All domain-related interfaces are located in the `jsonapi4j-core` module under t
 
 Here are the most essential ones:
 
-* `Resource<ATTRIBUTES, RESOURCE_DTO>` - implement this interface to declare a new **JSON:API resource**
+* `Resource<RESOURCE_DTO>` - implement this interface to declare a new **JSON:API resource**
 * `ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-one relationship**
 * `ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-many relationship**
 
-#### Resource<ATTRIBUTES, RESOURCE_DTO>
+#### Resource<RESOURCE_DTO>
 
 This is the primary interface for defining a JSON:API resource. It describes how your internal model is going to be represented by JSON:API documents. 
 
 Think about resources as of vertices (or nodes) in a graph.
 
-Type parameters:
-* `ATTRIBUTES` - the class representing the resource's exposed **attributes** in the API (`UserAttributes`, `CountryAttributes`, etc.).
+Type parameter:
 * `RESOURCE_DTO` - the internal data object or DTO from your domain or persistence layer (`UserDbEntity`, `DownstreamCountry`, etc.).
 
 Mandatory / Key Responsibilities:
@@ -1062,7 +1062,7 @@ In the example below we've configured our entire `UserResource` in a way it's vi
 ```java
 @AccessControl(authenticated = Authenticated.AUTHENTICATED)
 @Component
-public class UserResource implements Resource<UserAttributes, UserDbEntity> {
+public class UserResource implements Resource<UserDbEntity> {
 
   // other methods
 
