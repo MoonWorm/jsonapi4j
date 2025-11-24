@@ -1,11 +1,11 @@
 package pro.api4.jsonapi4j.domain;
 
-import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
-import pro.api4.jsonapi4j.plugin.ResourcePluginAware;
-import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.plugin.ResourcePluginAware;
 import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.List;
 
@@ -21,15 +21,10 @@ import java.util.List;
  * members like 'meta', 'links' are generated for the given JSON:API resource. Usually, you can rely on the
  * default behaviour.
  *
- * @param <ATTRIBUTES>   represents a Java type that encapsulates the resource specific unique data that is going to be
- *                       exposed via API. For example, "users" resource might have information about "address", "phone",
- *                       "firstName", etc. Represents
- *                       <a href="https://jsonapi.org/format/#document-resource-object-attributes">JSON:API Attributes Object</a>
  * @param <RESOURCE_DTO> a downstream object type that encapsulates internal model implementation and of this
  *                       JSON:API resource, e.g. Hibernate's Entity, JOOQ Record, or third-party service DTO
  */
-public interface Resource<ATTRIBUTES, RESOURCE_DTO>
-        extends ResourcePluginAware, Comparable<Resource<ATTRIBUTES, RESOURCE_DTO>> {
+public interface Resource<RESOURCE_DTO> extends ResourcePluginAware, Comparable<Resource<RESOURCE_DTO>> {
 
     /**
      * Resolves the resource unique identifier ("id" member) based on the corresponding downstream {@link RESOURCE_DTO}.
@@ -51,14 +46,16 @@ public interface Resource<ATTRIBUTES, RESOURCE_DTO>
     ResourceType resourceType();
 
     /**
-     * Maps a downstream {@link RESOURCE_DTO} object into an API-facing {@link ATTRIBUTES} object ("attributes" member).
+     * Maps a downstream {@link RESOURCE_DTO} object into an API-facing attributes object ("attributes" member). Read more
+     * information in the spec: <a href="https://jsonapi.org/format/#document-resource-object-attributes">JSON:API Attributes Object</a>
      * <p>
      * Refer <a href="https://jsonapi.org/format/#document-resource-object-attributes">JSON:API Attributes Object</a> for more details.
      *
      * @param dataSourceDto the corresponding downstream {@link RESOURCE_DTO} object
-     * @return API-facing {@link ATTRIBUTES} object
+     *
+     * @return API-facing custom attributes object
      */
-    default ATTRIBUTES resolveAttributes(RESOURCE_DTO dataSourceDto) {
+    default Object resolveAttributes(RESOURCE_DTO dataSourceDto) {
         return null;
     }
 

@@ -14,7 +14,7 @@ import java.util.List;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 
 @Component
-public class UserResource implements Resource<UserAttributes, UserDbEntity> {
+public class UserResource implements Resource<UserDbEntity> {
 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {

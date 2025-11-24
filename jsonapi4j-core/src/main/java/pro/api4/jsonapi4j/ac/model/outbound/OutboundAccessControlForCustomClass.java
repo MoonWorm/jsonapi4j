@@ -39,9 +39,9 @@ public class OutboundAccessControlForCustomClass {
         Map<String, OutboundAccessControlForCustomClass> nested
                 = extractNestedAccessControlRequirementsRecursively(clazz);
 
-        if (isResourceObjectClass(clazz)) {
-            // resolve attributes real type at runtime, otherwise treated as Object
-            Class<?> attClazz = ((ResourceObject<?, ?>) object).getAttributes().getClass();
+        if (object instanceof ResourceObject<?, ?> resourceObject) {
+            // resolve attributes real type at runtime against constructed object. Otherwise, always resolved as Class<Object> when use reflection API for Type.
+            Class<?> attClazz = resourceObject.getAttributes().getClass();
             AccessControlModel attClassLevelAccessControl
                     = AccessControlModel.fromClassAnnotation(attClazz);
             Map<String, AccessControlModel> attFieldLevelAccessControl
@@ -59,10 +59,6 @@ public class OutboundAccessControlForCustomClass {
                 .fieldLevel(fieldLevelAccessControl)
                 .nested(Collections.unmodifiableMap(nested))
                 .build();
-    }
-
-    private static boolean isResourceObjectClass(Class<?> clazz) {
-        return ResourceObject.class.isAssignableFrom(clazz);
     }
 
     private static Map<String, OutboundAccessControlForCustomClass> extractNestedAccessControlRequirementsRecursively(Class<?> clazz) {

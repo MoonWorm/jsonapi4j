@@ -15,7 +15,7 @@ public class ResourceOasPlugin implements ResourcePlugin<ResourceOasPlugin> {
     @Builder.Default
     private Class<?> attributes = null;
     @Builder.Default
-    private List<Class<? extends Resource<?, ?>>> includes = Collections.emptyList();
+    private List<Class<? extends Resource<?>>> includes = Collections.emptyList();
 
     @Override
     public Class<ResourceOasPlugin> getPluginClass() {

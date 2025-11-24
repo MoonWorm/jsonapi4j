@@ -18,11 +18,11 @@ public class DomainRegistry {
             Collections.emptySet()
     );
 
-    private final Map<ResourceType, Resource<?, ?>> resources;
+    private final Map<ResourceType, Resource<?>> resources;
     private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships;
 
     public DomainRegistry(
-            Set<Resource<?, ?>> resources,
+            Set<Resource<?>> resources,
             Set<Relationship<?, ?>> relationships
     ) {
         this.resources = Collections.unmodifiableMap(
@@ -65,11 +65,11 @@ public class DomainRegistry {
         );
     }
 
-    public Resource<?, ?> getResource(ResourceType resourceType) {
+    public Resource<?> getResource(ResourceType resourceType) {
         return resources.get(resourceType);
     }
 
-    public Collection<Resource<?, ?>> getResources() {
+    public Collection<Resource<?>> getResources() {
         return Collections.unmodifiableCollection(resources.values());
     }
 

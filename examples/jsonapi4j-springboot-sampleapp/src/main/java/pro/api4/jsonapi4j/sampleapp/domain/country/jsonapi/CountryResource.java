@@ -14,7 +14,7 @@ import java.util.List;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 
 @Component
-public class CountryResource implements Resource<CountryAttributes, DownstreamCountry> {
+public class CountryResource implements Resource<DownstreamCountry> {
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
