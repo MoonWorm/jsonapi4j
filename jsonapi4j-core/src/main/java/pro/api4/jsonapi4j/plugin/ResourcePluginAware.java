@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.plugin;
 
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.domain.plugin.ac.ResourceOutboundAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.plugin.oas.ResourceOasPlugin;
 
 import java.util.Collections;

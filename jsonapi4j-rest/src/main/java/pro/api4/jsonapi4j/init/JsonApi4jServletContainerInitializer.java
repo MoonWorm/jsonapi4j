@@ -8,11 +8,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.oas.OasServlet;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
+import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
@@ -264,7 +265,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         AccessControlEvaluator ace = (AccessControlEvaluator) servletContext.getAttribute(ACCESS_CONTROL_EVALUATOR_ATT_NAME);
         if (ace == null) {
             LOG.warn("AccessControlEvaluator not found in servlet context. Setting a default AccessControlEvaluator.");
-            ace = ResourceProcessorContext.DEFAULT_ACCESS_CONTROL_EVALUATOR;
+            ace = AccessControlEvaluator.createDefault();
         }
         return ace;
     }

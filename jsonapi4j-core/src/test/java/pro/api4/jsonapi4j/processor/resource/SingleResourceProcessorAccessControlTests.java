@@ -1,31 +1,5 @@
 package pro.api4.jsonapi4j.processor.resource;
 
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
-import pro.api4.jsonapi4j.plugin.ac.AuthenticatedPrincipalContextHolder;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierRootAdmin;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierPublic;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierPartner;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierNoAccess;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAccessTierModel;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirements;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlRequirementsForObject;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForResource;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -34,21 +8,48 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.principal.AuthenticatedPrincipalContextHolder;
+import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.ac.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.ac.tier.TierNoAccess;
+import pro.api4.jsonapi4j.ac.tier.TierPartner;
+import pro.api4.jsonapi4j.ac.tier.TierPublic;
+import pro.api4.jsonapi4j.ac.tier.TierRootAdmin;
+import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
+import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.BARS;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.FOO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
+import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.BARS;
+import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.FOO;
 
 @ExtendWith(MockitoExtension.class)
 public class SingleResourceProcessorAccessControlTests {
+
+    private static final AccessControlEvaluator AC_EVALUATOR = AccessControlEvaluator.createDefault();
 
     private static final String ID = "1";
     private static final String FIRST_NAME = "John";
@@ -85,6 +86,7 @@ public class SingleResourceProcessorAccessControlTests {
         // when
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
+                .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
                 .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
@@ -120,30 +122,23 @@ public class SingleResourceProcessorAccessControlTests {
         when(attributesResolver.resolveAttributes(DTO)).thenReturn(ATTRIBUTES);
 
         // when
+        var foo = new ToOneRelationshipDoc(
+                new ResourceIdentifierObject("31", FOO.getName()),
+                LinksObject.builder().self("/silver/1/relationships/foo").build()
+        );
+        var bar = new ToManyRelationshipsDoc(
+                List.of(
+                        new ResourceIdentifierObject("51", BARS.getName()),
+                        new ResourceIdentifierObject("55", BARS.getName())),
+                LinksObject.builder().self("/silver/1/relationships/bars").build()
+        );
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
-                .outboundAccessControlSettings(OutboundAccessControlSettingsForResource.builder()
-                        .forResource(AccessControlRequirementsForObject.builder()
-                                .fieldLevel(
-                                        Map.of(
-                                                "relationships",
-                                                AccessControlRequirements.builder()
-                                                        .requiredAccessTier(AccessControlAccessTierModel.builder()
-                                                                .requiredAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER).build()).build()
-                                        )
-                                ).build()).build())
+                .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
                 .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
-                .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
-                        new ResourceIdentifierObject("31", FOO.getName()),
-                        LinksObject.builder().self("/silver/1/relationships/foo").build()
-                ))
-                .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc(
-                        List.of(
-                                new ResourceIdentifierObject("51", BARS.getName()),
-                                new ResourceIdentifierObject("55", BARS.getName())),
-                        LinksObject.builder().self("/silver/1/relationships/bars").build()
-                ))
+                .toOneRelationshipResolver(FOO, (req, dto) -> foo)
+                .toManyRelationshipResolver(BARS, (req, dto) -> bar)
                 .attributesResolver(attributesResolver)
                 .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
@@ -153,8 +148,8 @@ public class SingleResourceProcessorAccessControlTests {
                 .hasFieldOrPropertyWithValue("data.id", "1")
                 .hasFieldOrPropertyWithValue("data.type", "silver")
                 .hasFieldOrPropertyWithValue("data.attributes", null)
-                .hasFieldOrPropertyWithValue("data.relationships.foo", null)
-                .hasFieldOrPropertyWithValue("data.relationships.bars", null);
+                .hasFieldOrPropertyWithValue("data.relationships.foo", foo)
+                .hasFieldOrPropertyWithValue("data.relationships.bars", bar);
         verify(ds, times(1)).get(REQUEST_ALL_INCLUDES);
         verify(attributesResolver, times(1)).resolveAttributes(DTO);
     }
@@ -173,6 +168,7 @@ public class SingleResourceProcessorAccessControlTests {
         // when
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
+                .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
                 .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(

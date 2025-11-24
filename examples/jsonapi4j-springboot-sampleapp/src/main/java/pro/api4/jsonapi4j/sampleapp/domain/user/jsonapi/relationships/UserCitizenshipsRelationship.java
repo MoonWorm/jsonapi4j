@@ -1,5 +1,10 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user.jsonapi.relationships;
 
+import pro.api4.jsonapi4j.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.ac.annotation.Authenticated;
+import pro.api4.jsonapi4j.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
@@ -16,6 +21,11 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.C
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
 
+@AccessControl(
+        authenticated = Authenticated.AUTHENTICATED,
+        scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
+        ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
+)
 @Component
 public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
 
@@ -44,19 +54,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
         return List.of(
                 RelationshipOasPlugin.builder()
                         .relationshipTypes(Set.of(COUNTRIES))
-                        .build()/*,
-                RelationshipAccessControlExtension.builder()
-                        .relationshipAccessControl(
-                                AccessControlInfoModel.builder()
-                                        .accessControlOwnership(AccessControlOwnershipModel.builder()
-                                                .ownerIdExtractor(DefaultOwnerIdExtractor.class)
-                                                .build())
-                                        .accessControlAccessTier(AccessControlAccessTierModel.builder()
-                                                .accessTier(FullAccess.FULL_ACCESS)
-                                                .build())
-                                        .build()
-                        )
-                        .build()*/
+                        .build()
         );
     }
 

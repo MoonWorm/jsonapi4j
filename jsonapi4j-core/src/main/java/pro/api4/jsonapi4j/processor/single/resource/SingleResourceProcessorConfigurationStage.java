@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForResource;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
 import java.util.concurrent.Executor;
@@ -20,7 +20,7 @@ public class SingleResourceProcessorConfigurationStage<REQUEST> {
 
     SingleResourceProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = ResourceProcessorContext.DEFAULT;
+        this.processorContext = new ResourceProcessorContext();
     }
 
     /**
@@ -47,14 +47,14 @@ public class SingleResourceProcessorConfigurationStage<REQUEST> {
     }
 
     public SingleResourceProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlSettingsForResource outboundAccessControlSettings
+            OutboundAccessControlForJsonApiResource outboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
         return this;
     }
 
     public SingleResourceProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            InboundAccessControlSettings inboundAccessControlSettings
+            AccessControlModel inboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
         return this;

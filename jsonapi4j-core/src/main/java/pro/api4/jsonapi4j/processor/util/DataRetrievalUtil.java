@@ -16,7 +16,7 @@ public final class DataRetrievalUtil {
 
     }
 
-    public static <RESULT> RESULT retrieveDataLenient(Supplier<RESULT> supplier) {
+    public static <RESULT> RESULT retrieveDataNullable(Supplier<RESULT> supplier) {
         RESULT result;
         try {
             result = supplier.get();
@@ -31,7 +31,7 @@ public final class DataRetrievalUtil {
     }
 
     public static <RESULT> RESULT retrieveDataStrict(Supplier<RESULT> supplier) {
-        RESULT result = retrieveDataLenient(supplier);
+        RESULT result = retrieveDataNullable(supplier);
         if (result == null) {
             throw new DataRetrievalException("Data provider returned null");
         }

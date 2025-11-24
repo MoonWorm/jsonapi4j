@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForRelationship;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
 public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
@@ -15,7 +15,7 @@ public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
 
     ToManyRelationshipsProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = RelationshipProcessorContext.DEFAULT;
+        this.processorContext = new RelationshipProcessorContext();
     }
 
     public ToManyRelationshipsProcessorConfigurationStage<REQUEST> accessControlEvaluator(
@@ -26,14 +26,14 @@ public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
     }
 
     public ToManyRelationshipsProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlSettingsForRelationship outboundAccessControlSettings
+            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControl
     ) {
-        this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
+        this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControl);
         return this;
     }
 
     public ToManyRelationshipsProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            InboundAccessControlSettings inboundAccessControlSettings
+            AccessControlModel inboundAccessControlSettings
     ) {
         this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
         return this;

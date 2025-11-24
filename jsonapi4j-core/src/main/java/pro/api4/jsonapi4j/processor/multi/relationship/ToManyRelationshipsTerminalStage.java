@@ -1,21 +1,25 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlRequerementsEvaluator;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluatorForRelationship;
-import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
+import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsRetrievalStage;
+import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
 @Slf4j
 public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
@@ -43,25 +47,15 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // validation
         Validate.notNull(docSupplier);
 
-        //
-        // Inbound Access Control checks + retrieve cursorPageableResponse
-        //
-        InboundAccessControlRequerementsEvaluator inboundAcEvaluator = new InboundAccessControlRequerementsEvaluator(
-                processorContext.getAccessControlEvaluator(),
-                processorContext.getInboundAccessControlSettings()
-        );
-        // apply settings from annotations if any
-        if (request != null) {
-            inboundAcEvaluator.calculateEffectiveAccessControlSettings(
-                    request.getClass()
-            );
-        }
-        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = inboundAcEvaluator.retrieveDataAndEvaluateInboundAcReq(
-                request,
-                () -> DataRetrievalUtil.retrieveDataLenient(() -> dataSupplier.get(request))
-        );
+        AccessControlEvaluator accessControlEvaluator
+                = processorContext.getAccessControlEvaluator();
 
-        // return if downstream response is null or inbound access is not allowed
+        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = new MultipleDataItemsRetrievalStage(
+                accessControlEvaluator,
+                processorContext.getInboundAccessControlSettings()
+        ).retrieveData(request, dataSupplier);
+
+        // return if downstream response is null or inbound access is not allowed or the response is null
         if (cursorPageableResponse == null) {
             // top-level links
             LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, null, null);
@@ -83,11 +77,6 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         //
         // Outbound Access Control checks + doc composing
         //
-        OutboundAccessControlRequirementsEvaluatorForRelationship outboundAcEvaluator = new OutboundAccessControlRequirementsEvaluatorForRelationship(
-                processorContext.getAccessControlEvaluator(),
-                processorContext.getOutboundAccessControlSettings()
-        );
-
         List<ResourceIdentifierObject> data = cursorPageableResponse
                 .getItems()
                 .stream()
@@ -103,7 +92,17 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                             resourceIdentifierMeta
                     );
                 })
-                .map(outboundAcEvaluator::anonymizeResourceIdentifierIfNeeded)
+                .map(resourceIdentifierObject ->
+                        anonymizeObjectIfNeeded(
+                                accessControlEvaluator,
+                                resourceIdentifierObject,
+                                resourceIdentifierObject,
+                                Optional.ofNullable(processorContext.getOutboundAccessControlSettings())
+                                        .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
+                                        .orElse(null)
+                        )
+                )
+                .map(AnonymizationResult::targetObject)
                 .filter(Objects::nonNull)
                 .toList();
 

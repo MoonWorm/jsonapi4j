@@ -1,16 +1,21 @@
 package pro.api4.jsonapi4j.processor.single.relationship;
 
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlRequerementsEvaluator;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlRequirementsEvaluatorForRelationship;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemsRetrievalStage;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
+
+import java.util.Optional;
+
+import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
 @Slf4j
 public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
@@ -38,25 +43,13 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // validation
         Validate.notNull(docSupplier);
 
-        //
-        // Inbound Access Control checks + retrieve data source dto
-        //
-        InboundAccessControlRequerementsEvaluator inboundAcEvaluator = new InboundAccessControlRequerementsEvaluator(
-                processorContext.getAccessControlEvaluator(),
+        AccessControlEvaluator accessControlEvaluator
+                = processorContext.getAccessControlEvaluator();
+
+        DATA_SOURCE_DTO dataSourceDto = new SingleDataItemsRetrievalStage(
+                accessControlEvaluator,
                 processorContext.getInboundAccessControlSettings()
-        );
-
-        // apply settings from annotations if any
-        if (request != null) {
-            inboundAcEvaluator.calculateEffectiveAccessControlSettings(
-                    request.getClass()
-            );
-        }
-
-        DATA_SOURCE_DTO dataSourceDto = inboundAcEvaluator.retrieveDataAndEvaluateInboundAcReq(
-                request,
-                () -> DataRetrievalUtil.retrieveDataLenient(() -> dataSupplier.get(request))
-        );
+        ).retrieveData(request, dataSupplier);
 
         // top-level links
         LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, dataSourceDto);
@@ -73,21 +66,23 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // resource meta
         Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(request, dataSourceDto);
         // compose data
-        ResourceIdentifierObject data = new ResourceIdentifierObject(
+        ResourceIdentifierObject resourceIdentifierObject = new ResourceIdentifierObject(
                 idAndType.getId(),
                 idAndType.getType().getType(),
                 resourceMeta
         );
 
-        //
-        // Outbound Access Control checks
-        //
-        OutboundAccessControlRequirementsEvaluatorForRelationship outboundAcEvaluator = new OutboundAccessControlRequirementsEvaluatorForRelationship(
-                processorContext.getAccessControlEvaluator(),
-                processorContext.getOutboundAccessControlSettings()
+        AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
+                accessControlEvaluator,
+                resourceIdentifierObject,
+                resourceIdentifierObject,
+                Optional.ofNullable(processorContext.getOutboundAccessControlSettings())
+                        .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
+                        .orElse(null)
         );
+
         // anonymize resource identifier if needed
-        data = outboundAcEvaluator.anonymizeResourceIdentifierIfNeeded(data);
+        ResourceIdentifierObject data = anonymizationResult.targetObject();
 
         // compose response
         return docSupplier.get(data, docLinks, docMeta);

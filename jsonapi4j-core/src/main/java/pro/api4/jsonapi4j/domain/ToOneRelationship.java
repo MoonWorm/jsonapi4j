@@ -80,6 +80,7 @@ public interface ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      *                            <a href="https://jsonapi.org/format/#document-resource-object-linkage">Resource Linkage</a>
      * @return any custom Java object that represents JSON:API meta object
      */
+    @Override
     default Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest,
                                                  RELATIONSHIP_DTO relationshipDto) {
         return null;

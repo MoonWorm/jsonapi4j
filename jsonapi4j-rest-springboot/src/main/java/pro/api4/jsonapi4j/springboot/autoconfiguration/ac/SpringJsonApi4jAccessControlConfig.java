@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration.ac;
 
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTierRegistry;
-import pro.api4.jsonapi4j.plugin.ac.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.tier.AccessTierRegistry;
+import pro.api4.jsonapi4j.ac.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.filter.ac.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.servlet.filter.ac.JsonApi4jAccessControlFilter;
 import pro.api4.jsonapi4j.servlet.filter.ac.PrincipalResolver;

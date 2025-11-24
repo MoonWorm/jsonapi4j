@@ -1,13 +1,11 @@
 package pro.api4.jsonapi4j.processor;
 
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForResource;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
 import lombok.Getter;
 import lombok.With;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 
 import java.util.concurrent.Executor;
 
@@ -15,33 +13,41 @@ import java.util.concurrent.Executor;
 @With
 public class ResourceProcessorContext {
 
-    public static final Executor DEFAULT_EXECUTOR = Runnable::run;
-    public static final AccessControlEvaluator DEFAULT_ACCESS_CONTROL_EVALUATOR
-            = new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry());
-    public static final ResourceProcessorContext DEFAULT = new ResourceProcessorContext(
-            DEFAULT_EXECUTOR,
-            DEFAULT_ACCESS_CONTROL_EVALUATOR,
-            InboundAccessControlSettings.DEFAULT,
-            OutboundAccessControlSettingsForResource.DEFAULT
-    );
+    public static final Executor DEFAULT_EXECUTOR = Runnable::run; // no parallelization
 
-    private final Executor executor;
-    private final AccessControlEvaluator accessControlEvaluator;
-    private final InboundAccessControlSettings inboundAccessControlSettings;
-    private final OutboundAccessControlSettingsForResource outboundAccessControlSettings;
+    private Executor executor;
+    private AccessControlEvaluator accessControlEvaluator;
+    private AccessControlModel inboundAccessControlSettings;
+    private OutboundAccessControlForJsonApiResource outboundAccessControlSettings;
 
     public ResourceProcessorContext(Executor executor,
                                     AccessControlEvaluator accessControlEvaluator,
-                                    InboundAccessControlSettings inboundAccessControlSettings,
-                                    OutboundAccessControlSettingsForResource outboundAccessControlSettings) {
-        Validate.notNull(executor);
-        Validate.notNull(accessControlEvaluator);
-        Validate.notNull(inboundAccessControlSettings);
-        Validate.notNull(outboundAccessControlSettings);
-        this.executor = executor;
-        this.accessControlEvaluator = accessControlEvaluator;
+                                    AccessControlModel inboundAccessControlSettings,
+                                    OutboundAccessControlForJsonApiResource outboundAccessControlSettings) {
+
+        this(executor);
         this.inboundAccessControlSettings = inboundAccessControlSettings;
         this.outboundAccessControlSettings = outboundAccessControlSettings;
+        this.accessControlEvaluator = accessControlEvaluator;
+    }
+
+    public ResourceProcessorContext(AccessControlEvaluator accessControlEvaluator,
+                                    AccessControlModel inboundAccessControlSettings,
+                                    OutboundAccessControlForJsonApiResource outboundAccessControlSettings) {
+
+        this(DEFAULT_EXECUTOR);
+        this.inboundAccessControlSettings = inboundAccessControlSettings;
+        this.outboundAccessControlSettings = outboundAccessControlSettings;
+        this.accessControlEvaluator = accessControlEvaluator;
+    }
+
+    public ResourceProcessorContext(Executor executor) {
+        Validate.notNull(executor);
+        this.executor = executor;
+    }
+
+    public ResourceProcessorContext() {
+        this.executor = DEFAULT_EXECUTOR;
     }
 
 }

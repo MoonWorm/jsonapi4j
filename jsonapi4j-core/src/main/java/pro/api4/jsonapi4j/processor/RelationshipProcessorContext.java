@@ -1,35 +1,28 @@
 package pro.api4.jsonapi4j.processor;
 
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.processor.ac.InboundAccessControlSettings;
-import pro.api4.jsonapi4j.processor.ac.OutboundAccessControlSettingsForRelationship;
 import lombok.Getter;
 import lombok.With;
-import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 
 @Getter
 @With
 public class RelationshipProcessorContext {
 
-    public static final RelationshipProcessorContext DEFAULT = new RelationshipProcessorContext(
-            ResourceProcessorContext.DEFAULT_ACCESS_CONTROL_EVALUATOR,
-            InboundAccessControlSettings.DEFAULT,
-            OutboundAccessControlSettingsForRelationship.DEFAULT
-    );
-
-    private final AccessControlEvaluator accessControlEvaluator;
-    private final InboundAccessControlSettings inboundAccessControlSettings;
-    private final OutboundAccessControlSettingsForRelationship outboundAccessControlSettings;
+    private AccessControlEvaluator accessControlEvaluator;
+    private AccessControlModel inboundAccessControlSettings;
+    private OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings;
 
     public RelationshipProcessorContext(AccessControlEvaluator accessControlEvaluator,
-                                        InboundAccessControlSettings inboundAccessControlSettings,
-                                        OutboundAccessControlSettingsForRelationship outboundAccessControlSettings) {
-        Validate.notNull(accessControlEvaluator);
-        Validate.notNull(inboundAccessControlSettings);
-        Validate.notNull(outboundAccessControlSettings);
+                                        AccessControlModel inboundAccessControlSettings,
+                                        OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings) {
         this.accessControlEvaluator = accessControlEvaluator;
         this.inboundAccessControlSettings = inboundAccessControlSettings;
         this.outboundAccessControlSettings = outboundAccessControlSettings;
+    }
+
+    public RelationshipProcessorContext() {
     }
 
 }
