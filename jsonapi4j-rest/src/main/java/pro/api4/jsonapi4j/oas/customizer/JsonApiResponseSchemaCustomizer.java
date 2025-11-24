@@ -75,7 +75,7 @@ public class JsonApiResponseSchemaCustomizer {
                 .forEach(s -> registerSchemaIfNotExists(s, openApi));
     }
 
-    private List<Schema> generateSchemasForResource(Resource<?, ?> resourceConfig) {
+    private List<Schema> generateSchemasForResource(Resource<?> resourceConfig) {
 
         PrimaryAndNestedSchemas attAndNestedSchemas = generateJsonApiAttributesSchema(resourceConfig);
 
@@ -152,7 +152,7 @@ public class JsonApiResponseSchemaCustomizer {
         return schemas;
     }
 
-    private PrimaryAndNestedSchemas generateJsonApiAttributesSchema(Resource<?, ?> resourceConfig) {
+    private PrimaryAndNestedSchemas generateJsonApiAttributesSchema(Resource<?> resourceConfig) {
         PrimaryAndNestedSchemas result;
         if (resourceConfig.getPlugin(ResourceOasPlugin.class) != null) {
             Class<?> attClass = resourceConfig.getPlugin(ResourceOasPlugin.class).getAttributes();
@@ -164,7 +164,7 @@ public class JsonApiResponseSchemaCustomizer {
         return result;
     }
 
-    private Optional<PrimaryAndNestedSchemas> generateJsonApiRelationshipsSchema(Resource<?, ?> resourceConfig, String toManyRelationshipsDocSchemaName, String toOneRelationshipDocSchemaName) {
+    private Optional<PrimaryAndNestedSchemas> generateJsonApiRelationshipsSchema(Resource<?> resourceConfig, String toManyRelationshipsDocSchemaName, String toOneRelationshipDocSchemaName) {
         Schema relationshipsSchema = new Schema<>();
         List<Schema> nestedSchemas = new ArrayList<>();
         PrimaryAndNestedSchemas result = new PrimaryAndNestedSchemas(relationshipsSchema, nestedSchemas);
@@ -282,7 +282,7 @@ public class JsonApiResponseSchemaCustomizer {
         return new PrimaryAndNestedSchemas(customToOneRelationshipDocSchema, nested);
     }
 
-    private PrimaryAndNestedSchemas generateResourceSchema(Resource<?, ?> resourceConfig,
+    private PrimaryAndNestedSchemas generateResourceSchema(Resource<?> resourceConfig,
                                                                                Schema<?> attributesSchema,
                                                                                Optional<Schema<?>> relationshipsSchema) {
         PrimaryAndNestedSchemas resourceSchema = generateAllSchemasFromType(ResourceObject.class);
@@ -295,7 +295,7 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateSingleResourceDocSchema(
-            Resource<?, ?> resourceConfig, Schema<?> resourceSchema
+            Resource<?> resourceConfig, Schema<?> resourceSchema
     ) {
         PrimaryAndNestedSchemas singleResourceDocSchema = generateAllSchemasFromType(SingleResourceDoc.class);
         singleResourceDocSchema.getPrimarySchema().getProperties().put("data", new Schema<>().$ref(resourceSchema.getName()));
@@ -305,7 +305,7 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateMultipleResourcesDocSchema(
-            Resource<?, ?> resourceConfig, Schema<?> resourceSchema
+            Resource<?> resourceConfig, Schema<?> resourceSchema
     ) {
         PrimaryAndNestedSchemas multipleResourceSchema = generateAllSchemasFromType(MultipleResourcesDoc.class);
         multipleResourceSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceSchema.getName())));
@@ -315,7 +315,7 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateToManyRelationshipDocSchema(
-            Resource<?, ?> resourceConfig, String resourceIdentifierSchemaName
+            Resource<?> resourceConfig, String resourceIdentifierSchemaName
     ) {
         PrimaryAndNestedSchemas toManyRelationshipsDocSchema = generateAllSchemasFromType(ToManyRelationshipsDoc.class);
         toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceIdentifierSchemaName)));
@@ -325,7 +325,7 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateToOneRelationshipDocSchema(
-            Resource<?, ?> resourceConfig,
+            Resource<?> resourceConfig,
             String resourceIdentifierSchemaName
     ) {
         PrimaryAndNestedSchemas toOneRelationshipSchema = generateAllSchemasFromType(ToOneRelationshipDoc.class);

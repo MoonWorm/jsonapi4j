@@ -265,7 +265,7 @@ public class JsonApi4j {
     }
 
     private <RESOURCE_DTO> ResourceTypeAndIdResolver<RESOURCE_DTO> getResourceTypeAndIdResolver(
-            Resource<?, RESOURCE_DTO> resourceConfig) {
+            Resource<RESOURCE_DTO> resourceConfig) {
         return dto -> new IdAndType(
                 resourceConfig.resolveResourceId(dto),
                 resourceConfig.resourceType()
@@ -343,14 +343,14 @@ public class JsonApi4j {
             );
         }
 
-        private <ATTRIBUTES, RESOURCE_DTO> SingleResourceDoc<?> processSingleResource(
+        private <RESOURCE_DTO> SingleResourceDoc<?> processSingleResource(
                 JsonApiRequest request,
                 SingleDataItemSupplier<JsonApiRequest, RESOURCE_DTO> dataSupplier,
                 AccessControlModel inboundAccessControlSettings
         ) {
             @SuppressWarnings("unchecked")
-            Resource<ATTRIBUTES, RESOURCE_DTO> resourceConfig
-                    = (Resource<ATTRIBUTES, RESOURCE_DTO>) domainRegistry.getResource(resourceType);
+            Resource<RESOURCE_DTO> resourceConfig
+                    = (Resource<RESOURCE_DTO>) domainRegistry.getResource(resourceType);
 
             return new SingleResourceProcessor()
                     .forRequest(request)
@@ -442,14 +442,14 @@ public class JsonApi4j {
             };
         }
 
-        private <ATTRIBUTES, DATA_SOURCE_DTO> MultipleResourcesDoc<?> processMultipleResources(
+        private <DATA_SOURCE_DTO> MultipleResourcesDoc<?> processMultipleResources(
                 JsonApiRequest request,
                 MultipleDataItemsSupplier<JsonApiRequest, DATA_SOURCE_DTO> dataSupplier,
                 AccessControlModel inboundAccessControlSettings
         ) {
             @SuppressWarnings("unchecked")
-            Resource<ATTRIBUTES, DATA_SOURCE_DTO> resourceConfig
-                    = (Resource<ATTRIBUTES, DATA_SOURCE_DTO>) domainRegistry.getResource(resourceType);
+            Resource<DATA_SOURCE_DTO> resourceConfig
+                    = (Resource<DATA_SOURCE_DTO>) domainRegistry.getResource(resourceType);
             return new MultipleResourcesProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
@@ -471,10 +471,9 @@ public class JsonApi4j {
                     .toMultipleResourcesDoc();
         }
 
-        private <ATTRIBUTES> OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
-                Resource<ATTRIBUTES, ?> resourceConfig
+        private OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
+                Resource<?> resourceConfig
         ) {
-
             AccessControlModel resourceClassLevel = AccessControlModel.fromClassAnnotation(resourceConfig.getClass());
 
             AccessControlModel resourceAttributesFieldLevel = AccessControlModel.fromAnnotation(

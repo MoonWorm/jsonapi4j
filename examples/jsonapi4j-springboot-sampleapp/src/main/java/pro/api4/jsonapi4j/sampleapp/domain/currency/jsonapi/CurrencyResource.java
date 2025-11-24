@@ -13,7 +13,7 @@ import java.util.List;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.CURRENCIES;
 
 @Component
-public class CurrencyResource implements Resource<CurrencyAttributes, DownstreamCurrencyWithCode> {
+public class CurrencyResource implements Resource<DownstreamCurrencyWithCode> {
 
     @Override
     public String resolveResourceId(DownstreamCurrencyWithCode downstreamCurrency) {
