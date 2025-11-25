@@ -57,6 +57,15 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         }
     }
 
+    private static void anonymizeField(Object targetObject,
+                                       String fieldName) {
+        try {
+            ReflectionUtils.setFieldValue(targetObject, fieldName, null);
+        } catch (Exception ex) {
+            throw new AccessControlMisconfigurationException("Anonymization failed. Can't set a value for a field ." + fieldName, ex);
+        }
+    }
+
     public <REQUEST, DATA> DATA retrieveDataIfAllowed(REQUEST request,
                                                       Supplier<DATA> dataSupplier,
                                                       AccessControlModel inboundAccessControlRequirements) {
@@ -154,23 +163,17 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         if (fieldLevelAcSettings != null) {
             for (Map.Entry<String, AccessControlModel> e : fieldLevelAcSettings.entrySet()) {
                 String fieldName = e.getKey();
-                AccessControlModel fieldAcInfo = e.getValue();
-                if (!evaluateOutboundRequirements(resourceObject, fieldAcInfo)) {
-                    anonymizeField(targetObject, fieldName);
-                    anonymizedFields.add(fieldName);
+                Object fieldValue = ReflectionUtils.getFieldValue(targetObject, fieldName);
+                if (fieldValue != null) {
+                    AccessControlModel fieldAcInfo = e.getValue();
+                    if (!evaluateOutboundRequirements(resourceObject, fieldAcInfo)) {
+                        anonymizeField(targetObject, fieldName);
+                        anonymizedFields.add(fieldName);
+                    }
                 }
             }
         }
         return Collections.unmodifiableSet(anonymizedFields);
-    }
-
-    private static void anonymizeField(Object targetObject,
-                                       String fieldName) {
-        try {
-            ReflectionUtils.setFieldValue(targetObject, fieldName, null);
-        } catch (Exception ex) {
-            throw new AccessControlMisconfigurationException("Anonymization failed. Can't set a value for a field ." + fieldName, ex);
-        }
     }
 
 }
