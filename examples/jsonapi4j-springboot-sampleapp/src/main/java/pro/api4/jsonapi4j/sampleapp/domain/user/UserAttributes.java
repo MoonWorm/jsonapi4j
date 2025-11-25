@@ -18,7 +18,7 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
-            scopes = @AccessControlScopes(requiredScopes = "user.read"),
+            scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     @Schema(description = "User's credit card number", example = "123456789", requiredMode = REQUIRED)

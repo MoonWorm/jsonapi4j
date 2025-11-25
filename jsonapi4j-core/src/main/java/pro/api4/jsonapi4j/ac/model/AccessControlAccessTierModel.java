@@ -18,7 +18,7 @@ public class AccessControlAccessTierModel {
     private String requiredAccessTier;
 
     static AccessControlAccessTierModel fromAnnotation(AccessControlAccessTier annotation) {
-        if (annotation == null) {
+        if (annotation == null || AccessControlAccessTier.NOT_SET.equals(annotation.value())) {
             return null;
         }
         return AccessControlAccessTierModel.builder().requiredAccessTier(annotation.value()).build();

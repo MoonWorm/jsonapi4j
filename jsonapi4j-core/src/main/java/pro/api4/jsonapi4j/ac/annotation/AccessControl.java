@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AccessControl {
 
-    Authenticated authenticated() default Authenticated.ANONYMOUS;
+    Authenticated authenticated() default Authenticated.NOT_SET;
 
     AccessControlScopes scopes() default @AccessControlScopes();
 

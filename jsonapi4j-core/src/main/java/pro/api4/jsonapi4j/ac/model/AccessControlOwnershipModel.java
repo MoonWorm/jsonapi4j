@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.ac.ownership.NoOpOwnerIdExtractor;
 import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
 
 @EqualsAndHashCode
@@ -21,13 +22,22 @@ public class AccessControlOwnershipModel {
     private Class<? extends OwnerIdExtractor<?>> ownerIdExtractor;
 
     static AccessControlOwnershipModel fromAnnotation(AccessControlOwnership annotation) {
-        if (annotation == null) {
+        if (annotation == null
+                || (!isOwnerIdFieldPathDefined(annotation.ownerIdFieldPath()) && !isOwnerIdExtractorDefined(annotation.ownerIdExtractor()))) {
             return null;
         }
         return AccessControlOwnershipModel.builder()
-                .ownerIdFieldPath(StringUtils.isBlank(annotation.ownerIdFieldPath()) ? null : annotation.ownerIdFieldPath())
-                .ownerIdExtractor(annotation.ownerIdExtractor())
+                .ownerIdFieldPath(isOwnerIdFieldPathDefined(annotation.ownerIdFieldPath()) ? annotation.ownerIdFieldPath() : null)
+                .ownerIdExtractor(isOwnerIdExtractorDefined(annotation.ownerIdExtractor()) ? annotation.ownerIdExtractor() : null)
                 .build();
+    }
+
+    private static boolean isOwnerIdFieldPathDefined(String ownerIdFieldPath) {
+        return StringUtils.isNotBlank(ownerIdFieldPath) && !AccessControlOwnership.NOT_SET.equals(ownerIdFieldPath);
+    }
+
+    private static boolean isOwnerIdExtractorDefined(Class<? extends OwnerIdExtractor<?>> ownerIdExtractor) {
+        return !NoOpOwnerIdExtractor.class.equals(ownerIdExtractor);
     }
 
 }
