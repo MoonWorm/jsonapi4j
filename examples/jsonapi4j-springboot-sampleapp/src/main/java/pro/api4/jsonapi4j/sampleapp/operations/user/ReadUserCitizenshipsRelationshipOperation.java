@@ -36,7 +36,7 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.oas.UserOasSettingsFactor
 
 @AccessControl(
         authenticated = Authenticated.AUTHENTICATED,
-        scopes = @AccessControlScopes(requiredScopes = {"user.citizenships.read"}),
+        scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
         tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )

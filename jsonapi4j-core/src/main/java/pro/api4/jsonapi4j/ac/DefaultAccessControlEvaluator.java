@@ -104,7 +104,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         if (ac == null) {
             return true;
         }
-        if (!ac.getOwnerIdFieldPath().trim().isEmpty()) {
+        if (ac.getOwnerIdFieldPath() != null && !ac.getOwnerIdFieldPath().trim().isEmpty()) {
             String ownerId = extractOwnerIdFromResourceObject(resourceObject, ac.getOwnerIdFieldPath());
             return evaluateOwnership(ownerId);
         }

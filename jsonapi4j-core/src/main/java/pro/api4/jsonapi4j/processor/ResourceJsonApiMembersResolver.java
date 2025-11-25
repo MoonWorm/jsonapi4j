@@ -70,7 +70,7 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
     }
 
     public ATTRIBUTES resolveAttributes(DATA_SOURCE_DTO dataSourceDto) {
-        return MappingUtil.mapSingleStrict(
+        return MappingUtil.mapSingleLenient(
                 dataSourceDto,
                 jsonApiContext.getAttributesResolver()::resolveAttributes
         );
