@@ -12,9 +12,10 @@ import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.ac.ReflectionUtils;
 import pro.api4.jsonapi4j.ac.annotation.AccessControl;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.Collections.unmodifiableMap;
 
 @EqualsAndHashCode
 @ToString
@@ -32,11 +33,18 @@ public class AccessControlModel {
         if (annotation == null) {
             return null;
         }
+        AccessControlAuthenticatedModel authenticatedModel = AccessControlAuthenticatedModel.fromValue(annotation.authenticated());
+        AccessControlAccessTierModel accessTierModel = AccessControlAccessTierModel.fromAnnotation(annotation.tier());
+        AccessControlScopesModel scopesModel = AccessControlScopesModel.fromAnnotation(annotation.scopes());
+        AccessControlOwnershipModel ownershipModel = AccessControlOwnershipModel.fromAnnotation(annotation.ownership());
+        if (authenticatedModel == null && accessTierModel == null && scopesModel == null && ownershipModel == null) {
+            return null;
+        }
         return builder()
-                .authenticated(AccessControlAuthenticatedModel.fromValue(annotation.authenticated()))
-                .requiredAccessTier(AccessControlAccessTierModel.fromAnnotation(annotation.tier()))
-                .requiredScopes(AccessControlScopesModel.fromAnnotation(annotation.scopes()))
-                .requiredOwnership(AccessControlOwnershipModel.fromAnnotation(annotation.ownership()))
+                .authenticated(authenticatedModel)
+                .requiredAccessTier(accessTierModel)
+                .requiredScopes(scopesModel)
+                .requiredOwnership(ownershipModel)
                 .build();
     }
 
@@ -44,20 +52,22 @@ public class AccessControlModel {
         Validate.notNull(clazz, "type must not be null");
         Map<String, AccessControl> accessControlAnnotationPerField
                 = ReflectionUtils.fetchAnnotationForFields(clazz, AccessControl.class);
-        return accessControlAnnotationPerField.entrySet().stream()
-                .collect(
-                        toMap(
-                                Map.Entry::getKey,
-                                e -> {
-                                    AccessControl accessControl = e.getValue();
-                                    return AccessControlModel.builder()
-                                            .authenticated(AccessControlAuthenticatedModel.fromValue(accessControl.authenticated()))
-                                            .requiredAccessTier(AccessControlAccessTierModel.fromAnnotation(accessControl.tier()))
-                                            .requiredScopes(AccessControlScopesModel.fromAnnotation(accessControl.scopes()))
-                                            .requiredOwnership(AccessControlOwnershipModel.fromAnnotation(accessControl.ownership()))
-                                            .build();
-                                }
-                        ));
+        Map<String, AccessControlModel> accessControlModelPerField = new HashMap<>();
+        accessControlAnnotationPerField.forEach((fieldName, accessControl) -> {
+            AccessControlAuthenticatedModel authenticatedModel = AccessControlAuthenticatedModel.fromValue(accessControl.authenticated());
+            AccessControlAccessTierModel accessTierModel = AccessControlAccessTierModel.fromAnnotation(accessControl.tier());
+            AccessControlScopesModel scopesModel = AccessControlScopesModel.fromAnnotation(accessControl.scopes());
+            AccessControlOwnershipModel ownershipModel = AccessControlOwnershipModel.fromAnnotation(accessControl.ownership());
+            if (authenticatedModel != null || accessTierModel != null || scopesModel != null || ownershipModel != null) {
+                accessControlModelPerField.put(fieldName, AccessControlModel.builder()
+                        .authenticated(authenticatedModel)
+                        .requiredAccessTier(AccessControlAccessTierModel.fromAnnotation(accessControl.tier()))
+                        .requiredScopes(AccessControlScopesModel.fromAnnotation(accessControl.scopes()))
+                        .requiredOwnership(AccessControlOwnershipModel.fromAnnotation(accessControl.ownership()))
+                        .build());
+            }
+        });
+        return unmodifiableMap(accessControlModelPerField);
     }
 
     public static AccessControlModel fromClassAnnotation(Class<?> clazz) {

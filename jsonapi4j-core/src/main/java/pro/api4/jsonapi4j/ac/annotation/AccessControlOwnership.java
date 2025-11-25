@@ -12,6 +12,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AccessControlOwnership {
 
+    String NOT_SET = "__NOT_SET__";
+
     /**
      * Used for the outbound access control evaluation. Ignored for inbound access control evaluation.
      * <p>
@@ -35,7 +37,7 @@ public @interface AccessControlOwnership {
      *     <li>meta</li>
      * </ul>
      * </p>
-     * Default behaviour - disabled. In order to enable it - just specify some path.
+     * Default behaviour - disabled ({@link #NOT_SET}). In order to enable it - just specify some path.
      * <p/>
      * Usually it can be set to 'id'. This works for most of the cases except for ones where owner id doesn't
      * match the main resource id.
@@ -46,7 +48,7 @@ public @interface AccessControlOwnership {
      *
      * @return field name that holds owner id String value
      */
-    String ownerIdFieldPath() default "";
+    String ownerIdFieldPath() default NOT_SET;
 
     /**
      * In the most of the cases should be used for inbound access control evaluation where ownership information is
@@ -54,8 +56,9 @@ public @interface AccessControlOwnership {
      * <p>
      * Some operations, e.g. Relationship operations usually don't have information about the owner in the response
      * itself. But usually there might be something in the request.
+     * For example, 'GET /users/2/relationships/citizenships'. We can extract owner id from the path.
      * <p/>
-     * For example, 'GET /users/2/citizenships'. We can extract owner id from the path.
+     * By default, uses {@link NoOpOwnerIdExtractor} that effectively means the framework does nothing in this regards.
      */
     Class<? extends OwnerIdExtractor<?>> ownerIdExtractor() default NoOpOwnerIdExtractor.class;
 

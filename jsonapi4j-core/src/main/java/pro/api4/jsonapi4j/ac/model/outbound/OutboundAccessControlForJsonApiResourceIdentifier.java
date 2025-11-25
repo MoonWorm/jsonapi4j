@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 
@@ -30,7 +29,9 @@ public class OutboundAccessControlForJsonApiResourceIdentifier {
     private final AccessControlModel resourceIdentifierMetaFieldLevel;
 
     public static OutboundAccessControlForJsonApiResourceIdentifier fromClassAnnotationsOf(ResourceIdentifierObject resourceIdentifierObject) {
-        Validate.notNull(resourceIdentifierObject);
+        if (resourceIdentifierObject == null) {
+            return null;
+        }
         Class<?> clazz = resourceIdentifierObject.getClass();
         AccessControlModel classLevelAccessControl
                 = AccessControlModel.fromClassAnnotation(clazz);

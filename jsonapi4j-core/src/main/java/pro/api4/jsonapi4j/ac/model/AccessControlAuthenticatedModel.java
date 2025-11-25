@@ -18,7 +18,7 @@ public class AccessControlAuthenticatedModel {
     private Authenticated authenticated;
 
     static AccessControlAuthenticatedModel fromValue(Authenticated authenticated) {
-        if (authenticated == null) {
+        if (authenticated == null || authenticated == Authenticated.NOT_SET) {
             return null;
         }
         return AccessControlAuthenticatedModel.builder()
