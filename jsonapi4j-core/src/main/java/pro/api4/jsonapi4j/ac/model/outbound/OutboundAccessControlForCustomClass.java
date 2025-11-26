@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import pro.api4.jsonapi4j.ac.ReflectionUtils;
 import pro.api4.jsonapi4j.ac.model.AccessControlModel;
@@ -40,7 +41,7 @@ public class OutboundAccessControlForCustomClass {
         Map<String, OutboundAccessControlForCustomClass> nested
                 = extractNestedRecursively(clazz);
 
-        // resolve attributes real type at runtime against constructed object.
+        // Resolve attributes real type at runtime against constructed object.
         // Otherwise, always resolved as Class<Object> when use reflection API for Type.
         if (object instanceof ResourceObject<?, ?> resourceObject) {
             Class<?> attClazz = resourceObject.getAttributes().getClass();
@@ -50,10 +51,14 @@ public class OutboundAccessControlForCustomClass {
                     = AccessControlModel.fromFieldsAnnotations(attClazz);
             Map<String, OutboundAccessControlForCustomClass> attNested
                     = extractNestedRecursively(attClazz);
-            nested.put(ResourceObject.ATTRIBUTES_FIELD, OutboundAccessControlForCustomClass.builder()
-                    .classLevel(attClassLevelAccessControl)
-                    .fieldLevel(attFieldLevelAccessControl)
-                    .nested(attNested).build());
+            if (attClassLevelAccessControl != null
+                || MapUtils.isNotEmpty(attFieldLevelAccessControl)
+                || MapUtils.isNotEmpty(attNested)) {
+                nested.put(ResourceObject.ATTRIBUTES_FIELD, OutboundAccessControlForCustomClass.builder()
+                        .classLevel(attClassLevelAccessControl)
+                        .fieldLevel(attFieldLevelAccessControl)
+                        .nested(attNested).build());
+            }
         }
 
         return OutboundAccessControlForCustomClass.builder()
@@ -76,14 +81,17 @@ public class OutboundAccessControlForCustomClass {
                         = AccessControlModel.fromFieldsAnnotations(fieldClass);
                 Map<String, OutboundAccessControlForCustomClass> nested
                         = extractNestedRecursively(fieldClass);
-
-                result.put(
-                        fieldName,
-                        OutboundAccessControlForCustomClass.builder()
-                                .classLevel(classLevelAccessControl)
-                                .fieldLevel(fieldLevelAccessControl)
-                                .nested(nested).build()
-                );
+                if (classLevelAccessControl != null
+                        || MapUtils.isNotEmpty(fieldLevelAccessControl)
+                        || MapUtils.isNotEmpty(nested)) {
+                    result.put(
+                            fieldName,
+                            OutboundAccessControlForCustomClass.builder()
+                                    .classLevel(classLevelAccessControl)
+                                    .fieldLevel(fieldLevelAccessControl)
+                                    .nested(nested).build()
+                    );
+                }
             }
         });
 

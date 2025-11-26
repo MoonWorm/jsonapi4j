@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.ac.annotation.AccessControlScopes;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import pro.api4.jsonapi4j.ac.annotation.Authenticated;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
@@ -18,6 +19,7 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
+            authenticated = Authenticated.AUTHENTICATED,
             scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
