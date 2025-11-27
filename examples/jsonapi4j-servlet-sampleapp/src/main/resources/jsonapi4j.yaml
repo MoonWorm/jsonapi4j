@@ -1,0 +1,27 @@
+rootPath: '/jsonapi'
+compoundDocs:
+  enabled: true
+  maxHops: 3
+  mapping:
+    users: 'http://localhost:8080/jsonapi'
+    countries: 'http://localhost:8080/jsonapi'
+    currencies: 'http://localhost:8080/jsonapi'
+oas:
+  info:
+    title: 'JSON:API Users & Countries'
+    version: 1.0.0
+  oauth2:
+    clientCredentials:
+      name: 'Client_Credentials'
+      description: 'Use this grant flow to access non-personalized data.'
+      scopes: { }
+  servers:
+    server-local:
+      name: Localhost
+      url: 'http://localhost:8080'
+    server-staging:
+      name: Staging
+      url: 'https://api.stage.com'
+    server-prod:
+      name: Production
+      url: 'https://api.com'

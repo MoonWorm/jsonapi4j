@@ -145,6 +145,10 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     private String getPath(HttpServletRequest request) {
         String path = request.getPathInfo();
+        log.info("Request path: {}", path);
+        if(path == null) {
+            return "/";
+        }
         return Paths.get(path).normalize().toString();
     }
 
