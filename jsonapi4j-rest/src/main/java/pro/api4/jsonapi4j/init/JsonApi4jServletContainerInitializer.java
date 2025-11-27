@@ -33,6 +33,7 @@ import jakarta.servlet.ServletRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -80,6 +81,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             if (path == null) {
                 path = servletContext.getInitParameter("jsonapi4j.config");
             }
+            LOG.info("Loading configuration from {}", path);
             if (path != null) {
                 return JsonApi4jConfigReader.readConfig(path);
             }
@@ -148,8 +150,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                                             String rootPath,
                                             ObjectMapper objectMapper,
                                             ExecutorService executorService) {
-        CompoundDocsResolverConfig.DomainUrlResolver domainUrlResolver =
-                (CompoundDocsResolverConfig.DomainUrlResolver) servletContext.getAttribute(DOMAIN_URL_RESOLVER_ATT_NAME);
+        CompoundDocsResolverConfig.DomainUrlResolver domainUrlResolver = initDomainUrlResolver(servletContext);
         int compoundDocsMaxHops = getCompoundDocsMaxHops(servletContext);
         ErrorStrategy errorStrategy = getCompoundDocsErrorStrategy(servletContext);
         CompoundDocsResolver compoundDocsResolver = new CompoundDocsResolver(
@@ -246,7 +247,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private DomainRegistry initDomainRegistry(ServletContext servletContext) {
         DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
         if (dr == null) {
-            LOG.warn("JsonApiResourceRegistry not found in servlet context. Setting an empty JsonApiResourceRegistry.");
+            LOG.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
             dr = DomainRegistry.EMPTY;
         }
         return dr;
@@ -292,6 +293,16 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         }
         return om;
+    }
+
+    private CompoundDocsResolverConfig.DomainUrlResolver initDomainUrlResolver(ServletContext servletContext) {
+        var r = (CompoundDocsResolverConfig.DomainUrlResolver) servletContext.getAttribute(DOMAIN_URL_RESOLVER_ATT_NAME);
+        if (r == null) {
+            LOG.info("JsonApi4jDomainUrlResolver not found in servlet context. Setting the default DefaultDomainUrlResolver.");
+            r = new CompoundDocsResolverConfig.DefaultDomainUrlResolver(Map.of());
+        }
+        servletContext.setAttribute(DOMAIN_URL_RESOLVER_ATT_NAME, r);
+        return r;
     }
 
 }

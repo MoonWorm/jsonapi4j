@@ -42,7 +42,12 @@ public class JsonApi4jConfigReader {
     }
 
     public static JsonApi4jProperties readConfig(String path) throws IOException {
-        return getObjectMapper(path).readValue(new File(path), JsonApi4jProperties.class);
+        try (InputStream is = JsonApi4jProperties.class.getResourceAsStream(path)) {
+            if (is == null) {
+                throw new IOException("Resource not found: " + path);
+            }
+            return getObjectMapper(path).readValue(is, JsonApi4jProperties.class);
+        }
     }
 
     public static JsonApi4jProperties readConfigFromClasspath(String configNameYaml, String configNameJson) throws IOException {
