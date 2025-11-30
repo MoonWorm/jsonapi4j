@@ -11,6 +11,8 @@
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+
+        <jsonapi4j.version>0.9.8-SNAPSHOT</jsonapi4j.version>
     </properties>
 
     <dependencies>
@@ -18,7 +20,7 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
             <scope>provided</scope>
-            <version>0.9.5</version>
+            <version>${jsonapi4j.version}</version>
         </dependency>
     </dependencies>
 </project>

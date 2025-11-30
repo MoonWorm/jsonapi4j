@@ -1,11 +1,13 @@
 package pro.api4.jsonapi4j.domain;
 
 
-import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,56 +15,26 @@ import java.util.stream.Collectors;
 
 public class DomainRegistry {
 
-    public static final DomainRegistry EMPTY = new DomainRegistry(
-            Collections.emptySet(),
-            Collections.emptySet()
-    );
-
     private final Map<ResourceType, Resource<?>> resources;
     private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships;
 
-    public DomainRegistry(
-            Set<Resource<?>> resources,
-            Set<Relationship<?, ?>> relationships
+    private DomainRegistry(
+            Map<ResourceType, Resource<?>> resources,
+            Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships
     ) {
-        this.resources = Collections.unmodifiableMap(
-                resources.stream().collect(Collectors.groupingBy(Resource::resourceType))
-                        .entrySet()
-                        .stream()
-                        .collect(Collectors.toMap(
-                                Map.Entry::getKey,
-                                e -> {
-                                    if (e.getValue().size() > 1) {
-                                        throw new DomainMisconfigurationException("Multiple resource declarations found for : " + e.getKey().getType() + " resource type");
-                                    }
-                                    return e.getValue().getFirst();
-                                }
-                        ))
-        );
+        this.resources = resources;
+        this.relationships = relationships;
+    }
 
-        this.relationships = Collections.unmodifiableMap(
-                relationships.stream()
-                        .collect(Collectors.groupingBy(Relationship::parentResourceType))
-                        .entrySet()
-                        .stream()
-                        .collect(
-                                Collectors.toMap(
-                                        Map.Entry::getKey,
-                                        resourceEntry -> resourceEntry.getValue().stream().collect(Collectors.groupingBy(Relationship::relationshipName))
-                                                .entrySet()
-                                                .stream()
-                                                .collect(Collectors.toMap(
-                                                        Map.Entry::getKey,
-                                                        relationshipEntry -> {
-                                                            if (relationshipEntry.getValue().size() > 1) {
-                                                                throw new DomainMisconfigurationException("Multiple relationship declarations found for : " + resourceEntry.getKey().getType() + " resource type, for relationship: " + relationshipEntry.getKey().getName());
-                                                            }
-                                                            return relationshipEntry.getValue().getFirst();
-                                                        }
-                                                ))
-                                )
-                        )
-        );
+    public static DomainRegistryBuilder builder() {
+        return new DomainRegistryBuilder();
+    }
+
+    public static DomainRegistry empty() {
+        return DomainRegistry.builder()
+                .resources(Collections.emptySet())
+                .relationships(Collections.emptySet())
+                .build();
     }
 
     public Resource<?> getResource(ResourceType resourceType) {
@@ -78,14 +50,12 @@ public class DomainRegistry {
     }
 
     public List<ToManyRelationship<?, ?>> getToManyRelationships(ResourceType resourceType) {
-        return Collections.unmodifiableList(
-                MapUtils.emptyIfNull(relationships.get(resourceType))
-                        .values()
-                        .stream()
-                        .filter(rel -> rel instanceof ToManyRelationship<?, ?>)
-                        .map(rel -> (ToManyRelationship<?, ?>) rel)
-                        .toList()
-        );
+        return MapUtils.emptyIfNull(relationships.get(resourceType))
+                .values()
+                .stream()
+                .filter(rel -> rel instanceof ToManyRelationship<?, ?>)
+                .map(rel -> (ToManyRelationship<?, ?>) rel)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public Set<RelationshipName> getToManyRelationshipNames(ResourceType resourceType) {
@@ -96,14 +66,12 @@ public class DomainRegistry {
     }
 
     public List<ToOneRelationship<?, ?>> getToOneRelationships(ResourceType resourceType) {
-        return Collections.unmodifiableList(
-                MapUtils.emptyIfNull(relationships.get(resourceType))
-                        .values()
-                        .stream()
-                        .filter(rel -> rel instanceof ToOneRelationship<?, ?>)
-                        .map(rel -> (ToOneRelationship<?, ?>) rel)
-                        .toList()
-        );
+        return MapUtils.emptyIfNull(relationships.get(resourceType))
+                .values()
+                .stream()
+                .filter(rel -> rel instanceof ToOneRelationship<?, ?>)
+                .map(rel -> (ToOneRelationship<?, ?>) rel)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     public Set<RelationshipName> getToOneRelationshipNames(ResourceType resourceType) {
@@ -165,6 +133,66 @@ public class DomainRegistry {
                 .stream()
                 .map(Relationship::relationshipName)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    @Slf4j
+    public static class DomainRegistryBuilder {
+
+        private final Map<ResourceType, Resource<?>> resources;
+        private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships;
+
+        private DomainRegistryBuilder() {
+            this.resources = new HashMap<>();
+            this.relationships = new HashMap<>();
+        }
+
+        public DomainRegistryBuilder resources(Set<Resource<?>> resources) {
+            for (Resource<?> resource : resources) {
+                this.resource(resource);
+            }
+            return this;
+        }
+
+        public DomainRegistryBuilder resource(Resource<?> resource) {
+            if (this.resources.containsKey(resource.resourceType())) {
+                throw new DomainMisconfigurationException("Multiple resource declarations found for : "
+                        + resource.resourceType() + " resource type");
+            }
+            this.resources.put(resource.resourceType(), resource);
+            log.info("{} resource of '{}' type has been registered.", resource.getClass().getSimpleName(), resource.resourceType().getType());
+            return this;
+        }
+
+        public DomainRegistryBuilder relationships(Set<Relationship<?, ?>> relationships) {
+            for (Relationship<?, ?> relationship : relationships) {
+                this.relationship(relationship);
+            }
+            return this;
+        }
+
+        public DomainRegistryBuilder relationship(Relationship<?, ?> relationship) {
+            if (this.relationships.containsKey(relationship.parentResourceType())
+                    && this.relationships.get(relationship.parentResourceType()).containsKey(relationship.relationshipName())) {
+                throw new DomainMisconfigurationException("Multiple relationship declarations found for : "
+                        + relationship.parentResourceType() + " resource type, for relationship: " + relationship.relationshipName());
+            }
+            this.relationships.computeIfAbsent(
+                    relationship.parentResourceType(),
+                    k -> new HashMap<>()
+            ).put(
+                    relationship.relationshipName(),
+                    relationship
+            );
+            log.info("{} relationship with '{}' name has been registered for '{}' type.", relationship.getClass().getSimpleName(), relationship.relationshipName(), relationship.parentResourceType().getType());
+            return this;
+        }
+
+        public DomainRegistry build() {
+            return new DomainRegistry(
+                    Collections.unmodifiableMap(this.resources),
+                    Collections.unmodifiableMap(this.relationships)
+            );
+        }
     }
 
 }

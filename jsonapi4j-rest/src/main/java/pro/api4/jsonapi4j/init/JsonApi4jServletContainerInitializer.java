@@ -248,7 +248,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
         if (dr == null) {
             LOG.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
-            dr = DomainRegistry.EMPTY;
+            dr = DomainRegistry.empty();
         }
         return dr;
     }
@@ -257,7 +257,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
         if (or == null) {
             LOG.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
-            or = OperationsRegistry.EMPTY;
+            or = OperationsRegistry.empty();
         }
         return or;
     }
@@ -265,7 +265,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private AccessControlEvaluator initAccessControlEvaluator(ServletContext servletContext) {
         AccessControlEvaluator ace = (AccessControlEvaluator) servletContext.getAttribute(ACCESS_CONTROL_EVALUATOR_ATT_NAME);
         if (ace == null) {
-            LOG.warn("AccessControlEvaluator not found in servlet context. Setting a default AccessControlEvaluator.");
+            LOG.info("AccessControlEvaluator not found in servlet context. Setting a default AccessControlEvaluator.");
             ace = AccessControlEvaluator.createDefault();
         }
         return ace;
@@ -274,7 +274,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private ErrorHandlerFactoriesRegistry initErrorHandlerFactory(ServletContext servletContext) {
         ErrorHandlerFactoriesRegistry aehf = (ErrorHandlerFactoriesRegistry) servletContext.getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
         if (aehf == null) {
-            LOG.warn("AggregatableErrorHandlerFactory not found in servlet context. Setting a default ErrorHandlerFactory.");
+            LOG.info("AggregatableErrorHandlerFactory not found in servlet context. Setting a default ErrorHandlerFactory.");
             aehf = new JsonApi4jErrorHandlerFactoriesRegistry();
             aehf.registerAll(new DefaultErrorHandlerFactory());
             aehf.registerAll(new Jsr380ErrorHandlers());
@@ -285,7 +285,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private ObjectMapper initObjectMapper(ServletContext servletContext) {
         ObjectMapper om = (ObjectMapper) servletContext.getAttribute(OBJECT_MAPPER_ATT_NAME);
         if (om == null) {
-            LOG.warn("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
+            LOG.info("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
             om = new ObjectMapper();
             om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             om.registerModule(new JavaTimeModule());
