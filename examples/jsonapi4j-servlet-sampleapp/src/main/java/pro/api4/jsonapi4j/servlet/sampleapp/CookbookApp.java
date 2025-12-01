@@ -42,22 +42,14 @@ public class CookbookApp {
                 )
             )
         );
-        var domainRegistry = new DomainRegistry(Set.of(new IngredientResource(), new DishRecipeResource()), Set.of());
+        var domainRegistry = DomainRegistry.builder()
+                .resource(new IngredientResource())
+                .resource(new DishRecipeResource())
+                .build();
 
         var recipeOperations = new RecipeOperations(recipes);
 
-
-        var operationsRegistry = new OperationsRegistry(
-            Set.of(recipeOperations),
-            Set.of(recipeOperations),
-            Set.of(),
-            Set.of(),
-            Set.of(),
-            Set.of(),
-            Set.of(),
-            Set.of(),
-            Set.of()
-        );
+        var operationsRegistry = OperationsRegistry.builder().operation(recipeOperations).build();
         context.setAttribute(JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
         context.setAttribute(JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
 

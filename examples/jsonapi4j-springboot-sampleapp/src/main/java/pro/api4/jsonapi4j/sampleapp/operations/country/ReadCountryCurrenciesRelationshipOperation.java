@@ -64,7 +64,7 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return COUNTRIES;
     }
 

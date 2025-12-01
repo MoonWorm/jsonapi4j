@@ -23,7 +23,7 @@ public class UserRelativesRelationship implements ToManyRelationship<UserDbEntit
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

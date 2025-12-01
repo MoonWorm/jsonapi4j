@@ -28,7 +28,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * <p>
      * For example, for "userCitizenships" relationships this is supposed to return "users".
      */
-    ResourceType parentResourceType();
+    ResourceType resourceType();
 
     /**
      * Resolves relationship's resource linkage "type" of the "data" member.
@@ -105,7 +105,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
 
     @Override
     default int compareTo(Relationship o) {
-        int result = this.parentResourceType().getType().compareTo(o.parentResourceType().getType());
+        int result = this.resourceType().getType().compareTo(o.resourceType().getType());
         if (result != 0) return result;
         return this.relationshipName().getName().compareTo(o.relationshipName().getName());
     }

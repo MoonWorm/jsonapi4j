@@ -15,7 +15,7 @@ public final class ToOneRelationshipLinksDefaultResolvers {
     }
 
     public static <REQUEST, RELATIONSHIP_DTO> SingleDataItemDocLinksResolver<REQUEST, RELATIONSHIP_DTO> defaultLinksResolver(
-            ResourceType parentResourceType,
+            ResourceType resourceType,
             String parentResourceId,
             RelationshipName relationshipName,
             ResourceTypeSupplier<RELATIONSHIP_DTO> relationshipResourceTypeResolver,
@@ -24,7 +24,7 @@ public final class ToOneRelationshipLinksDefaultResolvers {
         return (request, dataSourceDto) -> {
             LinksGenerator linkGenerator = new LinksGenerator(request);
             String selfLinkBasePath = LinksGenerator.relationshipBasePath(
-                    parentResourceType,
+                    resourceType,
                     parentResourceId,
                     relationshipName
             );

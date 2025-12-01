@@ -24,7 +24,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
     }
 
     public static <REQUEST, RELATIONSHIP_DTO> MultipleDataItemsDocLinksResolver<REQUEST, RELATIONSHIP_DTO> defaultLinksResolver(
-            ResourceType parentResourceType,
+            ResourceType resourceType,
             String parentResourceId,
             RelationshipName relationshipName,
             ResourceTypeSupplier<RELATIONSHIP_DTO> relationshipResourceTypeResolver,
@@ -33,7 +33,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
         return (request, dataSourceDtos, nextCursor) -> {
             LinksGenerator linksGenerator = new LinksGenerator(request);
 
-            String relationshipBasePath = LinksGenerator.relationshipBasePath(parentResourceType, parentResourceId, relationshipName);
+            String relationshipBasePath = LinksGenerator.relationshipBasePath(resourceType, parentResourceId, relationshipName);
 
             String selfLink = linksGenerator.generateSelfLink(
                     relationshipBasePath,

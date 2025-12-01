@@ -9,17 +9,12 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 /**
  * Base interface for all relationship operations: both ToOne* and ToMany*.
  */
-public interface RelationshipOperation extends Operation, OperationPluginAware {
+public interface RelationshipOperation extends ResourceOperation {
 
     /**
      * @return name of the given relationship
      */
     RelationshipName relationshipName();
-
-    /**
-     * @return type of the parent JSON:API resource
-     */
-    ResourceType parentResourceType();
 
     /**
      * Checks that the request has the corresponding resource id in the URL

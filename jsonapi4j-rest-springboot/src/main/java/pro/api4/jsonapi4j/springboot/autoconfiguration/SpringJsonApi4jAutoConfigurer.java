@@ -7,21 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.oas.OasServlet;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
-import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAccessControlConfig;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,6 +18,21 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.oas.OasServlet;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
+import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
+import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAccessControlConfig;
+import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
+import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasConfig;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,27 +50,19 @@ public class SpringJsonApi4jAutoConfigurer {
     public DomainRegistry jsonApi4jDomainRegistry(
             SpringContextJsonApi4jDomainScanner domainScanner
     ) {
-        return new DomainRegistry(
-                domainScanner.getResources(),
-                domainScanner.getRelationships()
-        );
+        return DomainRegistry.builder()
+                .resources(domainScanner.getResources())
+                .relationships(domainScanner.getRelationships())
+                .build();
     }
 
     @Bean
     public OperationsRegistry jsonApi4jOperationsRegistry(
             SpringContextJsonApi4jOperationsScanner operationsScanner
     ) {
-        return new OperationsRegistry(
-                operationsScanner.getReadResourceByIdOperations(),
-                operationsScanner.getReadMultipleResourcesOperations(),
-                operationsScanner.getCreateResourceOperations(),
-                operationsScanner.getUpdateResourceOperations(),
-                operationsScanner.getDeleteResourceOperations(),
-                operationsScanner.getReadToOneRelationshipOperations(),
-                operationsScanner.getReadToManyRelationshipOperations(),
-                operationsScanner.getUpdateToOneRelationshipOperations(),
-                operationsScanner.getUpdateToManyRelationshipOperations()
-        );
+        return OperationsRegistry.builder()
+                .operations(operationsScanner.getOperations())
+                .build();
     }
 
     @Bean("jsonApi4jExecutorService")

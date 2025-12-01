@@ -25,7 +25,7 @@ public class UserPlaceOfBirthRelationship implements ToOneRelationship<UserDbEnt
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

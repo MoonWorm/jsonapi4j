@@ -47,7 +47,7 @@ public class UpdateUserCitizenshipsRelationshipOperation implements UpdateToMany
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

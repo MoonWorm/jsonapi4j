@@ -22,7 +22,7 @@ public interface JsonApiRequest extends
     static JsonApiRequest composeRelationshipRequest(String resourceId,
                                                      Relationship<?, ?> relationship) {
         return builder()
-                .targetResourceType(relationship.parentResourceType())
+                .targetResourceType(relationship.resourceType())
                 .resourceId(resourceId)
                 .targetRelationship(relationship.relationshipName())
                 .operationType(relationship instanceof ToOneRelationship<?, ?>

@@ -30,7 +30,7 @@ public class RecipeIngredientOperations
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return CookbookResourceTypes.RECIPE;
     }
 }

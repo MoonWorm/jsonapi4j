@@ -25,7 +25,7 @@ public class CountryCurrenciesRelationship implements ToManyRelationship<Downstr
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return COUNTRIES;
     }
 

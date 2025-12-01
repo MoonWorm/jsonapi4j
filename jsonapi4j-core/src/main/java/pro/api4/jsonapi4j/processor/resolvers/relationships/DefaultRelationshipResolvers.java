@@ -20,12 +20,12 @@ public final class DefaultRelationshipResolvers {
     }
 
     public static <REQUEST, DATA_SOURCE_DTO> DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO> defaultRelationshipResolver(
-            ResourceType parentResourceType,
+            ResourceType resourceType,
             IdSupplier<DATA_SOURCE_DTO> idSupplier
     ) {
         return (relationship, request, dataSourceDto) -> {
             String relationshipBasePath = LinksGenerator.relationshipBasePath(
-                    parentResourceType,
+                    resourceType,
                     idSupplier.getId(dataSourceDto),
                     relationship
             );
@@ -36,7 +36,7 @@ public final class DefaultRelationshipResolvers {
         };
     }
 
-    public static <REQUEST, DATA_SOURCE_DTO> Map<RelationshipName, DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> all(ResourceType parentResourceType,
+    public static <REQUEST, DATA_SOURCE_DTO> Map<RelationshipName, DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> all(ResourceType resourceType,
                                                                                                                               IdSupplier<DATA_SOURCE_DTO> idSupplier,
                                                                                                                               RelationshipName[] relationshipNames) {
         return Arrays.stream(relationshipNames)
@@ -44,7 +44,7 @@ public final class DefaultRelationshipResolvers {
                         toMap(
                                 r -> r,
                                 r -> defaultRelationshipResolver(
-                                        parentResourceType,
+                                        resourceType,
                                         idSupplier
                                 )
                         )

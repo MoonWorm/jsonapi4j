@@ -8,9 +8,14 @@
     <artifactId>jsonapi4j-servlet-sampleapp</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
+    <name>JsonApi4j - Examples - Servlet Sample App</name>
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
+
+        <jsonapi4j.version>0.9.8-SNAPSHOT</jsonapi4j.version>
+
         <jetty.version>11.0.26</jetty.version>
         <lombok.version>1.18.36</lombok.version>
     </properties>
@@ -34,7 +39,7 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest</artifactId>
-            <version>0.9.5</version>
+            <version>${jsonapi4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
