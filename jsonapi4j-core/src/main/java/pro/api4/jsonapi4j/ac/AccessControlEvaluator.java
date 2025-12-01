@@ -72,10 +72,10 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         if (inboundAccessControlRequirements == null
                 || evaluateInboundRequirements(request, inboundAccessControlRequirements)
         ) {
-            log.info("Inbound Access is allowed on a request level. Proceeding...");
+            log.info("Inbound Access is allowed for a request {}. Proceeding...", request);
             return dataSupplier.get();
         } else {
-            log.info("Inbound Access is not allowed on a request level, returning empty response");
+            log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
             return null;
         }
     }
@@ -107,18 +107,19 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                 outboundAccessControlSettings.getClassLevel()
         );
         if (isFullyAnonymized) {
-            log.info("Access to the entire " + targetObject.getClass().getSimpleName() + " is not allowed, anonymizing...");
+            log.info("Access to the entire {} is not allowed, anonymizing...", targetObject);
             return new AnonymizationResult<>(null, true, Collections.emptySet());
         }
 
-        log.info("Access to the entire " + targetObject.getClass().getSimpleName() + " is allowed, proceeding...");
+        log.info("Access to the entire {} is allowed, proceeding...", targetObject);
         Set<String> targetObjectAnonymizedFields = anonymizeFields(
                 targetObject,
                 resourceObject,
                 outboundAccessControlSettings.getFieldLevel()
         );
         log.info(
-                "Anonymizing fields of the " + targetObject.getClass().getSimpleName() + ". {}",
+                "Anonymizing fields of the {}. {}",
+                targetObject,
                 targetObjectAnonymizedFields.isEmpty() ? "None fields have been anonymized." : "Fields anonymized: " + String.join(", ", targetObjectAnonymizedFields)
         );
 

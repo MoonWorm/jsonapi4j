@@ -149,7 +149,7 @@ public class OperationsRegistry {
                 && getRelationshipOperation(resourceType, relationshipName, operationType, false) != null;
     }
 
-    public boolean isAnyToManyRelationshipOperationsConfigured(ResourceType resourceType,
+    public boolean isAnyToManyRelationshipOperationConfigured(ResourceType resourceType,
                                                                RelationshipName relationshipName) {
         return OperationType.getToManyRelationshipOperationTypes()
                 .stream()
@@ -318,7 +318,21 @@ public class OperationsRegistry {
         List<Operation> result = new ArrayList<>();
         result.addAll(this.readResourceByIdOperations.values());
         result.addAll(this.readMultipleResourcesOperations.values());
-
+        result.addAll(this.createResourceOperations.values());
+        result.addAll(this.updateResourceOperations.values());
+        result.addAll(this.deleteResourceOperations.values());
+        this.readToOneRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
+        this.readToManyRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
+        this.updateToOneRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
+        this.updateToManyRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
         return Collections.unmodifiableList(result);
     }
 
@@ -372,6 +386,11 @@ public class OperationsRegistry {
                 this.createResourceOperations.put(o.resourceType(), o);
                 isRegistered = true;
                 logOperationRegistered(o, CreateResourceOperation.class);
+            }
+            if (operation instanceof UpdateResourceOperation o) {
+                this.updateResourceOperations.put(o.resourceType(), o);
+                isRegistered = true;
+                logOperationRegistered(o, UpdateResourceOperation.class);
             }
             if (operation instanceof DeleteResourceOperation o) {
                 this.deleteResourceOperations.put(o.resourceType(), o);
