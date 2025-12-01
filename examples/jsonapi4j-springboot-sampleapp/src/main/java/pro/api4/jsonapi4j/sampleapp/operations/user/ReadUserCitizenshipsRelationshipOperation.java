@@ -92,7 +92,7 @@ public class ReadUserCitizenshipsRelationshipOperation implements BatchReadToMan
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

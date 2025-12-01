@@ -174,13 +174,13 @@ public class JsonApiResponseSchemaCustomizer {
         Map<String, Schema> relationshipsSchemaProperties = new HashMap<>();
         for (ToManyRelationship<?, ?> relationshipConfig
                 : domainRegistry.getToManyRelationships(resourceConfig.resourceType())) {
-            ResourceType parentResourceType = relationshipConfig.parentResourceType();
+            ResourceType resourceType = relationshipConfig.resourceType();
             RelationshipName relationship = relationshipConfig.relationshipName();
             relationshipNames.add(relationship.getName());
             RelationshipOasPlugin relationshipOasExtension = relationshipConfig.getPlugin(RelationshipOasPlugin.class);
             if (relationshipOasExtension != null && relationshipOasExtension.getResourceLinkageMetaType() != null) {
                 PrimaryAndNestedSchemas customToManyRelationshipsDocSchema = generateCustomToManyRelationshipsDocSchema(
-                        parentResourceType,
+                        resourceType,
                         relationship,
                         relationshipOasExtension.getResourceLinkageMetaType()
                 );
@@ -198,13 +198,13 @@ public class JsonApiResponseSchemaCustomizer {
         }
         for (ToOneRelationship<?, ?> relationshipConfig
                 : domainRegistry.getToOneRelationships(resourceConfig.resourceType())) {
-            ResourceType parentResourceType = relationshipConfig.parentResourceType();
+            ResourceType resourceType = relationshipConfig.resourceType();
             RelationshipName relationship = relationshipConfig.relationshipName();
             relationshipNames.add(relationship.getName());
             RelationshipOasPlugin relationshipOasExtension = relationshipConfig.getPlugin(RelationshipOasPlugin.class);
             if (relationshipOasExtension != null && relationshipOasExtension.getResourceLinkageMetaType() != null) {
                 PrimaryAndNestedSchemas customToOneRelationshipDocSchema = generateCustomToOneRelationshipDocSchema(
-                        parentResourceType,
+                        resourceType,
                         relationship,
                         relationshipOasExtension.getResourceLinkageMetaType()
                 );
@@ -232,18 +232,18 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateCustomToManyRelationshipsDocSchema(
-            ResourceType parentResourceType,
+            ResourceType resourceType,
             RelationshipName relationshipName,
             Class<?> dataItemMetaClass
     ) {
         Schema<?> customToManyRelationshipsDocSchema = generateSchemaFromType(ToManyRelationshipsDoc.class);
-        customToManyRelationshipsDocSchema.setName(customToManyRelationshipDocSchemaName(parentResourceType, relationshipName));
+        customToManyRelationshipsDocSchema.setName(customToManyRelationshipDocSchemaName(resourceType, relationshipName));
 
         Schema<?> customResourceIdentifierSchema = generateSchemaFromType(ResourceIdentifierObject.class);
-        customResourceIdentifierSchema.setName(customResourceIdentifierSchemaName(parentResourceType, relationshipName));
+        customResourceIdentifierSchema.setName(customResourceIdentifierSchemaName(resourceType, relationshipName));
 
         PrimaryAndNestedSchemas customResourceIdentifierMetaSchemas = generateAllSchemasFromType(dataItemMetaClass);
-        customResourceIdentifierMetaSchemas.getPrimarySchema().setName(customResourceIdentifierMetaSchemaName(parentResourceType, relationshipName));
+        customResourceIdentifierMetaSchemas.getPrimarySchema().setName(customResourceIdentifierMetaSchemaName(resourceType, relationshipName));
 
         customResourceIdentifierSchema.getProperties().put("meta", new Schema().$ref(customResourceIdentifierMetaSchemas.getPrimarySchema().getName()));
 
@@ -258,18 +258,18 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateCustomToOneRelationshipDocSchema(
-            ResourceType parentResourceType,
+            ResourceType resourceType,
             RelationshipName relationshipName,
             Class<?> dataItemMetaClass
     ) {
         Schema<?> customToOneRelationshipDocSchema = generateSchemaFromType(ToOneRelationshipDoc.class);
-        customToOneRelationshipDocSchema.setName(customToOneRelationshipDocSchemaName(parentResourceType, relationshipName));
+        customToOneRelationshipDocSchema.setName(customToOneRelationshipDocSchemaName(resourceType, relationshipName));
 
         Schema<?> customResourceIdentifierSchema = generateSchemaFromType(ResourceIdentifierObject.class);
-        customResourceIdentifierSchema.setName(customResourceIdentifierSchemaName(parentResourceType, relationshipName));
+        customResourceIdentifierSchema.setName(customResourceIdentifierSchemaName(resourceType, relationshipName));
 
         PrimaryAndNestedSchemas customResourceIdentifierMetaSchemas = generateAllSchemasFromType(dataItemMetaClass);
-        customResourceIdentifierMetaSchemas.getPrimarySchema().setName(customResourceIdentifierMetaSchemaName(parentResourceType, relationshipName));
+        customResourceIdentifierMetaSchemas.getPrimarySchema().setName(customResourceIdentifierMetaSchemaName(resourceType, relationshipName));
 
         customResourceIdentifierSchema.getProperties().put("meta", new Schema().$ref(customResourceIdentifierMetaSchemas.getPrimarySchema().getName()));
 

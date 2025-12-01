@@ -45,7 +45,7 @@ public interface ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
                                                  List<RELATIONSHIP_DTO> relationshipDtos,
                                                  String nextCursor) {
         return ToManyRelationshipLinksDefaultResolvers.defaultLinksResolver(
-                parentResourceType(),
+                resourceType(),
                 relationshipRequest.getResourceId(),
                 relationshipName(),
                 this::resolveResourceIdentifierType,

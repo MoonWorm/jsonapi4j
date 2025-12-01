@@ -41,7 +41,7 @@ public interface ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
     default LinksObject resolveRelationshipLinks(JsonApiRequest relationshipRequest,
                                                  RELATIONSHIP_DTO relationshipDto) {
         return ToOneRelationshipLinksDefaultResolvers.defaultLinksResolver(
-                parentResourceType(),
+                resourceType(),
                 relationshipRequest.getResourceId(),
                 relationshipName(),
                 this::resolveResourceIdentifierType,

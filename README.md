@@ -327,7 +327,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
     }
   
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return () -> "users";
     }
   
@@ -346,7 +346,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
 
 * `Relationship relationshipName()` -  defines the name of the relationship (`citizenships`).
 
-* `ResourceType parentResourceType()` - identifies which resource this relationship belongs to (`users`).
+* `ResourceType resourceType()` - identifies which resource this relationship belongs to (`users`).
 
 * `ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
 
@@ -387,14 +387,14 @@ public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRela
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return () -> "users";
     }
     
 }
 ```
 
-* `relationshipName()` and `parentResourceType()` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
+* `relationshipName()` and `resourceType()` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
 
 * `RestCountriesFeignClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
   For simplicity, let's keep it local for now and simulate its behavior with an in-memory implementation:

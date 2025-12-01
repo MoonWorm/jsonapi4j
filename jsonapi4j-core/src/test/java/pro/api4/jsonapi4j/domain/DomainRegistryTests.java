@@ -91,7 +91,7 @@ public class DomainRegistryTests {
         }
 
         @Override
-        public ResourceType parentResourceType() {
+        public ResourceType resourceType() {
             return TestResourceTypes.FOO;
         }
 
@@ -114,7 +114,7 @@ public class DomainRegistryTests {
         }
 
         @Override
-        public ResourceType parentResourceType() {
+        public ResourceType resourceType() {
             return TestResourceTypes.FOO;
         }
 

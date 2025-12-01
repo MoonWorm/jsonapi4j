@@ -171,19 +171,19 @@ public class DomainRegistry {
         }
 
         public DomainRegistryBuilder relationship(Relationship<?, ?> relationship) {
-            if (this.relationships.containsKey(relationship.parentResourceType())
-                    && this.relationships.get(relationship.parentResourceType()).containsKey(relationship.relationshipName())) {
+            if (this.relationships.containsKey(relationship.resourceType())
+                    && this.relationships.get(relationship.resourceType()).containsKey(relationship.relationshipName())) {
                 throw new DomainMisconfigurationException("Multiple relationship declarations found for : "
-                        + relationship.parentResourceType() + " resource type, for relationship: " + relationship.relationshipName());
+                        + relationship.resourceType() + " resource type, for relationship: " + relationship.relationshipName());
             }
             this.relationships.computeIfAbsent(
-                    relationship.parentResourceType(),
+                    relationship.resourceType(),
                     k -> new HashMap<>()
             ).put(
                     relationship.relationshipName(),
                     relationship
             );
-            log.info("{} relationship with '{}' name has been registered for '{}' type.", relationship.getClass().getSimpleName(), relationship.relationshipName(), relationship.parentResourceType().getType());
+            log.info("{} relationship with '{}' name has been registered for '{}' type.", relationship.getClass().getSimpleName(), relationship.relationshipName(), relationship.resourceType().getType());
             return this;
         }
 

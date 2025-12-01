@@ -35,7 +35,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

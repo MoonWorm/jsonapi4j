@@ -71,7 +71,7 @@ public class ReadUserRelativesRelationshipOperation implements BatchReadToManyRe
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 

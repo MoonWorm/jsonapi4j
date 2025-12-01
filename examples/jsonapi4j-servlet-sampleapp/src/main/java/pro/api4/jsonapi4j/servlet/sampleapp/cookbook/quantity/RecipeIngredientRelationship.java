@@ -17,7 +17,7 @@ public class RecipeIngredientRelationship implements ToManyRelationship<DishReci
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return CookbookResourceTypes.RECIPE;
     }
 

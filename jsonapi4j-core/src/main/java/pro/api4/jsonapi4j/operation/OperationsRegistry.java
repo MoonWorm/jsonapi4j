@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -313,6 +314,14 @@ public class OperationsRegistry {
                 .toList();
     }
 
+    public List<? extends Operation> getAllOperations() {
+        List<Operation> result = new ArrayList<>();
+        result.addAll(this.readResourceByIdOperations.values());
+        result.addAll(this.readMultipleResourcesOperations.values());
+
+        return Collections.unmodifiableList(result);
+    }
+
     @Slf4j
     public static class OperationsRegistryBuilder {
 
@@ -346,7 +355,7 @@ public class OperationsRegistry {
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
         }
 
-        public OperationsRegistryBuilder operation(Operation operation) {
+        public OperationsRegistryBuilder operation(ResourceOperation operation) {
             Validate.notNull(operation);
             boolean isRegistered = false;
             if (operation instanceof ReadResourceByIdOperation<?> o) {
@@ -371,7 +380,7 @@ public class OperationsRegistry {
             }
             if (operation instanceof ReadToOneRelationshipOperation<?, ?> o) {
                 this.readToOneRelationshipOperations.computeIfAbsent(
-                        o.parentResourceType(),
+                        o.resourceType(),
                         rt -> new HashMap<>()
                 ).put(o.relationshipName(), o);
                 isRegistered = true;
@@ -379,7 +388,7 @@ public class OperationsRegistry {
             }
             if (operation instanceof ReadToManyRelationshipOperation<?, ?> o) {
                 this.readToManyRelationshipOperations.computeIfAbsent(
-                        o.parentResourceType(),
+                        o.resourceType(),
                         rt -> new HashMap<>()
                 ).put(o.relationshipName(), o);
                 isRegistered = true;
@@ -387,7 +396,7 @@ public class OperationsRegistry {
             }
             if (operation instanceof UpdateToOneRelationshipOperation o) {
                 this.updateToOneRelationshipOperations.computeIfAbsent(
-                        o.parentResourceType(),
+                        o.resourceType(),
                         rt -> new HashMap<>()
                 ).put(o.relationshipName(), o);
                 isRegistered = true;
@@ -395,21 +404,17 @@ public class OperationsRegistry {
             }
             if (operation instanceof UpdateToManyRelationshipOperation o) {
                 this.updateToManyRelationshipOperations.computeIfAbsent(
-                        o.parentResourceType(),
+                        o.resourceType(),
                         rt -> new HashMap<>()
                 ).put(o.relationshipName(), o);
                 isRegistered = true;
                 logOperationRegistered(o, UpdateToManyRelationshipOperation.class);
             }
-
             if (isRegistered) {
-                if (operation instanceof ResourceOperation resOp) {
-                    resourceTypesWithAnyOperationConfigured.add(resOp.resourceType());
-                } else {
-                    RelationshipOperation relOp = (RelationshipOperation) operation;
-                    resourceTypesWithAnyOperationConfigured.add(relOp.parentResourceType());
+                resourceTypesWithAnyOperationConfigured.add(operation.resourceType());
+                if (operation instanceof RelationshipOperation relOp) {
                     relationshipNamesWithAnyOperationConfigured.computeIfAbsent(
-                            relOp.parentResourceType(), k -> new HashSet<>()
+                            relOp.resourceType(), k -> new HashSet<>()
                     ).add(relOp.relationshipName());
                 }
             } else {
@@ -434,18 +439,18 @@ public class OperationsRegistry {
             return this;
         }
 
-        private void logOperationRegistered(Operation operationType,
+        private void logOperationRegistered(ResourceOperation operationType,
                                             Class<?> registeredAsType) {
             log.info("{} operation has been registered as {}.", operationType.getClass().getSimpleName(), registeredAsType.getSimpleName());
         }
 
-        public OperationsRegistryBuilder operations(Operation... operations) {
+        public OperationsRegistryBuilder operations(ResourceOperation... operations) {
             Validate.notNull(operations);
             Arrays.stream(operations).forEach(this::operation);
             return this;
         }
 
-        public OperationsRegistryBuilder operations(Collection<Operation> operations) {
+        public OperationsRegistryBuilder operations(Collection<ResourceOperation> operations) {
             Validate.notNull(operations);
             operations.forEach(this::operation);
             return this;

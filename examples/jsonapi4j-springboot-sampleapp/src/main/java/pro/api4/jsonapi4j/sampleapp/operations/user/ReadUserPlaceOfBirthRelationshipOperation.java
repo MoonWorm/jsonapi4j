@@ -74,7 +74,7 @@ public class ReadUserPlaceOfBirthRelationshipOperation implements BatchReadToOne
     }
 
     @Override
-    public ResourceType parentResourceType() {
+    public ResourceType resourceType() {
         return USERS;
     }
 
