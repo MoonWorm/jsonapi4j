@@ -16,14 +16,20 @@ import java.util.stream.Collectors;
 public class DomainRegistry {
 
     private final Map<ResourceType, Resource<?>> resources;
-    private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships;
+    private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships;
+    private final Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships;
+    private final Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships;
 
     private DomainRegistry(
             Map<ResourceType, Resource<?>> resources,
-            Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships
+            Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships,
+            Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships,
+            Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships
     ) {
-        this.resources = resources;
-        this.relationships = relationships;
+        this.resources = MapUtils.emptyIfNull(resources);
+        this.allRelationships = MapUtils.emptyIfNull(allRelationships);
+        this.toOneRelationships = MapUtils.emptyIfNull(toOneRelationships);
+        this.toManyRelationships = MapUtils.emptyIfNull(toManyRelationships);
     }
 
     public static DomainRegistryBuilder builder() {
@@ -38,22 +44,21 @@ public class DomainRegistry {
     }
 
     public Resource<?> getResource(ResourceType resourceType) {
-        return resources.get(resourceType);
+        return this.resources.get(resourceType);
     }
 
     public Collection<Resource<?>> getResources() {
-        return Collections.unmodifiableCollection(resources.values());
+        return Collections.unmodifiableCollection(this.resources.values());
     }
 
     public Set<ResourceType> getResourceTypes() {
-        return Collections.unmodifiableSet(resources.keySet());
+        return Collections.unmodifiableSet(this.resources.keySet());
     }
 
     public List<ToManyRelationship<?, ?>> getToManyRelationships(ResourceType resourceType) {
-        return MapUtils.emptyIfNull(relationships.get(resourceType))
+        return MapUtils.emptyIfNull(this.toManyRelationships.get(resourceType))
                 .values()
                 .stream()
-                .filter(rel -> rel instanceof ToManyRelationship<?, ?>)
                 .map(rel -> (ToManyRelationship<?, ?>) rel)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -66,10 +71,9 @@ public class DomainRegistry {
     }
 
     public List<ToOneRelationship<?, ?>> getToOneRelationships(ResourceType resourceType) {
-        return MapUtils.emptyIfNull(relationships.get(resourceType))
+        return MapUtils.emptyIfNull(this.toOneRelationships.get(resourceType))
                 .values()
                 .stream()
-                .filter(rel -> rel instanceof ToOneRelationship<?, ?>)
                 .map(rel -> (ToOneRelationship<?, ?>) rel)
                 .collect(Collectors.toUnmodifiableList());
     }
@@ -83,52 +87,38 @@ public class DomainRegistry {
 
     public ToManyRelationship<?, ?> getToManyRelationshipStrict(ResourceType resourceType,
                                                                 RelationshipName relationshipName) {
-        Map<RelationshipName, Relationship<?, ?>> resourceRelationships = relationships.get(resourceType);
+        Map<RelationshipName, ToManyRelationship<?, ?>> resourceRelationships = this.toManyRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
-            throw new DomainMisconfigurationException("No relationships found for the Resource ("
+            throw new DomainMisconfigurationException("No To Many relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        Relationship<?, ?> result = resourceRelationships.get(relationshipName);
+        ToManyRelationship<?, ?> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To Many Relationship is not found for the Resource ("
                     + resourceType.getType() + "). Please implement the relationship.");
         }
-        if (result instanceof ToManyRelationship<?, ?> rel) {
-            return rel;
-        } else {
-            throw new DomainMisconfigurationException("Found implementation of the '"
-                    + relationshipName.getName() + "' relationship for the Resource ("
-                    + resourceType.getType() + ") but it's not a To Many Relationship. Please implement the " +
-                    "relationship or approach the relationship as a To One Relationship.");
-        }
+        return result;
     }
 
     public ToOneRelationship<?, ?> getToOneRelationshipStrict(ResourceType resourceType,
                                                               RelationshipName relationshipName) {
-        Map<RelationshipName, Relationship<?, ?>> resourceRelationships = relationships.get(resourceType);
+        Map<RelationshipName, ToOneRelationship<?, ?>> resourceRelationships = this.toOneRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
-            throw new DomainMisconfigurationException("No relationships found for the Resource ("
+            throw new DomainMisconfigurationException("No To One relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        Relationship<?, ?> result = resourceRelationships.get(relationshipName);
+        ToOneRelationship<?, ?> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To One Relationship is not found for the Resource ("
                     + resourceType.getType() + "). Please implement the relationship.");
         }
-        if (result instanceof ToOneRelationship<?, ?> rel) {
-            return rel;
-        } else {
-            throw new DomainMisconfigurationException("Found implementation of the '"
-                    + relationshipName.getName() + "' relationship for the Resource ("
-                    + resourceType.getType() + ") but it's not a To One Relationship. Please implement the " +
-                    "relationship or approach the relationship as a To Many Relationship.");
-        }
+        return result;
     }
 
     public Set<RelationshipName> getAvailableRelationshipNames(ResourceType resourceType) {
-        return MapUtils.emptyIfNull(relationships.get(resourceType))
+        return MapUtils.emptyIfNull(allRelationships.get(resourceType))
                 .values()
                 .stream()
                 .map(Relationship::relationshipName)
@@ -139,11 +129,15 @@ public class DomainRegistry {
     public static class DomainRegistryBuilder {
 
         private final Map<ResourceType, Resource<?>> resources;
-        private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> relationships;
+        private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships;
+        private final Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships;
+        private final Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships;
 
         private DomainRegistryBuilder() {
             this.resources = new HashMap<>();
-            this.relationships = new HashMap<>();
+            this.allRelationships = new HashMap<>();
+            this.toOneRelationships = new HashMap<>();
+            this.toManyRelationships = new HashMap<>();
         }
 
         public DomainRegistryBuilder resources(Set<Resource<?>> resources) {
@@ -171,18 +165,33 @@ public class DomainRegistry {
         }
 
         public DomainRegistryBuilder relationship(Relationship<?, ?> relationship) {
-            if (this.relationships.containsKey(relationship.resourceType())
-                    && this.relationships.get(relationship.resourceType()).containsKey(relationship.relationshipName())) {
+            if (this.allRelationships.containsKey(relationship.resourceType())
+                    && this.allRelationships.get(relationship.resourceType()).containsKey(relationship.relationshipName())) {
                 throw new DomainMisconfigurationException("Multiple relationship declarations found for : "
                         + relationship.resourceType() + " resource type, for relationship: " + relationship.relationshipName());
             }
-            this.relationships.computeIfAbsent(
+            this.allRelationships.computeIfAbsent(
                     relationship.resourceType(),
                     k -> new HashMap<>()
             ).put(
                     relationship.relationshipName(),
                     relationship
             );
+
+            // pre-filter relationship by type
+            if (relationship instanceof ToOneRelationship<?, ?> rel) {
+                this.toOneRelationships.computeIfAbsent(
+                        relationship.resourceType(),
+                        k -> new HashMap<>()
+                ).put(relationship.relationshipName(), rel);
+            }
+            if (relationship instanceof ToManyRelationship<?, ?> rel) {
+                this.toManyRelationships.computeIfAbsent(
+                        relationship.resourceType(),
+                        k -> new HashMap<>()
+                ).put(relationship.relationshipName(), rel);
+            }
+
             log.info("{} relationship with '{}' name has been registered for '{}' type.", relationship.getClass().getSimpleName(), relationship.relationshipName(), relationship.resourceType().getType());
             return this;
         }
@@ -190,7 +199,9 @@ public class DomainRegistry {
         public DomainRegistry build() {
             return new DomainRegistry(
                     Collections.unmodifiableMap(this.resources),
-                    Collections.unmodifiableMap(this.relationships)
+                    Collections.unmodifiableMap(this.allRelationships),
+                    Collections.unmodifiableMap(this.toOneRelationships),
+                    Collections.unmodifiableMap(this.toManyRelationships)
             );
         }
     }
