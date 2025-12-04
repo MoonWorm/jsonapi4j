@@ -46,6 +46,7 @@
         <module>examples/jsonapi4j-samleapp-domain</module>
         <module>examples/jsonapi4j-springboot-sampleapp</module>
         <module>examples/jsonapi4j-servlet-sampleapp</module>
+        <module>jsonapi4j-report</module>
     </modules>
 
     <properties>
