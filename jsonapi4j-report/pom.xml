@@ -12,11 +12,7 @@
 
     <artifactId>jsonapi4j-report</artifactId>
 
-    <name>Test coverage report</name>
-
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
+    <name>JsonApi4j - Test coverage report</name>
 
     <dependencies>
         <dependency>
@@ -88,6 +84,13 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>
