@@ -25,7 +25,7 @@ jobs:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Configure Maven settings for Central Portal
-        uses: s4u/maven-settings-action@v3
+        uses: s4u/maven-settings-action@v4.0.0
         with:
           servers: |
             [
