@@ -44,7 +44,4 @@ jobs:
             ]
 
       - name: Build, Sign, and Publish to Sonatype Central
-        run: mvn clean deploy -pl '.,jsonapi4j-core,jsonapi4j-rest,jsonapi4j-rest-springboot,jsonapi4j-compound-docs-resolver' \
-          -Pdeploy-to-central \
-          -Drevision=${{ github.event.inputs.version }} \
-          -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+        run: mvn clean deploy -pl '.,jsonapi4j-core,jsonapi4j-rest,jsonapi4j-rest-springboot,jsonapi4j-compound-docs-resolver' -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
