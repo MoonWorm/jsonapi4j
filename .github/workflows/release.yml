@@ -44,4 +44,4 @@ jobs:
             ]
 
       - name: Build, Sign, and Publish to Sonatype Central
-        run: mvn clean deploy -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}
+        run: mvn clean deploy -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
