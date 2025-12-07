@@ -14,7 +14,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
 
-        <jsonapi4j.version>0.9.8-SNAPSHOT</jsonapi4j.version>
+        <jsonapi4j.version>0.9.9-SNAPSHOT</jsonapi4j.version>
 
         <jetty.version>11.0.26</jetty.version>
         <lombok.version>1.18.36</lombok.version>
