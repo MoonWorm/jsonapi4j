@@ -18,6 +18,8 @@ jobs:
 
       - name: Configure GPG for non-interactive mode
         run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           echo "use-agent" >> ~/.gnupg/gpg.conf
 
@@ -42,4 +44,4 @@ jobs:
             ]
 
       - name: Build, Sign, and Publish to Sonatype Central
-        run: mvn clean deploy -Drevision=${{ github.event.inputs.version }} -Pdeploy-to-central
+        run: mvn clean deploy -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase="${{ secrets.GPG_PASSPHRASE }}
