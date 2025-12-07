@@ -37,4 +37,4 @@ jobs:
             ]
 
       - name: Build, Sign, and Publish to Sonatype Central
-        run: mvn clean deploy -Drevision=${{ github.event.inputs.version }}
+        run: mvn clean deploy -Drevision=${{ github.event.inputs.version }} -Pdeploy-to-central
