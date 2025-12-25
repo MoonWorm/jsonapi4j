@@ -4,27 +4,23 @@ package pro.api4.jsonapi4j.domain;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class DomainRegistry {
 
-    private final Map<ResourceType, Resource<?>> resources;
+    private final Map<ResourceType, RegisteredResource<Resource<?>>> resources;
     private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships;
-    private final Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships;
-    private final Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships;
 
     private DomainRegistry(
-            Map<ResourceType, Resource<?>> resources,
+            Map<ResourceType, RegisteredResource<Resource<?>>> resources,
             Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships,
-            Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships,
-            Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships
+            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships,
+            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships
     ) {
         this.resources = MapUtils.emptyIfNull(resources);
         this.allRelationships = MapUtils.emptyIfNull(allRelationships);
@@ -32,22 +28,34 @@ public class DomainRegistry {
         this.toManyRelationships = MapUtils.emptyIfNull(toManyRelationships);
     }
 
-    public static DomainRegistryBuilder builder() {
-        return new DomainRegistryBuilder();
+    public static DomainRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
+        return new DomainRegistryBuilder(plugins);
     }
 
     public static DomainRegistry empty() {
-        return DomainRegistry.builder()
+        return DomainRegistry.builder(Collections.emptyList())
                 .resources(Collections.emptySet())
                 .relationships(Collections.emptySet())
                 .build();
     }
 
     public Resource<?> getResource(ResourceType resourceType) {
+        RegisteredResource<Resource<?>> registeredResource = this.resources.get(resourceType);
+        if (registeredResource != null) {
+            return registeredResource.getResource();
+        }
+        return null;
+    }
+
+    public RegisteredResource<Resource<?>> getRegisteredResource(ResourceType resourceType) {
         return this.resources.get(resourceType);
     }
 
     public Collection<Resource<?>> getResources() {
+        return Collections.unmodifiableCollection(this.resources.values().stream().map(RegisteredResource::getResource).toList());
+    }
+
+    public Collection<RegisteredResource<Resource<?>>> getRegisteredResources() {
         return Collections.unmodifiableCollection(this.resources.values());
     }
 
@@ -55,12 +63,15 @@ public class DomainRegistry {
         return Collections.unmodifiableSet(this.resources.keySet());
     }
 
-    public List<ToManyRelationship<?, ?>> getToManyRelationships(ResourceType resourceType) {
+    public List<? extends ToManyRelationship<?, ?>> getToManyRelationships(ResourceType resourceType) {
+        return getRegisteredToManyRelationships(resourceType).stream().map(RegisteredRelationship::getRelationship).toList();
+    }
+
+    public List<RegisteredRelationship<ToManyRelationship<?, ?>>> getRegisteredToManyRelationships(ResourceType resourceType) {
         return MapUtils.emptyIfNull(this.toManyRelationships.get(resourceType))
                 .values()
                 .stream()
-                .map(rel -> (ToManyRelationship<?, ?>) rel)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public Set<RelationshipName> getToManyRelationshipNames(ResourceType resourceType) {
@@ -70,12 +81,20 @@ public class DomainRegistry {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    public List<ToOneRelationship<?, ?>> getToOneRelationships(ResourceType resourceType) {
+    public List<? extends ToOneRelationship<?, ?>> getToOneRelationships(ResourceType resourceType) {
+        return getRegisteredToOneRelationships(resourceType)
+                .stream()
+                .map(RegisteredRelationship::getRelationship)
+                .toList();
+    }
+
+    public List<RegisteredRelationship<ToOneRelationship<?, ?>>> getRegisteredToOneRelationships(
+            ResourceType resourceType
+    ) {
         return MapUtils.emptyIfNull(this.toOneRelationships.get(resourceType))
                 .values()
                 .stream()
-                .map(rel -> (ToOneRelationship<?, ?>) rel)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     public Set<RelationshipName> getToOneRelationshipNames(ResourceType resourceType) {
@@ -87,12 +106,20 @@ public class DomainRegistry {
 
     public ToManyRelationship<?, ?> getToManyRelationshipStrict(ResourceType resourceType,
                                                                 RelationshipName relationshipName) {
-        Map<RelationshipName, ToManyRelationship<?, ?>> resourceRelationships = this.toManyRelationships.get(resourceType);
+        return getRegisteredToManyRelationshipStrict(resourceType, relationshipName).getRelationship();
+
+    }
+
+    public RegisteredRelationship<ToManyRelationship<?, ?>> getRegisteredToManyRelationshipStrict(
+            ResourceType resourceType,
+            RelationshipName relationshipName
+    ) {
+        Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>> resourceRelationships = this.toManyRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
             throw new DomainMisconfigurationException("No To Many relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        ToManyRelationship<?, ?> result = resourceRelationships.get(relationshipName);
+        RegisteredRelationship<ToManyRelationship<?, ?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To Many Relationship is not found for the Resource ("
@@ -103,12 +130,19 @@ public class DomainRegistry {
 
     public ToOneRelationship<?, ?> getToOneRelationshipStrict(ResourceType resourceType,
                                                               RelationshipName relationshipName) {
-        Map<RelationshipName, ToOneRelationship<?, ?>> resourceRelationships = this.toOneRelationships.get(resourceType);
+        return getRegisteredToOneRelationshipStrict(resourceType, relationshipName).getRelationship();
+    }
+
+    public RegisteredRelationship<ToOneRelationship<?, ?>> getRegisteredToOneRelationshipStrict(
+            ResourceType resourceType,
+                                                                                                RelationshipName relationshipName
+    ) {
+        Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>> resourceRelationships = this.toOneRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
             throw new DomainMisconfigurationException("No To One relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        ToOneRelationship<?, ?> result = resourceRelationships.get(relationshipName);
+        RegisteredRelationship<ToOneRelationship<?, ?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To One Relationship is not found for the Resource ("
@@ -128,12 +162,17 @@ public class DomainRegistry {
     @Slf4j
     public static class DomainRegistryBuilder {
 
-        private final Map<ResourceType, Resource<?>> resources;
-        private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships;
-        private final Map<ResourceType, Map<RelationshipName, ToOneRelationship<?, ?>>> toOneRelationships;
-        private final Map<ResourceType, Map<RelationshipName, ToManyRelationship<?, ?>>> toManyRelationships;
+        private final List<JsonApi4jPlugin> plugins;
 
-        private DomainRegistryBuilder() {
+        private final Map<ResourceType, RegisteredResource<Resource<?>>> resources;
+        private final Map<ResourceType, Map<RelationshipName, Relationship<?, ?>>> allRelationships;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships;
+
+
+        private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins) {
+            this.plugins = plugins;
+
             this.resources = new HashMap<>();
             this.allRelationships = new HashMap<>();
             this.toOneRelationships = new HashMap<>();
@@ -152,7 +191,7 @@ public class DomainRegistry {
                 throw new DomainMisconfigurationException("Multiple resource declarations found for : "
                         + resource.resourceType() + " resource type");
             }
-            this.resources.put(resource.resourceType(), resource);
+            this.resources.put(resource.resourceType(), enrichWithPluginInfo(resource));
             log.info("{} resource of '{}' type has been registered.", resource.getClass().getSimpleName(), resource.resourceType().getType());
             return this;
         }
@@ -183,13 +222,13 @@ public class DomainRegistry {
                 this.toOneRelationships.computeIfAbsent(
                         relationship.resourceType(),
                         k -> new HashMap<>()
-                ).put(relationship.relationshipName(), rel);
+                ).put(relationship.relationshipName(), enrichWithPluginInfo(rel));
             }
             if (relationship instanceof ToManyRelationship<?, ?> rel) {
                 this.toManyRelationships.computeIfAbsent(
                         relationship.resourceType(),
                         k -> new HashMap<>()
-                ).put(relationship.relationshipName(), rel);
+                ).put(relationship.relationshipName(), enrichWithPluginInfo(rel));
             }
 
             log.info("{} relationship with '{}' name has been registered for '{}' type.", relationship.getClass().getSimpleName(), relationship.relationshipName(), relationship.resourceType().getType());
@@ -203,6 +242,34 @@ public class DomainRegistry {
                     Collections.unmodifiableMap(this.toOneRelationships),
                     Collections.unmodifiableMap(this.toManyRelationships)
             );
+        }
+
+        private RegisteredResource<Resource<?>> enrichWithPluginInfo(Resource<?> resource) {
+            Map<String, Object> pluginsInfo = new HashMap<>();
+            for (JsonApi4jPlugin plugin : this.plugins) {
+                Object pluginInfo = plugin.extractPluginInfoFromResource(resource);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                }
+            }
+            return RegisteredResource.builder()
+                    .resource(resource)
+                    .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
+                    .build();
+        }
+
+        private <T extends Relationship<?, ?>> RegisteredRelationship<T> enrichWithPluginInfo(T relationship) {
+            Map<String, Object> pluginsInfo = new HashMap<>();
+            for (JsonApi4jPlugin plugin : this.plugins) {
+                Object pluginInfo = plugin.extractPluginInfoFromRelationship(relationship);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                }
+            }
+            return RegisteredRelationship.<T>builder()
+                    .relationship(relationship)
+                    .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
+                    .build();
         }
     }
 

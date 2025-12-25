@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.plugin.ResourcePluginAware;
 import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
@@ -24,7 +23,7 @@ import java.util.List;
  * @param <RESOURCE_DTO> a downstream object type that encapsulates internal model implementation and of this
  *                       JSON:API resource, e.g. Hibernate's Entity, JOOQ Record, or third-party service DTO
  */
-public interface Resource<RESOURCE_DTO> extends ResourcePluginAware, Comparable<Resource<RESOURCE_DTO>> {
+public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO>> {
 
     /**
      * Resolves the resource unique identifier ("id" member) based on the corresponding downstream {@link RESOURCE_DTO}.

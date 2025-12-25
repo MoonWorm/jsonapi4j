@@ -79,6 +79,10 @@ public final class OasSchemaNamesUtil {
         return capitalize(resourceType.getType()) + "Resource";
     }
 
+    public static String resourceSchemaName(String resourceType) {
+        return capitalize(resourceType) + "Resource";
+    }
+
     public static String customResourceIdentifierSchemaName(ResourceType resourceType,
                                                             RelationshipName relationshipName) {
         return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ResourceIdentifier";

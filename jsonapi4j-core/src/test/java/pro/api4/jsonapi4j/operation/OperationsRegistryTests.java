@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,7 +37,7 @@ public class OperationsRegistryTests {
         TestReadToManyRelationshipOperation readToManyRelationshipOperation = new TestReadToManyRelationshipOperation();
         TestUpdateToOneRelationshipOperation updateToOneRelationshipOperation = new TestUpdateToOneRelationshipOperation();
         TestUpdateToManyRelationshipOperation updateToManyRelationshipOperation = new TestUpdateToManyRelationshipOperation();
-        OperationsRegistry sut = OperationsRegistry.builder()
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
                 .operation(readByIdOperation)
                 .operation(readMultipleResourcesOperation)
                 .operation(createResourceOperation)
@@ -113,12 +114,12 @@ public class OperationsRegistryTests {
         assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
         assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, false)).isNotNull().isEqualTo(readToManyRelationshipOperation);
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, true)).isNotNull().isEqualTo(readToManyRelationshipOperation);
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,false)).isNull();
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,false)).isNull();
-        assertThatThrownBy(() -> sut.getReadToManyDataRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
-        assertThatThrownBy(() -> sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getReadToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, false)).isNotNull().isEqualTo(readToManyRelationshipOperation);
+        assertThat(sut.getReadToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, true)).isNotNull().isEqualTo(readToManyRelationshipOperation);
+        assertThat(sut.getReadToManyRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,false)).isNull();
+        assertThat(sut.getReadToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,false)).isNull();
+        assertThatThrownBy(() -> sut.getReadToManyRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getReadToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
 
         assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, false)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
         assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, true)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
@@ -215,7 +216,7 @@ public class OperationsRegistryTests {
         }
 
         @Override
-        public String read(JsonApiRequest relationshipRequest) {
+        public String readOne(JsonApiRequest relationshipRequest) {
             return UUID.randomUUID().toString();
         }
     }
@@ -233,7 +234,7 @@ public class OperationsRegistryTests {
         }
 
         @Override
-        public CursorPageableResponse<String> read(JsonApiRequest relationshipRequest) {
+        public CursorPageableResponse<String> readMany(JsonApiRequest relationshipRequest) {
             return CursorPageableResponse.empty();
         }
     }

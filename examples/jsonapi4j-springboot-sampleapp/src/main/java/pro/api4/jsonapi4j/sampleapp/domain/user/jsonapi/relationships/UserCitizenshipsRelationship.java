@@ -1,21 +1,16 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user.jsonapi.relationships;
 
-import pro.api4.jsonapi4j.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
-import pro.api4.jsonapi4j.ac.annotation.AccessControlScopes;
-import pro.api4.jsonapi4j.ac.annotation.Authenticated;
-import pro.api4.jsonapi4j.ac.ownership.ResourceIdFromUrlPathExtractor;
+import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
-import pro.api4.jsonapi4j.domain.plugin.oas.RelationshipOasPlugin;
-import pro.api4.jsonapi4j.plugin.RelationshipPlugin;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Set;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
@@ -49,13 +44,13 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
         return downstreamCountry.getCca2();
     }
 
-    @Override
+    /*@Override
     public List<RelationshipPlugin<?>> plugins() {
         return List.of(
                 RelationshipOasPlugin.builder()
                         .relationshipTypes(Set.of(COUNTRIES))
                         .build()
         );
-    }
+    }*/
 
 }

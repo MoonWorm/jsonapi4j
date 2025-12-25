@@ -2,13 +2,12 @@ package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.plugin.OperationPluginAware;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 /**
  * Base interface for all resource operations.
  */
-public interface ResourceOperation extends Operation, OperationPluginAware {
+public interface ResourceOperation extends Operation {
 
     /**
      * @return type of the given JSON:API resource

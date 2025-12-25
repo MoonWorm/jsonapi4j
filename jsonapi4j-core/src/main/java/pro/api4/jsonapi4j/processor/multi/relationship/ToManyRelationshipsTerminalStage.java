@@ -2,9 +2,9 @@ package pro.api4.jsonapi4j.processor.multi.relationship;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.AnonymizationResult;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
 @Slf4j
 public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {

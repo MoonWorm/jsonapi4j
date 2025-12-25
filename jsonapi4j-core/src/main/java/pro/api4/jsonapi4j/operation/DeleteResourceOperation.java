@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
+import java.util.function.Consumer;
+
 /**
  * Implement this interface to let jsonapi4j framework to know how to delete a single resource by id.
  * <p>
@@ -19,6 +21,10 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  * automatically processed and transformed into a valid {@link ErrorsDoc}.
  */
 public interface DeleteResourceOperation extends ResourceOperation {
+
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
+        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
+    };
 
     /**
      * Deletes a single resource.
@@ -47,7 +53,7 @@ public interface DeleteResourceOperation extends ResourceOperation {
      */
     @Override
     default void validate(JsonApiRequest request) {
-        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
+        DEFAULT_VALIDATOR.accept(request);
     }
 
 }

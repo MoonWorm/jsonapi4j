@@ -20,7 +20,7 @@ public class RecipeIngredientOperations
     private Map<String, List<Ingredient>> ingredients;
 
     @Override
-    public CursorPageableResponse<RecipeIngredientRelationship> read(JsonApiRequest relationshipRequest) {
+    public CursorPageableResponse<RecipeIngredientRelationship> readMany(JsonApiRequest relationshipRequest) {
         return null;
     }
 

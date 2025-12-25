@@ -1,11 +1,13 @@
 package pro.api4.jsonapi4j;
 
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.ReflectionUtils;
-import pro.api4.jsonapi4j.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import lombok.*;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.RelationshipName;
@@ -17,20 +19,7 @@ import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.CreateResourceOperation;
-import pro.api4.jsonapi4j.operation.DeleteResourceOperation;
-import pro.api4.jsonapi4j.operation.Operation;
-import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
-import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
-import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
-import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -57,6 +46,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
 /**
  * <p>
@@ -74,20 +64,19 @@ import static java.util.stream.Collectors.toMap;
  * </ol>
  * </p>
  */
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter
 public class JsonApi4j {
 
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private AccessControlEvaluator accessControlEvaluator;
-    private Executor executor;
-
-    public JsonApi4j(DomainRegistry domainRegistry,
-                     OperationsRegistry operationsRegistry) {
-        this.domainRegistry = domainRegistry;
-        this.operationsRegistry = operationsRegistry;
-        this.accessControlEvaluator = AccessControlEvaluator.createDefault();
-        this.executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
-    }
+    @With
+    @Builder.Default
+    private AccessControlEvaluator accessControlEvaluator = AccessControlEvaluator.createDefault();
+    @With
+    @Builder.Default
+    private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
 
     public Object execute(JsonApiRequest request) {
         if (request.getTargetRelationshipName() == null) {
@@ -231,8 +220,12 @@ public class JsonApi4j {
                 .toToManyRelationshipsDoc();
     }
 
-    private AccessControlModel getInboundAccessControlSettings(Operation operation) {
-        return AccessControlModel.fromClassAnnotation(operation.getClass());
+    private AccessControlModel getInboundAccessControlSettings(RegisteredOperation<?> registeredOperation) {
+        Object accessControlModel = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiAccessControlPlugin.NAME);
+        if (accessControlModel instanceof AccessControlModel acm) {
+            return acm;
+        }
+        return null;
     }
 
     private OutboundAccessControlForJsonApiResourceIdentifier getOutboundAccessControlSettingsForRelationship(
@@ -272,14 +265,6 @@ public class JsonApi4j {
         );
     }
 
-    public void setAccessControlEvaluator(AccessControlEvaluator accessControlEvaluator) {
-        this.accessControlEvaluator = accessControlEvaluator;
-    }
-
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
-    }
-
     public class ResourceTypeStepSelected {
 
         private final ResourceType resourceType;
@@ -297,49 +282,63 @@ public class JsonApi4j {
         }
 
         public <RESOURCE_DTO> SingleResourceDoc<?> readResourceById(JsonApiRequest request) {
+            RegisteredOperation<ReadResourceByIdOperation<?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadResourceByIdOperation(resourceType, true);
+
             @SuppressWarnings("unchecked")
             ReadResourceByIdOperation<RESOURCE_DTO> executable
-                    = (ReadResourceByIdOperation<RESOURCE_DTO>) operationsRegistry.getReadResourceByIdOperation(resourceType, true);
+                    = (ReadResourceByIdOperation<RESOURCE_DTO>) registeredOperation.getOperation();
             executable.validate(request);
 
             return processSingleResource(
                     request,
                     executable::readById,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public <RESOURCE_DTO> SingleResourceDoc<?> createResource(JsonApiRequest request) {
+            RegisteredOperation<CreateResourceOperation<?>> registeredOperation
+                    = operationsRegistry.getRegisteredCreateResourceOperation(resourceType, true);
+
             @SuppressWarnings("unchecked")
             CreateResourceOperation<RESOURCE_DTO> executable
-                    = (CreateResourceOperation<RESOURCE_DTO>) operationsRegistry.getCreateResourceOperation(resourceType, true);
+                    = (CreateResourceOperation<RESOURCE_DTO>) registeredOperation.getOperation();
+
             executable.validate(request);
+
             return processSingleResource(
                     request,
                     executable::create,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateResource(JsonApiRequest request) {
-            UpdateResourceOperation executable
-                    = operationsRegistry.getUpdateResourceOperation(resourceType, true);
+            RegisteredOperation<UpdateResourceOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateResourceOperation(resourceType, true);
+
+            UpdateResourceOperation executable = registeredOperation.getOperation();
             executable.validate(request);
             processSingleResourceNoResponse(
                     request,
                     executable::update,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void deleteResource(JsonApiRequest request) {
-            DeleteResourceOperation executable
-                    = operationsRegistry.getDeleteResourceOperation(resourceType, true);
+            RegisteredOperation<DeleteResourceOperation> registeredOperation
+                    = operationsRegistry.getRegisteredDeleteResourceOperation(resourceType, true);
+
+            DeleteResourceOperation executable = registeredOperation.getOperation();
+
             executable.validate(request);
+
             processSingleResourceNoResponse(
                     request,
                     executable::delete,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -388,29 +387,33 @@ public class JsonApi4j {
         }
 
         public <RESOURCE_DTO> MultipleResourcesDoc<?> readMultipleResources(JsonApiRequest request) {
-
-            @SuppressWarnings("unchecked")
-            ReadMultipleResourcesOperation<RESOURCE_DTO> readAllExecutable
-                    = (ReadMultipleResourcesOperation<RESOURCE_DTO>) operationsRegistry.getReadMultipleResourcesOperation(resourceType, false);
-            if (readAllExecutable != null) {
+            RegisteredOperation<ReadMultipleResourcesOperation<?>> registeredReadMultipleOperation
+                    = operationsRegistry.getRegisteredReadMultipleResourcesOperation(resourceType, false);
+            if (registeredReadMultipleOperation != null) {
+                @SuppressWarnings("unchecked")
+                ReadMultipleResourcesOperation<RESOURCE_DTO> readAllExecutable
+                        = (ReadMultipleResourcesOperation<RESOURCE_DTO>) registeredReadMultipleOperation.getOperation();
                 readAllExecutable.validate(request);
                 return processMultipleResources(
                         request,
                         readAllExecutable::readPage,
-                        getInboundAccessControlSettings(readAllExecutable)
+                        getInboundAccessControlSettings(registeredReadMultipleOperation)
                 );
             } else if (request.getFilters().size() == 1
                     && request.getFilters().containsKey(ReadMultipleResourcesOperation.ID_FILTER_NAME)) {
+                RegisteredOperation<ReadResourceByIdOperation<?>> registeredReadByIdOperation
+                        = operationsRegistry.getRegisteredReadResourceByIdOperation(resourceType, false);
+
                 @SuppressWarnings("unchecked")
                 ReadResourceByIdOperation<RESOURCE_DTO> readByIdExecutable
-                        = (ReadResourceByIdOperation<RESOURCE_DTO>) operationsRegistry.getReadResourceByIdOperation(resourceType, false);
+                        = (ReadResourceByIdOperation<RESOURCE_DTO>) registeredReadByIdOperation.getOperation();
                 if (readByIdExecutable != null) {
                     ReadMultipleResourcesOperation<RESOURCE_DTO> mimickedReadAllExecutable = mimicReadMultipleResourcesOperationViaSequentialReadByIds(readByIdExecutable);
                     mimickedReadAllExecutable.validate(request);
                     return processMultipleResources(
                             request,
                             mimickedReadAllExecutable::readPage,
-                            getInboundAccessControlSettings(readByIdExecutable)
+                            getInboundAccessControlSettings(registeredReadByIdOperation)
                     );
                 }
             }
@@ -558,22 +561,25 @@ public class JsonApi4j {
             ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
                     = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
 
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
+
             @SuppressWarnings("unchecked")
             ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipName, true);
+                    = (ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             JsonApiRequest relationshipRequest
                     = getRelationshipRequestSupplier(relationshipConfigCasted, resourceIdSupplier, executable::validate).create(parentRequest, dataSourceDto);
 
             MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO> dataSupplier
-                    = relRequest -> executable.readForResource(relRequest, dataSourceDto);
+                    = relRequest -> executable.readManyForResource(relRequest, dataSourceDto);
 
             return resolveToManyRelationshipsDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -610,12 +616,15 @@ public class JsonApi4j {
             ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
                     = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
 
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+
             @SuppressWarnings("unchecked")
             BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             AccessControlModel inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable);
+                    = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
                     = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
@@ -640,7 +649,7 @@ public class JsonApi4j {
 
         private boolean hasReadToManyRelationshipsBatchImplementation(ToManyRelationship<?, ?> relationshipConfig) {
             ReadToManyRelationshipOperation<?, ?> operation
-                    = operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipConfig.relationshipName(), false);
+                    = operationsRegistry.getReadToManyRelationshipOperation(resourceType, relationshipConfig.relationshipName(), false);
             return operation instanceof BatchReadToManyRelationshipOperation;
         }
 
@@ -675,22 +684,25 @@ public class JsonApi4j {
             RelationshipName relationshipName
                     = relationshipConfig.relationshipName();
 
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
+
             @SuppressWarnings("unchecked")
             ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipName, true);
+                    = (ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             JsonApiRequest relationshipRequest
                     = getRelationshipRequestSupplier(relationshipConfig, resourceIdSupplier, executable::validate).create(parentRequest, dataSourceDto);
 
             SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> dataSupplier
-                    = relRequest -> executable.readForResource(relRequest, dataSourceDto);
+                    = relRequest -> executable.readOneForResource(relRequest, dataSourceDto);
 
             return resolveToOneRelationshipDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -727,12 +739,15 @@ public class JsonApi4j {
             ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
                     = (ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
 
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+
             @SuppressWarnings("unchecked")
             BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             AccessControlModel inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable);
+                    = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
                     = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
@@ -796,39 +811,35 @@ public class JsonApi4j {
         }
 
         public <RELATIONSHIP_DTO> ToManyRelationshipsDoc readToManyRelationship(JsonApiRequest relationshipRequest) {
-            ToManyRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked") ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO> executable =
-                    (ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(
-                            resourceType,
-                            relationshipConfig.relationshipName(),
-                            true
-                    );
+                    (ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
             return resolveToManyRelationshipsDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
-                    (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    getInboundAccessControlSettings(executable)
+                    (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::readMany,
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateToManyRelationship(JsonApiRequest relationshipRequest) {
-            ToManyRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<UpdateToManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, true);
 
             UpdateToManyRelationshipOperation executable
-                    = operationsRegistry.getUpdateToManyRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
             executeCastedNoResponse(
                     relationshipRequest,
                     executable::update,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -862,12 +873,12 @@ public class JsonApi4j {
         }
 
         public <RELATIONSHIP_DTO> ToOneRelationshipDoc readToOneRelationship(JsonApiRequest relationshipRequest) {
-            ToOneRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO> executable
-                    = (ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
@@ -875,25 +886,24 @@ public class JsonApi4j {
                     resourceType,
                     relationshipName,
                     relationshipRequest,
-                    (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    getInboundAccessControlSettings(executable)
+                    (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::readOne,
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateToOneRelationship(JsonApiRequest relationshipRequest) {
-
-            ToOneRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<UpdateToOneRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateToOneRelationshipOperation(resourceType, relationshipName, true);
 
             UpdateToOneRelationshipOperation executable
-                    = operationsRegistry.getUpdateToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
             executeCastedNoResponse(
                     relationshipRequest,
                     executable::update,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 

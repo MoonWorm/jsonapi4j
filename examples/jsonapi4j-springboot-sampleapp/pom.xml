@@ -21,8 +21,6 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
 
-        <central.skip>true</central.skip>
-
         <jsonapi4j.version>0.9.9-SNAPSHOT</jsonapi4j.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <wiremock.version>3.0.1</wiremock.version>

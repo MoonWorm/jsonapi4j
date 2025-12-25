@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.domain;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -26,7 +27,7 @@ public class DomainRegistryTests {
     public void resourceAndNoRelationships_checkAllMethodsWorksAsExpected() {
         // given - when
         TestResource testResource = new TestResource();
-        DomainRegistry sut = DomainRegistry.builder()
+        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
                 .resource(testResource)
                 .build();
 
@@ -42,7 +43,7 @@ public class DomainRegistryTests {
         TestResource testResource = new TestResource();
         TestToOneRelationship testToOneRelationship = new TestToOneRelationship();
         TestToManyRelationship testToManyRelationship = new TestToManyRelationship();
-        DomainRegistry sut = DomainRegistry.builder()
+        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
                 .resource(testResource)
                 .relationship(testToOneRelationship)
                 .relationship(testToManyRelationship)

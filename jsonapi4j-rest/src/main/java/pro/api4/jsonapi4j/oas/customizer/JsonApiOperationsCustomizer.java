@@ -1,15 +1,16 @@
 package pro.api4.jsonapi4j.oas.customizer;
 
 import pro.api4.jsonapi4j.config.OasProperties;
-import pro.api4.jsonapi4j.plugin.OperationPluginAware;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.oas.customizer.util.OasSchemaNamesUtil;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.operation.plugin.OperationOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.operation.RegisteredOperation;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
@@ -36,14 +37,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static pro.api4.jsonapi4j.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
 import static pro.api4.jsonapi4j.oas.OasOperationExtensionProperties.URL_COMPATIBLE_UNIQUE_NAME;
@@ -161,61 +155,79 @@ public class JsonApiOperationsCustomizer {
 
     private Operation createResourceOperation(ResourceType resourceType,
                                               OperationType operationType) {
-        OperationPluginAware pluginAware = operationsRegistry.getResourceOperation(resourceType, operationType, false);
+        RegisteredOperation<?> registeredOperation = operationsRegistry.getRegisteredResourceOperation(resourceType, operationType, false);
         return createOperation(
                 resourceType,
                 null,
                 operationType,
-                pluginAware
+                registeredOperation
         );
     }
 
     private Operation createRelationshipOperation(ResourceType resourceType,
                                                   RelationshipName relationshipName,
                                                   OperationType operationType) {
-        OperationPluginAware pluginAware = operationsRegistry.getRelationshipOperation(resourceType, relationshipName, operationType, false);
+        RegisteredOperation<?> registeredOperation = operationsRegistry.getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, false);
         return createOperation(
                 resourceType,
                 relationshipName,
                 operationType,
-                pluginAware
+                registeredOperation
         );
     }
 
     private Operation createOperation(ResourceType resourceType,
                                       RelationshipName relationshipName,
                                       OperationType operationType,
-                                      OperationPluginAware pluginAwareOperation) {
-        if (pluginAwareOperation == null) {
+                                      RegisteredOperation<?> registeredOperation) {
+        if (registeredOperation == null) {
             log.warn("Can't generate OAS info for {} operation. It wasn't registered for {} resource.", operationType.name(), resourceType.getType());
             return null;
         }
 
-        OperationOasPlugin oasExtension = pluginAwareOperation.getPluginOrDefault(
-                OperationOasPlugin.class,
-                OperationOasPlugin.DEFAULT
-        );
+        Object oasInfoObject = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        if (oasInfoObject == null) {
+            log.warn(
+                    "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
+                    operationType.name(),
+                    resourceType.getType(),
+                    OasOperationInfo.class.getSimpleName()
+            );
+            return null;
+        }
+
+        String resourceNameSingle = null;
+        String resourceNamePlural = null;
+        Class<?> payloadType = null;
+        OasOperationInfo oasOperationInfo = null;
+        if (oasInfoObject instanceof OasOperationInfo) {
+            oasOperationInfo = (OasOperationInfo) oasInfoObject;
+            resourceNameSingle = oasOperationInfo.resourceNameSingle();
+            resourceNamePlural = oasOperationInfo.resourceNamePlural();
+            if (oasOperationInfo.payloadType() != OasOperationInfo.NotApplicable.class) {
+                payloadType = oasOperationInfo.payloadType();
+            }
+        }
 
         OasOperationInfoUtil.Info operationOasInfo = OasOperationInfoUtil.resolveOperationOasInfo(
                 resourceType,
                 relationshipName,
                 operationType,
-                oasExtension.getResourceNameSingle(),
-                oasExtension.getResourceNamePlural()
+                resourceNameSingle,
+                resourceNamePlural
         );
 
         List<String> supportedIncludes = getSupportedIncludes(operationOasInfo);
 
-        String payloadSchemaName = getSchemaName(
-                oasExtension.getPayloadType()
-        );
+        String payloadSchemaName = getSchemaName(payloadType);
+
         String happyPathResponseDocSchemaName = OasSchemaNamesUtil.happyPathResponseDocSchemaName(
                 resourceType,
                 operationType
         );
 
         return createOasOperation(
-                oasExtension,
+                oasOperationInfo,
                 operationOasInfo,
                 operationType.getHttpStatus(),
                 payloadSchemaName,
@@ -240,7 +252,7 @@ public class JsonApiOperationsCustomizer {
         return Collections.emptyList();
     }
 
-    private Operation createOasOperation(OperationOasPlugin oasExtension,
+    private Operation createOasOperation(OasOperationInfo oasOperationInfo,
                                          OasOperationInfoUtil.Info operationOasInfo,
                                          int httpStatus,
                                          String payloadSchemaName,
@@ -269,12 +281,12 @@ public class JsonApiOperationsCustomizer {
 
         // parameters
         List<Parameter> parameters = new ArrayList<>();
-        parameters.addAll(generateCustomParameters(oasExtension));
+        parameters.addAll(generateCustomParameters(oasOperationInfo));
         parameters.addAll(generateJsonApiParameters(supportedIncludes, operationOasInfo.isPaginationSupported()));
         oasOperation.setParameters(parameters);
 
         // security requirements
-        oasOperation.setSecurity(generateSecurityRequirements(oasExtension.getSecurityConfig()));
+        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo != null ? oasOperationInfo.securityConfig() : null));
 
         // oas extensions
         addOperationExtensions(oasOperation, operationOasInfo.getUrlCompatibleUniqueName(), supportedIncludes);
@@ -378,34 +390,34 @@ public class JsonApiOperationsCustomizer {
         }
     }
 
-    private List<SecurityRequirement> generateSecurityRequirements(OperationOasPlugin.SecurityConfig securityConfig) {
+    private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfo.SecurityConfig securityConfig) {
         if (securityConfig != null) {
             List<SecurityRequirement> securityRequirements = new ArrayList<>();
-            if (securityConfig.isClientCredentialsSupported()) {
+            if (securityConfig.clientCredentialsSupported()) {
                 securityRequirements.add(new SecurityRequirement().addList(OAUTH2_CLIENT_CREDENTIALS));
             }
-            if (securityConfig.isPkceSupported()) {
-                securityRequirements.add(new SecurityRequirement().addList(OAUTH2_AUTHORIZATION_CODE_PKCE, securityConfig.getRequiredScopes()));
+            if (securityConfig.pkceSupported()) {
+                securityRequirements.add(new SecurityRequirement().addList(OAUTH2_AUTHORIZATION_CODE_PKCE, Arrays.asList(securityConfig.requiredScopes())));
             }
             return securityRequirements;
         }
         return null;
     }
 
-    private List<Parameter> generateCustomParameters(OperationOasPlugin oasExtension) {
-        if (oasExtension != null) {
-            oasExtension.getParameters().stream().map(
+    private List<Parameter> generateCustomParameters(OasOperationInfo oasOperationInfo) {
+        if (oasOperationInfo != null) {
+            return Arrays.stream(oasOperationInfo.parameters()).map(
                     parameterConfig -> {
                         Parameter parameter = new Parameter();
-                        parameter.setName(parameterConfig.getName());
-                        parameter.setDescription(parameterConfig.getDescription());
-                        parameter.setRequired(parameterConfig.isRequired());
-                        parameter.setIn(parameterConfig.getIn().getName());
-                        if (parameterConfig.isArray()) {
-                            parameter.setSchema(new ArraySchema().items(new Schema().type(parameterConfig.getType().getType()).example(parameterConfig.getExample())));
+                        parameter.setName(parameterConfig.name());
+                        parameter.setDescription(parameterConfig.description());
+                        parameter.setRequired(parameterConfig.required());
+                        parameter.setIn(parameterConfig.in().getName());
+                        if (parameterConfig.array()) {
+                            parameter.setSchema(new ArraySchema().items(new Schema().type(parameterConfig.type().getType()).example(parameterConfig.example())));
                         } else {
-                            parameter.setExample(parameterConfig.getExample());
-                            parameter.setSchema(new Schema().type(parameterConfig.getType().getType()));
+                            parameter.setExample(parameterConfig.example());
+                            parameter.setSchema(new Schema().type(parameterConfig.type().getType()));
                         }
                         return parameter;
                     }

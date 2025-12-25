@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
 import java.util.concurrent.Executor;

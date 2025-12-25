@@ -8,42 +8,35 @@ import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class OperationsRegistry {
 
-    private final Map<ResourceType, ReadResourceByIdOperation<?>> readResourceByIdOperations;
-    private final Map<ResourceType, ReadMultipleResourcesOperation<?>> readMultipleResourcesOperations;
-    private final Map<ResourceType, CreateResourceOperation<?>> createResourceOperations;
-    private final Map<ResourceType, UpdateResourceOperation> updateResourceOperations;
-    private final Map<ResourceType, DeleteResourceOperation> deleteResourceOperations;
-    private final Map<ResourceType, Map<RelationshipName, ReadToOneRelationshipOperation<?, ?>>> readToOneRelationshipOperations;
-    private final Map<ResourceType, Map<RelationshipName, ReadToManyRelationshipOperation<?, ?>>> readToManyRelationshipOperations;
-    private final Map<ResourceType, Map<RelationshipName, UpdateToOneRelationshipOperation>> updateToOneRelationshipOperations;
-    private final Map<ResourceType, Map<RelationshipName, UpdateToManyRelationshipOperation>> updateToManyRelationshipOperations;
+    private final Map<ResourceType, RegisteredOperation<ReadResourceByIdOperation<?>>> readResourceByIdOperations;
+    private final Map<ResourceType, RegisteredOperation<ReadMultipleResourcesOperation<?>>> readMultipleResourcesOperations;
+    private final Map<ResourceType, RegisteredOperation<CreateResourceOperation<?>>> createResourceOperations;
+    private final Map<ResourceType, RegisteredOperation<UpdateResourceOperation>> updateResourceOperations;
+    private final Map<ResourceType, RegisteredOperation<DeleteResourceOperation>> deleteResourceOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToOneRelationshipOperation<?, ?>>>> readToOneRelationshipOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations;
     private final Set<ResourceType> resourceTypesWithAnyOperationConfigured;
     private final Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured;
 
-    private OperationsRegistry(Map<ResourceType, ReadResourceByIdOperation<?>> readResourceByIdOperations,
-                               Map<ResourceType, ReadMultipleResourcesOperation<?>> readMultipleResourcesOperations,
-                               Map<ResourceType, CreateResourceOperation<?>> createResourceOperations,
-                               Map<ResourceType, UpdateResourceOperation> updateResourceOperations,
-                               Map<ResourceType, DeleteResourceOperation> deleteResourceOperations,
-                               Map<ResourceType, Map<RelationshipName, ReadToOneRelationshipOperation<?, ?>>> readToOneRelationshipOperations,
-                               Map<ResourceType, Map<RelationshipName, ReadToManyRelationshipOperation<?, ?>>> readToManyRelationshipOperations,
-                               Map<ResourceType, Map<RelationshipName, UpdateToOneRelationshipOperation>> updateToOneRelationshipOperations,
-                               Map<ResourceType, Map<RelationshipName, UpdateToManyRelationshipOperation>> updateToManyRelationshipOperations,
+    private OperationsRegistry(Map<ResourceType, RegisteredOperation<ReadResourceByIdOperation<?>>> readResourceByIdOperations,
+                               Map<ResourceType, RegisteredOperation<ReadMultipleResourcesOperation<?>>> readMultipleResourcesOperations,
+                               Map<ResourceType, RegisteredOperation<CreateResourceOperation<?>>> createResourceOperations,
+                               Map<ResourceType, RegisteredOperation<UpdateResourceOperation>> updateResourceOperations,
+                               Map<ResourceType, RegisteredOperation<DeleteResourceOperation>> deleteResourceOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToOneRelationshipOperation<?, ?>>>> readToOneRelationshipOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations,
                                Set<ResourceType> resourceTypesWithAnyOperationConfigured,
                                Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured) {
         this.readResourceByIdOperations = readResourceByIdOperations;
@@ -59,14 +52,15 @@ public class OperationsRegistry {
         this.relationshipNamesWithAnyOperationConfigured = relationshipNamesWithAnyOperationConfigured;
     }
 
-    public static OperationsRegistryBuilder builder() {
-        return new OperationsRegistryBuilder();
+    public static OperationsRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
+        return new OperationsRegistryBuilder(plugins);
     }
 
     public static OperationsRegistry empty() {
-        return builder().build();
+        return builder(Collections.emptyList()).build();
     }
 
+    @SuppressWarnings("LombokGetterMayBeUsed")
     public Set<ResourceType> getResourceTypesWithAnyOperationConfigured() {
         return this.resourceTypesWithAnyOperationConfigured;
     }
@@ -78,17 +72,30 @@ public class OperationsRegistry {
     public ResourceOperation getResourceOperation(ResourceType resourceType,
                                                   OperationType operationType,
                                                   boolean orElseThrow) {
+        RegisteredOperation<? extends ResourceOperation> registeredOperation
+                = getRegisteredResourceOperation(resourceType, operationType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<? extends ResourceOperation> getRegisteredResourceOperation(
+            ResourceType resourceType,
+            OperationType operationType,
+            boolean orElseThrow
+    ) {
         if (operationType.getSubType() == OperationType.SubType.RESOURCE) {
             if (operationType == OperationType.READ_RESOURCE_BY_ID) {
-                return getReadResourceByIdOperation(resourceType, orElseThrow);
+                return getRegisteredReadResourceByIdOperation(resourceType, orElseThrow);
             } else if (operationType == OperationType.READ_MULTIPLE_RESOURCES) {
-                return getReadMultipleResourcesOperation(resourceType, orElseThrow);
+                return getRegisteredReadMultipleResourcesOperation(resourceType, orElseThrow);
             } else if (operationType == OperationType.CREATE_RESOURCE) {
-                return getCreateResourceOperation(resourceType, orElseThrow);
+                return getRegisteredCreateResourceOperation(resourceType, orElseThrow);
             } else if (operationType == OperationType.UPDATE_RESOURCE) {
-                return getUpdateResourceOperation(resourceType, orElseThrow);
+                return getRegisteredUpdateResourceOperation(resourceType, orElseThrow);
             } else {
-                return getDeleteResourceOperation(resourceType, orElseThrow);
+                return getRegisteredDeleteResourceOperation(resourceType, orElseThrow);
             }
         } else {
             if (orElseThrow) {
@@ -115,17 +122,31 @@ public class OperationsRegistry {
                                                           RelationshipName relationshipName,
                                                           OperationType operationType,
                                                           boolean orElseThrow) {
+        RegisteredOperation<? extends RelationshipOperation> registeredOperation
+                = getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<? extends RelationshipOperation> getRegisteredRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            OperationType operationType,
+            boolean orElseThrow
+    ) {
         if (operationType.getSubType() == OperationType.SubType.TO_ONE_RELATIONSHIP) {
             if (operationType == OperationType.READ_TO_ONE_RELATIONSHIP) {
-                return getReadToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
+                return getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
             } else {
-                return getUpdateToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
+                return getRegisteredUpdateToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
             }
         } else if (operationType.getSubType() == OperationType.SubType.TO_MANY_RELATIONSHIP) {
             if (operationType == OperationType.READ_TO_MANY_RELATIONSHIP) {
-                return getReadToManyDataRelationshipOperation(resourceType, relationshipName, orElseThrow);
+                return getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
             } else {
-                return getUpdateToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
+                return getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
             }
         } else {
             if (orElseThrow) {
@@ -150,7 +171,7 @@ public class OperationsRegistry {
     }
 
     public boolean isAnyToManyRelationshipOperationConfigured(ResourceType resourceType,
-                                                               RelationshipName relationshipName) {
+                                                              RelationshipName relationshipName) {
         return OperationType.getToManyRelationshipOperationTypes()
                 .stream()
                 .anyMatch(operationType -> isToManyRelationshipOperationConfigured(resourceType, relationshipName, operationType));
@@ -188,6 +209,18 @@ public class OperationsRegistry {
 
     public ReadResourceByIdOperation<?> getReadResourceByIdOperation(ResourceType resourceType,
                                                                      boolean orElseThrow) {
+        RegisteredOperation<ReadResourceByIdOperation<?>> registeredOperation
+                = getRegisteredReadResourceByIdOperation(resourceType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<ReadResourceByIdOperation<?>> getRegisteredReadResourceByIdOperation(
+            ResourceType resourceType,
+            boolean orElseThrow
+    ) {
         if (!readResourceByIdOperations.containsKey(resourceType)) {
             if (orElseThrow) {
                 throw new OperationNotFoundException(OperationType.READ_RESOURCE_BY_ID, resourceType);
@@ -199,6 +232,18 @@ public class OperationsRegistry {
 
     public ReadMultipleResourcesOperation<?> getReadMultipleResourcesOperation(ResourceType resourceType,
                                                                                boolean orElseThrow) {
+        RegisteredOperation<ReadMultipleResourcesOperation<?>> registeredOperation
+                = getRegisteredReadMultipleResourcesOperation(resourceType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<ReadMultipleResourcesOperation<?>> getRegisteredReadMultipleResourcesOperation(
+            ResourceType resourceType,
+            boolean orElseThrow
+    ) {
         if (!readMultipleResourcesOperations.containsKey(resourceType)) {
             if (orElseThrow) {
                 throw new OperationNotFoundException(OperationType.READ_MULTIPLE_RESOURCES, resourceType);
@@ -210,6 +255,18 @@ public class OperationsRegistry {
 
     public CreateResourceOperation<?> getCreateResourceOperation(ResourceType resourceType,
                                                                  boolean orElseThrow) {
+        RegisteredOperation<CreateResourceOperation<?>> registeredOperation
+                = getRegisteredCreateResourceOperation(resourceType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<CreateResourceOperation<?>> getRegisteredCreateResourceOperation(
+            ResourceType resourceType,
+            boolean orElseThrow
+    ) {
         if (!createResourceOperations.containsKey(resourceType)) {
             if (orElseThrow) {
                 throw new OperationNotFoundException(OperationType.CREATE_RESOURCE, resourceType);
@@ -221,6 +278,18 @@ public class OperationsRegistry {
 
     public UpdateResourceOperation getUpdateResourceOperation(ResourceType resourceType,
                                                               boolean orElseThrow) {
+        RegisteredOperation<UpdateResourceOperation> registeredOperation
+                = getRegisteredUpdateResourceOperation(resourceType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<UpdateResourceOperation> getRegisteredUpdateResourceOperation(
+            ResourceType resourceType,
+            boolean orElseThrow
+    ) {
         if (!updateResourceOperations.containsKey(resourceType)) {
             if (orElseThrow) {
                 throw new OperationNotFoundException(OperationType.UPDATE_RESOURCE, resourceType);
@@ -232,6 +301,18 @@ public class OperationsRegistry {
 
     public DeleteResourceOperation getDeleteResourceOperation(ResourceType resourceType,
                                                               boolean orElseThrow) {
+        RegisteredOperation<DeleteResourceOperation> registeredOperation
+                = getRegisteredDeleteResourceOperation(resourceType, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<DeleteResourceOperation> getRegisteredDeleteResourceOperation(
+            ResourceType resourceType,
+            boolean orElseThrow
+    ) {
         if (!deleteResourceOperations.containsKey(resourceType)) {
             if (orElseThrow) {
                 throw new OperationNotFoundException(OperationType.DELETE_RESOURCE, resourceType);
@@ -244,6 +325,19 @@ public class OperationsRegistry {
     public ReadToOneRelationshipOperation<?, ?> getReadToOneRelationshipOperation(ResourceType resourceType,
                                                                                   RelationshipName relationshipName,
                                                                                   boolean orElseThrow) {
+        RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                = getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> getRegisteredReadToOneRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
         if (!readToOneRelationshipOperations.containsKey(resourceType)
                 || !readToOneRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
             if (orElseThrow) {
@@ -254,9 +348,22 @@ public class OperationsRegistry {
         return readToOneRelationshipOperations.get(resourceType).get(relationshipName);
     }
 
-    public ReadToManyRelationshipOperation<?, ?> getReadToManyDataRelationshipOperation(ResourceType resourceType,
-                                                                                        RelationshipName relationshipName,
-                                                                                        boolean orElseThrow) {
+    public ReadToManyRelationshipOperation<?, ?> getReadToManyRelationshipOperation(ResourceType resourceType,
+                                                                                    RelationshipName relationshipName,
+                                                                                    boolean orElseThrow) {
+        RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                = getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> getRegisteredReadToManyRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
         if (!readToManyRelationshipOperations.containsKey(resourceType)
                 || !readToManyRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
             if (orElseThrow) {
@@ -275,6 +382,15 @@ public class OperationsRegistry {
     }
 
     public List<UpdateToOneRelationshipOperation> getUpdateToOneRelationshipOperations(ResourceType resourceType) {
+        return getRegisteredUpdateToOneRelationshipOperations(resourceType)
+                .stream()
+                .map(RegisteredOperation::getOperation)
+                .toList();
+    }
+
+    public List<RegisteredOperation<UpdateToOneRelationshipOperation>> getRegisteredUpdateToOneRelationshipOperations(
+            ResourceType resourceType
+    ) {
         return MapUtils.emptyIfNull(updateToOneRelationshipOperations.get(resourceType))
                 .values()
                 .stream()
@@ -284,6 +400,19 @@ public class OperationsRegistry {
     public UpdateToOneRelationshipOperation getUpdateToOneRelationshipOperation(ResourceType resourceType,
                                                                                 RelationshipName relationshipName,
                                                                                 boolean orElseThrow) {
+        RegisteredOperation<UpdateToOneRelationshipOperation> registeredOperation
+                = getRegisteredUpdateToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<UpdateToOneRelationshipOperation> getRegisteredUpdateToOneRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
         if (!updateToOneRelationshipOperations.containsKey(resourceType)
                 || !updateToOneRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
             if (orElseThrow) {
@@ -297,6 +426,19 @@ public class OperationsRegistry {
     public UpdateToManyRelationshipOperation getUpdateToManyRelationshipOperation(ResourceType resourceType,
                                                                                   RelationshipName relationshipName,
                                                                                   boolean orElseThrow) {
+        RegisteredOperation<UpdateToManyRelationshipOperation> registeredOperation
+                = getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
+        if (registeredOperation != null) {
+            return registeredOperation.getOperation();
+        }
+        return null;
+    }
+
+    public RegisteredOperation<UpdateToManyRelationshipOperation> getRegisteredUpdateToManyRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
         if (!updateToManyRelationshipOperations.containsKey(resourceType)
                 || !updateToManyRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
             if (orElseThrow) {
@@ -308,6 +450,15 @@ public class OperationsRegistry {
     }
 
     public List<UpdateToManyRelationshipOperation> getUpdateToManyRelationshipOperationsFor(ResourceType resourceType) {
+        return getRegisteredUpdateToManyRelationshipOperationsFor(resourceType)
+                .stream()
+                .map(RegisteredOperation::getOperation)
+                .toList();
+    }
+
+    public List<RegisteredOperation<UpdateToManyRelationshipOperation>> getRegisteredUpdateToManyRelationshipOperationsFor(
+            ResourceType resourceType
+    ) {
         return MapUtils.emptyIfNull(updateToManyRelationshipOperations.get(resourceType))
                 .values()
                 .stream()
@@ -315,7 +466,11 @@ public class OperationsRegistry {
     }
 
     public List<? extends Operation> getAllOperations() {
-        List<Operation> result = new ArrayList<>();
+        return getAllRegisteredOperations().stream().map(RegisteredOperation::getOperation).toList();
+    }
+
+    private List<RegisteredOperation<? extends Operation>> getAllRegisteredOperations() {
+        List<RegisteredOperation<? extends Operation>> result = new ArrayList<>();
         result.addAll(this.readResourceByIdOperations.values());
         result.addAll(this.readMultipleResourcesOperations.values());
         result.addAll(this.createResourceOperations.values());
@@ -336,24 +491,62 @@ public class OperationsRegistry {
         return Collections.unmodifiableList(result);
     }
 
+    public Object getPluginInfo(ResourceType resourceType,
+                                OperationType operationType,
+                                String pluginName) {
+        return MapUtils.emptyIfNull(getPluginsInfo(resourceType, operationType)).get(pluginName);
+    }
+
+    public Map<String, Object> getPluginsInfo(ResourceType resourceType,
+                                              OperationType operationType) {
+        RegisteredOperation<? extends ResourceOperation> registeredOperation
+                = getRegisteredResourceOperation(resourceType, operationType, false);
+        if (registeredOperation != null) {
+            return registeredOperation.getPluginInfo();
+        }
+        return null;
+    }
+
+    public Object getPluginInfo(ResourceType resourceType,
+                                RelationshipName relationshipName,
+                                OperationType operationType,
+                                String pluginName) {
+        return MapUtils.emptyIfNull(getPluginsInfo(resourceType, relationshipName, operationType)).get(pluginName);
+    }
+
+    public Map<String, Object> getPluginsInfo(ResourceType resourceType,
+                                              RelationshipName relationshipName,
+                                              OperationType operationType) {
+        RegisteredOperation<? extends RelationshipOperation> registeredOperation
+                = getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, false);
+        if (registeredOperation != null) {
+            return registeredOperation.getPluginInfo();
+        }
+        return null;
+    }
+
     @Slf4j
     public static class OperationsRegistryBuilder {
 
-        private final Map<ResourceType, ReadResourceByIdOperation<?>> readResourceByIdOperations;
-        private final Map<ResourceType, ReadMultipleResourcesOperation<?>> readMultipleResourcesOperations;
-        private final Map<ResourceType, CreateResourceOperation<?>> createResourceOperations;
-        private final Map<ResourceType, UpdateResourceOperation> updateResourceOperations;
-        private final Map<ResourceType, DeleteResourceOperation> deleteResourceOperations;
+        private final List<JsonApi4jPlugin> plugins;
 
-        private final Map<ResourceType, Map<RelationshipName, ReadToOneRelationshipOperation<?, ?>>> readToOneRelationshipOperations;
-        private final Map<ResourceType, Map<RelationshipName, ReadToManyRelationshipOperation<?, ?>>> readToManyRelationshipOperations;
-        private final Map<ResourceType, Map<RelationshipName, UpdateToOneRelationshipOperation>> updateToOneRelationshipOperations;
-        private final Map<ResourceType, Map<RelationshipName, UpdateToManyRelationshipOperation>> updateToManyRelationshipOperations;
+        private final Map<ResourceType, RegisteredOperation<ReadResourceByIdOperation<?>>> readResourceByIdOperations;
+        private final Map<ResourceType, RegisteredOperation<ReadMultipleResourcesOperation<?>>> readMultipleResourcesOperations;
+        private final Map<ResourceType, RegisteredOperation<CreateResourceOperation<?>>> createResourceOperations;
+        private final Map<ResourceType, RegisteredOperation<UpdateResourceOperation>> updateResourceOperations;
+        private final Map<ResourceType, RegisteredOperation<DeleteResourceOperation>> deleteResourceOperations;
+
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToOneRelationshipOperation<?, ?>>>> readToOneRelationshipOperations;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations;
 
         private final Set<ResourceType> resourceTypesWithAnyOperationConfigured;
         private final Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured;
 
-        private OperationsRegistryBuilder() {
+        private OperationsRegistryBuilder(List<JsonApi4jPlugin> plugins) {
+            this.plugins = plugins;
+
             this.readResourceByIdOperations = new HashMap<>();
             this.readMultipleResourcesOperations = new HashMap<>();
             this.createResourceOperations = new HashMap<>();
@@ -369,31 +562,67 @@ public class OperationsRegistry {
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
         }
 
+        public OperationsRegistryBuilder repository(ResourceRepository<?> repository) {
+            return this.operation(repository);
+        }
+
+
+        public OperationsRegistryBuilder repository(ToOneRelationshipRepository<?, ?> repository) {
+            return this.operation(repository);
+        }
+
+        public OperationsRegistryBuilder repository(ToOneRelationshipBatchAwareRepository<?, ?> repository) {
+            return this.operation(repository);
+        }
+
+        public OperationsRegistryBuilder repository(ToManyRelationshipRepository<?, ?> repository) {
+            return this.operation(repository);
+        }
+
+        public OperationsRegistryBuilder repository(ToManyRelationshipBatchAwareRepository<?, ?> repository) {
+            return this.operation(repository);
+        }
+
         public OperationsRegistryBuilder operation(ResourceOperation operation) {
             Validate.notNull(operation);
             boolean isRegistered = false;
             if (operation instanceof ReadResourceByIdOperation<?> o) {
-                this.readResourceByIdOperations.put(o.resourceType(), o);
+                this.readResourceByIdOperations.put(
+                        o.resourceType(),
+                        enrichWithPluginInfo(o, ReadResourceByIdOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, ReadResourceByIdOperation.class);
             }
             if (operation instanceof ReadMultipleResourcesOperation<?> o) {
-                this.readMultipleResourcesOperations.put(o.resourceType(), o);
+                this.readMultipleResourcesOperations.put(
+                        o.resourceType(),
+                        enrichWithPluginInfo(o, ReadMultipleResourcesOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, ReadMultipleResourcesOperation.class);
             }
             if (operation instanceof CreateResourceOperation<?> o) {
-                this.createResourceOperations.put(o.resourceType(), o);
+                this.createResourceOperations.put(
+                        o.resourceType(),
+                        enrichWithPluginInfo(o, CreateResourceOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, CreateResourceOperation.class);
             }
             if (operation instanceof UpdateResourceOperation o) {
-                this.updateResourceOperations.put(o.resourceType(), o);
+                this.updateResourceOperations.put(
+                        o.resourceType(),
+                        enrichWithPluginInfo(o, UpdateResourceOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, UpdateResourceOperation.class);
             }
             if (operation instanceof DeleteResourceOperation o) {
-                this.deleteResourceOperations.put(o.resourceType(), o);
+                this.deleteResourceOperations.put(
+                        o.resourceType(),
+                        enrichWithPluginInfo(o, DeleteResourceOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, DeleteResourceOperation.class);
             }
@@ -401,7 +630,10 @@ public class OperationsRegistry {
                 this.readToOneRelationshipOperations.computeIfAbsent(
                         o.resourceType(),
                         rt -> new HashMap<>()
-                ).put(o.relationshipName(), o);
+                ).put(
+                        o.relationshipName(),
+                        enrichWithPluginInfo(o, ReadToOneRelationshipOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, ReadToOneRelationshipOperation.class);
             }
@@ -409,7 +641,10 @@ public class OperationsRegistry {
                 this.readToManyRelationshipOperations.computeIfAbsent(
                         o.resourceType(),
                         rt -> new HashMap<>()
-                ).put(o.relationshipName(), o);
+                ).put(
+                        o.relationshipName(),
+                        enrichWithPluginInfo(o, ReadToManyRelationshipOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, ReadToManyRelationshipOperation.class);
             }
@@ -417,7 +652,10 @@ public class OperationsRegistry {
                 this.updateToOneRelationshipOperations.computeIfAbsent(
                         o.resourceType(),
                         rt -> new HashMap<>()
-                ).put(o.relationshipName(), o);
+                ).put(
+                        o.relationshipName(),
+                        enrichWithPluginInfo(o, UpdateToOneRelationshipOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, UpdateToOneRelationshipOperation.class);
             }
@@ -425,7 +663,10 @@ public class OperationsRegistry {
                 this.updateToManyRelationshipOperations.computeIfAbsent(
                         o.resourceType(),
                         rt -> new HashMap<>()
-                ).put(o.relationshipName(), o);
+                ).put(
+                        o.relationshipName(),
+                        enrichWithPluginInfo(o, UpdateToManyRelationshipOperation.class)
+                );
                 isRegistered = true;
                 logOperationRegistered(o, UpdateToManyRelationshipOperation.class);
             }
@@ -477,20 +718,35 @@ public class OperationsRegistry {
 
         public OperationsRegistry build() {
             return new OperationsRegistry(
-                    Collections.unmodifiableMap(this.readResourceByIdOperations),
-                    Collections.unmodifiableMap(this.readMultipleResourcesOperations),
-                    Collections.unmodifiableMap(this.createResourceOperations),
-                    Collections.unmodifiableMap(this.updateResourceOperations),
-                    Collections.unmodifiableMap(this.deleteResourceOperations),
+                    this.readResourceByIdOperations,
+                    this.readMultipleResourcesOperations,
+                    this.createResourceOperations,
+                    this.updateResourceOperations,
+                    this.deleteResourceOperations,
 
-                    Collections.unmodifiableMap(this.readToOneRelationshipOperations),
-                    Collections.unmodifiableMap(this.readToManyRelationshipOperations),
-                    Collections.unmodifiableMap(this.updateToOneRelationshipOperations),
-                    Collections.unmodifiableMap(this.updateToManyRelationshipOperations),
+                    this.readToOneRelationshipOperations,
+                    this.readToManyRelationshipOperations,
+                    this.updateToOneRelationshipOperations,
+                    this.updateToManyRelationshipOperations,
 
-                    Collections.unmodifiableSet(this.resourceTypesWithAnyOperationConfigured),
-                    Collections.unmodifiableMap(this.relationshipNamesWithAnyOperationConfigured)
+                    this.resourceTypesWithAnyOperationConfigured,
+                    this.relationshipNamesWithAnyOperationConfigured
             );
+        }
+
+        private <T extends Operation> RegisteredOperation<T> enrichWithPluginInfo(T operation,
+                                                                                  Class<?> operationClass) {
+            Map<String, Object> pluginsInfo = new HashMap<>();
+            for (JsonApi4jPlugin plugin : this.plugins) {
+                Object pluginInfo = plugin.extractPluginInfoFromOperation(operation, operationClass);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                }
+            }
+            return RegisteredOperation.<T>builder()
+                    .operation(operation)
+                    .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
+                    .build();
         }
     }
 

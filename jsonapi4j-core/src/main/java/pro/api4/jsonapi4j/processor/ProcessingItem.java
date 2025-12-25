@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.processor;
 
 import lombok.Data;
-import pro.api4.jsonapi4j.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
 
 @Data
 public class ProcessingItem<DATA_SOURCE_DTO, RESOURCE> {

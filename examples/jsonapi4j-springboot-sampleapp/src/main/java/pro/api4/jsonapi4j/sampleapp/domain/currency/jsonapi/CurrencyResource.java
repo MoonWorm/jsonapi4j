@@ -1,17 +1,17 @@
 package pro.api4.jsonapi4j.sampleapp.domain.currency.jsonapi;
 
+import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.domain.plugin.oas.ResourceOasPlugin;
-import pro.api4.jsonapi4j.plugin.ResourcePlugin;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyAttributes;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.CURRENCIES;
 
+@OasResourceInfo(
+        attributes = CurrencyAttributes.class
+)
 @Component
 public class CurrencyResource implements Resource<DownstreamCurrencyWithCode> {
 
@@ -33,12 +33,4 @@ public class CurrencyResource implements Resource<DownstreamCurrencyWithCode> {
         );
     }
 
-    @Override
-    public List<ResourcePlugin<?>> plugins() {
-        return List.of(
-                ResourceOasPlugin.builder()
-                        .attributes(CurrencyAttributes.class)
-                        .build()
-        );
-    }
 }

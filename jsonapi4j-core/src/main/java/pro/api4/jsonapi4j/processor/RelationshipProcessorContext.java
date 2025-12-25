@@ -2,9 +2,9 @@ package pro.api4.jsonapi4j.processor;
 
 import lombok.Getter;
 import lombok.With;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 
 @Getter
 @With

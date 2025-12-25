@@ -13,12 +13,12 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  * The framework also uses this implementation for scenarios when the client request a single or multiple
  * primary resources but also requests (via include="foo,bar") to resolve this relationship.
  * <p>
- * Main logic is supposed to be implemented in {@link #read(JsonApiRequest)}.
+ * Main logic is supposed to be implemented in {@link #readMany(JsonApiRequest)}.
  * <p>
  * It is recommended to complement the main logic implementation with some validation logic by implementing
  * {@link #validate(JsonApiRequest)} method. This method invoked before the main logic execution.
  * All checks regarding input parameters and their formats must be done there.
- * Don't bring these checks to the {@link #read(JsonApiRequest)}. If some error detected thrown exception will be
+ * Don't bring these checks to the {@link #readMany(JsonApiRequest)}. If some error detected thrown exception will be
  * automatically processed and transformed into a valid {@link ErrorsDoc}.
  *
  * @param <RESOURCE_DTO>     a downstream object type that encapsulates internal model implementation and of the parent
@@ -36,7 +36,7 @@ public interface ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>
      * @param relationshipRequest incoming {@link JsonApiRequest}
      * @return {@link CursorPageableResponse} containing a certain page of {@link RELATIONSHIP_DTO} items
      */
-    CursorPageableResponse<RELATIONSHIP_DTO> read(JsonApiRequest relationshipRequest);
+    CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest);
 
     /**
      * Triggered when querying the primary resource(s) as part of its relationship resolution
@@ -47,15 +47,15 @@ public interface ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>
      * <a href="https://jsonapi.org/format/#document-resource-object-relationships">JSON:API Relationship Object</a>
      * and effectively means that no external operations will be triggered in order to resolve these JSON:API linkages.
      * <p>
-     * By default, falling back to {@link #read(JsonApiRequest)} invocation that triggers an external operation.
+     * By default, falling back to {@link #readMany(JsonApiRequest)} invocation that triggers an external operation.
      *
      * @param relationshipRequest relationship {@link JsonApiRequest} that is composed during primary resource request
      *                            processing from the original {@link JsonApiRequest} and {@link RESOURCE_DTO}
      * @return {@link CursorPageableResponse} containing the first page of {@link RELATIONSHIP_DTO} items
      */
-    default CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest,
-                                                                     RESOURCE_DTO resourceDto) {
-        return read(relationshipRequest);
+    default CursorPageableResponse<RELATIONSHIP_DTO> readManyForResource(JsonApiRequest relationshipRequest,
+                                                                         RESOURCE_DTO resourceDto) {
+        return readMany(relationshipRequest);
     }
 
 }

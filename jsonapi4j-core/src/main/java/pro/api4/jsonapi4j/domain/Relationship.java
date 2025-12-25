@@ -1,11 +1,10 @@
 package pro.api4.jsonapi4j.domain;
 
-import pro.api4.jsonapi4j.plugin.RelationshipPluginAware;
-import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
+import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtractor;
+import pro.api4.jsonapi4j.plugin.ac.impl.ownership.OwnerIdExtractor;
 
 /**
  * Base interface for {@link ToManyRelationship} and {@link ToOneRelationship}. Encapsulates common logic of any type of
@@ -14,7 +13,7 @@ import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
  * Must not be used directly. Applications must extend either {@link ToManyRelationship} or {@link ToOneRelationship}.
  */
 public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
-        extends Comparable<Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>>, RelationshipPluginAware {
+        extends Comparable<Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>> {
 
     /**
      * @return an instance of {@link RelationshipName} that represents the name of the relationship e.g.

@@ -6,6 +6,7 @@ import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to read multiple resources. This implies both
@@ -63,6 +64,13 @@ public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOp
 
     String ID_FILTER_NAME = "id";
 
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
+        List<String> ids = request.getFilters().get(ID_FILTER_NAME);
+        if (ids != null && !ids.isEmpty()) {
+            new JsonApi4jDefaultValidator().validateFilterByIds(ids);
+        }
+    };
+
     /**
      * Reads multiple resources. Implies 'read all' by default, but can be limited by filters. In some situations only
      * 'read by id' filter flow might exist.
@@ -95,10 +103,7 @@ public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOp
      */
     @Override
     default void validate(JsonApiRequest request) {
-        List<String> ids = request.getFilters().get(ID_FILTER_NAME);
-        if (ids != null && !ids.isEmpty()) {
-            new JsonApi4jDefaultValidator().validateFilterByIds(ids);
-        }
+        DEFAULT_VALIDATOR.accept(request);
     }
 
 }

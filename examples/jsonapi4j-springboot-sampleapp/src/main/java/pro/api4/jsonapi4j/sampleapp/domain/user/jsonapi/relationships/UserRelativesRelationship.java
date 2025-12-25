@@ -4,12 +4,7 @@ import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
-import pro.api4.jsonapi4j.domain.plugin.oas.RelationshipOasPlugin;
-import pro.api4.jsonapi4j.plugin.RelationshipPlugin;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
-
-import java.util.List;
-import java.util.Set;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_RELATIVES;
@@ -37,13 +32,13 @@ public class UserRelativesRelationship implements ToManyRelationship<UserDbEntit
         return userDbEntity.getId();
     }
 
-    @Override
+    /*@Override
     public List<RelationshipPlugin<?>> plugins() {
         return List.of(
                 RelationshipOasPlugin.builder()
                         .relationshipTypes(Set.of(USERS))
                         .build()
         );
-    }
+    }*/
 
 }
