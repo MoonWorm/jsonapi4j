@@ -283,70 +283,74 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private PrimaryAndNestedSchemas generateSingleResourceDocSchema(
-            Resource<?> resourceConfig, Schema<?> resourceSchema
+            Resource<?> registeredResource, Schema<?> resourceSchema
     ) {
         PrimaryAndNestedSchemas singleResourceDocSchema = generateAllSchemasFromType(SingleResourceDoc.class);
         singleResourceDocSchema.getPrimarySchema().getProperties().put("data", new Schema<>().$ref(resourceSchema.getName()));
-        generateIncludedSchema(resourceConfig.resourceType(), false).ifPresent(s -> singleResourceDocSchema.getPrimarySchema().getProperties().put("included", s));
-        singleResourceDocSchema.getPrimarySchema().setName(singleResourceDocSchemaName(resourceConfig.resourceType()));
+        generateIncludedSchema(registeredResource, false).ifPresent(s -> singleResourceDocSchema.getPrimarySchema().getProperties().put("included", s));
+        singleResourceDocSchema.getPrimarySchema().setName(singleResourceDocSchemaName(registeredResource.resourceType()));
         return singleResourceDocSchema;
     }
 
     private PrimaryAndNestedSchemas generateMultipleResourcesDocSchema(
-            Resource<?> resourceConfig, Schema<?> resourceSchema
+            Resource<?> registeredResource, Schema<?> resourceSchema
     ) {
         PrimaryAndNestedSchemas multipleResourceSchema = generateAllSchemasFromType(MultipleResourcesDoc.class);
         multipleResourceSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceSchema.getName())));
-        generateIncludedSchema(resourceConfig.resourceType(), false).ifPresent(s -> multipleResourceSchema.getPrimarySchema().getProperties().put("included", s));
-        multipleResourceSchema.getPrimarySchema().setName(multipleResourcesDocSchemaName(resourceConfig.resourceType()));
+        generateIncludedSchema(registeredResource, false).ifPresent(s -> multipleResourceSchema.getPrimarySchema().getProperties().put("included", s));
+        multipleResourceSchema.getPrimarySchema().setName(multipleResourcesDocSchemaName(registeredResource.resourceType()));
         return multipleResourceSchema;
     }
 
     private PrimaryAndNestedSchemas generateToManyRelationshipDocSchema(
-            Resource<?> resourceConfig, String resourceIdentifierSchemaName
+            Resource<?> registeredResource,
+            String resourceIdentifierSchemaName
     ) {
         PrimaryAndNestedSchemas toManyRelationshipsDocSchema = generateAllSchemasFromType(ToManyRelationshipsDoc.class);
         toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceIdentifierSchemaName)));
-        generateIncludedSchema(resourceConfig.resourceType(), true).ifPresent(s -> toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("included", s));
-        toManyRelationshipsDocSchema.getPrimarySchema().setName(toManyRelationshipsDocSchemaName(resourceConfig.resourceType()));
+        generateIncludedSchema(registeredResource, true).ifPresent(s -> toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("included", s));
+        toManyRelationshipsDocSchema.getPrimarySchema().setName(toManyRelationshipsDocSchemaName(registeredResource.resourceType()));
         return toManyRelationshipsDocSchema;
     }
 
     private PrimaryAndNestedSchemas generateToOneRelationshipDocSchema(
-            Resource<?> resourceConfig,
+            Resource<?> registeredResource,
             String resourceIdentifierSchemaName
     ) {
         PrimaryAndNestedSchemas toOneRelationshipSchema = generateAllSchemasFromType(ToOneRelationshipDoc.class);
         toOneRelationshipSchema.getPrimarySchema().getProperties().put("data", new Schema<>().$ref(resourceIdentifierSchemaName));
         generateIncludedSchema(
-                resourceConfig.resourceType(),
+                registeredResource,
                 true
         ).ifPresent(s -> toOneRelationshipSchema.getPrimarySchema().getProperties().put("included", s));
-        toOneRelationshipSchema.getPrimarySchema().setName(toOneRelationshipDocSchemaName(resourceConfig.resourceType()));
+        toOneRelationshipSchema.getPrimarySchema().setName(toOneRelationshipDocSchemaName(registeredResource.resourceType()));
         return toOneRelationshipSchema;
     }
 
     private Optional<Schema> generateIncludedSchema(
-            ResourceType resourceType,
+            Resource<?> parentResource,
             boolean includingParentResourceType
     ) {
-        Stream<String> toManyRelationshipResourceTypes = domainRegistry
+        ResourceType resourceType = parentResource.resourceType();
+        Stream<Resource<?>> toManyRelationshipResourceTypes = domainRegistry
                 .getRegisteredToManyRelationships(resourceType)
                 .stream()
                 .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
                 .filter(Objects::nonNull)
                 .filter(r -> r instanceof OasRelationshipInfo)
                 .map(r -> (OasRelationshipInfo) r)
-                .flatMap(r -> Arrays.stream(r.relationshipTypes()));
-        Stream<String> toOneRelationshipResourceTypes = domainRegistry
+                .flatMap(r -> Arrays.stream(r.relationshipTypes()))
+                .flatMap(r -> domainRegistry.getResources().stream().filter(res -> res.getClass().isAssignableFrom(r)));
+        Stream<Resource<?>> toOneRelationshipResourceTypes = domainRegistry
                 .getRegisteredToOneRelationships(resourceType)
                 .stream()
                 .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
                 .filter(Objects::nonNull)
                 .filter(r -> r instanceof OasRelationshipInfo)
                 .map(r -> (OasRelationshipInfo) r)
-                .flatMap(r -> Arrays.stream(r.relationshipTypes()));
-        List<String> resourcesForRelationships = Stream.concat(
+                .flatMap(r -> Arrays.stream(r.relationshipTypes()))
+                .flatMap(r -> domainRegistry.getResources().stream().filter(res -> res.getClass().isAssignableFrom(r)));
+        List<Resource<?>> resourcesForRelationships = Stream.concat(
                 toManyRelationshipResourceTypes,
                 toOneRelationshipResourceTypes
         ).toList();
@@ -355,17 +359,19 @@ public class JsonApiResponseSchemaCustomizer {
             return Optional.empty();
         }
 
-        List<ResourceType> parentResource = includingParentResourceType
-                ? Collections.singletonList(resourceType)
-                : Collections.<ResourceType>emptyList();
-        List<String> resultingResources = Stream.concat(
+        List<Resource<?>> parentResourceType = includingParentResourceType
+                ? Collections.singletonList(parentResource)
+                : Collections.emptyList();
+
+        List<Resource<?>> resultingResources = Stream.concat(
                 resourcesForRelationships.stream(),
-                parentResource.stream().map(ResourceType::getType)
+                parentResourceType.stream()
         ).distinct().toList();
 
         List<Schema> schemaRefs = resultingResources
                 .stream()
                 .distinct()
+                .map(Resource::resourceType)
                 .map(OasSchemaNamesUtil::resourceSchemaName)
                 .map(rn -> new Schema().$ref(rn))
                 .toList();

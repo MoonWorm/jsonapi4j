@@ -1,18 +1,15 @@
-package pro.api4.jsonapi4j.sampleapp.domain.user.jsonapi;
+package pro.api4.jsonapi4j.sampleapp.domain.user;
 
 import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.domain.country.jsonapi.CountryResource;
-import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 
 @OasResourceInfo(
-        attributes = UserAttributes.class,
-        includes = {CountryResource.class}
+        attributes = UserAttributes.class
 )
 @Component
 public class UserResource implements Resource<UserDbEntity> {

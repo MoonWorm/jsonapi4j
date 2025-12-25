@@ -1,6 +1,7 @@
-package pro.api4.jsonapi4j.sampleapp.domain.user.jsonapi.relationships;
+package pro.api4.jsonapi4j.sampleapp.domain.user;
 
 import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
@@ -11,6 +12,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
@@ -20,6 +22,9 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry
         authenticated = Authenticated.AUTHENTICATED,
         scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
+)
+@OasRelationshipInfo(
+        relationshipTypes = {CountryResource.class}
 )
 @Component
 public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
@@ -43,14 +48,5 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
     public String resolveResourceIdentifierId(DownstreamCountry downstreamCountry) {
         return downstreamCountry.getCca2();
     }
-
-    /*@Override
-    public List<RelationshipPlugin<?>> plugins() {
-        return List.of(
-                RelationshipOasPlugin.builder()
-                        .relationshipTypes(Set.of(COUNTRIES))
-                        .build()
-        );
-    }*/
 
 }

@@ -1,6 +1,8 @@
 package pro.api4.jsonapi4j.plugin.oas;
 
+import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
@@ -83,6 +85,11 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
     @Override
     public Object extractPluginInfoFromResource(Resource<?> resource) {
         return resource.getClass().getAnnotation(OasResourceInfo.class);
+    }
+
+    @Override
+    public Object extractPluginInfoFromRelationship(Relationship<?, ?> relationship) {
+        return relationship.getClass().getAnnotation(OasRelationshipInfo.class);
     }
 
     private Object getOrDefault(Supplier<OasOperationInfo> primarySupplier,

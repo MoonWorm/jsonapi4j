@@ -1,11 +1,10 @@
-package pro.api4.jsonapi4j.sampleapp.domain.currency.jsonapi;
+package pro.api4.jsonapi4j.sampleapp.domain.currency;
 
 import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCurrencyWithCode;
-import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyAttributes;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.CURRENCIES;
 
