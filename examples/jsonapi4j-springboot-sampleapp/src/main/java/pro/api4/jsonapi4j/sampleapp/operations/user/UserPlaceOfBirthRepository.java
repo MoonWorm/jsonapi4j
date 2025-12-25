@@ -31,7 +31,6 @@ public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRe
     private final UserDb userDb;
 
     @OasOperationInfo(
-            resourceNameSingle = "user",
             securityConfig = @OasOperationInfo.SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true

@@ -35,7 +35,6 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
     }
 
     @OasOperationInfo(
-            resourceNameSingle = "user",
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true
@@ -59,7 +58,6 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
     }
 
     @OasOperationInfo(
-            resourceNameSingle = "user",
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true
@@ -90,7 +88,6 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
     }
 
     @OasOperationInfo(
-            resourceNameSingle = "user",
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true

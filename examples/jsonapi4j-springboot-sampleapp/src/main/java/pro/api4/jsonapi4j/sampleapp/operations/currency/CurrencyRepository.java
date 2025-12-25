@@ -56,7 +56,6 @@ public class CurrencyRepository implements ResourceRepository<DownstreamCurrency
     }
 
     @OasOperationInfo(
-            resourceNameSingle = "currency",
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true

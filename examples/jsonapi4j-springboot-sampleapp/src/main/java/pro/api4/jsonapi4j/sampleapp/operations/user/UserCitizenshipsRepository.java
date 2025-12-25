@@ -31,7 +31,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.U
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
 
 @OasOperationInfo(
-        resourceNameSingle = "user",
         securityConfig = @OasOperationInfo.SecurityConfig(
                 clientCredentialsSupported = true,
                 pkceSupported = true

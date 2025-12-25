@@ -11,10 +11,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OasOperationInfo {
 
-    String resourceNameSingle() default "";
-
-    String resourceNamePlural() default  "";
-
     SecurityConfig securityConfig() default @SecurityConfig;
 
     Parameter[] parameters() default  {};

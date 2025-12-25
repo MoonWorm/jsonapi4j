@@ -9,6 +9,10 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OasResourceInfo {
 
+    String resourceNameSingle() default "";
+
+    String resourceNamePlural() default  "";
+
     Class<?> attributes() default NoAttributes.class;
 
     class NoAttributes {

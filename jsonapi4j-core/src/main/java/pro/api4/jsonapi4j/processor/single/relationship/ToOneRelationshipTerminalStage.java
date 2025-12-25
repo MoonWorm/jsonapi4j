@@ -51,13 +51,12 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 processorContext.getInboundAccessControlSettings()
         ).retrieveData(request, dataSupplier);
 
-        // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, dataSourceDto);
-        // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, dataSourceDto);
-
         // return if downstream response is null or inbound access is not allowed
         if (dataSourceDto == null) {
+            // doc links
+            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, null);
+            // doc meta
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, null);
             return docSupplier.get(null, docLinks, docMeta);
         }
 
@@ -83,6 +82,18 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // anonymize resource identifier if needed
         ResourceIdentifierObject data = anonymizationResult.targetObject();
+
+        // top-level links
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
+                request,
+                anonymizationResult.isFullyAnonymized() ? null : dataSourceDto
+        );
+
+        // top-level meta
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(
+                request,
+                anonymizationResult.isFullyAnonymized() ? null :dataSourceDto
+        );
 
         // compose response
         return docSupplier.get(data, docLinks, docMeta);

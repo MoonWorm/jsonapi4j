@@ -59,6 +59,7 @@ public class OasServlet extends HttpServlet {
         new JsonApiRequestBodySchemaCustomizer(operationsRegistry).customise(openAPI);
         new JsonApiOperationsCustomizer(
                 properties.getRootPath(),
+                domainRegistry,
                 operationsRegistry,
                 properties.getOas().getCustomResponseHeaders()
         ).customise(openAPI);

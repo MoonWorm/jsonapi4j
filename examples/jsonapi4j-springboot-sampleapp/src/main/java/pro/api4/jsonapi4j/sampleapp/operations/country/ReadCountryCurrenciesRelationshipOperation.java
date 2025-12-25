@@ -22,7 +22,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryRelationshipsRe
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation.readCountryById;
 
 @OasOperationInfo(
-        resourceNameSingle = "country",
         securityConfig = @SecurityConfig(
                 clientCredentialsSupported = true,
                 pkceSupported = true

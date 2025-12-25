@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCo
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 
 @OasResourceInfo(
+        resourceNameSingle = "country",
         attributes = CountryAttributes.class
 )
 @Component

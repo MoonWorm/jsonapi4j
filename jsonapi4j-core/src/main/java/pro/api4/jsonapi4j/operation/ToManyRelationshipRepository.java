@@ -20,13 +20,13 @@ public interface ToManyRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> ex
         throw new OperationNotFoundException(OperationType.UPDATE_TO_MANY_RELATIONSHIP, resourceType(), relationshipName());
     }
 
-    // TODO: move to annotation
+    // TODO: move to annotation and set to registered relationship
     @Override
     default ResourceType resourceType() {
         return null;
     }
 
-    // TODO: move to annotation
+    // TODO: move to annotation and set to registered relationship
     @Override
     default RelationshipName relationshipName() {
         return null;

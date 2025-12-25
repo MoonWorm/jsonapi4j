@@ -1,8 +1,11 @@
 package pro.api4.jsonapi4j.oas.customizer;
 
 import pro.api4.jsonapi4j.config.OasProperties;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.oas.customizer.util.OasSchemaNamesUtil;
@@ -56,6 +59,7 @@ public class JsonApiOperationsCustomizer {
     public static final String OAUTH2_AUTHORIZATION_CODE_PKCE = "Authorization_Code_PKCE";
 
     private final String rootPath;
+    private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders;
 
@@ -185,8 +189,8 @@ public class JsonApiOperationsCustomizer {
             return null;
         }
 
-        Object oasInfoObject = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (oasInfoObject == null) {
+        Object oasOperationInfoObject = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        if (oasOperationInfoObject == null) {
             log.warn(
                     "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
                     operationType.name(),
@@ -198,12 +202,17 @@ public class JsonApiOperationsCustomizer {
 
         String resourceNameSingle = null;
         String resourceNamePlural = null;
+        RegisteredResource<?> registeredResource = domainRegistry.getRegisteredResource(resourceType);
+        Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
+            resourceNameSingle = oasResourceInfo.resourceNameSingle();
+            resourceNamePlural = oasResourceInfo.resourceNamePlural();
+        }
+
         Class<?> payloadType = null;
         OasOperationInfo oasOperationInfo = null;
-        if (oasInfoObject instanceof OasOperationInfo) {
-            oasOperationInfo = (OasOperationInfo) oasInfoObject;
-            resourceNameSingle = oasOperationInfo.resourceNameSingle();
-            resourceNamePlural = oasOperationInfo.resourceNamePlural();
+        if (oasOperationInfoObject instanceof OasOperationInfo) {
+            oasOperationInfo = (OasOperationInfo) oasOperationInfoObject;
             if (oasOperationInfo.payloadType() != OasOperationInfo.NotApplicable.class) {
                 payloadType = oasOperationInfo.payloadType();
             }

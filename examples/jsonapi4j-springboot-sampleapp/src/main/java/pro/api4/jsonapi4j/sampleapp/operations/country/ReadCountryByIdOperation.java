@@ -20,7 +20,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.C
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.readCountriesByIds;
 
 @OasOperationInfo(
-        resourceNameSingle = "country",
         securityConfig = @SecurityConfig(
                 clientCredentialsSupported = true,
                 pkceSupported = true

@@ -14,10 +14,7 @@ import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsRetrievalStage;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
@@ -65,46 +62,51 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             return docSupplier.get(Collections.emptyList(), docLinks, docMeta);
         }
 
-        // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
-                request,
-                cursorPageableResponse.getItems(),
-                cursorPageableResponse.getNextCursor()
-        );
-        // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, cursorPageableResponse.getItems());
-
         //
         // Outbound Access Control checks + doc composing
         //
-        List<ResourceIdentifierObject> data = cursorPageableResponse
-                .getItems()
-                .stream()
-                .map(dto -> {
-                    // id and type
-                    IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dto);
-                    // resource identifier meta
-                    Object resourceIdentifierMeta = jsonApiMembersResolver.resolveResourceMeta(request, dto);
-                    // compose resource identifier
-                    return new ResourceIdentifierObject(
-                            idAndType.getId(),
-                            idAndType.getType().getType(),
-                            resourceIdentifierMeta
-                    );
-                })
-                .map(resourceIdentifierObject ->
-                        anonymizeObjectIfNeeded(
-                                accessControlEvaluator,
-                                resourceIdentifierObject,
-                                resourceIdentifierObject,
-                                Optional.ofNullable(processorContext.getOutboundAccessControlSettings())
-                                        .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
-                                        .orElse(null)
-                        )
-                )
-                .map(AnonymizationResult::targetObject)
-                .filter(Objects::nonNull)
+        Map<DATA_SOURCE_DTO, ResourceIdentifierObject> anonymizationResultMap = new HashMap<>();
+        for (DATA_SOURCE_DTO dto: cursorPageableResponse.getItems()) {
+            // id and type
+            IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dto);
+            // resource identifier meta
+            Object resourceIdentifierMeta = jsonApiMembersResolver.resolveResourceMeta(request, dto);
+            // compose resource identifier
+            ResourceIdentifierObject resourceIdentifierObject = new ResourceIdentifierObject(
+                    idAndType.getId(),
+                    idAndType.getType().getType(),
+                    resourceIdentifierMeta
+            );
+
+            // anonymize
+            AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
+                    accessControlEvaluator,
+                    resourceIdentifierObject,
+                    resourceIdentifierObject,
+                    Optional.ofNullable(processorContext.getOutboundAccessControlSettings())
+                            .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
+                            .orElse(null)
+            );
+
+            anonymizationResultMap.put(dto, anonymizationResult.targetObject());
+        }
+
+        List<DATA_SOURCE_DTO> nonAnonymizedDtos = anonymizationResultMap.entrySet().stream()
+                .filter(e -> e.getValue() != null)
+                .map(Map.Entry::getKey)
                 .toList();
+
+        // top-level links
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
+                request,
+                nonAnonymizedDtos,
+                cursorPageableResponse.getNextCursor()
+        );
+        // top-level meta
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, nonAnonymizedDtos);
+
+        // compose data
+        List<ResourceIdentifierObject> data = anonymizationResultMap.values().stream().filter(Objects::nonNull).toList();
 
         // compose response
         return docSupplier.get(data, docLinks, docMeta);

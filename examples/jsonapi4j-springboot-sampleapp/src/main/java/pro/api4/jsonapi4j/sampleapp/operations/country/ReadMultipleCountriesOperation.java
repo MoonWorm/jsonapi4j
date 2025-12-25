@@ -22,7 +22,6 @@ import java.util.List;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 
 @OasOperationInfo(
-        resourceNameSingle = "country",
         securityConfig = @SecurityConfig(
                 clientCredentialsSupported = true,
                 pkceSupported = true

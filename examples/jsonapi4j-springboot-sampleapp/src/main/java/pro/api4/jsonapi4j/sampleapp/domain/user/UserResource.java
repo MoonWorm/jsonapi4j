@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 
 @OasResourceInfo(
+        resourceNameSingle = "user",
         attributes = UserAttributes.class
 )
 @Component

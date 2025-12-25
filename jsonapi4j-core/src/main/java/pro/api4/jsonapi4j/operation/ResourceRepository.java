@@ -38,7 +38,7 @@ public interface ResourceRepository<RESOURCE_DTO> extends
         throw new OperationNotFoundException(OperationType.DELETE_RESOURCE, resourceType());
     }
 
-    // TODO: move to annotation
+    // TODO: move to annotation and set to registered resource
     @Override
     default ResourceType resourceType() {
         return null;

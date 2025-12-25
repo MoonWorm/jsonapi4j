@@ -20,13 +20,13 @@ public interface ToOneRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> ext
         throw new OperationNotFoundException(OperationType.UPDATE_TO_ONE_RELATIONSHIP, resourceType(), relationshipName());
     }
 
-    // TODO: move to annotation
+    // TODO: move to annotation and set to registered relationship
     @Override
     default ResourceType resourceType() {
         return null;
     }
 
-    // TODO: move to annotation
+    // TODO: move to annotation and set to registered relationship
     @Override
     default RelationshipName relationshipName() {
         return null;

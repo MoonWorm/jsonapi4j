@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCu
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.CURRENCIES;
 
 @OasResourceInfo(
+        resourceNameSingle = "currency",
         attributes = CurrencyAttributes.class
 )
 @Component
