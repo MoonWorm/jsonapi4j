@@ -9,8 +9,8 @@ import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDb;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 import java.util.Collection;
 import java.util.List;

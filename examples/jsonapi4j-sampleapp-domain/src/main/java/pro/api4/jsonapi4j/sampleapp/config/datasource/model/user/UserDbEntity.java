@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource.userdb;
+package pro.api4.jsonapi4j.sampleapp.config.datasource.model.user;
 
 import lombok.Data;
 

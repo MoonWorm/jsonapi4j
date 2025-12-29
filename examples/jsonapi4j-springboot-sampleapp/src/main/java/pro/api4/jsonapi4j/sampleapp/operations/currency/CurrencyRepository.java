@@ -12,9 +12,9 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityCo
 import pro.api4.jsonapi4j.operation.ResourceRepository;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCurrencyWithCode;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.RestCountriesFeignClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.RestCountriesFeignClient.Field;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient.Field;
 
 import java.util.ArrayList;
 import java.util.Collections;

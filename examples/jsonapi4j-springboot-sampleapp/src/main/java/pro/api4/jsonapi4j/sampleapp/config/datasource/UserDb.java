@@ -1,8 +1,8 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource.userdb;
+package pro.api4.jsonapi4j.sampleapp.config.datasource;
 
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.pagination.LimitOffsetToCursorAdapter;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
-@Component
 public class UserDb {
 
     private static AtomicInteger ID_COUNTER;

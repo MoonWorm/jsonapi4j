@@ -1,10 +1,9 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user;
 
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 
@@ -12,7 +11,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.U
         resourceNameSingle = "user",
         attributes = UserAttributes.class
 )
-@Component
 public class UserResource implements Resource<UserDbEntity> {
 
     @Override

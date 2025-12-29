@@ -1,5 +1,6 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries;
+package pro.api4.jsonapi4j.sampleapp.config.datasource;
 
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.Region;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;

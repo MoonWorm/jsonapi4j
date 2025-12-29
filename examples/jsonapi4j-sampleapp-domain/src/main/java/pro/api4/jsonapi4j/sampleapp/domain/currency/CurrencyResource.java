@@ -1,10 +1,9 @@
 package pro.api4.jsonapi4j.sampleapp.domain.currency;
 
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCurrencyWithCode;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.CURRENCIES;
 
@@ -12,7 +11,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.C
         resourceNameSingle = "currency",
         attributes = CurrencyAttributes.class
 )
-@Component
 public class CurrencyResource implements Resource<DownstreamCurrencyWithCode> {
 
     @Override

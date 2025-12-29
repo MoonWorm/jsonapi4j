@@ -1,11 +1,10 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user;
 
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_RELATIVES;
@@ -13,7 +12,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry
 @OasRelationshipInfo(
         relationshipTypes = {UserResource.class}
 )
-@Component
 public class UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserDbEntity> {
 
     @Override

@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries;
+package pro.api4.jsonapi4j.sampleapp.config.datasource.model.country;
 
 import lombok.Data;
 

@@ -8,10 +8,10 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.DownstreamCountry;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.restcountries.RestCountriesFeignClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDb;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.userdb.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 

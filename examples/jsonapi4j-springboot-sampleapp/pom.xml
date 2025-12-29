@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.jsonapi4j</groupId>
+    <groupId>pro.api4</groupId>
     <artifactId>jsonapi4j-springboot-sampleapp</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
@@ -57,6 +57,12 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-springboot</artifactId>
             <version>${jsonapi4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sampleapp-domain</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <!--Spring Dependencies-->
