@@ -205,8 +205,12 @@ public class JsonApiOperationsCustomizer {
         RegisteredResource<?> registeredResource = domainRegistry.getRegisteredResource(resourceType);
         Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
-            resourceNameSingle = oasResourceInfo.resourceNameSingle();
-            resourceNamePlural = oasResourceInfo.resourceNamePlural();
+            if (StringUtils.isNotBlank(oasResourceInfo.resourceNameSingle())) {
+                resourceNameSingle = oasResourceInfo.resourceNameSingle();
+            }
+            if (StringUtils.isNotBlank(oasResourceInfo.resourceNamePlural())) {
+                resourceNamePlural = oasResourceInfo.resourceNamePlural();
+            }
         }
 
         Class<?> payloadType = null;
