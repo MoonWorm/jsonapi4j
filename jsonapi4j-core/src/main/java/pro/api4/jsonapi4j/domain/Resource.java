@@ -55,7 +55,12 @@ public interface Resource<RESOURCE_DTO> {
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
      * for a documents that have a single resource as their primary data ("data" member).
      * <p>
-     * By default, generates a links object with "self" member only.
+     * By default, generates a links object with "self" member only:
+     * {@snippet :
+     * "links": {
+     *     "self": "/users/5"
+     * }
+     * }
      *
      * @param request       the original JSON:API request
      * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}
@@ -73,7 +78,13 @@ public interface Resource<RESOURCE_DTO> {
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
      * for a documents that have an array of resources as their primary data ("data" member).
      * <p>
-     * By default, generates a links object with "self" and "next" members if applicable.
+     * By default, generates a links object with "self" and "next" members if applicable:
+     * {@snippet :
+     * "links": {
+     *     "self": "/users?page[cursor]=DoJu",
+     *     "next: "/users?page[cursor]=DoJw"
+     * }
+     * }
      *
      * @param request        the original JSON:API request
      * @param dataSourceDtos a list of the corresponding {@link RESOURCE_DTO}
@@ -128,7 +139,12 @@ public interface Resource<RESOURCE_DTO> {
      * member of the
      * <a href="https://jsonapi.org/format/#document-resource-objects">JSON:API Resource Object</a>
      * <p>
-     * By default, generates a links object with a "self" member.
+     * By default, generates a links object with a "self" member:
+     * {@snippet :
+     * "links": {
+     *    "self": "/users/5"
+     * }
+     * }
      *
      * @param request       the original JSON:API request
      * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}

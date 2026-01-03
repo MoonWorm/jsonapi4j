@@ -72,7 +72,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO> {
      * parent resource. That is only used for a Compound Documents scenarios when relationship was requested in 'include' query parameter
      * while dealing with resources.
      * <p/>
-     * Defaults to {@link JsonApiRequest#composeRelationshipRequest(String, ResourceType, RelationshipName, RelationshipType)} (String, ResourceType, Relationship, RelationshipType)} and resolves resource id
+     * Defaults to {@link JsonApiRequest#composeRelationshipRequest(String, ResourceType, RelationshipName, pro.api4.jsonapi4j.operation.OperationType)} (String, ResourceType, Relationship, RelationshipType)} and resolves resource id
      * based on {@link Resource#resolveResourceId(Object)} implementation of the parent resource.
      * Can be overridden here.
      * <p/>

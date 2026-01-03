@@ -49,7 +49,7 @@
 
     <properties>
         <!--project revision-->
-        <revision>0.9.9-SNAPSHOT</revision>
+        <revision>0.9.10-SNAPSHOT</revision>
 
         <!--spting/web-->
         <spring.version>5.3.14</spring.version>

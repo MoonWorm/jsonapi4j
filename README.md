@@ -42,7 +42,10 @@ The framework modules are published to Maven Central. You can find the latest av
 
 Let's implement a simple application that exposes two resources - `users` and `countries` - and defines a relationship between them, representing which `citizenships` (or passports) each user holds.
 
-![Simple Domain Graph](docs/simple-domain-graph.png "Simple Domain Graph")
+```mermaid
+flowchart TD
+    U[users] -->|relatives| U
+```
 
 Then, let's implement a few operations for these resources - reading multiple users and countries by their IDs, and retrieving which citizenships each user has.
 

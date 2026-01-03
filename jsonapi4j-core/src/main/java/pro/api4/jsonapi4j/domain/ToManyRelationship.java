@@ -32,8 +32,21 @@ public interface ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * member of the
      * <a href="https://jsonapi.org/format/#document-resource-object-relationships">JSON:API Relationship Object</a>
      * <p>
-     * By default, generates 'self', 'related', and 'next' members of the
-     * <a href="https://jsonapi.org/format/#document-links">JSON:API Links Object</a> when applicable.
+     * By default, generates 'self' and 'related' members:
+     * {@snippet :
+     * "links": {
+     *     "self": "/countries/NO/relationships/currencies",
+     *     "related": {
+     *        "currencies": {
+     *           "href": "/currencies?filter[id]=NOK",
+     *           "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+     *           "meta": {
+     *              "ids": ["NOK"]
+     *           }
+     *        }
+     *    }
+     * }
+     * }
      *
      * @param relationshipRequest the corresponding relationship request
      * @param relationshipDtos    to-many relationship dtos

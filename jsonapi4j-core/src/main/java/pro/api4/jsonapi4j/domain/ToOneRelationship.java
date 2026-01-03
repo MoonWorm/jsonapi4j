@@ -30,8 +30,13 @@ public interface ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * member of the
      * <a href="https://jsonapi.org/format/#document-resource-object-relationships">JSON:API Relationship Object</a>
      * <p>
-     * By default, generates 'self' and 'related' members of the
-     * <a href="https://jsonapi.org/format/#document-links">JSON:API Links Object</a>.
+     * By default, generates 'self' and 'related' members:
+     * {@snippet :
+     * "links": {
+     *     "self": "/users/5/relationships/placeOfBirth",
+     *     "related": "/countries/NO"
+     * }
+     * }
      *
      * @param relationshipRequest the corresponding relationship request
      * @param relationshipDto     to-one relationship dto
