@@ -33,10 +33,12 @@ public class SpringJsonApi4jOasConfig {
     @Bean
     public OpenApiCustomizer jsonApiPathsConfigurer(
             SpringJsonApi4JProperties properties,
+            DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry
     ) {
         return new JsonApiOperationsCustomizer(
                 properties.getRootPath(),
+                domainRegistry,
                 operationsRegistry,
                 properties.getOas().getCustomResponseHeaders()
         );

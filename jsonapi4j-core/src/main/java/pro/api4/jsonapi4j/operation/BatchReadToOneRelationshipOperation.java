@@ -31,6 +31,6 @@ public interface BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_
      * @return map of {@link RESOURCE_DTO} - {@link RELATIONSHIP_DTO} pairs
      */
     Map<RESOURCE_DTO, RELATIONSHIP_DTO> readBatches(JsonApiRequest originalRequest,
-                                                              List<RESOURCE_DTO> resourceDtos);
+                                                    List<RESOURCE_DTO> resourceDtos);
 
 }

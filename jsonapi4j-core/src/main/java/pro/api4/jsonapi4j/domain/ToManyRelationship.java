@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToManyRelationshipLinksDefaultResolvers;
 
 import java.util.List;
 
@@ -44,13 +43,7 @@ public interface ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
     default LinksObject resolveRelationshipLinks(JsonApiRequest relationshipRequest,
                                                  List<RELATIONSHIP_DTO> relationshipDtos,
                                                  String nextCursor) {
-        return ToManyRelationshipLinksDefaultResolvers.defaultLinksResolver(
-                resourceType(),
-                relationshipRequest.getResourceId(),
-                relationshipName(),
-                this::resolveResourceIdentifierType,
-                this::resolveResourceIdentifierId
-        ).resolve(relationshipRequest, relationshipDtos, nextCursor);
+        return NOT_IMPLEMENTED_LINKS_STUB;
     }
 
     /**

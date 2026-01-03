@@ -1,11 +1,12 @@
 package pro.api4.jsonapi4j.domain;
 
-import pro.api4.jsonapi4j.plugin.RelationshipPluginAware;
-import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.plugin.ac.impl.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.processor.RelationshipType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
+import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtractor;
+import pro.api4.jsonapi4j.plugin.ac.impl.ownership.OwnerIdExtractor;
 
 /**
  * Base interface for {@link ToManyRelationship} and {@link ToOneRelationship}. Encapsulates common logic of any type of
@@ -13,28 +14,15 @@ import pro.api4.jsonapi4j.ac.ownership.OwnerIdExtractor;
  * <p>
  * Must not be used directly. Applications must extend either {@link ToManyRelationship} or {@link ToOneRelationship}.
  */
-public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
-        extends Comparable<Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>>, RelationshipPluginAware {
+public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO> {
 
-    /**
-     * @return an instance of {@link RelationshipName} that represents the name of the relationship e.g.
-     * "userProperties", "userCitizenships", etc.
-     */
-    RelationshipName relationshipName();
-
-
-    /**
-     * @return an instance of {@link ResourceType} that represents the resource type of the parent resource.
-     * <p>
-     * For example, for "userCitizenships" relationships this is supposed to return "users".
-     */
-    ResourceType resourceType();
+    LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
 
     /**
      * Resolves relationship's resource linkage "type" of the "data" member.
      *
      * @param relationshipDto the corresponding {@link RELATIONSHIP_DTO}, can represent multiple resource types
-     * @return an instance of {@link ResourceType} that represents the resource type ("type" member) of the
+     * @return a String that represents the resource type ("type" member) of the
      * relationship's
      * <a href="https://jsonapi.org/format/#document-resource-object-linkage">resource linkage object</a>.
      * Can return different types, because a resource might have a relationship of the mixed resource types.
@@ -45,17 +33,17 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * <pre>
      * {@code
      * @Override
-     * public ResourceType resolveResourceIdentifierType(UserProperty userPropertyDto) {
+     * public String resolveResourceIdentifierType(UserProperty userPropertyDto) {
      *      if (userPropertyDto.getType() == APARTMENTS) {
-     *          return () -> "apartments";
+     *          return "apartments";
      *      } else if (userPropertyDto.getType() == CARS) {
-     *          return () -> "cars";
+     *          return "cars";
      *      }
      * }
      * }
      * </pre>
      */
-    ResourceType resolveResourceIdentifierType(RELATIONSHIP_DTO relationshipDto);
+    String resolveResourceIdentifierType(RELATIONSHIP_DTO relationshipDto);
 
     /**
      * Resolves relationship's resource linkage "id" of the "data" member.
@@ -84,7 +72,7 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      * parent resource. That is only used for a Compound Documents scenarios when relationship was requested in 'include' query parameter
      * while dealing with resources.
      * <p/>
-     * Defaults to {@link JsonApiRequest#composeRelationshipRequest(String, Relationship)} and resolves resource id
+     * Defaults to {@link JsonApiRequest#composeRelationshipRequest(String, ResourceType, RelationshipName, RelationshipType)} (String, ResourceType, Relationship, RelationshipType)} and resolves resource id
      * based on {@link Resource#resolveResourceId(Object)} implementation of the parent resource.
      * Can be overridden here.
      * <p/>
@@ -101,13 +89,6 @@ public interface Relationship<RESOURCE_DTO, RELATIONSHIP_DTO>
     default JsonApiRequest constructRelationshipRequest(JsonApiRequest originalRequest,
                                                         RESOURCE_DTO resourceDto) {
         return null;
-    }
-
-    @Override
-    default int compareTo(Relationship o) {
-        int result = this.resourceType().getType().compareTo(o.resourceType().getType());
-        if (result != 0) return result;
-        return this.relationshipName().getName().compareTo(o.relationshipName().getName());
     }
 
 }

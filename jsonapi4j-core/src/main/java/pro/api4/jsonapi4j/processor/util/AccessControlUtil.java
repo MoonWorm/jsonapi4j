@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.processor.util;
 
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForCustomClass;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForCustomClass;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.processor.ProcessingItem;
 
 import java.util.List;

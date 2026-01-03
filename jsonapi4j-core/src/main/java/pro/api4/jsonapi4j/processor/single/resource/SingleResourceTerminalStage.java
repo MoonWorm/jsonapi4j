@@ -2,9 +2,9 @@ package pro.api4.jsonapi4j.processor.single.resource;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.AnonymizationResult;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForCustomClass;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
@@ -22,8 +22,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
-import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
+import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.processor.util.AccessControlUtil.getEffectiveOutboundAccessControlSettings;
 
 public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
@@ -79,7 +78,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                     return Stream.concat(
                                     toManyRelationshipsDocMap.entrySet().stream(),
                                     toOneRelationshipDocMap.entrySet().stream()
-                            ).sorted(Comparator.comparing(e -> e.getKey().getName()))
+                            ).sorted(Comparator.comparing(Map.Entry::getKey))
                             .collect(CustomCollectors.toOrderedMapThatSupportsNullValues(
                                     e -> e.getKey().getName(),
                                     Map.Entry::getValue

@@ -1,20 +1,18 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
-import pro.api4.jsonapi4j.plugin.OperationPluginAware;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+
+import java.util.function.Consumer;
 
 /**
  * Base interface for all relationship operations: both ToOne* and ToMany*.
  */
 public interface RelationshipOperation extends ResourceOperation {
 
-    /**
-     * @return name of the given relationship
-     */
-    RelationshipName relationshipName();
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
+        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
+    };
 
     /**
      * Checks that the request has the corresponding resource id in the URL
@@ -38,7 +36,7 @@ public interface RelationshipOperation extends ResourceOperation {
      */
     @Override
     default void validate(JsonApiRequest request) {
-        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
+        DEFAULT_VALIDATOR.accept(request);
     }
 
 }

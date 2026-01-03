@@ -2,7 +2,10 @@ package pro.api4.jsonapi4j.sampleapp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Import;
+import pro.api4.jsonapi4j.sampleapp.domain.config.DomainSpringConfig;
 
+@Import(DomainSpringConfig.class)
 @SpringBootApplication
 public class Jsonapi4jSampleApp {
 

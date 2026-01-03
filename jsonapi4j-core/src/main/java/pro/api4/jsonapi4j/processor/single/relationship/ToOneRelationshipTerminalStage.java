@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.processor.single.relationship;
 
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.AnonymizationResult;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
@@ -15,7 +15,7 @@ import org.apache.commons.lang3.Validate;
 
 import java.util.Optional;
 
-import static pro.api4.jsonapi4j.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
 @Slf4j
 public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
@@ -51,13 +51,12 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 processorContext.getInboundAccessControlSettings()
         ).retrieveData(request, dataSupplier);
 
-        // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, dataSourceDto);
-        // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, dataSourceDto);
-
         // return if downstream response is null or inbound access is not allowed
         if (dataSourceDto == null) {
+            // doc links
+            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, null);
+            // doc meta
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, null);
             return docSupplier.get(null, docLinks, docMeta);
         }
 
@@ -83,6 +82,18 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // anonymize resource identifier if needed
         ResourceIdentifierObject data = anonymizationResult.targetObject();
+
+        // top-level links
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
+                request,
+                anonymizationResult.isFullyAnonymized() ? null : dataSourceDto
+        );
+
+        // top-level meta
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(
+                request,
+                anonymizationResult.isFullyAnonymized() ? null :dataSourceDto
+        );
 
         // compose response
         return docSupplier.get(data, docLinks, docMeta);

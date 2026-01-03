@@ -1,37 +1,21 @@
 package pro.api4.jsonapi4j;
 
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.ReflectionUtils;
-import pro.api4.jsonapi4j.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.domain.Relationship;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.domain.ToManyRelationship;
-import pro.api4.jsonapi4j.domain.ToOneRelationship;
+import lombok.*;
+import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.CreateResourceOperation;
-import pro.api4.jsonapi4j.operation.DeleteResourceOperation;
-import pro.api4.jsonapi4j.operation.Operation;
-import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
-import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
-import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
-import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.IdSupplier;
@@ -39,12 +23,12 @@ import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
-import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.*;
+import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToManyRelationshipLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToOneRelationshipLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcessor;
@@ -57,6 +41,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
 /**
  * <p>
@@ -74,20 +59,19 @@ import static java.util.stream.Collectors.toMap;
  * </ol>
  * </p>
  */
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter
 public class JsonApi4j {
 
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private AccessControlEvaluator accessControlEvaluator;
-    private Executor executor;
-
-    public JsonApi4j(DomainRegistry domainRegistry,
-                     OperationsRegistry operationsRegistry) {
-        this.domainRegistry = domainRegistry;
-        this.operationsRegistry = operationsRegistry;
-        this.accessControlEvaluator = AccessControlEvaluator.createDefault();
-        this.executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
-    }
+    @With
+    @Builder.Default
+    private AccessControlEvaluator accessControlEvaluator = AccessControlEvaluator.createDefault();
+    @With
+    @Builder.Default
+    private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
 
     public Object execute(JsonApiRequest request) {
         if (request.getTargetRelationshipName() == null) {
@@ -168,20 +152,22 @@ public class JsonApi4j {
             SingleDataItemSupplier<JsonApiRequest, ?> executable,
             AccessControlModel inboundAccessControlSettings
     ) {
+        RegisteredRelationship<ToOneRelationship<?, ?>> registeredRelationship
+                = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
 
         @SuppressWarnings("unchecked")
-        ToOneRelationship<?, RELATIONSHIP_DTO> relationshipConfig
-                = (ToOneRelationship<?, RELATIONSHIP_DTO>) domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
+        ToOneRelationship<?, RELATIONSHIP_DTO> toOneRelationshipCasted
+                = (ToOneRelationship<?, RELATIONSHIP_DTO>) registeredRelationship.getRelationship();
 
         @SuppressWarnings("unchecked")
         SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> executableCasted
                 = (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
 
         OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
+                = getOutboundAccessControlSettingsForRelationship(toOneRelationshipCasted);
 
         ResourceTypeAndIdResolver<RELATIONSHIP_DTO> typeAndIdResolver
-                = getResourceIdentifierTypeAndIdResolver(relationshipConfig);
+                = getResourceIdentifierTypeAndIdResolver(toOneRelationshipCasted);
 
         return new ToOneRelationshipProcessor()
                 .forRequest(relationshipRequest)
@@ -189,11 +175,31 @@ public class JsonApi4j {
                 .inboundAccessControlSettings(inboundAccessControlSettings)
                 .outboundAccessControlSettings(outboundAccessControlSettings)
                 .dataSupplier(executableCasted)
-                .topLevelLinksResolver(relationshipConfig::resolveRelationshipLinks)
-                .topLevelMetaResolver(relationshipConfig::resolveRelationshipMeta)
-                .resourceIdentifierMetaResolver(relationshipConfig::resolveResourceIdentifierMeta)
+                .topLevelLinksResolver(getSingleDataTopLevelLinksResolver(toOneRelationshipCasted, resourceType, relationshipName))
+                .topLevelMetaResolver(toOneRelationshipCasted::resolveRelationshipMeta)
+                .resourceIdentifierMetaResolver(toOneRelationshipCasted::resolveResourceIdentifierMeta)
                 .resourceTypeAndIdSupplier(typeAndIdResolver)
                 .toToOneRelationshipDoc();
+    }
+
+    private <RELATIONSHIP_DTO, RESOURCE_DTO> SingleDataItemDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getSingleDataTopLevelLinksResolver(
+            ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> toOneRelationshipCasted,
+            ResourceType resourceType,
+            RelationshipName relationshipName
+    ) {
+        return (req, dto) -> {
+            LinksObject linksObject = toOneRelationshipCasted.resolveRelationshipLinks(req, dto);
+            if (linksObject == Relationship.NOT_IMPLEMENTED_LINKS_STUB) {
+                return ToOneRelationshipLinksDefaultResolvers.defaultLinksResolver(
+                        resourceType,
+                        req.getResourceId(),
+                        relationshipName,
+                        resourceTypeStr -> new ResourceType(toOneRelationshipCasted.resolveResourceIdentifierType(resourceTypeStr)),
+                        toOneRelationshipCasted::resolveResourceIdentifierId
+                ).resolve(req, dto);
+            }
+            return linksObject;
+        };
     }
 
     private <RELATIONSHIP_DTO> ToManyRelationshipsDoc resolveToManyRelationshipsDocCommon(
@@ -203,20 +209,22 @@ public class JsonApi4j {
             MultipleDataItemsSupplier<JsonApiRequest, ?> executable,
             AccessControlModel inboundAccessControlSettings
     ) {
+        RegisteredRelationship<ToManyRelationship<?, ?>> registeredRelationship =
+                domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
 
         @SuppressWarnings("unchecked")
-        ToManyRelationship<?, RELATIONSHIP_DTO> relationshipConfig
-                = (ToManyRelationship<?, RELATIONSHIP_DTO>) domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
+        ToManyRelationship<?, RELATIONSHIP_DTO> toManyRelationshipCasted
+                = (ToManyRelationship<?, RELATIONSHIP_DTO>) registeredRelationship.getRelationship();
 
         @SuppressWarnings("unchecked")
         MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO> executableCasted
                 = (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
 
         OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
+                = getOutboundAccessControlSettingsForRelationship(toManyRelationshipCasted);
 
         ResourceTypeAndIdResolver<RELATIONSHIP_DTO> typeAndIdResolver
-                = getResourceIdentifierTypeAndIdResolver(relationshipConfig);
+                = getResourceIdentifierTypeAndIdResolver(toManyRelationshipCasted);
 
         return new ToManyRelationshipsProcessor()
                 .forRequest(relationshipRequest)
@@ -224,27 +232,51 @@ public class JsonApi4j {
                 .inboundAccessControlSettings(inboundAccessControlSettings)
                 .outboundAccessControlSettings(outboundAccessControlSettings)
                 .dataSupplier(executableCasted)
-                .resourceIdentifierMetaResolver(relationshipConfig::resolveResourceIdentifierMeta)
-                .topLevelLinksResolver(relationshipConfig::resolveRelationshipLinks)
-                .topLevelMetaResolver(relationshipConfig::resolveRelationshipMeta)
+                .resourceIdentifierMetaResolver(toManyRelationshipCasted::resolveResourceIdentifierMeta)
+                .topLevelLinksResolver(getMultipleDataItemsTopLevelLinksResolver(toManyRelationshipCasted, resourceType, relationshipName))
+                .topLevelMetaResolver(toManyRelationshipCasted::resolveRelationshipMeta)
                 .resourceTypeAndIdSupplier(typeAndIdResolver)
                 .toToManyRelationshipsDoc();
     }
 
-    private AccessControlModel getInboundAccessControlSettings(Operation operation) {
-        return AccessControlModel.fromClassAnnotation(operation.getClass());
+    private <RELATIONSHIP_DTO, RESOURCE_DTO> MultipleDataItemsDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getMultipleDataItemsTopLevelLinksResolver(
+            ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> toManyRelationshipCasted,
+            ResourceType resourceType,
+            RelationshipName relationshipName
+    ) {
+        return (req, dtos, nextCursor) -> {
+            LinksObject linksObject = toManyRelationshipCasted.resolveRelationshipLinks(req, dtos, nextCursor);
+            if (linksObject == Relationship.NOT_IMPLEMENTED_LINKS_STUB) {
+                return ToManyRelationshipLinksDefaultResolvers.defaultLinksResolver(
+                        resourceType,
+                        req.getResourceId(),
+                        relationshipName,
+                        resourceTypeStr -> new ResourceType(toManyRelationshipCasted.resolveResourceIdentifierType(resourceTypeStr)),
+                        toManyRelationshipCasted::resolveResourceIdentifierId
+                ).resolve(req, dtos, nextCursor);
+            }
+            return linksObject;
+        };
+    }
+
+    private AccessControlModel getInboundAccessControlSettings(RegisteredOperation<?> registeredOperation) {
+        Object accessControlModel = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiAccessControlPlugin.NAME);
+        if (accessControlModel instanceof AccessControlModel acm) {
+            return acm;
+        }
+        return null;
     }
 
     private OutboundAccessControlForJsonApiResourceIdentifier getOutboundAccessControlSettingsForRelationship(
-            Relationship<?, ?> relationshipConfig
+            Relationship<?, ?> relationship
     ) {
         AccessControlModel resourceIdentifierClassLevel = AccessControlModel.fromClassAnnotation(
-                relationshipConfig.getClass()
+                relationship.getClass()
         );
 
         AccessControlModel resourceIdentifierMetaFieldLevel = AccessControlModel.fromAnnotation(
                 ReflectionUtils.fetchAnnotationForMethod(
-                        relationshipConfig.getClass(),
+                        relationship.getClass(),
                         "resolveResourceIdentifierMeta",
                         AccessControl.class
                 )
@@ -257,27 +289,11 @@ public class JsonApi4j {
     }
 
     private <RELATIONSHIP_DTO, RESOURCE_DTO> ResourceTypeAndIdResolver<RELATIONSHIP_DTO> getResourceIdentifierTypeAndIdResolver(
-            Relationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfig) {
+            Relationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationship) {
         return dto -> new IdAndType(
-                relationshipConfig.resolveResourceIdentifierId(dto),
-                relationshipConfig.resolveResourceIdentifierType(dto)
+                relationship.resolveResourceIdentifierId(dto),
+                new ResourceType(relationship.resolveResourceIdentifierType(dto))
         );
-    }
-
-    private <RESOURCE_DTO> ResourceTypeAndIdResolver<RESOURCE_DTO> getResourceTypeAndIdResolver(
-            Resource<RESOURCE_DTO> resourceConfig) {
-        return dto -> new IdAndType(
-                resourceConfig.resolveResourceId(dto),
-                resourceConfig.resourceType()
-        );
-    }
-
-    public void setAccessControlEvaluator(AccessControlEvaluator accessControlEvaluator) {
-        this.accessControlEvaluator = accessControlEvaluator;
-    }
-
-    public void setExecutor(Executor executor) {
-        this.executor = executor;
     }
 
     public class ResourceTypeStepSelected {
@@ -297,49 +313,63 @@ public class JsonApi4j {
         }
 
         public <RESOURCE_DTO> SingleResourceDoc<?> readResourceById(JsonApiRequest request) {
+            RegisteredOperation<ReadResourceByIdOperation<?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadResourceByIdOperation(resourceType, true);
+
             @SuppressWarnings("unchecked")
             ReadResourceByIdOperation<RESOURCE_DTO> executable
-                    = (ReadResourceByIdOperation<RESOURCE_DTO>) operationsRegistry.getReadResourceByIdOperation(resourceType, true);
+                    = (ReadResourceByIdOperation<RESOURCE_DTO>) registeredOperation.getOperation();
             executable.validate(request);
 
             return processSingleResource(
                     request,
                     executable::readById,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public <RESOURCE_DTO> SingleResourceDoc<?> createResource(JsonApiRequest request) {
+            RegisteredOperation<CreateResourceOperation<?>> registeredOperation
+                    = operationsRegistry.getRegisteredCreateResourceOperation(resourceType, true);
+
             @SuppressWarnings("unchecked")
             CreateResourceOperation<RESOURCE_DTO> executable
-                    = (CreateResourceOperation<RESOURCE_DTO>) operationsRegistry.getCreateResourceOperation(resourceType, true);
+                    = (CreateResourceOperation<RESOURCE_DTO>) registeredOperation.getOperation();
+
             executable.validate(request);
+
             return processSingleResource(
                     request,
                     executable::create,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateResource(JsonApiRequest request) {
-            UpdateResourceOperation executable
-                    = operationsRegistry.getUpdateResourceOperation(resourceType, true);
+            RegisteredOperation<UpdateResourceOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateResourceOperation(resourceType, true);
+
+            UpdateResourceOperation executable = registeredOperation.getOperation();
             executable.validate(request);
             processSingleResourceNoResponse(
                     request,
                     executable::update,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void deleteResource(JsonApiRequest request) {
-            DeleteResourceOperation executable
-                    = operationsRegistry.getDeleteResourceOperation(resourceType, true);
+            RegisteredOperation<DeleteResourceOperation> registeredOperation
+                    = operationsRegistry.getRegisteredDeleteResourceOperation(resourceType, true);
+
+            DeleteResourceOperation executable = registeredOperation.getOperation();
+
             executable.validate(request);
+
             processSingleResourceNoResponse(
                     request,
                     executable::delete,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -348,9 +378,10 @@ public class JsonApi4j {
                 SingleDataItemSupplier<JsonApiRequest, RESOURCE_DTO> dataSupplier,
                 AccessControlModel inboundAccessControlSettings
         ) {
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
             @SuppressWarnings("unchecked")
             Resource<RESOURCE_DTO> resourceConfig
-                    = (Resource<RESOURCE_DTO>) domainRegistry.getResource(resourceType);
+                    = (Resource<RESOURCE_DTO>) registeredResource.getResource();
 
             return new SingleResourceProcessor()
                     .forRequest(request)
@@ -364,13 +395,29 @@ public class JsonApi4j {
                     .batchToManyRelationshipResolvers(getBatchToManyRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toOneRelationshipResolvers(getToOneRelationshipResolvers(resourceConfig::resolveResourceId))
                     .batchToOneRelationshipResolvers(getBatchToOneRelationshipResolvers(resourceConfig::resolveResourceId))
-                    .topLevelLinksResolver(resourceConfig::resolveTopLevelLinksForSingleResourceDoc)
+                    .topLevelLinksResolver(getSingleDataItemTopLevelLinksResolver(resourceType, resourceConfig))
                     .topLevelMetaResolver(resourceConfig::resolveTopLevelMetaForSingleResourceDoc)
-                    .resourceLinksResolver(resourceConfig::resolveResourceLinks)
+                    .resourceLinksResolver(getResourceLinksResolver(resourceType, resourceConfig))
                     .resourceMetaResolver(resourceConfig::resolveResourceMeta)
                     .attributesResolver(resourceConfig::resolveAttributes)
                     .resourceTypeAndIdResolver(getResourceTypeAndIdResolver(resourceConfig))
                     .toSingleResourceDoc();
+        }
+
+        private <RESOURCE_DTO> SingleDataItemDocLinksResolver<JsonApiRequest, RESOURCE_DTO> getSingleDataItemTopLevelLinksResolver(
+                ResourceType resourceType,
+                Resource<RESOURCE_DTO> resourceConfig
+        ) {
+            return (req, dto) -> {
+                LinksObject linksObject = resourceConfig.resolveTopLevelLinksForSingleResourceDoc(req, dto);
+                if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
+                    return SingleResourceDocLinksDefaultResolvers.<JsonApiRequest, RESOURCE_DTO>defaultTopLevelLinksResolver(
+                            resourceType,
+                            resourceConfig::resolveResourceId
+                    ).resolve(req, dto);
+                }
+                return linksObject;
+            };
         }
 
         private void processSingleResourceNoResponse(
@@ -388,29 +435,33 @@ public class JsonApi4j {
         }
 
         public <RESOURCE_DTO> MultipleResourcesDoc<?> readMultipleResources(JsonApiRequest request) {
-
-            @SuppressWarnings("unchecked")
-            ReadMultipleResourcesOperation<RESOURCE_DTO> readAllExecutable
-                    = (ReadMultipleResourcesOperation<RESOURCE_DTO>) operationsRegistry.getReadMultipleResourcesOperation(resourceType, false);
-            if (readAllExecutable != null) {
+            RegisteredOperation<ReadMultipleResourcesOperation<?>> registeredReadMultipleOperation
+                    = operationsRegistry.getRegisteredReadMultipleResourcesOperation(resourceType, false);
+            if (registeredReadMultipleOperation != null) {
+                @SuppressWarnings("unchecked")
+                ReadMultipleResourcesOperation<RESOURCE_DTO> readAllExecutable
+                        = (ReadMultipleResourcesOperation<RESOURCE_DTO>) registeredReadMultipleOperation.getOperation();
                 readAllExecutable.validate(request);
                 return processMultipleResources(
                         request,
                         readAllExecutable::readPage,
-                        getInboundAccessControlSettings(readAllExecutable)
+                        getInboundAccessControlSettings(registeredReadMultipleOperation)
                 );
             } else if (request.getFilters().size() == 1
                     && request.getFilters().containsKey(ReadMultipleResourcesOperation.ID_FILTER_NAME)) {
+                RegisteredOperation<ReadResourceByIdOperation<?>> registeredReadByIdOperation
+                        = operationsRegistry.getRegisteredReadResourceByIdOperation(resourceType, false);
+
                 @SuppressWarnings("unchecked")
                 ReadResourceByIdOperation<RESOURCE_DTO> readByIdExecutable
-                        = (ReadResourceByIdOperation<RESOURCE_DTO>) operationsRegistry.getReadResourceByIdOperation(resourceType, false);
+                        = (ReadResourceByIdOperation<RESOURCE_DTO>) registeredReadByIdOperation.getOperation();
                 if (readByIdExecutable != null) {
                     ReadMultipleResourcesOperation<RESOURCE_DTO> mimickedReadAllExecutable = mimicReadMultipleResourcesOperationViaSequentialReadByIds(readByIdExecutable);
                     mimickedReadAllExecutable.validate(request);
                     return processMultipleResources(
                             request,
                             mimickedReadAllExecutable::readPage,
-                            getInboundAccessControlSettings(readByIdExecutable)
+                            getInboundAccessControlSettings(registeredReadByIdOperation)
                     );
                 }
             }
@@ -420,25 +471,16 @@ public class JsonApi4j {
         private <RESOURCE_DTO> ReadMultipleResourcesOperation<RESOURCE_DTO> mimicReadMultipleResourcesOperationViaSequentialReadByIds(
                 ReadResourceByIdOperation<RESOURCE_DTO> readByIdExecutable
         ) {
-            return new ReadMultipleResourcesOperation<>() {
-
-                @Override
-                public CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request) {
-                    List<RESOURCE_DTO> result = request.getFilters().get(ReadMultipleResourcesOperation.ID_FILTER_NAME).stream().map(id -> {
-                        JsonApiRequest readByIdRequest = JsonApiRequest.composeReadByIdRequest(
-                                id,
-                                resourceType
-                        );
-                        return readByIdExecutable.readById(readByIdRequest);
-                    }).toList();
-                    return CursorPageableResponse.fromItemsNotPageable(result);
-                }
-
-                @Override
-                public ResourceType resourceType() {
-                    return resourceType;
-                }
-
+            return request -> {
+                List<RESOURCE_DTO> result = request.getFilters().get(ReadMultipleResourcesOperation.ID_FILTER_NAME).stream().map(id -> {
+                    JsonApiRequest readByIdRequest = JsonApiRequest.composeResourceRequest(
+                            id,
+                            resourceType,
+                            OperationType.READ_RESOURCE_BY_ID
+                    );
+                    return readByIdExecutable.readById(readByIdRequest);
+                }).toList();
+                return CursorPageableResponse.fromItemsNotPageable(result);
             };
         }
 
@@ -447,9 +489,10 @@ public class JsonApi4j {
                 MultipleDataItemsSupplier<JsonApiRequest, DATA_SOURCE_DTO> dataSupplier,
                 AccessControlModel inboundAccessControlSettings
         ) {
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
             @SuppressWarnings("unchecked")
             Resource<DATA_SOURCE_DTO> resourceConfig
-                    = (Resource<DATA_SOURCE_DTO>) domainRegistry.getResource(resourceType);
+                    = (Resource<DATA_SOURCE_DTO>) registeredResource.getResource();
             return new MultipleResourcesProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
@@ -462,13 +505,44 @@ public class JsonApi4j {
                     .batchToManyRelationshipResolvers(getBatchToManyRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toOneRelationshipResolvers(getToOneRelationshipResolvers(resourceConfig::resolveResourceId))
                     .batchToOneRelationshipResolvers(getBatchToOneRelationshipResolvers(resourceConfig::resolveResourceId))
-                    .topLevelLinksResolver(resourceConfig::resolveTopLevelLinksForMultiResourcesDoc)
+                    .topLevelLinksResolver(getMultiDataItemTopLevelLinksResolver(resourceType, resourceConfig))
                     .topLevelMetaResolver(resourceConfig::resolveTopLevelMetaForMultiResourcesDoc)
-                    .resourceLinksResolver(resourceConfig::resolveResourceLinks)
+                    .resourceLinksResolver(getResourceLinksResolver(resourceType, resourceConfig))
                     .resourceMetaResolver(resourceConfig::resolveResourceMeta)
                     .attributesResolver(resourceConfig::resolveAttributes)
                     .resourceTypeAndIdResolver(getResourceTypeAndIdResolver(resourceConfig))
                     .toMultipleResourcesDoc();
+        }
+
+        private <DATA_SOURCE_DTO> ResourceLinksResolver<JsonApiRequest, DATA_SOURCE_DTO> getResourceLinksResolver(
+                ResourceType resourceType,
+                Resource<DATA_SOURCE_DTO> resourceConfig
+        ) {
+            return (req, dto) -> {
+                LinksObject linksObject = resourceConfig.resolveResourceLinks(req, dto);
+                if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
+                    return ResourceLinksDefaultResolvers.defaultResourceLinksResolver(
+                            resourceType,
+                            resourceConfig::resolveResourceId
+                    ).resolve(req, dto);
+                }
+                return linksObject;
+            };
+        }
+
+        private <DATA_SOURCE_DTO> MultipleDataItemsDocLinksResolver<JsonApiRequest, DATA_SOURCE_DTO> getMultiDataItemTopLevelLinksResolver(
+                ResourceType resourceType,
+                Resource<DATA_SOURCE_DTO> resourceConfig
+        ) {
+            return (req, dtos, nextCursor) -> {
+                LinksObject linksObject = resourceConfig.resolveTopLevelLinksForMultiResourcesDoc(req, dtos, nextCursor);
+                if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
+                    return MultiResourcesDocLinksDefaultResolvers.<JsonApiRequest, DATA_SOURCE_DTO>defaultTopLevelLinksResolver(
+                            resourceType
+                    ).resolve(req, dtos, nextCursor);
+                }
+                return linksObject;
+            };
         }
 
         private OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
@@ -532,11 +606,12 @@ public class JsonApi4j {
                     .filter(r -> !hasReadToManyRelationshipsBatchImplementation(r))
                     .collect(
                             toMap(
-                                    ToManyRelationship::relationshipName,
-                                    relationshipConfig ->
+                                    RegisteredRelationship::getRelationshipName,
+                                    registeredRelationship ->
                                             (req, dataSourceDto) ->
                                                     resolveToManyRelationships(
-                                                            (ToManyRelationship<RESOURCE_DTO, ?>) relationshipConfig,
+                                                            registeredRelationship.getRelationshipName(),
+                                                            (ToManyRelationship<RESOURCE_DTO, ?>) registeredRelationship.getRelationship(),
                                                             dataSourceDto,
                                                             resourceIdSupplier,
                                                             req
@@ -546,34 +621,39 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> ToManyRelationshipsDoc resolveToManyRelationships(
-                ToManyRelationship<RESOURCE_DTO, ?> relationshipConfig,
+                RelationshipName relationshipName,
+                ToManyRelationship<RESOURCE_DTO, ?> toManyRelationship,
                 RESOURCE_DTO dataSourceDto,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest parentRequest
         ) {
-
-            RelationshipName relationshipName = relationshipConfig.relationshipName();
-
             @SuppressWarnings("unchecked")
-            ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
-                    = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
+            ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> toManyRelationshipCasted
+                    = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) toManyRelationship;
+
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipName, true);
+                    = (ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
-            JsonApiRequest relationshipRequest
-                    = getRelationshipRequestSupplier(relationshipConfigCasted, resourceIdSupplier, executable::validate).create(parentRequest, dataSourceDto);
+            JsonApiRequest relationshipRequest = getRelationshipRequestSupplier(
+                    toManyRelationshipCasted,
+                    resourceIdSupplier,
+                    registeredOperation.getOperationMeta(),
+                    executable::validate
+            ).create(parentRequest, dataSourceDto);
 
             MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO> dataSupplier
-                    = relRequest -> executable.readForResource(relRequest, dataSourceDto);
+                    = relRequest -> executable.readManyForResource(relRequest, dataSourceDto);
 
             return resolveToManyRelationshipsDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -586,11 +666,12 @@ public class JsonApi4j {
                     .filter(this::hasReadToManyRelationshipsBatchImplementation)
                     .collect(
                             toMap(
-                                    ToManyRelationship::relationshipName,
-                                    relationshipConfig ->
+                                    RegisteredRelationship::getRelationshipName,
+                                    registeredRelationship ->
                                             (req, dataSourceDtos) ->
                                                     resolveToManyRelationshipsInBatch(
-                                                            (ToManyRelationship<RESOURCE_DTO, ?>) relationshipConfig,
+                                                            registeredRelationship.getRelationshipName(),
+                                                            (ToManyRelationship<RESOURCE_DTO, ?>) registeredRelationship.getRelationship(),
                                                             dataSourceDtos,
                                                             resourceIdSupplier,
                                                             req
@@ -600,47 +681,61 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToManyRelationshipsDoc> resolveToManyRelationshipsInBatch(
-                ToManyRelationship<RESOURCE_DTO, ?> relationshipConfig,
+                RelationshipName relationshipName,
+                ToManyRelationship<RESOURCE_DTO, ?> toManyRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest parentRequest
         ) {
 
             @SuppressWarnings("unchecked")
-            ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
-                    = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
+            ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> toManyRelationshipCasted
+                    = (ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) toManyRelationship;
+
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             AccessControlModel inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable);
+                    = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                    = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
+                    = getOutboundAccessControlSettingsForRelationship(toManyRelationship);
 
-            RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier
-                    = getRelationshipRequestSupplier(relationshipConfigCasted, resourceIdSupplier, executable::validate);
+            RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier = getRelationshipRequestSupplier(
+                    toManyRelationshipCasted,
+                    resourceIdSupplier,
+                    registeredOperation.getOperationMeta(),
+                    executable::validate
+            );
 
             ResourceTypeAndIdResolver<RELATIONSHIP_DTO> resourceIdentifierTypeAndIdResolver
-                    = getResourceIdentifierTypeAndIdResolver(relationshipConfigCasted);
+                    = getResourceIdentifierTypeAndIdResolver(toManyRelationshipCasted);
+
+            MultipleDataItemsDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> topLevelLinksResolver
+                    = getMultipleDataItemsTopLevelLinksResolver(toManyRelationshipCasted, resourceType, relationshipName);
 
             return new BatchToManyRelationshipsProcessor()
                     .accessControlEvaluator(accessControlEvaluator)
                     .inboundAccessControlSettings(inboundAccessControlSettings)
                     .outboundAccessControlSettings(outboundAccessControlSettings)
                     .dataSupplier(executable::readBatches)
-                    .resourceIdentifierMetaResolver(relationshipConfigCasted::resolveResourceIdentifierMeta)
-                    .topLevelLinksResolver(relationshipConfigCasted::resolveRelationshipLinks)
-                    .topLevelMetaResolver(relationshipConfigCasted::resolveRelationshipMeta)
+                    .resourceIdentifierMetaResolver(toManyRelationshipCasted::resolveResourceIdentifierMeta)
+                    .topLevelLinksResolver(topLevelLinksResolver)
+                    .topLevelMetaResolver(toManyRelationshipCasted::resolveRelationshipMeta)
                     .resourceIdentifierTypeAndIdResolver(resourceIdentifierTypeAndIdResolver)
                     .toManyRelationshipsDocBatch(parentRequest, dataSourceDtos, relationshipRequestSupplier);
         }
 
-        private boolean hasReadToManyRelationshipsBatchImplementation(ToManyRelationship<?, ?> relationshipConfig) {
-            ReadToManyRelationshipOperation<?, ?> operation
-                    = operationsRegistry.getReadToManyDataRelationshipOperation(resourceType, relationshipConfig.relationshipName(), false);
+        private boolean hasReadToManyRelationshipsBatchImplementation(RegisteredRelationship<?> registeredRelationship) {
+            ReadToManyRelationshipOperation<?, ?> operation = operationsRegistry.getReadToManyRelationshipOperation(
+                    resourceType,
+                    registeredRelationship.getRelationshipName(),
+                    false
+            );
             return operation instanceof BatchReadToManyRelationshipOperation;
         }
 
@@ -653,11 +748,12 @@ public class JsonApi4j {
                     .filter(r -> !hasReadToOneRelationshipBatchImplementation(r))
                     .collect(
                             toMap(
-                                    ToOneRelationship::relationshipName,
-                                    relationshipConfig ->
+                                    RegisteredRelationship::getRelationshipName,
+                                    registeredRelationship ->
                                             (req, dataSourceDto) ->
                                                     resolveSingleDataRelationshipDoc(
-                                                            (ToOneRelationship<RESOURCE_DTO, ?>) relationshipConfig,
+                                                            registeredRelationship.getRelationshipName(),
+                                                            (ToOneRelationship<RESOURCE_DTO, ?>) registeredRelationship.getRelationship(),
                                                             dataSourceDto,
                                                             resourceIdSupplier,
                                                             req
@@ -667,30 +763,35 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> ToOneRelationshipDoc resolveSingleDataRelationshipDoc(
-                ToOneRelationship<RESOURCE_DTO, ?> relationshipConfig,
+                RelationshipName relationshipName,
+                ToOneRelationship<RESOURCE_DTO, ?> toOneRelationship,
                 RESOURCE_DTO dataSourceDto,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest parentRequest
         ) {
-            RelationshipName relationshipName
-                    = relationshipConfig.relationshipName();
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipName, true);
+                    = (ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
-            JsonApiRequest relationshipRequest
-                    = getRelationshipRequestSupplier(relationshipConfig, resourceIdSupplier, executable::validate).create(parentRequest, dataSourceDto);
+            JsonApiRequest relationshipRequest = getRelationshipRequestSupplier(
+                    toOneRelationship,
+                    resourceIdSupplier,
+                    registeredOperation.getOperationMeta(),
+                    executable::validate
+            ).create(parentRequest, dataSourceDto);
 
             SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> dataSupplier
-                    = relRequest -> executable.readForResource(relRequest, dataSourceDto);
+                    = relRequest -> executable.readOneForResource(relRequest, dataSourceDto);
 
             return resolveToOneRelationshipDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    getInboundAccessControlSettings(executable)
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -703,11 +804,12 @@ public class JsonApi4j {
                     .filter(this::hasReadToOneRelationshipBatchImplementation)
                     .collect(
                             toMap(
-                                    ToOneRelationship::relationshipName,
-                                    relationshipConfig ->
+                                    RegisteredRelationship::getRelationshipName,
+                                    registeredRelationship ->
                                             (req, dataSourceDtos) ->
                                                     resolveToOneRelationshipInBatch(
-                                                            (ToOneRelationship<RESOURCE_DTO, ?>) relationshipConfig,
+                                                            registeredRelationship.getRelationshipName(),
+                                                            (ToOneRelationship<RESOURCE_DTO, ?>) registeredRelationship.getRelationship(),
                                                             dataSourceDtos,
                                                             resourceIdSupplier,
                                                             req
@@ -717,62 +819,79 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToOneRelationshipDoc> resolveToOneRelationshipInBatch(
-                ToOneRelationship<RESOURCE_DTO, ?> relationshipConfig,
+                RelationshipName relationshipName,
+                ToOneRelationship<RESOURCE_DTO, ?> toOneRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest request
         ) {
 
             @SuppressWarnings("unchecked")
-            ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> relationshipConfigCasted
-                    = (ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) relationshipConfig;
+            ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO> toOneRelationshipCasted
+                    = (ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>) toOneRelationship;
+
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> executable
-                    = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             AccessControlModel inboundAccessControlSettings
-                    = getInboundAccessControlSettings(executable);
+                    = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                    = getOutboundAccessControlSettingsForRelationship(relationshipConfig);
+                    = getOutboundAccessControlSettingsForRelationship(toOneRelationship);
 
-            RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier
-                    = getRelationshipRequestSupplier(relationshipConfigCasted, resourceIdSupplier, executable::validate);
+            RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier = getRelationshipRequestSupplier(
+                    toOneRelationshipCasted,
+                    resourceIdSupplier,
+                    registeredOperation.getOperationMeta(),
+                    executable::validate
+            );
 
             ResourceTypeAndIdResolver<RELATIONSHIP_DTO> resourceIdentifierTypeAndIdResolver
-                    = getResourceIdentifierTypeAndIdResolver(relationshipConfigCasted);
+                    = getResourceIdentifierTypeAndIdResolver(toOneRelationshipCasted);
+
+            SingleDataItemDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> topLevelLinksResolver
+                    = getSingleDataTopLevelLinksResolver(toOneRelationshipCasted, resourceType, relationshipName);
 
             return new BatchToOneRelationshipProcessor()
                     .accessControlEvaluator(accessControlEvaluator)
                     .inboundAccessControlSettings(inboundAccessControlSettings)
                     .outboundAccessControlSettings(outboundAccessControlSettings)
                     .dataSupplier(executable::readBatches)
-                    .resourceIdentifierMetaResolver(relationshipConfigCasted::resolveResourceIdentifierMeta)
-                    .topLevelLinksResolver(relationshipConfigCasted::resolveRelationshipLinks)
-                    .topLevelMetaResolver(relationshipConfigCasted::resolveRelationshipMeta)
+                    .resourceIdentifierMetaResolver(toOneRelationshipCasted::resolveResourceIdentifierMeta)
+                    .topLevelLinksResolver(topLevelLinksResolver)
+                    .topLevelMetaResolver(toOneRelationshipCasted::resolveRelationshipMeta)
                     .resourceIdentifierTypeAndIdResolver(resourceIdentifierTypeAndIdResolver)
                     .toOneRelationshipDocBatch(request, dataSourceDtos, relationshipRequestSupplier);
         }
 
-        private boolean hasReadToOneRelationshipBatchImplementation(ToOneRelationship<?, ?> relationshipConfig) {
-            ReadToOneRelationshipOperation<?, ?> operation
-                    = operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), false);
+        private boolean hasReadToOneRelationshipBatchImplementation(RegisteredRelationship<?> registeredRelationship) {
+            ReadToOneRelationshipOperation<?, ?> operation = operationsRegistry.getReadToOneRelationshipOperation(
+                    resourceType,
+                    registeredRelationship.getRelationshipName(),
+                    false
+            );
             return operation instanceof BatchReadToOneRelationshipOperation;
         }
 
         private <RESOURCE_DTO> RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> getRelationshipRequestSupplier(
-                Relationship<RESOURCE_DTO, ?> relationshipConfig,
+                Relationship<RESOURCE_DTO, ?> relationship,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
+                RegisteredOperation.OperationMeta operationMeta,
                 Consumer<JsonApiRequest> validator
         ) {
             return (originalRequest, dataSourceDto) -> {
                 JsonApiRequest relationshipRequest
-                        = relationshipConfig.constructRelationshipRequest(originalRequest, dataSourceDto);
+                        = relationship.constructRelationshipRequest(originalRequest, dataSourceDto);
                 if (relationshipRequest == null) {
                     relationshipRequest = JsonApiRequest.composeRelationshipRequest(
                             resourceIdSupplier.getId(dataSourceDto),
-                            relationshipConfig
+                            operationMeta.getResourceType(),
+                            operationMeta.getRelationshipName(),
+                            operationMeta.getOperationType()
                     );
                 }
 
@@ -780,6 +899,14 @@ public class JsonApi4j {
 
                 return relationshipRequest;
             };
+        }
+
+        private <RESOURCE_DTO> ResourceTypeAndIdResolver<RESOURCE_DTO> getResourceTypeAndIdResolver(
+                Resource<RESOURCE_DTO> resourceConfig) {
+            return dto -> new IdAndType(
+                    resourceConfig.resolveResourceId(dto),
+                    resourceType
+            );
         }
 
     }
@@ -796,39 +923,57 @@ public class JsonApi4j {
         }
 
         public <RELATIONSHIP_DTO> ToManyRelationshipsDoc readToManyRelationship(JsonApiRequest relationshipRequest) {
-            ToManyRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked") ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO> executable =
-                    (ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO>) operationsRegistry.getReadToManyDataRelationshipOperation(
-                            resourceType,
-                            relationshipConfig.relationshipName(),
-                            true
-                    );
+                    (ReadToManyRelationshipOperation<?, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
             return resolveToManyRelationshipsDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
-                    (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    getInboundAccessControlSettings(executable)
+                    (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) request -> {
+                        try {
+                            return executable.readMany(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateToManyRelationship(JsonApiRequest relationshipRequest) {
-            ToManyRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<UpdateToManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, true);
 
             UpdateToManyRelationshipOperation executable
-                    = operationsRegistry.getUpdateToManyRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
             executeCastedNoResponse(
                     relationshipRequest,
-                    executable::update,
-                    getInboundAccessControlSettings(executable)
+                    request -> {
+                        try {
+                            executable.update(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
@@ -862,12 +1007,12 @@ public class JsonApi4j {
         }
 
         public <RELATIONSHIP_DTO> ToOneRelationshipDoc readToOneRelationship(JsonApiRequest relationshipRequest) {
-            ToOneRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
+                    = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
 
             @SuppressWarnings("unchecked")
             ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO> executable
-                    = (ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO>) operationsRegistry.getReadToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = (ReadToOneRelationshipOperation<?, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
@@ -875,25 +1020,46 @@ public class JsonApi4j {
                     resourceType,
                     relationshipName,
                     relationshipRequest,
-                    (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable::read,
-                    getInboundAccessControlSettings(executable)
+                    (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) request -> {
+                        try {
+                            return executable.readOne(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 
         public void updateToOneRelationship(JsonApiRequest relationshipRequest) {
-
-            ToOneRelationship<?, ?> relationshipConfig
-                    = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
+            RegisteredOperation<UpdateToOneRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredUpdateToOneRelationshipOperation(resourceType, relationshipName, true);
 
             UpdateToOneRelationshipOperation executable
-                    = operationsRegistry.getUpdateToOneRelationshipOperation(resourceType, relationshipConfig.relationshipName(), true);
+                    = registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
 
             executeCastedNoResponse(
                     relationshipRequest,
-                    executable::update,
-                    getInboundAccessControlSettings(executable)
+                    request -> {
+                        try {
+                            executable.update(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    getInboundAccessControlSettings(registeredOperation)
             );
         }
 

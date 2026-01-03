@@ -12,12 +12,12 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  * The framework also uses this implementation for scenarios when the client request a single or multiple
  * primary resources but also requests (via include="foo,bar") to resolve this relationship.
  * <p>
- * Main logic is supposed to be implemented in {@link #read(JsonApiRequest)}.
+ * Main logic is supposed to be implemented in {@link #readOne(JsonApiRequest)}.
  * <p>
  * It is recommended to complement the main logic implementation with some validation logic by implementing
  * {@link #validate(JsonApiRequest)} method. This method invoked before the main logic execution.
  * All checks regarding input parameters and their formats must be done there.
- * Don't bring these checks to the {@link #read(JsonApiRequest)}. If some error detected thrown exception will be
+ * Don't bring these checks to the {@link #readOne(JsonApiRequest)}. If some error detected thrown exception will be
  * automatically processed and transformed into a valid {@link ErrorsDoc}.
  *
  * @param <RESOURCE_DTO>     a downstream object type that encapsulates internal model implementation and of the parent
@@ -35,7 +35,7 @@ public interface ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> 
      * @param relationshipRequest incoming {@link JsonApiRequest}
      * @return {@link RELATIONSHIP_DTO} item
      */
-    RELATIONSHIP_DTO read(JsonApiRequest relationshipRequest);
+    RELATIONSHIP_DTO readOne(JsonApiRequest relationshipRequest);
 
 
     /**
@@ -47,16 +47,16 @@ public interface ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> 
      * <a href="https://jsonapi.org/format/#document-resource-object-relationships">JSON:API Relationship Object</a>
      * and effectively means that no operations will be triggered in order to resolve these JSON:API linkages.
      * <p>
-     * By default, falling back to {@link #read(JsonApiRequest)} invocation that triggers an external operation.
+     * By default, falling back to {@link #readOne(JsonApiRequest)} invocation that triggers an external operation.
      *
      * @param relationshipRequest relationship {@link JsonApiRequest} that is composed during primary resource request
      *                            processing from the original {@link JsonApiRequest} and {@link RESOURCE_DTO}
      * @param resourceDto         parent resource DTO
      * @return {@link RELATIONSHIP_DTO} item
      */
-    default RELATIONSHIP_DTO readForResource(JsonApiRequest relationshipRequest,
-                                             RESOURCE_DTO resourceDto) {
-        return read(relationshipRequest);
+    default RELATIONSHIP_DTO readOneForResource(JsonApiRequest relationshipRequest,
+                                                RESOURCE_DTO resourceDto) {
+        return readOne(relationshipRequest);
     }
 
 }

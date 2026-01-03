@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
-import pro.api4.jsonapi4j.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
 
 public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {

@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.processor.resource;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,18 +15,16 @@ import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.principal.AuthenticatedPrincipalContextHolder;
-import pro.api4.jsonapi4j.ac.DefaultAccessControlEvaluator;
-import pro.api4.jsonapi4j.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.ac.annotation.AccessControlAccessTier;
-import pro.api4.jsonapi4j.ac.annotation.AccessControlOwnership;
-import pro.api4.jsonapi4j.ac.annotation.AccessControlScopes;
-import pro.api4.jsonapi4j.ac.tier.DefaultAccessTierRegistry;
-import pro.api4.jsonapi4j.ac.tier.TierNoAccess;
-import pro.api4.jsonapi4j.ac.tier.TierPartner;
-import pro.api4.jsonapi4j.ac.tier.TierPublic;
-import pro.api4.jsonapi4j.ac.tier.TierRootAdmin;
+import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.principal.AuthenticatedPrincipalContextHolder;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.TierNoAccess;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.TierPartner;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.TierPublic;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.TierRootAdmin;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
@@ -43,14 +40,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.BARS;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorAccessControlTests.Relationships.RelationshipsRegistry.FOO;
 
 @ExtendWith(MockitoExtension.class)
 public class SingleResourceProcessorAccessControlTests {
 
     private static final AccessControlEvaluator AC_EVALUATOR = AccessControlEvaluator.createDefault();
 
+    private static final ResourceType SILVER = new ResourceType("silver");
+    private static final RelationshipName FOO = new RelationshipName("foo");
+    private static final RelationshipName BARS = new RelationshipName("bars");
+    
     private static final String ID = "1";
     private static final String FIRST_NAME = "John";
     private static final String LAST_NAME = "Doe";
@@ -88,7 +87,7 @@ public class SingleResourceProcessorAccessControlTests {
                 .forRequest(REQUEST_ALL_INCLUDES)
                 .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{ FOO, BARS }))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
                         new ResourceIdentifierObject("31", FOO.getName()),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
@@ -101,7 +100,7 @@ public class SingleResourceProcessorAccessControlTests {
                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                 ))
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
@@ -136,11 +135,11 @@ public class SingleResourceProcessorAccessControlTests {
                 .forRequest(REQUEST_ALL_INCLUDES)
                 .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{ FOO, BARS }))
                 .toOneRelationshipResolver(FOO, (req, dto) -> foo)
                 .toManyRelationshipResolver(BARS, (req, dto) -> bar)
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
@@ -170,7 +169,7 @@ public class SingleResourceProcessorAccessControlTests {
                 .forRequest(REQUEST_ALL_INCLUDES)
                 .accessControlEvaluator(AC_EVALUATOR)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{ FOO, BARS }))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
                         new ResourceIdentifierObject("31", FOO.getName()),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
@@ -183,7 +182,7 @@ public class SingleResourceProcessorAccessControlTests {
                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                 ))
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
@@ -191,18 +190,7 @@ public class SingleResourceProcessorAccessControlTests {
         verify(ds, times(1)).get(REQUEST_ALL_INCLUDES);
         verify(attributesResolver, times(1)).resolveAttributes(DTO);
     }
-
-    @Getter
-    private enum Type implements ResourceType {
-        SILVER("silver");
-
-        private final String type;
-
-        Type(String type) {
-            this.type = type;
-        }
-    }
-
+    
     @Data
     @AllArgsConstructor
     @RequiredArgsConstructor
@@ -252,24 +240,13 @@ public class SingleResourceProcessorAccessControlTests {
 
         public Relationships(Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocMap,
                              Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocMap) {
-            this.foo = toOneRelationshipDocMap.get(RelationshipsRegistry.FOO);
-            this.bars = toManyRelationshipsDocMap.get(RelationshipsRegistry.BARS);
+            this.foo = toOneRelationshipDocMap.get(FOO);
+            this.bars = toManyRelationshipsDocMap.get(BARS);
         }
 
         public Relationships(ToOneRelationshipDoc foo, ToManyRelationshipsDoc bars) {
             this.foo = foo;
             this.bars = bars;
-        }
-
-        @Getter
-        public enum RelationshipsRegistry implements RelationshipName {
-            FOO("foo"), BARS("bars");
-
-            private final String name;
-
-            RelationshipsRegistry(String name) {
-                this.name = name;
-            }
         }
 
     }

@@ -5,7 +5,7 @@ import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.ac.exception.AccessControlMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.ac.impl.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;

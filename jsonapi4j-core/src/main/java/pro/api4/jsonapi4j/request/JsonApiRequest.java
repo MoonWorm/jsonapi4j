@@ -1,8 +1,7 @@
 package pro.api4.jsonapi4j.request;
 
-import pro.api4.jsonapi4j.domain.Relationship;
+import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.domain.ToOneRelationship;
 import pro.api4.jsonapi4j.operation.OperationType;
 
 public interface JsonApiRequest extends
@@ -20,24 +19,24 @@ public interface JsonApiRequest extends
     }
 
     static JsonApiRequest composeRelationshipRequest(String resourceId,
-                                                     Relationship<?, ?> relationship) {
+                                                     ResourceType resourceType,
+                                                     RelationshipName relationshipName,
+                                                     OperationType operationType) {
         return builder()
-                .targetResourceType(relationship.resourceType())
+                .targetResourceType(resourceType)
+                .operationType(operationType)
                 .resourceId(resourceId)
-                .targetRelationship(relationship.relationshipName())
-                .operationType(relationship instanceof ToOneRelationship<?, ?>
-                        ? OperationType.READ_TO_ONE_RELATIONSHIP
-                        : OperationType.READ_TO_MANY_RELATIONSHIP
-                )
+                .targetRelationship(relationshipName)
                 .build();
     }
 
-    static JsonApiRequest composeReadByIdRequest(String resourceId,
-                                                 ResourceType targetResourceType) {
+    static JsonApiRequest composeResourceRequest(String resourceId,
+                                                 ResourceType resourceType,
+                                                 OperationType operationType) {
         return builder()
-                .targetResourceType(targetResourceType)
+                .targetResourceType(resourceType)
                 .resourceId(resourceId)
-                .operationType(OperationType.READ_RESOURCE_BY_ID)
+                .operationType(operationType)
                 .build();
     }
 

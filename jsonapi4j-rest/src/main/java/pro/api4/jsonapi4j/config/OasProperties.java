@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.config;
 
-import pro.api4.jsonapi4j.ac.tier.AccessTier;
-import pro.api4.jsonapi4j.ac.tier.TierPublic;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.AccessTier;
+import pro.api4.jsonapi4j.plugin.ac.impl.tier.TierPublic;
 import lombok.Data;
 
 import java.util.Map;

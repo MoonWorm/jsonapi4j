@@ -1,12 +1,16 @@
 package pro.api4.jsonapi4j.operation;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
+import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,7 +40,7 @@ public class OperationsRegistryTests {
         TestReadToManyRelationshipOperation readToManyRelationshipOperation = new TestReadToManyRelationshipOperation();
         TestUpdateToOneRelationshipOperation updateToOneRelationshipOperation = new TestUpdateToOneRelationshipOperation();
         TestUpdateToManyRelationshipOperation updateToManyRelationshipOperation = new TestUpdateToManyRelationshipOperation();
-        OperationsRegistry sut = OperationsRegistry.builder()
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
                 .operation(readByIdOperation)
                 .operation(readMultipleResourcesOperation)
                 .operation(createResourceOperation)
@@ -49,92 +53,133 @@ public class OperationsRegistryTests {
                 .build();
 
         // then
+        ResourceType fooResource = new ResourceType("foo");
+        RelationshipName toOneRelationship = new RelationshipName("to1");
+        RelationshipName toManyRelationship = new RelationshipName("to2");
         assertThat(sut.getAllOperations()).isNotNull().hasSize(9);
-        assertThat(sut.getResourceTypesWithAnyOperationConfigured()).isNotNull().isEqualTo(Set.of(TestResourceTypes.FOO));
-        assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(TestResourceTypes.FOO)).isEqualTo(Set.of(TestRelationships.TO_ONE, TestRelationships.TO_MANY));
-        assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(TestResourceTypes.NON_EXISTENT)).isEmpty();
+        assertThat(sut.getResourceTypesWithAnyOperationConfigured()).isNotNull().isEqualTo(Set.of(fooResource));
+        assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(fooResource)).isEqualTo(Set.of(toOneRelationship, toManyRelationship));
+        assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(new ResourceType("non-existing"))).isEmpty();
 
-        assertThat(sut.isRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE, OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
-        assertThat(sut.isRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
-        assertThat(sut.isRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.READ_RESOURCE_BY_ID)).isFalse();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
-        assertThat(sut.isAnyResourceOperationConfigured(TestResourceTypes.FOO)).isTrue();
-        assertThat(sut.isAnyResourceOperationConfigured(TestResourceTypes.NON_EXISTENT)).isFalse();
+        assertThat(sut.isAnyResourceOperationConfigured(fooResource)).isTrue();
+        assertThat(sut.isAnyResourceOperationConfigured(new ResourceType("non-existing"))).isFalse();
 
-        assertThat(sut.isAnyToOneRelationshipOperationConfigured(TestResourceTypes.FOO)).isTrue();
-        assertThat(sut.isAnyToOneRelationshipOperationConfigured(TestResourceTypes.NON_EXISTENT)).isFalse();
-        assertThat(sut.isAnyToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE)).isTrue();
-        assertThat(sut.isAnyToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.NON_EXISTENT)).isFalse();
-        assertThat(sut.isToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE, OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
-        assertThat(sut.isToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
-        assertThat(sut.isToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.NON_EXISTENT, OperationType.READ_TO_ONE_RELATIONSHIP)).isFalse();
-        assertThat(sut.isToOneRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_ONE, OperationType.READ_RESOURCE_BY_ID)).isFalse();
+        assertThat(sut.isAnyToOneRelationshipOperationConfigured(fooResource)).isTrue();
+        assertThat(sut.isAnyToOneRelationshipOperationConfigured(new ResourceType("non-existing"))).isFalse();
+        assertThat(sut.isAnyToOneRelationshipOperationConfigured(fooResource, toOneRelationship)).isTrue();
+        assertThat(sut.isAnyToOneRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"))).isFalse();
+        assertThat(sut.isToOneRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToOneRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToOneRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"), OperationType.READ_TO_ONE_RELATIONSHIP)).isFalse();
+        assertThat(sut.isToOneRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
-        assertThat(sut.isAnyToManyRelationshipOperationConfigured(TestResourceTypes.FOO)).isTrue();
-        assertThat(sut.isAnyToManyRelationshipOperationConfigured(TestResourceTypes.NON_EXISTENT)).isFalse();
-        assertThat(sut.isAnyToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY)).isTrue();
-        assertThat(sut.isAnyToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.NON_EXISTENT)).isFalse();
-        assertThat(sut.isToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.NON_EXISTENT, OperationType.READ_TO_MANY_RELATIONSHIP)).isFalse();
-        assertThat(sut.isToManyRelationshipOperationConfigured(TestResourceTypes.FOO, TestRelationships.TO_MANY, OperationType.READ_RESOURCE_BY_ID)).isFalse();
+        assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource)).isTrue();
+        assertThat(sut.isAnyToManyRelationshipOperationConfigured(new ResourceType("non-existing"))).isFalse();
+        assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource, toManyRelationship)).isTrue();
+        assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"))).isFalse();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"), OperationType.READ_TO_MANY_RELATIONSHIP)).isFalse();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
-        assertThat(sut.getReadResourceByIdOperation(TestResourceTypes.FOO, false)).isNotNull().isEqualTo(readByIdOperation);
-        assertThat(sut.getReadResourceByIdOperation(TestResourceTypes.FOO, true)).isNotNull().isEqualTo(readByIdOperation);
-        assertThat(sut.getReadResourceByIdOperation(TestResourceTypes.NON_EXISTENT, false)).isNull();
-        assertThatThrownBy(() -> sut.getReadResourceByIdOperation(TestResourceTypes.NON_EXISTENT, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getReadResourceByIdOperation(fooResource, false)).isNotNull().isEqualTo(readByIdOperation);
+        assertThat(sut.getReadResourceByIdOperation(fooResource, true)).isNotNull().isEqualTo(readByIdOperation);
+        assertThat(sut.getReadResourceByIdOperation(new ResourceType("non-existing"), false)).isNull();
+        assertThatThrownBy(() -> sut.getReadResourceByIdOperation(new ResourceType("non-existing"), true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getReadMultipleResourcesOperation(TestResourceTypes.FOO, false)).isNotNull().isEqualTo(readMultipleResourcesOperation);
-        assertThat(sut.getReadMultipleResourcesOperation(TestResourceTypes.FOO, true)).isNotNull().isEqualTo(readMultipleResourcesOperation);
-        assertThat(sut.getReadMultipleResourcesOperation(TestResourceTypes.NON_EXISTENT, false)).isNull();
-        assertThatThrownBy(() -> sut.getReadMultipleResourcesOperation(TestResourceTypes.NON_EXISTENT, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getReadMultipleResourcesOperation(fooResource, false)).isNotNull().isEqualTo(readMultipleResourcesOperation);
+        assertThat(sut.getReadMultipleResourcesOperation(fooResource, true)).isNotNull().isEqualTo(readMultipleResourcesOperation);
+        assertThat(sut.getReadMultipleResourcesOperation(new ResourceType("non-existing"), false)).isNull();
+        assertThatThrownBy(() -> sut.getReadMultipleResourcesOperation(new ResourceType("non-existing"), true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getCreateResourceOperation(TestResourceTypes.FOO, false)).isNotNull().isEqualTo(createResourceOperation);
-        assertThat(sut.getCreateResourceOperation(TestResourceTypes.FOO, true)).isNotNull().isEqualTo(createResourceOperation);
-        assertThat(sut.getCreateResourceOperation(TestResourceTypes.NON_EXISTENT, false)).isNull();
-        assertThatThrownBy(() -> sut.getCreateResourceOperation(TestResourceTypes.NON_EXISTENT, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getCreateResourceOperation(fooResource, false)).isNotNull().isEqualTo(createResourceOperation);
+        assertThat(sut.getCreateResourceOperation(fooResource, true)).isNotNull().isEqualTo(createResourceOperation);
+        assertThat(sut.getCreateResourceOperation(new ResourceType("non-existing"), false)).isNull();
+        assertThatThrownBy(() -> sut.getCreateResourceOperation(new ResourceType("non-existing"), true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getUpdateResourceOperation(TestResourceTypes.FOO, false)).isNotNull().isEqualTo(updateResourceOperation);
-        assertThat(sut.getUpdateResourceOperation(TestResourceTypes.FOO, true)).isNotNull().isEqualTo(updateResourceOperation);
-        assertThat(sut.getUpdateResourceOperation(TestResourceTypes.NON_EXISTENT, false)).isNull();
-        assertThatThrownBy(() -> sut.getUpdateResourceOperation(TestResourceTypes.NON_EXISTENT, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getUpdateResourceOperation(fooResource, false)).isNotNull().isEqualTo(updateResourceOperation);
+        assertThat(sut.getUpdateResourceOperation(fooResource, true)).isNotNull().isEqualTo(updateResourceOperation);
+        assertThat(sut.getUpdateResourceOperation(new ResourceType("non-existing"), false)).isNull();
+        assertThatThrownBy(() -> sut.getUpdateResourceOperation(new ResourceType("non-existing"), true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getDeleteResourceOperation(TestResourceTypes.FOO, false)).isNotNull().isEqualTo(deleteResourceOperation);
-        assertThat(sut.getDeleteResourceOperation(TestResourceTypes.FOO, true)).isNotNull().isEqualTo(deleteResourceOperation);
-        assertThat(sut.getDeleteResourceOperation(TestResourceTypes.NON_EXISTENT, false)).isNull();
-        assertThatThrownBy(() -> sut.getDeleteResourceOperation(TestResourceTypes.NON_EXISTENT, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getDeleteResourceOperation(fooResource, false)).isNotNull().isEqualTo(deleteResourceOperation);
+        assertThat(sut.getDeleteResourceOperation(fooResource, true)).isNotNull().isEqualTo(deleteResourceOperation);
+        assertThat(sut.getDeleteResourceOperation(new ResourceType("non-existing"), false)).isNull();
+        assertThatThrownBy(() -> sut.getDeleteResourceOperation(new ResourceType("non-existing"), true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getReadToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, false)).isNotNull().isEqualTo(readToOneRelationshipOperation);
-        assertThat(sut.getReadToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, true)).isNotNull().isEqualTo(readToOneRelationshipOperation);
-        assertThat(sut.getReadToOneRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_ONE,false)).isNull();
-        assertThat(sut.getReadToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY,false)).isNull();
-        assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
-        assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getReadToOneRelationshipOperation(fooResource, toOneRelationship, false)).isNotNull().isEqualTo(readToOneRelationshipOperation);
+        assertThat(sut.getReadToOneRelationshipOperation(fooResource, toOneRelationship, true)).isNotNull().isEqualTo(readToOneRelationshipOperation);
+        assertThat(sut.getReadToOneRelationshipOperation(new ResourceType("non-existing"), toOneRelationship,false)).isNull();
+        assertThat(sut.getReadToOneRelationshipOperation(fooResource, toManyRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(new ResourceType("non-existing"), toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getReadToOneRelationshipOperation(fooResource, toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, false)).isNotNull().isEqualTo(readToManyRelationshipOperation);
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, true)).isNotNull().isEqualTo(readToManyRelationshipOperation);
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,false)).isNull();
-        assertThat(sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,false)).isNull();
-        assertThatThrownBy(() -> sut.getReadToManyDataRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
-        assertThatThrownBy(() -> sut.getReadToManyDataRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getReadToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().isEqualTo(readToManyRelationshipOperation);
+        assertThat(sut.getReadToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().isEqualTo(readToManyRelationshipOperation);
+        assertThat(sut.getReadToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,false)).isNull();
+        assertThat(sut.getReadToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getReadToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getReadToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, false)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
-        assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE, true)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
-        assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_ONE,false)).isNull();
-        assertThat(sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY,false)).isNull();
-        assertThatThrownBy(() -> sut.getUpdateToOneRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
-        assertThatThrownBy(() -> sut.getUpdateToOneRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getUpdateToOneRelationshipOperation(fooResource, toOneRelationship, false)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
+        assertThat(sut.getUpdateToOneRelationshipOperation(fooResource, toOneRelationship, true)).isNotNull().isEqualTo(updateToOneRelationshipOperation);
+        assertThat(sut.getUpdateToOneRelationshipOperation(new ResourceType("non-existing"), toOneRelationship,false)).isNull();
+        assertThat(sut.getUpdateToOneRelationshipOperation(fooResource, toManyRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getUpdateToOneRelationshipOperation(new ResourceType("non-existing"), toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getUpdateToOneRelationshipOperation(fooResource, toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
 
-        assertThat(sut.getUpdateToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, false)).isNotNull().isEqualTo(updateToManyRelationshipOperation);
-        assertThat(sut.getUpdateToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_MANY, true)).isNotNull().isEqualTo(updateToManyRelationshipOperation);
-        assertThat(sut.getUpdateToManyRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,false)).isNull();
-        assertThat(sut.getUpdateToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,false)).isNull();
-        assertThatThrownBy(() -> sut.getUpdateToManyRelationshipOperation(TestResourceTypes.NON_EXISTENT, TestRelationships.TO_MANY,true)).isInstanceOf(OperationNotFoundException.class);
-        assertThatThrownBy(() -> sut.getUpdateToManyRelationshipOperation(TestResourceTypes.FOO, TestRelationships.TO_ONE,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThat(sut.getUpdateToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().isEqualTo(updateToManyRelationshipOperation);
+        assertThat(sut.getUpdateToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().isEqualTo(updateToManyRelationshipOperation);
+        assertThat(sut.getUpdateToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,false)).isNull();
+        assertThat(sut.getUpdateToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getUpdateToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getUpdateToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+    }
+    
+    @JsonApiResource(resourceType = "foo")
+    private static class TestFooResource implements Resource<String> {
+
+        @Override
+        public String resolveResourceId(String dataSourceDto) {
+            return dataSourceDto;
+        }
+    }
+    
+    @JsonApiRelationship(relationshipName = "to1", parentResource = TestFooResource.class)
+    private static class TestToOneRelationship implements ToOneRelationship<String, String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return s;
+        }
     }
 
+    @JsonApiRelationship(relationshipName = "to2", parentResource = TestFooResource.class)
+    private static class TestToManyRelationship implements ToManyRelationship<String, String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return s;
+        }
+    }
+
+    @JsonApiResourceOperation(resource = TestFooResource.class)
     private static class TestReadByIdOperation implements ReadResourceByIdOperation<String> {
 
         @Override
@@ -142,19 +187,10 @@ public class OperationsRegistryTests {
             return UUID.randomUUID().toString();
         }
 
-        @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
     }
 
+    @JsonApiResourceOperation(resource = TestFooResource.class)
     private static class TestReadMultipleResourcesOperation implements ReadMultipleResourcesOperation<String> {
-
-        @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
 
         @Override
         public CursorPageableResponse<String> readPage(JsonApiRequest request) {
@@ -163,25 +199,17 @@ public class OperationsRegistryTests {
 
     }
 
-    private static class TestCreateResourceOperation implements CreateResourceOperation {
+    @JsonApiResourceOperation(resource = TestFooResource.class)
+    private static class TestCreateResourceOperation implements CreateResourceOperation<String> {
 
         @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
-        @Override
-        public Object create(JsonApiRequest request) {
+        public String create(JsonApiRequest request) {
             return UUID.randomUUID().toString();
         }
     }
 
+    @JsonApiResourceOperation(resource = TestFooResource.class)
     private static class TestUpdateResourceOperation implements UpdateResourceOperation {
-
-        @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
 
         @Override
         public void update(JsonApiRequest request) {
@@ -189,12 +217,8 @@ public class OperationsRegistryTests {
         }
     }
 
+    @JsonApiResourceOperation(resource = TestFooResource.class)
     private static class TestDeleteResourceOperation implements DeleteResourceOperation {
-
-        @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
 
         @Override
         public void delete(JsonApiRequest request) {
@@ -202,110 +226,40 @@ public class OperationsRegistryTests {
         }
     }
 
+    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToOneRelationship.class)
     private static class TestReadToOneRelationshipOperation implements ReadToOneRelationshipOperation<String, String> {
 
         @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
-        @Override
-        public RelationshipName relationshipName() {
-            return TestRelationships.TO_ONE;
-        }
-
-        @Override
-        public String read(JsonApiRequest relationshipRequest) {
+        public String readOne(JsonApiRequest relationshipRequest) {
             return UUID.randomUUID().toString();
         }
+
     }
 
+    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToManyRelationship.class)
     private static class TestReadToManyRelationshipOperation implements ReadToManyRelationshipOperation<String, String> {
 
         @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
-        @Override
-        public RelationshipName relationshipName() {
-            return TestRelationships.TO_MANY;
-        }
-
-        @Override
-        public CursorPageableResponse<String> read(JsonApiRequest relationshipRequest) {
+        public CursorPageableResponse<String> readMany(JsonApiRequest relationshipRequest) {
             return CursorPageableResponse.empty();
         }
     }
 
+    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToOneRelationship.class)
     private static class TestUpdateToOneRelationshipOperation implements UpdateToOneRelationshipOperation {
 
         @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
-        @Override
-        public RelationshipName relationshipName() {
-            return TestRelationships.TO_ONE;
-        }
-
-        @Override
         public void update(JsonApiRequest request) {
 
         }
     }
 
+    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToManyRelationship.class)
     private static class TestUpdateToManyRelationshipOperation implements UpdateToManyRelationshipOperation {
 
         @Override
-        public ResourceType resourceType() {
-            return TestResourceTypes.FOO;
-        }
-
-        @Override
-        public RelationshipName relationshipName() {
-            return TestRelationships.TO_MANY;
-        }
-
-        @Override
         public void update(JsonApiRequest request) {
 
-        }
-    }
-
-    private enum TestResourceTypes implements ResourceType {
-
-        FOO("foo"),
-        NON_EXISTENT("bar");
-
-        private final String type;
-
-        TestResourceTypes(String type) {
-            this.type = type;
-        }
-
-
-        @Override
-        public String getType() {
-            return this.type;
-        }
-    }
-
-    public enum TestRelationships implements RelationshipName {
-        TO_ONE("to1"),
-        TO_MANY("to2"),
-        NON_EXISTENT("nonExistent");
-
-        private final String name;
-
-        TestRelationships(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String getName() {
-            return name;
         }
     }
 

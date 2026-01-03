@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
+import java.util.function.Consumer;
+
 /**
  * Implement this interface to let jsonapi4j framework to know how to create a new resource.
  * <p>
@@ -23,6 +25,8 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  */
 public interface CreateResourceOperation<RESOURCE_DTO> extends ResourceOperation {
 
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {};
+
     /**
      * Create a new resource: attributes section with relationships or without.
      *
@@ -30,5 +34,10 @@ public interface CreateResourceOperation<RESOURCE_DTO> extends ResourceOperation
      * @return newly created and saved {@link RESOURCE_DTO}
      */
     RESOURCE_DTO create(JsonApiRequest request);
+
+    @Override
+    default void validate(JsonApiRequest request) {
+        DEFAULT_VALIDATOR.accept(request);
+    }
 
 }
