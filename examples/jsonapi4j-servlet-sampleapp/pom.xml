@@ -4,17 +4,19 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>pro.api4</groupId>
+    <parent>
+        <artifactId>jsonapi4j-examples</artifactId>
+        <groupId>pro.api4</groupId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
     <artifactId>jsonapi4j-servlet-sampleapp</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
 
     <name>JsonApi4j - Examples - Servlet Sample App</name>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
-
-        <jsonapi4j.version>0.9.9-SNAPSHOT</jsonapi4j.version>
 
         <jetty.version>11.0.26</jetty.version>
         <lombok.version>1.18.36</lombok.version>
@@ -39,7 +41,6 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest</artifactId>
-            <version>${jsonapi4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>pro.api4</groupId>
+    <artifactId>jsonapi4j-examples</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>JsonApi4j - Examples - Parent Module</name>
+
+    <modules>
+        <module>jsonapi4j-sampleapp-domain</module>
+        <module>jsonapi4j-springboot-sampleapp</module>
+        <module>jsonapi4j-servlet-sampleapp</module>
+    </modules>
+
+    <properties>
+        <jsonapi4j.version>0.9.9-SNAPSHOT</jsonapi4j.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>pro.api4</groupId>
+                <artifactId>jsonapi4j-core</artifactId>
+                <version>${jsonapi4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pro.api4</groupId>
+                <artifactId>jsonapi4j-rest</artifactId>
+                <version>${jsonapi4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pro.api4</groupId>
+                <artifactId>jsonapi4j-rest-springboot</artifactId>
+                <version>${jsonapi4j.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+</project>
