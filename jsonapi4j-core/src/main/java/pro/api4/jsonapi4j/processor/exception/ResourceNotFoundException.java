@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 public class ResourceNotFoundException extends DataRetrievalException {
 
     public ResourceNotFoundException(String id, ResourceType resourceType) {
-        super("'" + resourceType.getType() + "' resource of a given id (" + id + ") is not found");
+        super("'" + resourceType + "' resource of a given id (" + id + ") is not found");
     }
 
 }

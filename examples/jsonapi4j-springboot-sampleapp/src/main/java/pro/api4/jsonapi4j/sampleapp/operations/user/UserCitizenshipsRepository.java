@@ -3,33 +3,35 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
-import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
-import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_CITIZENSHIPS;
-
+@JsonApiRelationshipOperation(
+        resource = UserResource.class,
+        relationship = UserCitizenshipsRelationship.class
+)
 @OasOperationInfo(
         securityConfig = @OasOperationInfo.SecurityConfig(
                 clientCredentialsSupported = true,
@@ -124,13 +126,4 @@ public class UserCitizenshipsRepository implements ToManyRelationshipBatchAwareR
                 .forEach(countryValidator::validateCountryId);
     }
 
-    @Override
-    public ResourceType resourceType() {
-        return USERS;
-    }
-
-    @Override
-    public RelationshipName relationshipName() {
-        return USER_CITIZENSHIPS;
-    }
 }

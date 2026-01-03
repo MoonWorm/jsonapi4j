@@ -73,12 +73,12 @@ public class JsonApiOperationsCustomizer {
     private void createAndRegisterOperations(Paths paths) {
         operationsRegistry.getResourceTypesWithAnyOperationConfigured()
                 .stream()
-                .sorted(Comparator.comparing(ResourceType::getType))
+                .sorted()
                 .forEach(resourceType -> {
                     createAndRegisterResourceOperations(paths, resourceType);
                     operationsRegistry.getRelationshipNamesWithAnyOperationConfigured(resourceType)
                             .stream()
-                            .sorted(Comparator.comparing(RelationshipName::getName))
+                            .sorted()
                             .forEach(relationshipName -> {
                                 createAndRegisterRelationshipOperations(paths, resourceType, relationshipName);
                             });
@@ -202,7 +202,7 @@ public class JsonApiOperationsCustomizer {
 
         String resourceNameSingle = null;
         String resourceNamePlural = null;
-        RegisteredResource<?> registeredResource = domainRegistry.getRegisteredResource(resourceType);
+        RegisteredResource<?> registeredResource = domainRegistry.getResource(resourceType);
         Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
             if (StringUtils.isNotBlank(oasResourceInfo.resourceNameSingle())) {
@@ -257,8 +257,8 @@ public class JsonApiOperationsCustomizer {
             } else {
                 return operationsRegistry.getRelationshipNamesWithReadOperationConfigured(operationOasInfo.getResourceType())
                         .stream()
-                        .map(RelationshipName::getName)
                         .sorted()
+                        .map(RelationshipName::getName)
                         .toList();
             }
         }

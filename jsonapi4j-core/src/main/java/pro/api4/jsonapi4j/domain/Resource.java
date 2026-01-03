@@ -1,9 +1,6 @@
 package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
-import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
-import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.List;
@@ -23,7 +20,9 @@ import java.util.List;
  * @param <RESOURCE_DTO> a downstream object type that encapsulates internal model implementation and of this
  *                       JSON:API resource, e.g. Hibernate's Entity, JOOQ Record, or third-party service DTO
  */
-public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO>> {
+public interface Resource<RESOURCE_DTO> {
+
+    LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
 
     /**
      * Resolves the resource unique identifier ("id" member) based on the corresponding downstream {@link RESOURCE_DTO}.
@@ -34,15 +33,6 @@ public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO
      * @return unique resource's id
      */
     String resolveResourceId(RESOURCE_DTO dataSourceDto);
-
-    /**
-     * The corresponding resource's type ("type" member).
-     * <p>
-     * Must be unique across all domains.
-     *
-     * @return an instance of {@link ResourceType} that represents the current resource type.
-     */
-    ResourceType resourceType();
 
     /**
      * Maps a downstream {@link RESOURCE_DTO} object into an API-facing attributes object ("attributes" member). Read more
@@ -73,10 +63,7 @@ public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO
      */
     default LinksObject resolveTopLevelLinksForSingleResourceDoc(JsonApiRequest request,
                                                                  RESOURCE_DTO dataSourceDto) {
-        return SingleResourceDocLinksDefaultResolvers.<JsonApiRequest, RESOURCE_DTO>defaultTopLevelLinksResolver(
-                resourceType(),
-                this::resolveResourceId
-        ).resolve(request, dataSourceDto);
+        return NOT_IMPLEMENTED_LINKS_STUB;
     }
 
     /**
@@ -96,9 +83,7 @@ public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO
     default LinksObject resolveTopLevelLinksForMultiResourcesDoc(JsonApiRequest request,
                                                                  List<RESOURCE_DTO> dataSourceDtos,
                                                                  String nextCursor) {
-        return MultiResourcesDocLinksDefaultResolvers.<JsonApiRequest, RESOURCE_DTO>defaultTopLevelLinksResolver(
-                resourceType()
-        ).resolve(request, dataSourceDtos, nextCursor);
+        return NOT_IMPLEMENTED_LINKS_STUB;
     }
 
     /**
@@ -151,10 +136,7 @@ public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO
      */
     default LinksObject resolveResourceLinks(JsonApiRequest request,
                                              RESOURCE_DTO dataSourceDto) {
-        return ResourceLinksDefaultResolvers.defaultResourceLinksResolver(
-                resourceType(),
-                this::resolveResourceId
-        ).resolve(request, dataSourceDto);
+        return NOT_IMPLEMENTED_LINKS_STUB;
     }
 
     /**
@@ -172,11 +154,6 @@ public interface Resource<RESOURCE_DTO> extends Comparable<Resource<RESOURCE_DTO
     default Object resolveResourceMeta(JsonApiRequest request,
                                        RESOURCE_DTO dataSourceDto) {
         return null;
-    }
-
-    @Override
-    default int compareTo(Resource o) {
-        return resourceType().getType().compareTo(o.resourceType().getType());
     }
 
 }

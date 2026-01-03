@@ -78,7 +78,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                     return Stream.concat(
                                     toManyRelationshipsDocMap.entrySet().stream(),
                                     toOneRelationshipDocMap.entrySet().stream()
-                            ).sorted(Comparator.comparing(e -> e.getKey().getName()))
+                            ).sorted(Comparator.comparing(Map.Entry::getKey))
                             .collect(CustomCollectors.toOrderedMapThatSupportsNullValues(
                                     e -> e.getKey().getName(),
                                     Map.Entry::getValue

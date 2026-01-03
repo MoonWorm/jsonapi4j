@@ -12,11 +12,13 @@ import java.util.Map;
 public class RegisteredResource<T extends Resource<?>> implements Comparable<RegisteredResource<T>> {
 
     private T resource;
+    private ResourceType resourceType;
+    private Class<?> registeredAs;
     private Map<String, Object> pluginInfo;
 
     @Override
     public int compareTo(RegisteredResource<T> o) {
-        return this.resource.compareTo(o.getResource());
+        return this.resourceType.compareTo(o.getResourceType());
     }
 
 }

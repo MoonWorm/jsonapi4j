@@ -1,17 +1,16 @@
 package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe;
 
 import lombok.AllArgsConstructor;
-import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.ResourceRepository;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.CookbookResourceTypes;
 
 import java.util.List;
 
+@JsonApiResourceOperation(resource = DishRecipeResource.class)
 @AllArgsConstructor
-public class RecipeOperations implements ResourceRepository<DishRecipe>
-{
+public class RecipeOperations implements ResourceRepository<DishRecipe> {
 
     private final List<DishRecipe> recipes;
 
@@ -28,11 +27,6 @@ public class RecipeOperations implements ResourceRepository<DishRecipe>
     @Override
     public void validateReadById(JsonApiRequest request) {
         ResourceRepository.super.validateReadById(request);
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return CookbookResourceTypes.RECIPE;
     }
 
 }

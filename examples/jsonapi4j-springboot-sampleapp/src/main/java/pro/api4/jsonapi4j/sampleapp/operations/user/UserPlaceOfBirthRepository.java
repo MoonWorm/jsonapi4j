@@ -2,16 +2,17 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipBatchAwareRepository;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
@@ -20,9 +21,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
-import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_PLACE_OF_BIRTH;
-
+@JsonApiRelationshipOperation(
+        resource = UserResource.class,
+        relationship = UserPlaceOfBirthRelationship.class
+)
 @RequiredArgsConstructor
 @Component
 public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
@@ -77,16 +79,6 @@ public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRe
                         e -> countries.get(e.getValue())
                 )
         );
-    }
-
-    @Override
-    public RelationshipName relationshipName() {
-        return USER_PLACE_OF_BIRTH;
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return USERS;
     }
 
 }

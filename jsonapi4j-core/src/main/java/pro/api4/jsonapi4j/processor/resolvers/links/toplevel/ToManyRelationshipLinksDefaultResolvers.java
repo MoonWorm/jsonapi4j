@@ -61,7 +61,11 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                 Collectors.toMap(
                                         e -> e.getKey().getType(),
                                         e -> {
-                                            List<String> ids = e.getValue().stream().map(ImmutablePair::getRight).sorted().toList();
+                                            List<String> ids = e.getValue()
+                                                    .stream()
+                                                    .map(ImmutablePair::getRight)
+                                                    .sorted()
+                                                    .toList();
                                             String href = String.format(
                                                     "%s?%s",
                                                     LinksGenerator.resourcesBasePath(e.getKey()),

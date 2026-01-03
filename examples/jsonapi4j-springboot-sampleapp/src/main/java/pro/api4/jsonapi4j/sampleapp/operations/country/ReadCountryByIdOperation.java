@@ -4,21 +4,23 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
+import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.Collections;
 
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.readCountriesByIds;
 
+@JsonApiResourceOperation(resource = CountryResource.class)
 @OasOperationInfo(
         securityConfig = @SecurityConfig(
                 clientCredentialsSupported = true,
@@ -43,14 +45,9 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
     public static DownstreamCountry readCountryById(String id, RestCountriesFeignClient client) {
         var result = readCountriesByIds(Collections.singletonList(id), client);
         if (CollectionUtils.isEmpty(result)) {
-            throw new ResourceNotFoundException(id, COUNTRIES);
+            throw new ResourceNotFoundException(id, new ResourceType("countries"));
         }
         return result.get(0);
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return COUNTRIES;
     }
 
     @Override

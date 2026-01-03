@@ -1,35 +1,21 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user;
 
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.ToOneRelationship;
+import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.COUNTRIES;
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
-import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationshipsRegistry.USER_PLACE_OF_BIRTH;
-
+@JsonApiRelationship(relationshipName = "placeOfBirth", parentResource = UserResource.class)
 @OasRelationshipInfo(
         relationshipTypes = {CountryResource.class}
 )
 public class UserPlaceOfBirthRelationship implements ToOneRelationship<UserDbEntity, DownstreamCountry> {
 
     @Override
-    public RelationshipName relationshipName() {
-        return USER_PLACE_OF_BIRTH;
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return USERS;
-    }
-
-    @Override
-    public ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
-        return COUNTRIES;
+    public String resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
+        return "countries";
     }
 
     @Override

@@ -1,6 +1,5 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -15,33 +14,42 @@ public interface ResourceRepository<RESOURCE_DTO> extends
 
     @Override
     default RESOURCE_DTO readById(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.READ_RESOURCE_BY_ID, resourceType());
+        throw new OperationNotFoundException(
+                OperationType.READ_RESOURCE_BY_ID,
+                request.getTargetResourceType()
+        );
     }
 
     @Override
     default CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.READ_MULTIPLE_RESOURCES, resourceType());
+        throw new OperationNotFoundException(
+                OperationType.READ_MULTIPLE_RESOURCES,
+                request.getTargetResourceType()
+        );
     }
 
     @Override
     default RESOURCE_DTO create(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.CREATE_RESOURCE, resourceType());
+        throw new OperationNotFoundException(
+                OperationType.CREATE_RESOURCE,
+                request.getTargetResourceType()
+        );
     }
 
     @Override
     default void update(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.UPDATE_RESOURCE, resourceType());
+        throw new OperationNotFoundException(
+                OperationType.UPDATE_RESOURCE,
+                request.getTargetResourceType()
+        );
     }
 
     @Override
     default void delete(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.DELETE_RESOURCE, resourceType());
-    }
-
-    // TODO: move to annotation and set to registered resource
-    @Override
-    default ResourceType resourceType() {
-        return null;
+        throw new OperationNotFoundException(
+                OperationType.DELETE_RESOURCE,
+                request.getTargetResourceType()
+        );
     }
 
     @Override

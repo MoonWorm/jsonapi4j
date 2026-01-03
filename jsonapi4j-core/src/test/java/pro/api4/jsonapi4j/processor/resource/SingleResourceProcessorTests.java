@@ -17,7 +17,6 @@ import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,8 +28,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorTests.Relationships.RelationshipsRegistry.BARS;
-import static pro.api4.jsonapi4j.processor.resource.SingleResourceProcessorTests.Relationships.RelationshipsRegistry.FOO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.times;
@@ -39,6 +36,10 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SingleResourceProcessorTests {
+
+    private static final ResourceType SILVER = new ResourceType("silver");
+    private static final RelationshipName FOO = new RelationshipName("foo");
+    private static final RelationshipName BARS = new RelationshipName("bars");
 
     private static final String ID = "1";
     private static final String NAME = "foo bar";
@@ -70,14 +71,14 @@ public class SingleResourceProcessorTests {
                 .forRequest(REQUEST_NO_INCLUDES)
                 .dataSupplier(ds)
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
         assertThat(result)
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .hasFieldOrPropertyWithValue("relationships", null)
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
@@ -110,18 +111,18 @@ public class SingleResourceProcessorTests {
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, fooRelSupplier)
                 .toManyRelationshipResolver(BARS, barsRelSupplier)
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
         assertThat(result)
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .hasFieldOrPropertyWithValue(
                         "relationships",
                         new Relationships(
@@ -156,18 +157,18 @@ public class SingleResourceProcessorTests {
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_NO_INCLUDES)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, fooRelSupplier)
                 .toManyRelationshipResolver(BARS, barsRelSupplier)
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
         assertThat(result)
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .hasFieldOrPropertyWithValue("relationships", new Relationships(
                         new ToOneRelationshipDoc(LinksObject.builder().self("/silver/1/relationships/foo").build()),
                         new ToManyRelationshipsDoc(LinksObject.builder().self("/silver/1/relationships/bars").build()))
@@ -192,14 +193,14 @@ public class SingleResourceProcessorTests {
                 .dataSupplier(ds)
                 .resourceLinksResolver((req, dto) -> LinksObject.builder().self("/silver/1").build())
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
         assertThat(result)
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .hasFieldOrPropertyWithValue("links", LinksObject.builder().self("/silver/1").build())
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
@@ -219,14 +220,14 @@ public class SingleResourceProcessorTests {
                 .dataSupplier(ds)
                 .resourceMetaResolver((req, dto) -> Map.of("test_prop", "some_value"))
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
         assertThat(result)
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .hasFieldOrPropertyWithValue("meta", Map.of("test_prop", "some_value"))
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
@@ -246,7 +247,7 @@ public class SingleResourceProcessorTests {
                 .dataSupplier(ds)
                 .topLevelLinksResolver((req, dto) -> LinksObject.builder().self("/silver").build())
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
@@ -254,7 +255,7 @@ public class SingleResourceProcessorTests {
                 .hasFieldOrPropertyWithValue("links", LinksObject.builder().self("/silver").build())
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
         verify(ds, times(1)).get(REQUEST_NO_INCLUDES);
@@ -273,7 +274,7 @@ public class SingleResourceProcessorTests {
                 .dataSupplier(ds)
                 .topLevelMetaResolver((req, dto) -> Map.of("test_prop", "some_value"))
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
@@ -281,7 +282,7 @@ public class SingleResourceProcessorTests {
                 .hasFieldOrPropertyWithValue("meta", Map.of("test_prop", "some_value"))
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
-                .hasFieldOrPropertyWithValue("type", Type.SILVER.getType())
+                .hasFieldOrPropertyWithValue("type", SILVER.getType())
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
         verify(ds, times(1)).get(REQUEST_NO_INCLUDES);
@@ -296,10 +297,10 @@ public class SingleResourceProcessorTests {
             new SingleResourceProcessor()
                     .forRequest(REQUEST_NO_INCLUDES)
                     .dataSupplier(ds)
-                    .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                    .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                     .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc())
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
         }).isInstanceOf(IllegalStateException.class)
                 .hasMessage("Every declared 'default' relationship must also has either 'ToOneRelationshipResolver' or 'ToManyRelationshipsResolver' being configured (or their batch alternatives). Missing for 'foo' relationship.");
@@ -309,10 +310,10 @@ public class SingleResourceProcessorTests {
             new SingleResourceProcessor()
                     .forRequest(REQUEST_NO_INCLUDES)
                     .dataSupplier(ds)
-                    .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                    .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                     .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc())
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
         }).isInstanceOf(IllegalStateException.class)
                 .hasMessage("Every declared 'default' relationship must also has either 'ToOneRelationshipResolver' or 'ToManyRelationshipsResolver' being configured (or their batch alternatives). Missing for 'bars' relationship.");
@@ -362,11 +363,11 @@ public class SingleResourceProcessorTests {
         new SingleResourceProcessor()
                 .forRequest((Request) null)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc())
                 .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc())
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // no rels
@@ -374,7 +375,7 @@ public class SingleResourceProcessorTests {
                 .forRequest((Request) null)
                 .dataSupplier(ds)
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, ResourceWithNoRelationshipsDoc::new);
 
         // then
@@ -392,11 +393,11 @@ public class SingleResourceProcessorTests {
         new SingleResourceProcessor()
                 .forRequest(REQUEST_NO_INCLUDES)
                 .dataSupplier(ds)
-                .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc())
                 .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc())
                 .attributesResolver(attributesResolver)
-                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toSingleResourceDoc(null, JsonApiResourceObjectWithRelationships::new, ResourceWithRelationshipsDoc::new);
 
         // then
@@ -412,11 +413,11 @@ public class SingleResourceProcessorTests {
             new SingleResourceProcessor()
                     .forRequest(REQUEST_NO_INCLUDES)
                     .dataSupplier(ds)
-                    .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                    .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                     .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc())
                     .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc())
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(Relationships::new, null, ResourceWithRelationshipsDoc::new);
         }).isInstanceOf(NullPointerException.class);
 
@@ -426,7 +427,7 @@ public class SingleResourceProcessorTests {
                     .forRequest(REQUEST_NO_INCLUDES)
                     .dataSupplier(ds)
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(null, ResourceWithNoRelationshipsDoc::new);
         }).isInstanceOf(NullPointerException.class);
 
@@ -443,11 +444,11 @@ public class SingleResourceProcessorTests {
             new SingleResourceProcessor()
                     .forRequest(REQUEST_NO_INCLUDES)
                     .dataSupplier(ds)
-                    .defaultRelationships(all(Type.SILVER, dto -> String.valueOf(dto.getId()), Relationships.RelationshipsRegistry.values()))
+                    .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                     .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc())
                     .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc())
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(Relationships::new, JsonApiResourceObjectWithRelationships::new, null);
         }).isInstanceOf(NullPointerException.class);
 
@@ -457,24 +458,13 @@ public class SingleResourceProcessorTests {
                     .forRequest(REQUEST_ALL_INCLUDES)
                     .dataSupplier(ds)
                     .attributesResolver(attributesResolver)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), Type.SILVER))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                     .toSingleResourceDoc(JsonApiResourceObjectWithNoRelationships::new, null);
         }).isInstanceOf(NullPointerException.class);
 
         // then
         verify(ds, times(0)).get(REQUEST_NO_INCLUDES);
         verify(attributesResolver, times(0)).resolveAttributes(DTO);
-    }
-
-    @Getter
-    private enum Type implements ResourceType {
-        SILVER("silver");
-
-        private final String type;
-
-        Type(String type) {
-            this.type = type;
-        }
     }
 
     @Data
@@ -527,17 +517,6 @@ public class SingleResourceProcessorTests {
         public Relationships(ToOneRelationshipDoc foo, ToManyRelationshipsDoc bars) {
             this.foo = foo;
             this.bars = bars;
-        }
-
-        @Getter
-        public enum RelationshipsRegistry implements RelationshipName {
-            FOO("foo"), BARS("bars");
-
-            private final String name;
-
-            RelationshipsRegistry(String name) {
-                this.name = name;
-            }
         }
 
     }

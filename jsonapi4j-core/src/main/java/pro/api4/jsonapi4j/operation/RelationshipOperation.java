@@ -1,6 +1,5 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
@@ -14,11 +13,6 @@ public interface RelationshipOperation extends ResourceOperation {
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
         new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
     };
-
-    /**
-     * @return name of the given relationship
-     */
-    RelationshipName relationshipName();
 
     /**
      * Checks that the request has the corresponding resource id in the URL

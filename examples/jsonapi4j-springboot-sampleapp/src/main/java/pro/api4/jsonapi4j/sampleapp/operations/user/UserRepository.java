@@ -2,8 +2,8 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
@@ -14,25 +14,20 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationships;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.user.validation.UserInputParamsValidator;
 
 import java.util.List;
 
-import static pro.api4.jsonapi4j.sampleapp.domain.SampleAppDomainResourceTypes.USERS;
-
 @RequiredArgsConstructor
 @Component
+@JsonApiResourceOperation(resource = UserResource.class)
 public class UserRepository implements ResourceRepository<UserDbEntity> {
 
     private final UserDb userDb;
     private final UserInputParamsValidator userValidator;
     private final CountryInputParamsValidator countryValidator;
-
-    @Override
-    public ResourceType resourceType() {
-        return USERS;
-    }
 
     @OasOperationInfo(
             securityConfig = @SecurityConfig(

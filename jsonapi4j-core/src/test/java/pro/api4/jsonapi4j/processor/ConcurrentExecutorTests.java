@@ -30,20 +30,43 @@ import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelati
 @Disabled("for manual testing")
 public class ConcurrentExecutorTests {
 
+    private static final ResourceType TYPE1 = new ResourceType("mytype");
+
+    private static final RelationshipName REL1_MULTI = new RelationshipName("rel1");
+    private static final RelationshipName REL2_MULTI = new RelationshipName("rel2");
+    private static final RelationshipName REL3_MULTI = new RelationshipName("rel3");
+    private static final RelationshipName REL4_SINGLE = new RelationshipName("rel4");
+    private static final RelationshipName REL5_SINGLE = new RelationshipName("rel5");
+    private static final RelationshipName REL6_SINGLE = new RelationshipName("rel6");
+    private static final RelationshipName REL7_SINGLE_BATCH = new RelationshipName("rel7");
+    private static final RelationshipName REL8_MULTI_BATCH = new RelationshipName("rel8");
+
+    private static final RelationshipName[] RELATIONSHIPS = new RelationshipName[] {
+            REL1_MULTI,
+            REL2_MULTI,
+            REL3_MULTI,
+            REL4_SINGLE,
+            REL5_SINGLE,
+            REL6_SINGLE,
+            REL7_SINGLE_BATCH,
+            REL8_MULTI_BATCH
+    };
+
+
     @Test
     public void testParallelExecution_multiResources() {
         long start = System.currentTimeMillis();
 
         Request request = new Request(50,
                 Set.of(
-                        MyRelationshipsRegistry.REL1_MULTI.getName(),
-                        MyRelationshipsRegistry.REL2_MULTI.getName(),
-                        MyRelationshipsRegistry.REL3_MULTI.getName(),
-                        MyRelationshipsRegistry.REL4_SINGLE.getName(),
-                        MyRelationshipsRegistry.REL5_SINGLE.getName(),
-                        MyRelationshipsRegistry.REL6_SINGLE.getName(),
-                        MyRelationshipsRegistry.REL7_SINGLE_BATCH.getName(),
-                        MyRelationshipsRegistry.REL8_MULTI_BATCH.getName()
+                        REL1_MULTI.getName(),
+                        REL2_MULTI.getName(),
+                        REL3_MULTI.getName(),
+                        REL4_SINGLE.getName(),
+                        REL5_SINGLE.getName(),
+                        REL6_SINGLE.getName(),
+                        REL7_SINGLE_BATCH.getName(),
+                        REL8_MULTI_BATCH.getName()
                 )
         );
 
@@ -54,8 +77,8 @@ public class ConcurrentExecutorTests {
                     .forRequest(request)
                     .concurrentRelationshipResolution(executorService)
                     .dataSupplier(req -> CursorPageableResponse.fromItemsAndCursor(List.of(1, 2, 3), null))
-                    .defaultRelationships(all(MyTypes.TYPE1, String::valueOf, MyRelationshipsRegistry.values()))
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL1_MULTI, (req, dto) -> {
+                    .defaultRelationships(all(TYPE1, String::valueOf, RELATIONSHIPS))
+                    .toManyRelationshipResolver(REL1_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + ": Rel 1 (multi) resolved");
@@ -67,7 +90,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self.link").build()
                         );
                     })
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL2_MULTI, (req, dto) -> {
+                    .toManyRelationshipResolver(REL2_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 2 (multi) resolved");
@@ -79,7 +102,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self2.link").build()
                         );
                     })
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL3_MULTI, (req, dto) -> {
+                    .toManyRelationshipResolver(REL3_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 3 (multi) resolved");
@@ -91,7 +114,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self3.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL4_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL4_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 4 (to one) resolved");
@@ -103,7 +126,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self4.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL5_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL5_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 5 (to one) resolved");
@@ -115,7 +138,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self5.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL6_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL6_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 6 (to one) resolved");
@@ -127,7 +150,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self6.link").build()
                         );
                     })
-                    .batchToOneRelationshipResolver(MyRelationshipsRegistry.REL7_SINGLE_BATCH, (req, dto) -> {
+                    .batchToOneRelationshipResolver(REL7_SINGLE_BATCH, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 7 (batch to one) resolved");
@@ -140,7 +163,7 @@ public class ConcurrentExecutorTests {
                                 3, new ToOneRelationshipDoc(new ResourceIdentifierObject("10", "eitthtype"))
                         );
                     })
-                    .batchToManyRelationshipResolver(MyRelationshipsRegistry.REL8_MULTI_BATCH, (req, dto) -> {
+                    .batchToManyRelationshipResolver(REL8_MULTI_BATCH, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 8 (batch multi) resolved");
@@ -172,7 +195,7 @@ public class ConcurrentExecutorTests {
                         );
                     })
                     .attributesResolver(suppliedId -> suppliedId)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(String.valueOf(dto), MyTypes.TYPE1))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(String.valueOf(dto), TYPE1))
                     .toMultipleResourcesDoc(
                             MyRelationships::new,
                             new ResourceSupplier<Integer, MyRelationships, ResourceObject<Integer, MyRelationships>>() {
@@ -198,12 +221,12 @@ public class ConcurrentExecutorTests {
         long start = System.currentTimeMillis();
 
         Request request = new Request(50, Set.of(
-                MyRelationshipsRegistry.REL1_MULTI.getName(),
-                MyRelationshipsRegistry.REL2_MULTI.getName(),
-                MyRelationshipsRegistry.REL3_MULTI.getName(),
-                MyRelationshipsRegistry.REL4_SINGLE.getName(),
-                MyRelationshipsRegistry.REL5_SINGLE.getName(),
-                MyRelationshipsRegistry.REL6_SINGLE.getName())
+                REL1_MULTI.getName(),
+                REL2_MULTI.getName(),
+                REL3_MULTI.getName(),
+                REL4_SINGLE.getName(),
+                REL5_SINGLE.getName(),
+                REL6_SINGLE.getName())
         );
 
         int THREADS_COUNT = 6;
@@ -213,8 +236,8 @@ public class ConcurrentExecutorTests {
                     .forRequest(request)
                     .concurrentRelationshipResolution(executorService)
                     .dataSupplier(req -> 2)
-                    .defaultRelationships(all(MyTypes.TYPE1, String::valueOf, MyRelationshipsRegistry.values()))
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL1_MULTI, (req, dto) -> {
+                    .defaultRelationships(all(TYPE1, String::valueOf, RELATIONSHIPS))
+                    .toManyRelationshipResolver(REL1_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + ": Rel 1 (multi) resolved");
@@ -226,7 +249,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self.link").build()
                         );
                     })
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL2_MULTI, (req, dto) -> {
+                    .toManyRelationshipResolver(REL2_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 2 (multi) resolved");
@@ -238,7 +261,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self2.link").build()
                         );
                     })
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL3_MULTI, (req, dto) -> {
+                    .toManyRelationshipResolver(REL3_MULTI, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 3 (multi) resolved");
@@ -250,7 +273,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self3.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL4_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL4_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 4 (to one) resolved");
@@ -262,7 +285,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self4.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL5_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL5_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 5 (to one) resolved");
@@ -274,7 +297,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self5.link").build()
                         );
                     })
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL6_SINGLE, (req, dto) -> {
+                    .toOneRelationshipResolver(REL6_SINGLE, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 6 (to one) resolved");
@@ -287,7 +310,7 @@ public class ConcurrentExecutorTests {
                         );
                     })
 
-                    .toOneRelationshipResolver(MyRelationshipsRegistry.REL7_SINGLE_BATCH, (req, dto) -> {
+                    .toOneRelationshipResolver(REL7_SINGLE_BATCH, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 7 (to one) resolved");
@@ -299,7 +322,7 @@ public class ConcurrentExecutorTests {
                                 LinksObject.builder().self("http://self7.link").build()
                         );
                     })
-                    .toManyRelationshipResolver(MyRelationshipsRegistry.REL8_MULTI_BATCH, (req, dto) -> {
+                    .toManyRelationshipResolver(REL8_MULTI_BATCH, (req, dto) -> {
                         try {
                             Thread.sleep(2000L);
                             System.out.println(Thread.currentThread().getName() + " Rel 8 (multi) resolved");
@@ -312,7 +335,7 @@ public class ConcurrentExecutorTests {
                         );
                     })
                     .attributesResolver(suppliedId -> suppliedId)
-                    .resourceTypeAndIdResolver(dto -> new IdAndType(String.valueOf(dto), MyTypes.TYPE1))
+                    .resourceTypeAndIdResolver(dto -> new IdAndType(String.valueOf(dto), TYPE1))
                     .toSingleResourceDoc(
                             MyRelationships::new,
                             new ResourceSupplier<Integer, MyRelationships, ResourceObject<Integer, MyRelationships>>() {
@@ -331,44 +354,6 @@ public class ConcurrentExecutorTests {
                     );
             System.out.println("Took: " + (System.currentTimeMillis() - start));
         }
-    }
-
-    public enum MyTypes implements ResourceType {
-        TYPE1("mytype");
-
-        private final String name;
-
-        MyTypes(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String getType() {
-            return name;
-        }
-    }
-
-    public enum MyRelationshipsRegistry implements RelationshipName {
-        REL1_MULTI("rel1"),
-        REL2_MULTI("rel2"),
-        REL3_MULTI("rel3"),
-        REL4_SINGLE("rel4"),
-        REL5_SINGLE("rel5"),
-        REL6_SINGLE("rel6"),
-        REL7_SINGLE_BATCH("rel7"),
-        REL8_MULTI_BATCH("rel8");
-
-        private final String name;
-
-        MyRelationshipsRegistry(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String getName() {
-            return name;
-        }
-
     }
 
     @Data
@@ -400,14 +385,14 @@ public class ConcurrentExecutorTests {
                 Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocMap,
                 Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocMap
         ) {
-            this.rel1 = toManyRelationshipsDocMap.get(MyRelationshipsRegistry.REL1_MULTI);
-            this.rel2 = toManyRelationshipsDocMap.get(MyRelationshipsRegistry.REL2_MULTI);
-            this.rel3 = toManyRelationshipsDocMap.get(MyRelationshipsRegistry.REL3_MULTI);
-            this.rel4 = toOneRelationshipDocMap.get(MyRelationshipsRegistry.REL4_SINGLE);
-            this.rel5 = toOneRelationshipDocMap.get(MyRelationshipsRegistry.REL5_SINGLE);
-            this.rel6 = toOneRelationshipDocMap.get(MyRelationshipsRegistry.REL6_SINGLE);
-            this.rel7 = toOneRelationshipDocMap.get(MyRelationshipsRegistry.REL7_SINGLE_BATCH);
-            this.rel8 = toManyRelationshipsDocMap.get(MyRelationshipsRegistry.REL8_MULTI_BATCH);
+            this.rel1 = toManyRelationshipsDocMap.get(REL1_MULTI);
+            this.rel2 = toManyRelationshipsDocMap.get(REL2_MULTI);
+            this.rel3 = toManyRelationshipsDocMap.get(REL3_MULTI);
+            this.rel4 = toOneRelationshipDocMap.get(REL4_SINGLE);
+            this.rel5 = toOneRelationshipDocMap.get(REL5_SINGLE);
+            this.rel6 = toOneRelationshipDocMap.get(REL6_SINGLE);
+            this.rel7 = toOneRelationshipDocMap.get(REL7_SINGLE_BATCH);
+            this.rel8 = toManyRelationshipsDocMap.get(REL8_MULTI_BATCH);
         }
     }
 

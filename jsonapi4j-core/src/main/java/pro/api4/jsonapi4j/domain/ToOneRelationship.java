@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToOneRelationshipLinksDefaultResolvers;
 
 /**
  * This interface is used for designing the JSON:API domain. Represents a
@@ -40,13 +39,7 @@ public interface ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      */
     default LinksObject resolveRelationshipLinks(JsonApiRequest relationshipRequest,
                                                  RELATIONSHIP_DTO relationshipDto) {
-        return ToOneRelationshipLinksDefaultResolvers.defaultLinksResolver(
-                resourceType(),
-                relationshipRequest.getResourceId(),
-                relationshipName(),
-                this::resolveResourceIdentifierType,
-                this::resolveResourceIdentifierId
-        ).resolve(relationshipRequest, relationshipDto);
+        return NOT_IMPLEMENTED_LINKS_STUB;
     }
 
     /**

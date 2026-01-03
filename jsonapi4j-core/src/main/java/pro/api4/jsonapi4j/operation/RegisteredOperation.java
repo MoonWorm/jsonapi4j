@@ -20,4 +20,27 @@ public class RegisteredOperation<T extends ResourceOperation> {
     private final OperationType operationType;
     private final Map<String, Object> pluginInfo;
 
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Getter
+    @ToString
+    @EqualsAndHashCode
+    public static class OperationMeta {
+        private final Class<?> registeredAs;
+        private final ResourceType resourceType;
+        private final RelationshipName relationshipName;
+        private final OperationType operationType;
+        private final Map<String, Object> pluginInfo;
+    }
+
+    public OperationMeta getOperationMeta() {
+        return OperationMeta.builder()
+                .registeredAs(this.registeredAs)
+                .resourceType(this.resourceType)
+                .relationshipName(this.relationshipName)
+                .operationType(this.operationType)
+                .pluginInfo(this.pluginInfo)
+                .build();
+    }
+
 }
