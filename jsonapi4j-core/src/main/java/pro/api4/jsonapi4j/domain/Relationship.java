@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j.domain;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.plugin.ac.impl.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
-import pro.api4.jsonapi4j.processor.RelationshipType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.ac.impl.ownership.OwnerIdExtractor;

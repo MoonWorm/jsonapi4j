@@ -40,14 +40,14 @@ The framework modules are published to Maven Central. You can find the latest av
 
 ## 2. Declare the Domain
 
-Let's implement a simple application that exposes two resources - `users` and `countries` - and defines a relationship between them, representing which `citizenships` (or passports) each user holds.
+Let's implement a simple application that exposes just one resource - `users`. And `relatives` relationship that is self-linked on the same `users` resource.
 
 ```mermaid
 flowchart TD
     U[users] -->|relatives| U
 ```
 
-Then, let's implement a few operations for these resources - reading multiple users and countries by their IDs, and retrieving which citizenships each user has.
+Then, let's implement a few operations for these resources - reading multiple `users`, and retrieving which are the other `users` the current user has as `relatives`.
 
 ## 3. Define the JSON:API Resource for Users
 
@@ -55,18 +55,16 @@ As mentioned above, let's start by defining our first JSON:API resource - `user`
 
 ```java
 @Component
-public class UserResource implements Resource<UserDbEntity> {
+@JsonApiResource(resourceType = "users") // 1.
+public class UserResource implements Resource<UserDbEntity> { // 2.
 
+    // 3. 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {
       return userDbEntity.getId();
     }
   
-    @Override
-    public ResourceType resourceType() {
-      return () -> "users";
-    }
-  
+    // 4.
     @Override
     public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
       return new UserAttributes(
@@ -75,17 +73,15 @@ public class UserResource implements Resource<UserDbEntity> {
               userDbEntity.getCreditCardNumber()
       );
     }
+
 }
 ```
 
 What's happening here:
-
-* `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
-* `ResourceType resourceType()` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
-* `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (UserDbEntity) to the public API-facing representation (UserAttributes)
-
-Each resource is parametrized with a type:
-* `UserDbEntity` is how data is represented internally.
+1. `@JsonApiResource(resourceType = "users")` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
+2. `UserResource implements Resource<UserDbEntity>` each resource must implement `Resource` interface. It's parametrized with a `UserDbEntity` type - is how data is represented internally.
+3. `String resolveResourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
+4. `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (`UserDbEntity`) to the public API-facing representation (`UserAttributes`)
 
 Here's a draft implementation of `UserAttributes`:
 
@@ -119,28 +115,24 @@ public class UserDbEntity {
 
 Internal models (like `UserDbEntity` in this case) often differ from `UserAttributes`. They may encapsulate database-specific details (for example, a Hibernate entity or a JOOQ record), represent a DTO from an external service, or even aggregate data from multiple sources.
 
-## 4. Declare the JSON:API Operation — Read Multiple Users
+## 4. Declare the first JSON:API Operation — Read Multiple Users
 
 Now that we've defined our resource and attributes, let's implement the first operation to read all users.
 This operation will be available under `GET /users`.
 
 ```java
 @Component
-public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
+@JsonApiResourceOperation(resource = UserResource.class) // 1.
+public class UserRepository implements ResourceRepository<UserDbEntity> { // 2.
 
-    private final UserDb userDb;
+    private final UserDb userDb; // 3.
     
     public ReadAllUsersOperation(UserDb userDb) {
         this.userDb = userDb;
     }
 
     @Override
-    public ResourceType resourceType() {
-        return () -> "users";
-    }
-
-    @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) { // 4.
         UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
         return new CursorPageableResponse.fromItemsAndCursor(
                 pagedResult.getEntities(),
@@ -151,12 +143,13 @@ public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperatio
 }
 ```
 
-* `resourceType()` - identify which resource this operation belongs to (`users`).
+What's happening here:
+1. `@JsonApiResourceOperation(resource = UserResource.class)` - identify which JSON:API resource this operation belongs to (`users`).
+2. `UserRepository implements ResourceRepository<UserDbEntity>` - this class must implement `ResourceRepository`. This interface consist of all available operations that can be implemented for any JSON:API resource. Interface parametrized with `UserDbEntity` - internal model that represents our `users` resource. 
+3. The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source. In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism. 
+4. As of now we only implement `readPage(...)` method among others available in `ResourceRepository`. 
 
-* The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source.
-  In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism.
-  For the sake of this demo, here’s a simple in-memory implementation to support the operation above:
-
+For the sake of this demo, here’s a simple in-memory implementation of `UserDb` to support the operations from above:
 ```java
 @Component
 public class UserDb {
@@ -243,200 +236,87 @@ And then you should receive a paginated, JSON:API-compliant response such as:
 
 Try to remove `page[cursor]=xxx` query parameter - it will just start reading user resources from the very beginning.
 
-## 5. Define the JSON:API Resource for Countries
+## 5. Add a JSON:API Relationship - User Relatives
 
-Similar to the `users` resource, we need to declare a dedicated JSON:API resource representing a `citizenship` - in this case, a resource of type `country`.
+Now that we've defined our first resource, let's establish a `relatives` relationship between `users`.
 
-```java
-@Component
-public class CountryResource implements Resource<DownstreamCountry> {
+Each user can have multiple `relatives`, which makes this a **to-many** relationship (represented by an array of resource identifier objects).
 
-    @Override
-    public String resolveResourceId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2(); // let's use CCA2 code as a unique country identifier
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return () -> "countries";
-    }
-
-    @Override
-    public CountryAttributes map(DownstreamCountry downstreamCountry) {
-        return new CountryAttributes(
-                downstreamCountry.getName().getCommon(),
-                downstreamCountry.getRegion()
-        );
-    }
-  
-}
-```
-
-This resource is parametrized with `DownstreamCountry`.
-
-Here is draft implementation of `CountryAttributes`:
-
-```java
-public class CountryAttributes {
-    
-    private final String name;
-    private final String region;
-  
-    // constructors, getters and setters
-
-}
-```
-
-In this example, we expose only the `name` and `region` fields through the **attributes**, using `.getName().getCommon()` for the country name. While `cca2` is used as a country ID. 
-And here is the draft implementation for `DownstreamCountry`:
-
-```java
-public class DownstreamCountry {
-
-    private final String cca2;
-    private final Name name;
-    private final String region;
-    
-    // constructors, getters and setters
-
-    public static class Name {
-  
-        private final String common;
-        private final String official;
-
-        // constructors, getters and setters
-  
-    }
-
-}
-```
-
-## 6. Add a JSON:API Relationship - User Citizenships
-
-Now that we've defined our first resources, let's establish a relationship between them.
-
-We'll define a relationship called `citizenships` between the `UserJsonApiResource` and `CountryJsonApiResource`.
-Each user can have multiple `citizenships`, which makes this a **to-many** relationship (represented by an array of resource identifier objects).
-
-To implement this, we'll create a class that implements the ToManyRelationship interface:
+To implement this, we'll create a class that implements the `ToManyRelationship` interface:
 
 ```java
 @Component
-public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
+@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class) // 1.
+public class UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserDbEntity> { // 2.
 
-    @Override
-    public Relationship relationshipName() {
-        return () -> "citizenships";
+    @Override // 3.
+    public String resolveResourceIdentifierType(UserDbEntity userDbEntity) {
+        return "users";
     }
-  
-    @Override
-    public ResourceType resourceType() {
-        return () -> "users";
-    }
-  
-    @Override
-    public ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
-        return () -> "countries";
-    }
-  
-    @Override
-    public String resolveResourceIdentifierId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2();
+
+    @Override // 4.
+    public String resolveResourceIdentifierId(UserDbEntity userDbEntity) {
+        return userDbEntity.getId();
     }
 
 }
 ```
 
-* `Relationship relationshipName()` -  defines the name of the relationship (`citizenships`).
+1. `@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)` - defines the name of the relationship - `relatives` and identifies which resource this relationship belongs to - `UserResource`
+2. `UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserDbEntity>` - this relationship must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model that represents relationship resource and internal model of the parent resource. In this particular case both types are represented by the same model - `UserDbEntity`.   
+3. `String resolveResourceIdentifierType(UserDbEntity userDbEntity)` - determines the type of the related resource - `users`. In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
+4. `String resolveResourceIdentifierId(UserDbEntity userDbEntity)` - resolves the unique identifier of the user
 
-* `ResourceType resourceType()` - identifies which resource this relationship belongs to (`users`).
-
-* `ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
-
-* `String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves the unique identifier of each related resource (e.g., the country's CCA2 code).
-
-## 7. Add the Missing Relationship Operation
+## 6. Add the Missing Relationship Operation
 
 The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.
 
-To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells **JsonApi4j** how to find the related country resources (i.e., which passports or `citizenships` each user has).
+To do this, implement `UserRelativesRepository` - this tells **JsonApi4j** how to find the related user relatives.
 
 ```java
 @Component
-public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry> {
-
-    private final RestCountriesFeignClient client;
+@JsonApiRelationshipOperation(resource = UserResource.class, relationship = UserRelativesRelationship.class) // 1.
+public class UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserDbEntity> { // 2.
+    
     private final UserDb userDb;
     
-    public ReadUserCitizenshipsRelationshipOperation(RestCountriesFeignClient client,
-                                                     UserDb userDb) {
-        this.client = client;
+    public UserRelativesRepository(UserDb userDb) {
         this.userDb = userDb;
     }
     
-
     @Override
-    public CursorAwareResponse<DownstreamCountry> read(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
-                client.readCountriesByIds(userDb.getUserCitizenships(request.getResourceId())),
-                request.getCursor(), 
-                2 // set limit to 2
-        );
-    }
-
-    @Override
-    public RelationshipName relationshipName() {
-        return () -> "citizenships";
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return () -> "users";
+    public CursorPageableResponse<UserDbEntity> readMany(JsonApiRequest request) { // 3.
+        List<String> relativeIds = userDb.getUserRelatives(request.getResourceId());
+        List<UserDbEntity> relatives = userDb.readByIds(relativeIds);
+        return CursorPageableResponse.fromItemsPageable(relatives, request.getCursor(), 2); // 4. 
     }
     
 }
 ```
 
-* `relationshipName()` and `resourceType()` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
+1. `@JsonApiRelationshipOperation(resource = UserResource.class, relationship = UserRelativesRelationship.class)` uniquely identify which resource and relationship this operation belongs to (`UserResource` and `UserRelativesRelationship` accordingly).
+2. `UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserDbEntity>` - this repository must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model that represents relationship resource and internal model of the parent resource. In this particular case both types are represented by the same model - `UserDbEntity`.
+3. `CursorPageableResponse<UserDbEntity> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipRepository`.
+4. Let's set page limit to 2 to showcase the pagination
 
-* `RestCountriesFeignClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
-  For simplicity, let's keep it local for now and simulate its behavior with an in-memory implementation:
-
-```java
-@Component
-public class RestCountriesFeignClient {
-
-  private static final Map<String, DownstreamCountry> COUNTRIES = Map.of(
-          "NO", new DownstreamCountry("NO", new Name("Norway", "Kingdom of Norway"), "Europe"),
-          "FI", new DownstreamCountry("FI", new Name("Finland", "Republic of Finland"), "Europe"),
-          "US", new DownstreamCountry("US", new Name("United States", "United States of America"), "Americas")
-  );
-
-  public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
-      return countryIds.stream().filter(COUNTRIES::containsKey).map(COUNTRIES::get).toList();
-  }
-
-}
-```
-
-We also need to extend our existing `UserDb` to include information about which countries each user holds passports from (identified by their CCA2 codes).
+We also need to extend our existing `UserDb` to include information about user relatives.
 ```java
 
 public class UserDb {
     
     //  ...
-    
-    private Map<String, List<String>> userIdToCountryCca2 = new ConcurrentHashMap<>();
+
+    private Map<String, List<String>> userRelatives = new ConcurrentHashMap<>();
     {
-        userIdToCountryCca2.put("1", List.of("NO", "FI", "US"));
-        userIdToCountryCca2.put("2", List.of("US"));
-        userIdToCountryCca2.put("3", List.of("US", "FI"));
-        userIdToCountryCca2.put("4", List.of("NO", "US"));
-        userIdToCountryCca2.put("5", List.of("US"));
+        userRalatives.put("1", List.of("2"));
+        userRalatives.put("2", List.of("1", "4"));
+        userRalatives.put("3", Collections.emptyList());
+        userRalatives.put("4", List.of("1"));
+        userRalatives.put("5", List.of("1", "2", "4"));
     }
 
-    public List<String> getUserCitizenships(String userId) {
-        return userIdToCountryCca2.get(userId);
+    public List<String> getUserRelatives(String userId) {
+        return userRalatives.get(userId);
     }
 
     // ...
@@ -444,308 +324,426 @@ public class UserDb {
 }
 ```
 
-Finally, this operation will be available under `GET /users/{userId}/relationships/citizenships`.
+Finally, this operation will be available under `GET /users/{userId}/relationships/relatives`.
 
-## 8. Enable Compound Documents (Optional)
+## 7. Request/Response Examples
 
-To support [Compound Documents](https://jsonapi.org/format/#document-compound-documents), implement `ReadMultipleResourcesOperation<DownstreamCountry>` with an `id` filter. This allows the framework to resolve included resources efficiently when requested via the include query parameter.
+### Fetch a User's Relatives Relationships
 
-While you could also implement `ReadByIdOperation<DownstreamCountry>`, this approach is less efficient because compound documents would be resolved sequentially, one by one, instead of using a single batch request via `filter[id]=x,y,z`.
-
-```java
-@Component
-public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
-
-    private final RestCountriesFeignClient client;
-    
-    public ReadAllCountriesOperation(RestCountriesFeignClient client) {
-        this.client = client;
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return () -> "countries";
-    }
-
-    @Override
-    public CursorPageableResponse<DownstreamCountry> readPage(JsonApiRequest request) {
-        if (request.getFilters().containsKey(ID_FILTER_NAME)) {
-            return CursorPageableResponse.byItems(client.readCountriesByIds(request.getFilters().get(ID_FILTER_NAME)));
-        } else {
-            throw new JsonApi4jException(400, CommonCodes.MISSING_REQUIRED_PARAMETER, "Operation supports 'id' filter only");
-        }
-    }
-
-}
-```
-
-* `resourceType()` - identify which resource this operation belongs to (`countries`).
-
-* `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.
-
-This operation will be available under `GET /countries?filter[id]=x,y,z`.
-
-Now we can finally start exploring some more exciting HTTP requests. Check out the next section for hands-on examples!
-
-## 9. Request/Response Examples
-
-### Fetch a User's Citizenship Relationships
-
-Request: [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships)
+Request: [/users/5/relationships/relatives](http://localhost:8080/jsonapi/users/5/relationships/relatives)
 
 Response:
 ```json
 {
-  "data": [
-    {
-      "id": "NO",
-      "type": "countries"
-    },
-    {
-      "id": "FI",
-      "type": "countries"
-    }
-  ],
   "links": {
-    "self": "/users/1/relationships/citizenships",
+    "self": "/users/5/relationships/relatives",
     "related": {
-      "countries": {
-        "href": "/countries?filter[id]=FI,NO", 
-        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
-        "meta": {
-          "ids": ["FI", "NO"]
-        }
-      }
-    },
-    "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
-  }
-}
-```
-
-It's worth noting that each relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
-
-For example, to fetch the second page of a user's citizenships relationship, try:
-/citizenships?page[cursor]=DoJu](http://localhost:8080/jsonapi/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu)
-
-### Fetch a User's Citizenship Relationships Along with Corresponding Country Resources
-
-Request: [/users/1/relationships/citizenships?include=citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships?include=citizenships)
-
-Response:
-
-```json
-{
-  "data": [
-    {
-      "id": "NO",
-      "type": "countries"
-    },
-    {
-      "id": "FI",
-      "type": "countries"
-    }
-  ],
-  "links": {
-    "self": "/users/1/relationships/citizenships?include=citizenships",
-    "related": {
-      "countries": {
-        "href": "/countries?filter[id]=FI,NO",
+      "users": {
+        "href": "/users?filter[id]=1,2",
         "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
-          "ids": ["FI", "NO"]
-        }  
+          "ids": [
+            "1",
+            "2"
+          ]
+        }
       }
     },
-    "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+    "next": "/users/5/relationships/relatives?page%5Bcursor%5D=DoJu"
   },
-  "included": [
+  "data": [
     {
-      "attributes": {
-        "name": "Norway",
-        "region": "Europe"
-      },
-      "links": {
-        "self": "/countries/NO"
-      },
-      "id": "NO",
-      "type": "countries"
+      "id": "1",
+      "type": "users"
     },
     {
-      "attributes": {
-        "name": "Finland",
-        "region": "Europe"
-      },
-      "links": {
-        "self": "/countries/FI"
-      },
-      "id": "FI",
-      "type": "countries"
+      "id": "2",
+      "type": "users"
     }
   ]
 }
 ```
 
-### Fetch Multiple Countries by IDs
+It's worth noting that 'relatives' relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
 
-Request: [/countries?filter[id]=US,NO](http://localhost:8080/jsonapi/countries?filter[id]=US,NO)
+For example, to fetch the second page of a user's relatives relationship, try:
+[/users/5/relationships/relatives?page%5Bcursor%5D=DoJu](http://localhost:8080/jsonapi/users/5/relationships/relatives?page%5Bcursor%5D=DoJu)
+
+### Fetch a User's Relatives Relationships Along with Corresponding User Resources
+
+Request: [/users/5/relationships/relatives?include=relatives](http://localhost:8080/jsonapi/users/5/relationships/relatives?include=relatives)
 
 Response:
+
 ```json
 {
-"data": [
+  "links": {
+    "self": "/users/5/relationships/relatives?include=relatives",
+    "related": {
+      "users": {
+        "href": "/users?filter[id]=1,2",
+        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": [
+            "1",
+            "2"
+          ]
+        }
+      }
+    },
+    "next": "/users/5/relationships/relatives?include=relatives&page%5Bcursor%5D=DoJu"
+  },
+  "data": [
     {
-      "attributes": {
-        "name": "Norway",
-        "region": "Europe"
-      },
-      "links": {
-        "self": "/countries/NO"
-      },
-      "id": "NO",
-      "type": "countries"
+      "id": "1",
+      "type": "users"
     },
     {
-      "attributes": {
-        "name": "United States",
-        "region": "Americas"
-      },
-      "links": {
-        "self": "/countries/US"
-      },
-      "id": "US",
-      "type": "countries"
+      "id": "2",
+      "type": "users"
     }
   ],
-  "links": {
-    "self": "/countries?filter%5Bid%5D=US%2CNO"
-  }
+  "included": [
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    }
+  ]
 }
 ```
 
-### Fetch a Specific Page of Users with Citizenship Linkage Objects and Resolved Country Resources
+### Fetch Multiple Users by IDs
 
-Request: [/users?page[cursor]=DoJu&include=citizenships](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=citizenships)
+Request: [/users?filter[id]=1,2](http://localhost:8080/jsonapi/users?filter[id]=1,2)
 
 Response:
 ```json
 {
+  "links": {
+    "self": "/users?filter%5Bid%5D=1%2C2"
+  },
   "data": [
     {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    }
+  ]
+}
+```
+
+### Fetch a Specific Page of Users with Relatives
+
+Request: [/users?page[cursor]=DoJu&include=relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives)
+
+Response:
+```json
+{
+  "links": {
+    "self": "/users?include=relatives&page%5Bcursor%5D=DoJu",
+    "next": "/users?include=relatives&page%5Bcursor%5D=DoJw"
+  },
+  "data": [
+    {
+      "id": "3",
+      "type": "users",
       "attributes": {
         "fullName": "Jack Doe",
         "email": "jack@doe.com"
       },
       "relationships": {
-        "citizenships": {
-          "data": [
-            {
-              "id": "US",
-              "type": "countries"
-            },
-            {
-              "id": "FI",
-              "type": "countries"
-            }
-          ],
+        "relatives": {
           "links": {
-            "self": "/users/3/relationships/citizenships",
+            "self": "/users/3/relationships/relatives",
             "related": {
-              "countries": {
-                "href": "/countries?filter[id]=FI,US",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": ["FI", "US"]
-                }
-              }
+
             }
-          }
+          },
+          "data": []
         }
       },
       "links": {
         "self": "/users/3"
-      },
-      "id": "3",
-      "type": "users"
+      }
     },
     {
+      "id": "4",
+      "type": "users",
       "attributes": {
         "fullName": "Jessy Doe",
         "email": "jessy@doe.com"
       },
       "relationships": {
-        "citizenships": {
-          "data": [
-            {
-              "id": "NO",
-              "type": "countries"
-            },
-            {
-              "id": "US",
-              "type": "countries"
-            }
-          ],
+        "relatives": {
           "links": {
-            "self": "/users/4/relationships/citizenships",
+            "self": "/users/4/relationships/relatives",
             "related": {
-              "countries": {
-                "href": "/countries?filter[id]=NO,US",
+              "users": {
+                "href": "/users?filter[id]=1",
                 "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
-                  "ids": ["NO", "US"]
+                  "ids": [
+                    "1"
+                  ]
                 }
               }
             }
-          }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users"
+            }
+          ]
         }
       },
       "links": {
         "self": "/users/4"
-      },
-      "id": "4",
-      "type": "users"
+      }
     }
   ],
-  "links": {
-    "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
-    "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
-  },
   "included": [
     {
+      "id": "1",
+      "type": "users",
       "attributes": {
-        "name": "Norway",
-        "region": "Europe"
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives"
+          }
+        }
       },
       "links": {
-        "self": "/countries/NO"
-      },
-      "id": "NO",
-      "type": "countries"
-    },
-    {
-      "attributes": {
-        "name": "Finland",
-        "region": "Europe"
-      },
-      "links": {
-        "self": "/countries/FI"
-      },
-      "id": "FI",
-      "type": "countries"
-    },
-    {
-      "attributes": {
-        "name": "United States",
-        "region": "Americas"
-      },
-      "links": {
-        "self": "/countries/US"
-      },
-      "id": "US",
-      "type": "countries"
+        "self": "/users/1"
+      }
     }
   ]
 }
 ```
+
+User '3' has no relatives. While user '4' has one relative with id '1'. The corresponding user resource can be found in the "included" section.
+
+### Fetch a Specific Page of Users with Relatives and their Relatives
+
+Now let's read the same users, but with 2-levels of relatives, e.g. with relatives of their relatives.
+
+Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives.relatives)
+
+Response:
+```json
+{
+  "links": {
+    "self": "/users?include=relatives&page%5Bcursor%5D=DoJu",
+    "next": "/users?include=relatives&page%5Bcursor%5D=DoJw"
+  },
+  "data": [
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jack Doe",
+        "email": "jack@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives",
+            "related": {
+
+            }
+          },
+          "data": []
+        }
+      },
+      "links": {
+        "self": "/users/3"
+      }
+    },
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=1",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "1"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/4"
+      }
+    }
+  ],
+  "included": [
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=2,3",
+                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "2",
+                    "3"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "2",
+              "type": "users"
+            },
+            {
+              "id": "3",
+              "type": "users"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jack Doe",
+        "email": "jack@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/3"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    }
+  ]
+}
+```
+
+User '3' has no relatives. While user '4' has one relative with id '1'. User '1' has relatives '2' and '3'. All the mentioned user resources can be found in the "included" section.
 
 # Contributing 
 

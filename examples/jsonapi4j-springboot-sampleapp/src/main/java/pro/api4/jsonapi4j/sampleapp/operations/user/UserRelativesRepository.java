@@ -48,7 +48,7 @@ public class UserRelativesRepository implements ToManyRelationshipBatchAwareRepo
     public CursorPageableResponse<UserDbEntity> readMany(JsonApiRequest request) {
         List<String> relativeIds = userDb.getUserRelatives(request.getResourceId());
         List<UserDbEntity> relatives = userDb.readByIds(relativeIds);
-        return CursorPageableResponse.fromItemsPageable(relatives);
+        return CursorPageableResponse.fromItemsPageable(relatives, request.getCursor(), 2);
     }
 
     @Override
