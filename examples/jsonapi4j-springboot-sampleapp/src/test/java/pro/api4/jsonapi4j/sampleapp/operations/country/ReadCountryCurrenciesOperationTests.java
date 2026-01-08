@@ -21,7 +21,7 @@ import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class ReadCurrencyRelationshipOperationTests {
+public class ReadCountryCurrenciesOperationTests {
 
     private WireMockServer wiremockServer;
 

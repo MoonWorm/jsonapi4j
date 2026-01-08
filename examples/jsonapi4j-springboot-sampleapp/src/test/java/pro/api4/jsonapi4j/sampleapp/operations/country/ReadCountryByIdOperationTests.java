@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class ReadByIdOperationTests {
+public class ReadCountryByIdOperationTests {
 
     private WireMockServer wiremockServer;
 

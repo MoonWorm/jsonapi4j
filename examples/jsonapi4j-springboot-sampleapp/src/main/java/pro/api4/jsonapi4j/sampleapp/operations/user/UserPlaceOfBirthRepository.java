@@ -12,7 +12,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
-import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
@@ -22,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @JsonApiRelationshipOperation(
-        resource = UserResource.class,
         relationship = UserPlaceOfBirthRelationship.class
 )
 @RequiredArgsConstructor

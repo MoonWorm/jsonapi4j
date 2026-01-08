@@ -4,12 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
-import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
@@ -20,6 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static pro.api4.jsonapi4j.domain.DomainRegistry.DomainRegistryBuilder.*;
 import static pro.api4.jsonapi4j.operation.OperationType.*;
 
 // TODO: keep only 'registered' methods
@@ -727,12 +724,12 @@ public class OperationsRegistry {
             if (operationType.getSubType() == SubType.RESOURCE) {
                 JsonApiResourceOperation jsonApiResourceOperation
                         = operation.getClass().getAnnotation(JsonApiResourceOperation.class);
-                resourceType = DomainRegistry.DomainRegistryBuilder.resolveResourceType(jsonApiResourceOperation.resource());
+                resourceType = resolveResourceType(jsonApiResourceOperation.resource());
             } else {
                 JsonApiRelationshipOperation jsonApiRelationshipOperation
                         = operation.getClass().getAnnotation(JsonApiRelationshipOperation.class);
-                resourceType = DomainRegistry.DomainRegistryBuilder.resolveResourceType(jsonApiRelationshipOperation.resource());
-                relationshipName = DomainRegistry.DomainRegistryBuilder.resolveRelationshipName(jsonApiRelationshipOperation.relationship());
+                resourceType = resolveParentResourceType(jsonApiRelationshipOperation.relationship());
+                relationshipName = resolveRelationshipName(jsonApiRelationshipOperation.relationship());
             }
             return RegisteredOperation.<T>builder()
                     .operation(operation)

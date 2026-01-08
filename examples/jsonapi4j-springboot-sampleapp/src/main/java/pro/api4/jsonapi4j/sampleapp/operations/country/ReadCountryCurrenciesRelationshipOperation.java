@@ -13,7 +13,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
-import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation.readCountryById;
 
 @JsonApiRelationshipOperation(
-        resource = CountryResource.class,
         relationship = CountryCurrenciesRelationship.class
 )
 @OasOperationInfo(

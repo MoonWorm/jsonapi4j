@@ -226,7 +226,7 @@ public class OperationsRegistryTests {
         }
     }
 
-    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToOneRelationship.class)
+    @JsonApiRelationshipOperation(relationship = TestToOneRelationship.class)
     private static class TestReadToOneRelationshipOperation implements ReadToOneRelationshipOperation<String, String> {
 
         @Override
@@ -236,7 +236,7 @@ public class OperationsRegistryTests {
 
     }
 
-    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToManyRelationship.class)
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
     private static class TestReadToManyRelationshipOperation implements ReadToManyRelationshipOperation<String, String> {
 
         @Override
@@ -245,7 +245,7 @@ public class OperationsRegistryTests {
         }
     }
 
-    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToOneRelationship.class)
+    @JsonApiRelationshipOperation(relationship = TestToOneRelationship.class)
     private static class TestUpdateToOneRelationshipOperation implements UpdateToOneRelationshipOperation {
 
         @Override
@@ -254,7 +254,7 @@ public class OperationsRegistryTests {
         }
     }
 
-    @JsonApiRelationshipOperation(resource = TestFooResource.class, relationship = TestToManyRelationship.class)
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
     private static class TestUpdateToManyRelationshipOperation implements UpdateToManyRelationshipOperation {
 
         @Override

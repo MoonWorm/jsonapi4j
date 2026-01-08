@@ -293,6 +293,14 @@ public class DomainRegistry {
             return new RelationshipName(jsonApiRelationship.relationshipName());
         }
 
+        public static ResourceType resolveParentResourceType(Class<? extends Relationship<?,?>> relationshipClass) {
+            JsonApiRelationship jsonApiRelationship = relationshipClass.getAnnotation(JsonApiRelationship.class);
+            if (jsonApiRelationship == null) {
+                throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
+            }
+            return resolveResourceType(jsonApiRelationship.parentResource());
+        }
+
         private <T extends Relationship<?, ?>> RegisteredRelationship<T> enrichWithMetaInfo(T relationship) {
             JsonApiRelationship jsonApiRelationship = relationship.getClass().getAnnotation(JsonApiRelationship.class);
             if (jsonApiRelationship == null) {
