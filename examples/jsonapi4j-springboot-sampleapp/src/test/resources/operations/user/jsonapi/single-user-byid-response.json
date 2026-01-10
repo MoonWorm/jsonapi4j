@@ -1,0 +1,33 @@
+{
+  "links": {
+    "self": "/users/1"
+  },
+  "data": {
+    "id": "1",
+    "type": "users",
+    "attributes": {
+      "fullName": "John Doe",
+      "email": "john@doe.com"
+    },
+    "relationships": {
+      "citizenships": {
+        "links": {
+          "self": "/users/1/relationships/citizenships"
+        }
+      },
+      "placeOfBirth": {
+        "links": {
+          "self": "/users/1/relationships/placeOfBirth"
+        }
+      },
+      "relatives": {
+        "links": {
+          "self": "/users/1/relationships/relatives"
+        }
+      }
+    },
+    "links": {
+      "self": "/users/1"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "links": {
+    "self": "/users/1?include=placeOfBirth%2Ccitizenships%2Crelatives"
+  },
+  "data": {
+    "id": "1",
+    "type": "users",
+    "attributes": {
+      "fullName": "John Doe",
+      "email": "john@doe.com"
+    },
+    "relationships": {
+      "placeOfBirth": {
+        "links": {
+          "self": "/users/1/relationships/placeOfBirth",
+          "related": "/countries/US"
+        },
+        "data": {
+          "id": "US",
+          "type": "countries"
+        }
+      },
+      "relatives": {
+        "links": {
+          "self": "/users/1/relationships/relatives",
+          "related": {
+            "users": {
+              "href": "/users?filter[id]=2,3",
+              "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+              "meta": {
+                "ids": [
+                  "2",
+                  "3"
+                ]
+              }
+            }
+          }
+        },
+        "data": [
+          {
+            "id": "2",
+            "type": "users",
+            "meta": {
+              "relationshipType": "HUSBAND"
+            }
+          },
+          {
+            "id": "3",
+            "type": "users",
+            "meta": {
+              "relationshipType": "BROTHER"
+            }
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "/users/1"
+    }
+  }
+}

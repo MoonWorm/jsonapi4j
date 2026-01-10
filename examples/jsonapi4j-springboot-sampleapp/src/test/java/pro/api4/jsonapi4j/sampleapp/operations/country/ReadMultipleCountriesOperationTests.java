@@ -3,6 +3,8 @@ package pro.api4.jsonapi4j.sampleapp.operations.country;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import pro.api4.jsonapi4j.request.FiltersAwareRequest;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
 import org.junit.jupiter.api.AfterEach;
@@ -20,15 +22,20 @@ import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
+import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.REGION_FILTER_NAME;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class ReadAllCountriesOperationTests {
+public class ReadMultipleCountriesOperationTests {
 
     private WireMockServer wiremockServer;
 
     @Value("${wiremock.port}")
     private int wiremockPort;
+
+    @Value("${jsonapi4j.root-path}")
+    private String jsonApiRootPath;
 
     @LocalServerPort
     private int appPort;
@@ -48,7 +55,7 @@ public class ReadAllCountriesOperationTests {
     }
 
     @Test
-    public void test_readAll() {
+    public void test_readMultipleWithRelationships() {
         wiremockServer.stubFor(get(urlEqualTo("/all?fields=cca2&fields=name&fields=region&fields=currencies"))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -57,7 +64,8 @@ public class ReadAllCountriesOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .get("http://localhost:" + appPort + "/jsonapi/countries?include=currencies")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/countries")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
@@ -65,7 +73,7 @@ public class ReadAllCountriesOperationTests {
     }
 
     @Test
-    public void test_filterByIds() {
+    public void test_filterByIdsWithRelationships() {
         wiremockServer.stubFor(get(urlEqualTo("/alpha?codes=TG&codes=YT&fields=cca2&fields=name&fields=region&fields=currencies"))
                 .willReturn(aResponse()
                         .withStatus(200)
@@ -74,7 +82,9 @@ public class ReadAllCountriesOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .get("http://localhost:" + appPort + "/jsonapi/countries?filter[id]=TG,YT&include=currencies")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
+                .queryParam(FiltersAwareRequest.getFilterParam(ID_FILTER_NAME), "TG", "YT")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/countries")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
@@ -91,7 +101,9 @@ public class ReadAllCountriesOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .get("http://localhost:" + appPort + "/jsonapi/countries?filter[region]=europe&include=currencies")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
+                .queryParam(FiltersAwareRequest.getFilterParam(REGION_FILTER_NAME), "europe")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/countries")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
@@ -102,7 +114,9 @@ public class ReadAllCountriesOperationTests {
     public void test_readAll_validationError() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .get("http://localhost:" + appPort + "/jsonapi/countries?filter[region]=foo&include=currencies")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
+                .queryParam(FiltersAwareRequest.getFilterParam(REGION_FILTER_NAME), "foo")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/countries")
                 .then()
                 .statusCode(400)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)

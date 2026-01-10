@@ -1,11 +1,8 @@
-package pro.api4.jsonapi4j.sampleapp.operations.country;
+package pro.api4.jsonapi4j.sampleapp.operations.currencies;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,18 +10,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
+import pro.api4.jsonapi4j.request.FiltersAwareRequest;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-public class ReadCountryByIdOperationTests {
+public class ReadMultipleCurrenciesOperationTests {
 
     private WireMockServer wiremockServer;
 
@@ -52,36 +52,36 @@ public class ReadCountryByIdOperationTests {
     }
 
     @Test
-    public void test_readByIdWithRelationships() {
-        wiremockServer.stubFor(get(urlEqualTo("/alpha?codes=TG&fields=cca2&fields=name&fields=region&fields=currencies"))
+    public void test_filterByIdsWithRelationships() {
+        wiremockServer.stubFor(get(urlEqualTo("/currency/NOK?fields=currencies"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
-                        .withBody(ResourceUtil.readResourceFile("operations/country/restcountries/single-country-response.json"))));
+                        .withBody(ResourceUtil.readResourceFile("operations/currency/restcountries/multiple-currencies-response.json"))));
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("countryId", "TG")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
-                .get("http://localhost:" + appPort + jsonApiRootPath + "/countries/{countryId}")
+                .queryParam(FiltersAwareRequest.getFilterParam(ID_FILTER_NAME), "NOK")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/country/jsonapi/single-country-byid-response.json")));
+                .body(jsonEquals(ResourceUtil.readResourceFile("operations/currency/jsonapi/multiple-currencies-byids-response.json")));
     }
 
     @Test
-    public void test_readById_validationError() {
+    public void test_readAll_validationError() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
-                .pathParam("countryId", "TG")
-                .get("http://localhost:" + appPort + jsonApiRootPath + "/foobars/{countryId}")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
-                .statusCode(404)
-                .body("errors[0].code", equalTo("NOT_FOUND"))
-                .body("errors[0].status", equalTo("404"))
-                .body("errors[0].detail", equalTo("JSON:API operation can not be resolved for the path: /foobars/TG, and method: GET. Unknown resource type: foobars"))
+                .statusCode(400)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("errors[0].code", equalTo("MISSING_REQUIRED_PARAMETER"))
+                .body("errors[0].detail", equalTo("Operation requires ids"))
+                .body("errors[0].status", equalTo("400"))
                 .body("errors[0].id", notNullValue());
     }
 

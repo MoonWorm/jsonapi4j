@@ -3,14 +3,15 @@ package pro.api4.jsonapi4j;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
@@ -21,7 +22,6 @@ import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -216,80 +216,106 @@ class BatchToManyRelationshipsProcessor {
                 return Collections.emptyMap();
             }
 
-            Map<RESOURCE_DTO, ToManyRelationshipsDoc> result = new HashMap<>();
-            for (RESOURCE_DTO resourceDto : resourceDtos) {
-                CursorPageableResponse<RELATIONSHIP_DTO> cursorPageableResponse = responseMap.get(resourceDto);
-                if (!responseMap.containsKey(resourceDto)) {
-                    //
-                    // Is not allowed
-                    //
-                    result.put(resourceDto, null);
-                } else {
-                    REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
+            Map<RESOURCE_DTO, List<ImmutablePair<RELATIONSHIP_DTO, AnonymizationResult<ResourceIdentifierObject>>>> preComposedDataMap = responseMap.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() != null)
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> preComposeData(
+                                    resourceDtosToRelationshipRequestMap.get(e.getKey()),
+                                    e.getValue()
+                            ))
+                    );
 
-                    // doc-level links
-                    LinksObject docLinks = topLevelLinksResolver != null
-                            ? topLevelLinksResolver.resolve(relationshipRequest, cursorPageableResponse.getItems(), cursorPageableResponse.getNextCursor())
-                            : null;
-                    // doc-level meta
-                    Object docMeta = topLevelMetaResolver != null
-                            ? topLevelMetaResolver.resolve(relationshipRequest, cursorPageableResponse.getItems())
-                            : null;
-
-                    if (cursorPageableResponse == null) {
-                        result.put(resourceDto, new ToManyRelationshipsDoc(null, docLinks, docMeta));
-                    } else if (CollectionUtils.isEmpty(cursorPageableResponse.getItems())) {
-                        result.put(resourceDto, new ToManyRelationshipsDoc(Collections.emptyList(), docLinks, docMeta));
-                    } else {
-                        List<ResourceIdentifierObject> data = cursorPageableResponse
-                                .getItems()
-                                .stream()
-                                .map(relationshipDto -> {
-                                    // id and type
-                                    IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
-
-                                    if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
-                                        log.warn(
-                                                "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
-                                                relationshipDto
-                                        );
-                                        return null;
-                                    }
-
-                                    // resource meta
-                                    Object resourceMeta = resourceMetaResolver != null
-                                            ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
-                                            : null;
-
-                                    // compose resource identifier
-                                    return new ResourceIdentifierObject(
-                                            idAndType.getId(),
-                                            idAndType.getType().getType(),
-                                            resourceMeta
-                                    );
-                                })
-                                .filter(Objects::nonNull)
-                                .map(resourceIdentifier -> {
-                                    // anonymize if needed
-                                    if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
-                                        resourceIdentifier = accessControlEvaluator.anonymizeObjectIfNeeded(
-                                                resourceIdentifier,
-                                                resourceIdentifier,
-                                                outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
-                                        ).targetObject();
-                                    }
-                                    return resourceIdentifier;
-                                })
-                                .filter(Objects::nonNull)
-                                .toList();
-
-                        // compose doc and add to the result map
-                        result.put(resourceDto, new ToManyRelationshipsDoc(data, docLinks, docMeta));
+            return preComposedDataMap.entrySet().stream().collect(Collectors.toUnmodifiableMap(
+                    Map.Entry::getKey,
+                    e -> {
+                        RESOURCE_DTO resourceDto = e.getKey();
+                        List<ImmutablePair<RELATIONSHIP_DTO, AnonymizationResult<ResourceIdentifierObject>>> preComposedData = e.getValue();
+                        REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
+                        return composeToManyRelationshipsDoc(relationshipRequest, responseMap.get(resourceDto), preComposedData);
                     }
-                }
-            }
+            ));
+        }
 
-            return Collections.unmodifiableMap(result);
+        private ToManyRelationshipsDoc composeToManyRelationshipsDoc(REQUEST relationshipRequest,
+                                                                     CursorPageableResponse<RELATIONSHIP_DTO> cursorPageableResponse,
+                                                                     List<ImmutablePair<RELATIONSHIP_DTO, AnonymizationResult<ResourceIdentifierObject>>> preComposedData) {
+
+            List<RELATIONSHIP_DTO> nonAnonymizedRelationshipDtos = preComposedData.stream()
+                    .filter(p -> p.getRight().isNotFullyAnonymized())
+                    .map(ImmutablePair::getLeft)
+                    .toList();
+
+            String nextCursor = cursorPageableResponse.getNextCursor();
+
+            // doc-level links
+            LinksObject docLinks = topLevelLinksResolver != null
+                    ? topLevelLinksResolver.resolve(relationshipRequest, nonAnonymizedRelationshipDtos, nextCursor)
+                    : null;
+
+            // doc-level meta
+            Object docMeta = topLevelMetaResolver != null
+                    ? topLevelMetaResolver.resolve(relationshipRequest, nonAnonymizedRelationshipDtos)
+                    : null;
+
+            List<ResourceIdentifierObject> data = preComposedData.stream()
+                    .map(ImmutablePair::getRight)
+                    .map(AnonymizationResult::targetObject)
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            return new ToManyRelationshipsDoc(data, docLinks, docMeta);
+        }
+
+        private List<ImmutablePair<RELATIONSHIP_DTO, AnonymizationResult<ResourceIdentifierObject>>> preComposeData(REQUEST request,
+                                                                                                                    CursorPageableResponse<RELATIONSHIP_DTO> cursorPageableResponse) {
+            return cursorPageableResponse
+                    .getItems()
+                    .stream()
+                    .map(relationshipDto -> {
+                        ResourceIdentifierObject resourceIdentifierObject = composeResourceIdentifierObject(
+                                request,
+                                relationshipDto
+                        );
+                        AnonymizationResult<ResourceIdentifierObject> anonymizationResult
+                                = anonymizeIfNeeded(resourceIdentifierObject);
+                        return new ImmutablePair<>(relationshipDto, anonymizationResult);
+                    }).toList();
+        }
+
+        private ResourceIdentifierObject composeResourceIdentifierObject(REQUEST relationshipRequest, RELATIONSHIP_DTO relationshipDto) {
+            // id and type
+            IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
+
+            // validate none of these is null
+            Validate.notNull(idAndType);
+            Validate.notNull(idAndType.getId());
+            Validate.notNull(idAndType.getType());
+
+            // resource meta
+            Object resourceMeta = resourceMetaResolver != null
+                    ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
+                    : null;
+
+            // compose resource identifier
+            return new ResourceIdentifierObject(
+                    idAndType.getId(),
+                    idAndType.getType().getType(),
+                    resourceMeta
+            );
+        }
+
+        private AnonymizationResult<ResourceIdentifierObject> anonymizeIfNeeded(ResourceIdentifierObject resourceIdentifierObject) {
+            // anonymize if needed
+            if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
+                return accessControlEvaluator.anonymizeObjectIfNeeded(
+                        resourceIdentifierObject,
+                        resourceIdentifierObject,
+                        outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
+                );
+            }
+            return new AnonymizationResult<>(resourceIdentifierObject);
         }
 
     }

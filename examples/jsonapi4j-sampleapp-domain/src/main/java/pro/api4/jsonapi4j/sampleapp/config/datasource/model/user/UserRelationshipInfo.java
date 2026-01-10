@@ -7,7 +7,7 @@ import lombok.Data;
 public class UserRelationshipInfo {
 
     private final String relativeUserId;
-    private final RelationshipType relationship;
+    private final RelationshipType relationshipType;
 
     public enum RelationshipType {
         HUSBAND, WIFE, SON, DAUGHTER, MOTHER, FATHER, BROTHER;

@@ -54,7 +54,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                     outboundAccessControlSettings
             );
         } else {
-            return new AnonymizationResult<>(targetObject, false, Collections.emptySet());
+            return new AnonymizationResult<>(targetObject);
         }
     }
 

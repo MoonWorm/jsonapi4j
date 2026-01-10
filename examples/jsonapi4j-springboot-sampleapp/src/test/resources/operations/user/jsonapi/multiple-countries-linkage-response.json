@@ -1,0 +1,22 @@
+{
+  "links": {
+    "self": "/users/5/relationships/citizenships?include=citizenships",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=US",
+        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": [
+            "US"
+          ]
+        }
+      }
+    }
+  },
+  "data": [
+    {
+      "id": "US",
+      "type": "countries"
+    }
+  ]
+}

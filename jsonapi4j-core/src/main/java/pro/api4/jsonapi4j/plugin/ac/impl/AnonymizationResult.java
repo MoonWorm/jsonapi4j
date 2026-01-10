@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.ac.impl;
 
+import java.util.Collections;
 import java.util.Set;
 
 public record AnonymizationResult<T>(
@@ -7,4 +8,13 @@ public record AnonymizationResult<T>(
         boolean isFullyAnonymized,
         Set<String> anonymizedFields
 ) {
+
+    public AnonymizationResult(T targetObject) {
+        this(targetObject, false, Collections.emptySet());
+    }
+
+    public boolean isNotFullyAnonymized() {
+        return !isFullyAnonymized;
+    }
+
 }

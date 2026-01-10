@@ -4,7 +4,6 @@ import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
@@ -15,7 +14,7 @@ import static pro.api4.jsonapi4j.plugin.utils.ReflectionUtils.fetchAnnotationFor
 
 public class JsonApiOasPlugin implements JsonApi4jPlugin {
 
-    public static final String NAME = JsonApiAccessControlPlugin.class.getSimpleName();
+    public static final String NAME = JsonApiOasPlugin.class.getSimpleName();
 
     @Override
     public String pluginName() {

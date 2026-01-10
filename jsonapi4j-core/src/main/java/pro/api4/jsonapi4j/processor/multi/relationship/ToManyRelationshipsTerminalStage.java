@@ -65,7 +65,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         //
         // Outbound Access Control checks + doc composing
         //
-        Map<DATA_SOURCE_DTO, ResourceIdentifierObject> anonymizationResultMap = new HashMap<>();
+        Map<DATA_SOURCE_DTO, ResourceIdentifierObject> anonymizationResultMap = new LinkedHashMap<>();
         for (DATA_SOURCE_DTO dto: cursorPageableResponse.getItems()) {
             // id and type
             IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dto);

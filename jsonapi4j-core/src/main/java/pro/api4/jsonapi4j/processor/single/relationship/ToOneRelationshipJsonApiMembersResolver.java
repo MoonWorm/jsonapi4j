@@ -16,7 +16,12 @@ public class ToOneRelationshipJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO> {
     }
 
     public IdAndType resolveResourceTypeAndId(DATA_SOURCE_DTO dataSourceDto) {
-        return jsonApiContext.getResourceTypeAndIdResolver().resolveTypeAndId(dataSourceDto);
+        IdAndType idAndType = jsonApiContext.getResourceTypeAndIdResolver().resolveTypeAndId(dataSourceDto);
+        // validate none of these is null
+        Validate.notNull(idAndType);
+        Validate.notNull(idAndType.getId());
+        Validate.notNull(idAndType.getType());
+        return idAndType;
     }
 
     public LinksObject resolveDocLinks(REQUEST request, DATA_SOURCE_DTO dataSourceDto) {

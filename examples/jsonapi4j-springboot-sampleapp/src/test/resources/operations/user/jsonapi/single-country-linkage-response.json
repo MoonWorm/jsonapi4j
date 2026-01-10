@@ -1,0 +1,10 @@
+{
+  "links": {
+    "self": "/users/1/relationships/placeOfBirth?include=placeOfBirth",
+    "related": "/countries/US"
+  },
+  "data": {
+    "id": "US",
+    "type": "countries"
+  }
+}

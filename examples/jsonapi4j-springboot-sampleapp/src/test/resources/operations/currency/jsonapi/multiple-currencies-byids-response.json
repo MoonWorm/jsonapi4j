@@ -1,0 +1,18 @@
+{
+  "links": {
+    "self": "/currencies?include=currencies&filter%5Bid%5D=NOK"
+  },
+  "data": [
+    {
+      "id": "NOK",
+      "type": "currencies",
+      "attributes": {
+        "name": "krone",
+        "symbol": "kr"
+      },
+      "links": {
+        "self": "/currencies/NOK"
+      }
+    }
+  ]
+}

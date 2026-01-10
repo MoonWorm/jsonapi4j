@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
@@ -215,75 +214,74 @@ class BatchToOneRelationshipProcessor {
                 return Collections.emptyMap();
             }
 
-            Map<RESOURCE_DTO, ToOneRelationshipDoc> result = new HashMap<>();
-            for (RESOURCE_DTO resourceDto : resourceDtos) {
-                RELATIONSHIP_DTO relationshipDto = responseMap.get(resourceDto);
-                if (!responseMap.containsKey(resourceDto)) {
-                    //
-                    // Is not allowed
-                    //
-                    result.put(resourceDto, null);
+            return responseMap.entrySet().stream().collect(
+                    Collectors.toUnmodifiableMap(
+                            Map.Entry::getKey,
+                            e -> {
+                                RESOURCE_DTO resourceDto = e.getKey();
+                                REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
+                                RELATIONSHIP_DTO relationshipDto = e.getValue();
+                                return composeToOneRelationshipDoc(relationshipRequest, relationshipDto);
+                            }
+                    )
+            );
+        }
+
+        private ToOneRelationshipDoc composeToOneRelationshipDoc(REQUEST relationshipRequest,
+                                                                 RELATIONSHIP_DTO relationshipDto) {
+            ResourceIdentifierObject data = composeData(relationshipRequest, relationshipDto);
+
+            // hide DTO if Resource Identifier was anonymized
+            RELATIONSHIP_DTO relationshipDtoEffective = data == null ? null : relationshipDto;
+
+            // doc-level links
+            LinksObject docLinks = topLevelLinksResolver != null
+                    ? topLevelLinksResolver.resolve(relationshipRequest, relationshipDtoEffective)
+                    : null;
+            // doc-level meta
+            Object docMeta = topLevelMetaResolver != null
+                    ? topLevelMetaResolver.resolve(relationshipRequest, relationshipDtoEffective)
+                    : null;
+
+            return new ToOneRelationshipDoc(data, docLinks, docMeta);
+        }
+
+        private ResourceIdentifierObject composeData(REQUEST relationshipRequest,
+                                                     RELATIONSHIP_DTO relationshipDto) {
+            ResourceIdentifierObject data = null;
+            if (relationshipDto != null) {
+                // id and type
+                IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
+
+                // validate none of these is null
+                Validate.notNull(idAndType);
+                Validate.notNull(idAndType.getId());
+                Validate.notNull(idAndType.getType());
+
+                // resource meta
+                Object resourceMeta = resourceMetaResolver != null
+                        ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
+                        : null;
+
+                // compose resource identifier
+                ResourceIdentifierObject resourceIdentifier = new ResourceIdentifierObject(
+                        idAndType.getId(),
+                        idAndType.getType().getType(),
+                        resourceMeta
+                );
+
+                // anonymize if needed
+                if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
+                    data = accessControlEvaluator.anonymizeObjectIfNeeded(
+                            resourceIdentifier,
+                            resourceIdentifier,
+                            outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
+                    ).targetObject();
                 } else {
-                    REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
-
-                    // doc-level links
-                    LinksObject docLinks = topLevelLinksResolver != null
-                            ? topLevelLinksResolver.resolve(relationshipRequest, relationshipDto)
-                            : null;
-                    // doc-level meta
-                    Object docMeta = topLevelMetaResolver != null
-                            ? topLevelMetaResolver.resolve(relationshipRequest, relationshipDto)
-                            : null;
-
-                    if (relationshipDto == null) {
-                        //
-                        // Is allowed but response is null
-                        //
-                        result.put(resourceDto, new ToOneRelationshipDoc(null, docLinks, docMeta));
-                    } else {
-                        //
-                        // Is allowed and response is not null
-                        //
-
-                        // id and type
-                        IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
-
-                        ResourceIdentifierObject resourceIdentifier;
-
-                        if (idAndType == null || idAndType.getId() == null || StringUtils.isBlank(idAndType.getId())) {
-                            log.warn(
-                                    "Resolved from {} relationship dto resource identifier is null, has null 'type' or empty 'id' members. Skipping...",
-                                    relationshipDto
-                            );
-                            resourceIdentifier = null;
-                        } else {
-                            // resource meta
-                            Object resourceMeta = resourceMetaResolver != null
-                                    ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
-                                    : null;
-                            // compose resource identifier
-                            resourceIdentifier = new ResourceIdentifierObject(
-                                    idAndType.getId(),
-                                    idAndType.getType().getType(),
-                                    resourceMeta
-                            );
-                        }
-
-                        // anonymize if needed
-                        if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
-                            resourceIdentifier = accessControlEvaluator.anonymizeObjectIfNeeded(
-                                    resourceIdentifier,
-                                    resourceIdentifier,
-                                    outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
-                            ).targetObject();
-                        }
-
-                        // compose doc and add to the result map
-                        result.put(resourceDto, new ToOneRelationshipDoc(resourceIdentifier, docLinks, docMeta));
-                    }
+                    data = resourceIdentifier;
                 }
             }
-            return Collections.unmodifiableMap(result);
+            return data;
         }
 
     }

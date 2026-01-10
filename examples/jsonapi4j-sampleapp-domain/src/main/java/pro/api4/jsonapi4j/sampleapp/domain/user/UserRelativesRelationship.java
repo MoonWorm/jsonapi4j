@@ -3,8 +3,11 @@ package pro.api4.jsonapi4j.sampleapp.domain.user;
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
+
+import java.util.Map;
 
 @JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)
 @OasRelationshipInfo(
@@ -20,6 +23,11 @@ public class UserRelativesRelationship implements ToManyRelationship<UserDbEntit
     @Override
     public String resolveResourceIdentifierId(UserRelationshipInfo userDbEntity) {
         return userDbEntity.getRelativeUserId();
+    }
+
+    @Override
+    public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, UserRelationshipInfo userRelationshipInfo) {
+        return Map.of("relationshipType", userRelationshipInfo.getRelationshipType());
     }
 
 }
