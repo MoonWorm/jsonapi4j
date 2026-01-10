@@ -60,6 +60,7 @@ public class ReadMultipleUsersOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
@@ -99,6 +100,7 @@ public class ReadMultipleUsersOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "3")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth")
                 .queryParam(FiltersAwareRequest.getFilterParam(ID_FILTER_NAME), "1", "2")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users")

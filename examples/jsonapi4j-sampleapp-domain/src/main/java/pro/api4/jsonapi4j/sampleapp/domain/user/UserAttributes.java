@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.plugin.ac.impl.annotation.Authenticated;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
+@AccessControl(authenticated = Authenticated.AUTHENTICATED)
 @Data
 public class UserAttributes {
 
@@ -19,7 +20,6 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
-            authenticated = Authenticated.AUTHENTICATED,
             scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )

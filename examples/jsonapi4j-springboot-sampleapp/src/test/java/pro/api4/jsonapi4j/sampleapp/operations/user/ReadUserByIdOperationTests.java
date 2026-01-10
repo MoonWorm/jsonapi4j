@@ -54,6 +54,7 @@ public class ReadUserByIdOperationTests {
     public void test_readById() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -86,6 +87,7 @@ public class ReadUserByIdOperationTests {
 
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
