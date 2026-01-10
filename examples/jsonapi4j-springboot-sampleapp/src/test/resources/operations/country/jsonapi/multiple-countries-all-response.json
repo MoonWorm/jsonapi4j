@@ -18,7 +18,7 @@
             "related": {
               "currencies": {
                 "href": "/currencies?filter[id]=XOF",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["XOF"]
                 }
@@ -51,7 +51,7 @@
             "related": {
               "currencies": {
                 "href": "/currencies?filter[id]=EUR",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["EUR"]
                 }

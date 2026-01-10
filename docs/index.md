@@ -538,7 +538,7 @@ Response:
     "related": {
       "countries": {
         "href": "/countries?filter[id]=FI,NO", 
-        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml", 
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml", 
         "meta": {
           "ids": ["FI", "NO"]
         }
@@ -577,7 +577,7 @@ Response:
     "related": {
       "countries": {
         "href": "/countries?filter[id]=FI,NO",
-        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": ["FI", "NO"]
         }  
@@ -679,7 +679,7 @@ Response:
             "related": {
               "countries": {
                 "href": "/countries?filter[id]=FI,US",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["FI", "US"]
                 }
@@ -716,7 +716,7 @@ Response:
             "related": {
               "countries": {
                 "href": "/countries?filter[id]=NO,US",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["NO", "US"]
                 }

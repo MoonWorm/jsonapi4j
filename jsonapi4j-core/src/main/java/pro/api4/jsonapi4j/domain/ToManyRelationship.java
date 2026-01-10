@@ -39,7 +39,7 @@ public interface ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
      *     "related": {
      *        "currencies": {
      *           "href": "/currencies?filter[id]=NOK",
-     *           "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+     *           "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
      *           "meta": {
      *              "ids": ["NOK"]
      *           }

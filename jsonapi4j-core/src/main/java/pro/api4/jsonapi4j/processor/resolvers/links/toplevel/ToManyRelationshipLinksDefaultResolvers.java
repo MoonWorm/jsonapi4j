@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 public final class ToManyRelationshipLinksDefaultResolvers {
 
-    private static final String RELATED_LINKS_DESCRIBED_BY = "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml";
+    private static final String RELATED_LINKS_DESCRIBED_BY = "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml";
 
     private ToManyRelationshipLinksDefaultResolvers() {
 
