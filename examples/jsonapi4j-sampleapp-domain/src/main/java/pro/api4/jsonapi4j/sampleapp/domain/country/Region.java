@@ -5,6 +5,7 @@ import java.util.Arrays;
 public enum Region {
     europe,
     africa,
+    americas,
     asia;
 
     public static Region fromName(String name) {

@@ -1,174 +1,40 @@
 package pro.api4.jsonapi4j.sampleapp.config.datasource;
 
-import org.apache.commons.collections4.ListUtils;
-import pro.api4.jsonapi4j.processor.util.CustomCollectors;
-import pro.api4.jsonapi4j.request.pagination.LimitOffsetToCursorAdapter;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+public interface UserDb {
 
-public class UserDb {
+    UserDbEntity readById(String id);
 
-    private static AtomicInteger ID_COUNTER;
+    List<UserDbEntity> readByIds(List<String> ids);
 
-    private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
-    private Map<String, List<String>> userCitizenships = new ConcurrentHashMap<>();
-    private Map<String, String> userPlaceOfBirth = new ConcurrentHashMap<>();
-    private Map<String, List<UserRelationshipInfo>> userRalatives = new ConcurrentHashMap<>();
+    UserDbEntity createUser(String firstName,
+                            String lastName,
+                            String email,
+                            String creditCardNumber);
 
-    {
-        users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789"));
-        userCitizenships.put("1", List.of("NO", "FI", "US"));
-        userPlaceOfBirth.put("1", "US");
-        userRalatives.put(
-                "1",
-                List.of(
-                        new UserRelationshipInfo("2", RelationshipType.HUSBAND),
-                        new UserRelationshipInfo("3", RelationshipType.BROTHER)
-                )
-        );
+    List<String> getUserCitizenships(String userId);
 
-        users.put("2", new UserDbEntity("2", "Jane", "Doe", "jane@doe.com", "222456789"));
-        userCitizenships.put("2", List.of("US"));
-        userPlaceOfBirth.put("2", "FI");
-        userRalatives.put(
-                "2",
-                List.of(
-                        new UserRelationshipInfo("1", RelationshipType.WIFE),
-                        new UserRelationshipInfo("4", RelationshipType.SON)
-                )
-        );
+    void updateUserCitizenships(String userId, List<String> cca2s);
 
-        users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789"));
-        userCitizenships.put("3", List.of("US", "FI"));
-        userPlaceOfBirth.put("3", "NO");
-        userRalatives.put("3", Collections.emptyList());
+    List<UserRelationshipInfo> getUserRelatives(String userId);
 
-        users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789"));
-        userCitizenships.put("4", List.of("NO", "US"));
-        userPlaceOfBirth.put("4", "US");
-        userRalatives.put(
-                "4",
-                List.of(
-                        new UserRelationshipInfo("1", RelationshipType.FATHER),
-                        new UserRelationshipInfo("2", RelationshipType.MOTHER)
-                )
-        );
+    Map<String, List<String>> getUsersCitizenships(Set<String> userIds);
 
-        users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789"));
-        userCitizenships.put("5", List.of("US"));
-        userPlaceOfBirth.put("5", "NO");
-        userRalatives.put(
-                "5",
-                List.of(
-                        new UserRelationshipInfo("1", RelationshipType.BROTHER),
-                        new UserRelationshipInfo("2", RelationshipType.DAUGHTER),
-                        new UserRelationshipInfo("3", RelationshipType.FATHER),
-                        new UserRelationshipInfo("4", RelationshipType.BROTHER)
-                )
-        );
+    Map<String, List<UserRelationshipInfo>> getUsersRelatives(Set<String> userIds);
 
-        ID_COUNTER = new AtomicInteger(6);
-    }
+    String getUserPlaceOfBirth(String userId);
 
-    public UserDbEntity readById(String id) {
-        return users.get(id);
-    }
+    Map<String, String> getUsersPlaceOfBirth(Set<String> userIds);
 
-    public List<UserDbEntity> readByIds(List<String> ids) {
-        return ids.stream().map(this::readById).toList();
-    }
+    DbPage<UserDbEntity> readAllUsers(String cursor);
 
-
-    public UserDbEntity createUser(String firstName,
-                                   String lastName,
-                                   String email,
-                                   String creditCardNumber) {
-        UserDbEntity newUser = new UserDbEntity(
-                String.valueOf(ID_COUNTER.getAndIncrement()),
-                firstName,
-                lastName,
-                email,
-                creditCardNumber
-        );
-        users.put(newUser.getId(), newUser);
-        return newUser;
-    }
-
-    public UserDbEntity createUser(String firstName,
-                                   String lastName,
-                                   String email,
-                                   String creditCardNumber,
-                                   List<String> cca2s) {
-        UserDbEntity result = createUser(firstName, lastName, email, creditCardNumber);
-        userCitizenships.put(result.getId(), cca2s);
-        return result;
-    }
-
-    public List<String> getUserCitizenships(String userId) {
-        return userCitizenships.get(userId);
-    }
-
-    public List<UserRelationshipInfo> getUserRelatives(String userId) {
-        return userRalatives.get(userId);
-    }
-
-    public void updateUserCitizenships(String userId, List<String> cca2s) {
-        userCitizenships.remove(userId);
-        userCitizenships.put(userId, cca2s);
-    }
-
-    public Map<String, List<String>> getUsersCitizenships(Set<String> userIds) {
-        return userIds.stream().collect(
-                Collectors.toMap(
-                        userId -> userId,
-                        userId -> emptyIfNull(userCitizenships.get(userId))
-                )
-        );
-    }
-
-    public Map<String, List<UserRelationshipInfo>> getUsersRelatives(Set<String> userIds) {
-        return userIds.stream().collect(
-                Collectors.toMap(
-                        userId -> userId,
-                        userId -> ListUtils.emptyIfNull(userRalatives.get(userId))
-                )
-        );
-    }
-
-    public String getUserPlaceOfBirth(String userId) {
-        return userPlaceOfBirth.get(userId);
-    }
-
-    public Map<String, String> getUsersPlaceOfBirth(Set<String> userIds) {
-        return userIds.stream().collect(
-                CustomCollectors.toMapThatSupportsNullValues(
-                        userId -> userId,
-                        userId -> userPlaceOfBirth.get(userId)
-                )
-        );
-    }
-
-    public DbPage<UserDbEntity> readAllUsers(String cursor) {
-        LimitOffsetToCursorAdapter adapter = new LimitOffsetToCursorAdapter(cursor).withDefaultLimit(2);
-        LimitOffsetToCursorAdapter.LimitAndOffset limitAndOffset = adapter.decodeLimitAndOffset();
-
-        int effectiveFrom = limitAndOffset.getOffset() < users.size() ? limitAndOffset.getOffset() : users.size() - 1;
-        int effectiveTo = Math.min(effectiveFrom + limitAndOffset.getLimit(), users.size());
-
-        List<UserDbEntity> result = new ArrayList<>(users.values()).subList(effectiveFrom, effectiveTo);
-        String nextCursor = adapter.nextCursor(users.size());
-        return new DbPage<>(nextCursor, result);
-    }
-
-    public static class DbPage<E> {
+    class DbPage<E> {
 
         private final String cursor;
         private final List<E> entities;

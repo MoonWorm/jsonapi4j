@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Component
 public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     private final UserDb userDb;
 
     @OasOperationInfo(

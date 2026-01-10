@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
@@ -40,7 +40,7 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOpe
 @Component
 public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry, DownstreamCurrencyWithCode> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     private final CountryInputParamsValidator validator;
 
     @Override

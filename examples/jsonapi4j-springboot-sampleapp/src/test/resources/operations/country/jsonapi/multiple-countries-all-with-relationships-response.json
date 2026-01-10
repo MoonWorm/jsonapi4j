@@ -1,26 +1,27 @@
 {
   "links": {
-    "self": "/countries?include=currencies&filter%5Bregion%5D=europe"
+    "self": "/countries?include=currencies",
+    "next": "/countries?include=currencies&page%5Bcursor%5D=DoJu"
   },
   "data": [
     {
-      "id": "NO",
+      "id": "TG",
       "type": "countries",
       "attributes": {
-        "name": "Norway",
-        "region": "Europe"
+        "name": "Togo",
+        "region": "Africa"
       },
       "relationships": {
         "currencies": {
           "links": {
-            "self": "/countries/NO/relationships/currencies",
+            "self": "/countries/TG/relationships/currencies",
             "related": {
               "currencies": {
-                "href": "/currencies?filter[id]=NOK",
+                "href": "/currencies?filter[id]=XOF",
                 "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
-                    "NOK"
+                    "XOF"
                   ]
                 }
               }
@@ -28,27 +29,27 @@
           },
           "data": [
             {
-              "id": "NOK",
+              "id": "XOF",
               "type": "currencies"
             }
           ]
         }
       },
       "links": {
-        "self": "/countries/NO"
+        "self": "/countries/TG"
       }
     },
     {
-      "id": "FI",
+      "id": "YT",
       "type": "countries",
       "attributes": {
-        "name": "Finland",
-        "region": "Europe"
+        "name": "Mayotte",
+        "region": "Africa"
       },
       "relationships": {
         "currencies": {
           "links": {
-            "self": "/countries/FI/relationships/currencies",
+            "self": "/countries/YT/relationships/currencies",
             "related": {
               "currencies": {
                 "href": "/currencies?filter[id]=EUR",
@@ -70,7 +71,7 @@
         }
       },
       "links": {
-        "self": "/countries/FI"
+        "self": "/countries/YT"
       }
     }
   ]

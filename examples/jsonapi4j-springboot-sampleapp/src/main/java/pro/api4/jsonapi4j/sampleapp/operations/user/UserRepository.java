@@ -93,26 +93,21 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
         var payload = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
         UserAttributes att = payload.getData().getAttributes();
         var rel = payload.getData().getRelationships();
+        UserDbEntity result = userDb.createUser(
+                att.getFullName().split("\\s+")[0],
+                att.getFullName().split("\\s+")[1],
+                att.getEmail(),
+                att.getCreditCardNumber()
+        );
         if (rel != null && rel.getCitizenships() != null) {
             List<String> countryIds = rel.getCitizenships().getData()
                     .stream()
                     .map(ResourceIdentifierObject::getId)
                     .toList();
-            return userDb.createUser(
-                    att.getFullName().split("\\s+")[0],
-                    att.getFullName().split("\\s+")[1],
-                    att.getEmail(),
-                    att.getCreditCardNumber(),
-                    countryIds
-            );
-        } else {
-            return userDb.createUser(
-                    att.getFullName().split("\\s+")[0],
-                    att.getFullName().split("\\s+")[1],
-                    att.getEmail(),
-                    att.getCreditCardNumber()
-            );
+
+            userDb.updateUserCitizenships(result.getId(), countryIds);
         }
+        return result;
     }
 
     @Override

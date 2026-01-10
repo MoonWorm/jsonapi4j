@@ -1,73 +1,44 @@
 {
+  "links": {
+    "self": "/countries",
+    "next": "/countries?page%5Bcursor%5D=DoJu"
+  },
   "data": [
     {
+      "id": "TG",
+      "type": "countries",
       "attributes": {
         "name": "Togo",
         "region": "Africa"
       },
       "relationships": {
         "currencies": {
-          "data": [
-            {
-              "id": "XOF",
-              "type": "currencies"
-            }
-          ],
           "links": {
-            "self": "/countries/TG/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=XOF",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": ["XOF"]
-                }
-              }
-            }
+            "self": "/countries/TG/relationships/currencies"
           }
         }
       },
       "links": {
         "self": "/countries/TG"
-      },
-      "id": "TG",
-      "type": "countries"
+      }
     },
     {
+      "id": "YT",
+      "type": "countries",
       "attributes": {
         "name": "Mayotte",
         "region": "Africa"
       },
       "relationships": {
         "currencies": {
-          "data": [
-            {
-              "id": "EUR",
-              "type": "currencies"
-            }
-          ],
           "links": {
-            "self": "/countries/YT/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=EUR",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": ["EUR"]
-                }
-              }
-            }
+            "self": "/countries/YT/relationships/currencies"
           }
         }
       },
       "links": {
         "self": "/countries/YT"
-      },
-      "id": "YT",
-      "type": "countries"
+      }
     }
-  ],
-  "links": {
-    "self": "/countries?include=currencies"
-  }
+  ]
 }

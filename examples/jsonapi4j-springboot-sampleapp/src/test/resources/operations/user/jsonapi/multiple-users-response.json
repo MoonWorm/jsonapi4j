@@ -1,7 +1,7 @@
 {
   "links": {
-    "self": "/users?include=placeOfBirth%2Ccitizenships%2Crelatives",
-    "next": "/users?include=placeOfBirth%2Ccitizenships%2Crelatives&page%5Bcursor%5D=DoJu"
+    "self": "/users",
+    "next": "/users?page%5Bcursor%5D=DoJu"
   },
   "data": [
     {
@@ -12,48 +12,20 @@
         "email": "john@doe.com"
       },
       "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/1/relationships/citizenships"
+          }
+        },
         "placeOfBirth": {
           "links": {
-            "self": "/users/1/relationships/placeOfBirth",
-            "related": "/countries/US"
-          },
-          "data": {
-            "id": "US",
-            "type": "countries"
+            "self": "/users/1/relationships/placeOfBirth"
           }
         },
         "relatives": {
           "links": {
-            "self": "/users/1/relationships/relatives",
-            "related": {
-              "users": {
-                "href": "/users?filter[id]=2,3",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "2",
-                    "3"
-                  ]
-                }
-              }
-            }
-          },
-          "data": [
-            {
-              "id": "2",
-              "type": "users",
-              "meta": {
-                "relationshipType": "HUSBAND"
-              }
-            },
-            {
-              "id": "3",
-              "type": "users",
-              "meta": {
-                "relationshipType": "BROTHER"
-              }
-            }
-          ]
+            "self": "/users/1/relationships/relatives"
+          }
         }
       },
       "links": {
@@ -68,48 +40,20 @@
         "email": "jane@doe.com"
       },
       "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/2/relationships/citizenships"
+          }
+        },
         "placeOfBirth": {
           "links": {
-            "self": "/users/2/relationships/placeOfBirth",
-            "related": "/countries/FI"
-          },
-          "data": {
-            "id": "FI",
-            "type": "countries"
+            "self": "/users/2/relationships/placeOfBirth"
           }
         },
         "relatives": {
           "links": {
-            "self": "/users/2/relationships/relatives",
-            "related": {
-              "users": {
-                "href": "/users?filter[id]=1,4",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "1",
-                    "4"
-                  ]
-                }
-              }
-            }
-          },
-          "data": [
-            {
-              "id": "1",
-              "type": "users",
-              "meta": {
-                "relationshipType": "WIFE"
-              }
-            },
-            {
-              "id": "4",
-              "type": "users",
-              "meta": {
-                "relationshipType": "SON"
-              }
-            }
-          ]
+            "self": "/users/2/relationships/relatives"
+          }
         }
       },
       "links": {

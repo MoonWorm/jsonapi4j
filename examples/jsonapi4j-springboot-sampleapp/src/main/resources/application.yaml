@@ -15,9 +15,9 @@ jsonapi4j:
     enabled: true
     maxHops: 3
     mapping:
-      users: 'http://localhost:8080/jsonapi'
-      countries: 'http://localhost:8080/jsonapi'
-      currencies: 'http://localhost:8080/jsonapi'
+      users: http://localhost:${server.port}${jsonapi4j.root-path}
+      countries: http://localhost:${server.port}${jsonapi4j.root-path}
+      currencies: http://localhost:${server.port}${jsonapi4j.root-path}
   oas:
     enabled: true
     info:
@@ -31,7 +31,7 @@ jsonapi4j:
     servers:
       server-local:
         name: Localhost
-        url: 'http://localhost:8080'
+        url: http://localhost:${server.port}
       server-staging:
         name: Staging
         url: 'https://api.stage.com'

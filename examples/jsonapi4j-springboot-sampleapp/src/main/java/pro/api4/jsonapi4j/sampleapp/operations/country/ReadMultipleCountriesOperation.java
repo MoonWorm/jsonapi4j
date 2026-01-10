@@ -10,8 +10,8 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient.Field;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient.Field;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.domain.country.Region;
@@ -49,44 +49,44 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
 
     public static final String REGION_FILTER_NAME = "region";
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     private final CountryInputParamsValidator validator;
 
-    public static List<DownstreamCountry> readCountriesByIds(List<String> ids, RestCountriesFeignClient client) {
+    public static List<DownstreamCountry> readCountriesByIds(List<String> ids, CountriesClient client) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
-        var responseEntity = client.getByCca2(
+        List<DownstreamCountry> downstreamCountries = client.getByCca2(
                 ids,
                 List.of(Field.cca2, Field.name, Field.region, Field.currencies)
         );
-        if (responseEntity == null || responseEntity.getBody() == null) {
+        if (CollectionUtils.isEmpty(downstreamCountries)) {
             return Collections.emptyList();
         }
-        return responseEntity.getBody();
+        return downstreamCountries;
     }
 
     public static List<DownstreamCountry> readCountriesByRegion(String region,
-                                                                RestCountriesFeignClient client) {
+                                                                CountriesClient client) {
         var resolvedRegion = Region.fromName(region);
-        var responseEntity = client.getCountriesByRegion(
+        var downstreamCountries = client.getCountriesByRegion(
                 resolvedRegion,
                 List.of(Field.cca2, Field.name, Field.region, Field.currencies)
         );
-        if (responseEntity == null || responseEntity.getBody() == null) {
+        if (CollectionUtils.isEmpty(downstreamCountries)) {
             return Collections.emptyList();
         }
-        return responseEntity.getBody();
+        return downstreamCountries;
     }
 
-    public static List<DownstreamCountry> readAllCountries(RestCountriesFeignClient client) {
-        var responseEntity = client.getAllCountries(
+    public static List<DownstreamCountry> readAllCountries(CountriesClient client) {
+        var downstreamCountries = client.getAllCountries(
                 List.of(Field.cca2, Field.name, Field.region, Field.currencies)
         );
-        if (responseEntity == null || responseEntity.getBody() == null) {
+        if (CollectionUtils.isEmpty(downstreamCountries)) {
             return Collections.emptyList();
         }
-        return responseEntity.getBody();
+        return downstreamCountries;
     }
 
     @Override
@@ -109,7 +109,8 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
         } else {
             return CursorPageableResponse.fromItemsPageable(
                     readAllCountries(client),
-                    request.getCursor()
+                    request.getCursor(),
+                    2 // page size
             );
         }
     }

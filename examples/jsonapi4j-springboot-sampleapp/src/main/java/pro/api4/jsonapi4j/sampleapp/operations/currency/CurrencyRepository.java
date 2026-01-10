@@ -12,8 +12,9 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient.Field;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient.Field;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyResource;
 
@@ -26,31 +27,29 @@ import java.util.List;
 @Component
 public class CurrencyRepository implements ResourceRepository<DownstreamCurrencyWithCode> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
 
     public static List<DownstreamCurrencyWithCode> readCurrenciesByIds(List<String> ids,
-                                                                       RestCountriesFeignClient client) {
+                                                                       CountriesClient client) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyList();
         }
 
         List<DownstreamCurrencyWithCode> result = new ArrayList<>();
         for (String id : ids) {
-            var responseEntity = client.getByCurrency(
+            List<DownstreamCountry> downstreamCountries = client.getByCurrency(
                     id,
                     List.of(Field.currencies)
             );
-            if (responseEntity == null || responseEntity.getBody() == null) {
+            if (CollectionUtils.isEmpty(downstreamCountries)) {
                 return Collections.emptyList();
             }
-            if (CollectionUtils.isNotEmpty(responseEntity.getBody())) {
-                result.add(
-                        new DownstreamCurrencyWithCode(
-                                id,
-                                responseEntity.getBody().get(0).getCurrencies().get(id)
-                        )
-                );
-            }
+            result.add(
+                    new DownstreamCurrencyWithCode(
+                            id,
+                            downstreamCountries.getFirst().getCurrencies().get(id)
+                    )
+            );
         }
         return result;
     }

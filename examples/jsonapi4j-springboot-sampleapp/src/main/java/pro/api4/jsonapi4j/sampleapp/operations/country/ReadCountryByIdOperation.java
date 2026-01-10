@@ -11,7 +11,7 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.RestCountriesFeignClient;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
@@ -39,10 +39,10 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountr
 @Component
 public class ReadCountryByIdOperation implements ReadResourceByIdOperation<DownstreamCountry> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     private final CountryInputParamsValidator validator;
 
-    public static DownstreamCountry readCountryById(String id, RestCountriesFeignClient client) {
+    public static DownstreamCountry readCountryById(String id, CountriesClient client) {
         var result = readCountriesByIds(Collections.singletonList(id), client);
         if (CollectionUtils.isEmpty(result)) {
             throw new ResourceNotFoundException(id, new ResourceType("countries"));
