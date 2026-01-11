@@ -7,12 +7,18 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
 import java.util.Set;
 
 public class JsonApi4jDefaultValidator {
+
+    public void validateNonNull(Object object) {
+        NonNullObject nonNullObject = new NonNullObject(object);
+        validateInternal(nonNullObject);
+    }
 
     public void validateFilterByIds(List<String> resourceIds) {
         JsonApiIds jsonApiIds = new JsonApiIds(resourceIds.stream().map(JsonApiId::new).toList());
@@ -33,6 +39,8 @@ public class JsonApi4jDefaultValidator {
             }
         }
     }
+
+    public record NonNullObject(@NotNull Object object) {}
 
     public record JsonApiIds(@Size(max = 20) List<@Valid JsonApiId> ids) {}
 

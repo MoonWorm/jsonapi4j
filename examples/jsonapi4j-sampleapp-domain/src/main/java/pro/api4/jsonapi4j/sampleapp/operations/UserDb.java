@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource;
+package pro.api4.jsonapi4j.sampleapp.operations;
 
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;

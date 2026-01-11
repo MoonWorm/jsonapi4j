@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.sampleapp.operations.country;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
@@ -10,8 +9,8 @@ import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient.Field;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.domain.country.Region;
@@ -44,7 +43,6 @@ import java.util.List;
         }
 )
 @RequiredArgsConstructor
-@Component
 public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
 
     public static final String REGION_FILTER_NAME = "region";

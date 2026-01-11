@@ -1,14 +1,13 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
@@ -19,7 +18,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-@Component
 @JsonApiRelationshipOperation(
         relationship = UserRelativesRelationship.class
 )

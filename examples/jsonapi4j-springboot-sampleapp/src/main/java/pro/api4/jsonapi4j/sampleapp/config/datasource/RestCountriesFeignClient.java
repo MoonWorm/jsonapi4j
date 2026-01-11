@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.Region;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 
 import java.util.List;
 

@@ -48,8 +48,8 @@ public class ReadMultipleCurrenciesOperationTests {
                 .then()
                 .statusCode(400)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body("errors[0].code", equalTo("MISSING_REQUIRED_PARAMETER"))
-                .body("errors[0].detail", equalTo("Operation requires ids"))
+                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
+                .body("errors[0].detail", equalTo("must not be null"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].id", notNullValue());
     }

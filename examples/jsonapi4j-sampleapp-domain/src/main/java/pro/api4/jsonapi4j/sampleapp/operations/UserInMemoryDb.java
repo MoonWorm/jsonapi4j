@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.config.datasource;
+package pro.api4.jsonapi4j.sampleapp.operations;
 
 import org.apache.commons.collections4.ListUtils;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;

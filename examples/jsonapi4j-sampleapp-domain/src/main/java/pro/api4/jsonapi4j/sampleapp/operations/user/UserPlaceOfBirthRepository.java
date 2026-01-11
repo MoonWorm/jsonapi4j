@@ -1,14 +1,13 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
@@ -24,7 +23,6 @@ import java.util.stream.Collectors;
         relationship = UserPlaceOfBirthRelationship.class
 )
 @RequiredArgsConstructor
-@Component
 public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;

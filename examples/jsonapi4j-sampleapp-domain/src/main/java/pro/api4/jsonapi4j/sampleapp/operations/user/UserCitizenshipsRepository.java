@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
-import org.springframework.stereotype.Component;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
@@ -16,13 +15,13 @@ import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtracto
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.UserDb;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship;
-import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,7 +49,6 @@ import java.util.stream.Collectors;
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
 @RequiredArgsConstructor
-@Component
 public class UserCitizenshipsRepository implements ToManyRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;
