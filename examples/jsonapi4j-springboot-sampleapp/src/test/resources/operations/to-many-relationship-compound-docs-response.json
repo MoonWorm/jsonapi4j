@@ -1,0 +1,70 @@
+{
+  "links": {
+    "self": "/users/5/relationships/citizenships?include=citizenships",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=US",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": [
+            "US"
+          ]
+        }
+      }
+    }
+  },
+  "data": [
+    {
+      "id": "US",
+      "type": "countries"
+    }
+  ],
+  "included": [
+    {
+      "id": "USD",
+      "type": "currencies",
+      "attributes": {
+        "name": "United States dollar",
+        "symbol": "$"
+      },
+      "links": {
+        "self": "/currencies/USD"
+      }
+    },
+    {
+      "id": "US",
+      "type": "countries",
+      "attributes": {
+        "name": "United States",
+        "region": "Americas"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/US/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=USD",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "USD"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "USD",
+              "type": "currencies"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/countries/US"
+      }
+    }
+  ]
+}

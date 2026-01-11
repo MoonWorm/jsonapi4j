@@ -1,0 +1,326 @@
+{
+  "links": {
+    "self": "/users?include=placeOfBirth%2Ccitizenships%2Crelatives",
+    "next": "/users?include=placeOfBirth%2Ccitizenships%2Crelatives&page%5Bcursor%5D=DoJu"
+  },
+  "data": [
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/1/relationships/placeOfBirth",
+            "related": "/countries/US"
+          },
+          "data": {
+            "id": "US",
+            "type": "countries"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=2,3",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "2",
+                    "3"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "2",
+              "type": "users",
+              "meta": {
+                "relationshipType": "HUSBAND"
+              }
+            },
+            {
+              "id": "3",
+              "type": "users",
+              "meta": {
+                "relationshipType": "BROTHER"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/2/relationships/placeOfBirth",
+            "related": "/countries/FI"
+          },
+          "data": {
+            "id": "FI",
+            "type": "countries"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=1,4",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "1",
+                    "4"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users",
+              "meta": {
+                "relationshipType": "WIFE"
+              }
+            },
+            {
+              "id": "4",
+              "type": "users",
+              "meta": {
+                "relationshipType": "SON"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    }
+  ],
+  "included": [
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jack Doe",
+        "email": "jack@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/3/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/3/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/3"
+      }
+    },
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/4/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/4/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/4"
+      }
+    },
+    {
+      "id": "USD",
+      "type": "currencies",
+      "attributes": {
+        "name": "United States dollar",
+        "symbol": "$"
+      },
+      "links": {
+        "self": "/currencies/USD"
+      }
+    },
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/1/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/1/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/2/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/2/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    },
+    {
+      "id": "FI",
+      "type": "countries",
+      "attributes": {
+        "name": "Finland",
+        "region": "Europe"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/FI/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=EUR",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "EUR"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "EUR",
+              "type": "currencies"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/countries/FI"
+      }
+    },
+    {
+      "id": "US",
+      "type": "countries",
+      "attributes": {
+        "name": "United States",
+        "region": "Americas"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/US/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=USD",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "USD"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "USD",
+              "type": "currencies"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/countries/US"
+      }
+    },
+    {
+      "id": "EUR",
+      "type": "currencies",
+      "attributes": {
+        "name": "Euro",
+        "symbol": "€"
+      },
+      "links": {
+        "self": "/currencies/EUR"
+      }
+    }
+  ]
+}
