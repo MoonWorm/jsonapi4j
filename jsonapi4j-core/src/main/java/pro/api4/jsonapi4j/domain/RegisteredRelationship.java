@@ -10,7 +10,7 @@ import java.util.Map;
 @Getter
 @ToString
 @EqualsAndHashCode
-public class RegisteredRelationship<T extends Relationship<?, ?>> {
+public class RegisteredRelationship<T extends Relationship<?>> {
 
     private T relationship;
     private ResourceType parentResourceType;

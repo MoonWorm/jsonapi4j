@@ -152,7 +152,7 @@ public class OperationsRegistryTests {
     }
     
     @JsonApiRelationship(relationshipName = "to1", parentResource = TestFooResource.class)
-    private static class TestToOneRelationship implements ToOneRelationship<String, String> {
+    private static class TestToOneRelationship implements ToOneRelationship<String> {
 
         @Override
         public String resolveResourceIdentifierType(String s) {
@@ -166,7 +166,7 @@ public class OperationsRegistryTests {
     }
 
     @JsonApiRelationship(relationshipName = "to2", parentResource = TestFooResource.class)
-    private static class TestToManyRelationship implements ToManyRelationship<String, String> {
+    private static class TestToManyRelationship implements ToManyRelationship<String> {
 
         @Override
         public String resolveResourceIdentifierType(String s) {

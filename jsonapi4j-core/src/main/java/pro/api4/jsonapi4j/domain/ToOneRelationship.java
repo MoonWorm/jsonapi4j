@@ -16,13 +16,9 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
  * members like 'meta', 'links' are generated for the given JSON:API relationship. Usually, you can rely on the
  * default behaviour.
  *
- * @param <RESOURCE_DTO>     a downstream object type that encapsulates internal model implementation and of the parent
- *                           JSON:API resource, e.g. Hibernate's Entity, JOOQ Record, or third-party service DTO
- * @param <RELATIONSHIP_DTO> similarly to a {@link RESOURCE_DTO} represents downstream object type, but for a given
- *                           JSON:API relationship
+ * @param <RELATIONSHIP_DTO> represents downstream object type, but for a given JSON:API relationship
  */
-public interface ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
-        extends Relationship<RESOURCE_DTO, RELATIONSHIP_DTO> {
+public interface ToOneRelationship<RELATIONSHIP_DTO> extends Relationship<RELATIONSHIP_DTO> {
 
     /**
      * Customization point for the

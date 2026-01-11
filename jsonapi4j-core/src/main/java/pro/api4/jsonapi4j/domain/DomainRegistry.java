@@ -17,20 +17,20 @@ import java.util.stream.Collectors;
 public class DomainRegistry {
 
     private final Map<ResourceType, RegisteredResource<Resource<?>>> resources;
-    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?, ?>>>> allRelationships;
-    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships;
-    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>>> toOneRelationships;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>>> toManyRelationships;
 
     private final Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass;
-    private final Map<Class<?>, RegisteredRelationship<Relationship<?, ?>>> relationshipsByClass;
+    private final Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass;
 
     private DomainRegistry(
             Map<ResourceType, RegisteredResource<Resource<?>>> resources,
-            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?, ?>>>> allRelationships,
-            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships,
-            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships,
+            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships,
+            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>>> toOneRelationships,
+            Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>>> toManyRelationships,
             Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass,
-            Map<Class<?>, RegisteredRelationship<Relationship<?, ?>>> relationshipsByClass
+            Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass
     ) {
         this.resources = MapUtils.emptyIfNull(resources);
         this.allRelationships = MapUtils.emptyIfNull(allRelationships);
@@ -67,7 +67,7 @@ public class DomainRegistry {
         return Collections.unmodifiableSet(this.resources.keySet());
     }
 
-    public List<RegisteredRelationship<ToManyRelationship<?, ?>>> getToManyRelationships(ResourceType resourceType) {
+    public List<RegisteredRelationship<ToManyRelationship<?>>> getToManyRelationships(ResourceType resourceType) {
         return MapUtils.emptyIfNull(this.toManyRelationships.get(resourceType))
                 .values()
                 .stream()
@@ -81,7 +81,7 @@ public class DomainRegistry {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    public List<RegisteredRelationship<ToOneRelationship<?, ?>>> getToOneRelationships(
+    public List<RegisteredRelationship<ToOneRelationship<?>>> getToOneRelationships(
             ResourceType resourceType
     ) {
         return MapUtils.emptyIfNull(this.toOneRelationships.get(resourceType))
@@ -97,16 +97,16 @@ public class DomainRegistry {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    public RegisteredRelationship<ToManyRelationship<?, ?>> getToManyRelationshipStrict(
+    public RegisteredRelationship<ToManyRelationship<?>> getToManyRelationshipStrict(
             ResourceType resourceType,
             RelationshipName relationshipName
     ) {
-        Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>> resourceRelationships = this.toManyRelationships.get(resourceType);
+        Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>> resourceRelationships = this.toManyRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
             throw new DomainMisconfigurationException("No To Many relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        RegisteredRelationship<ToManyRelationship<?, ?>> result = resourceRelationships.get(relationshipName);
+        RegisteredRelationship<ToManyRelationship<?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To Many Relationship is not found for the Resource ("
@@ -115,16 +115,16 @@ public class DomainRegistry {
         return result;
     }
 
-    public RegisteredRelationship<ToOneRelationship<?, ?>> getToOneRelationshipStrict(
+    public RegisteredRelationship<ToOneRelationship<?>> getToOneRelationshipStrict(
             ResourceType resourceType,
             RelationshipName relationshipName
     ) {
-        Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>> resourceRelationships = this.toOneRelationships.get(resourceType);
+        Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>> resourceRelationships = this.toOneRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
             throw new DomainMisconfigurationException("No To One relationships found for the Resource ("
                     + resourceType.getType() + ").");
         }
-        RegisteredRelationship<ToOneRelationship<?, ?>> result = resourceRelationships.get(relationshipName);
+        RegisteredRelationship<ToOneRelationship<?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
             throw new DomainMisconfigurationException("Implementation of the '"
                     + relationshipName.getName() + "' To One Relationship is not found for the Resource ("
@@ -147,12 +147,12 @@ public class DomainRegistry {
         private final List<JsonApi4jPlugin> plugins;
 
         private final Map<ResourceType, RegisteredResource<Resource<?>>> resources;
-        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?, ?>>>> allRelationships;
-        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?, ?>>>> toOneRelationships;
-        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?, ?>>>> toManyRelationships;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>>> toOneRelationships;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>>> toManyRelationships;
 
         private final Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass;
-        private final Map<Class<?>, RegisteredRelationship<Relationship<?, ?>>> relationshipsByClass;
+        private final Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass;
 
         private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins) {
             this.plugins = plugins;
@@ -186,17 +186,17 @@ public class DomainRegistry {
             return this;
         }
 
-        public DomainRegistryBuilder relationships(Set<Relationship<?, ?>> relationships) {
-            for (Relationship<?, ?> relationship : relationships) {
+        public DomainRegistryBuilder relationships(Set<Relationship<?>> relationships) {
+            for (Relationship<?> relationship : relationships) {
                 this.relationship(relationship);
             }
             return this;
         }
 
-        public DomainRegistryBuilder relationship(Relationship<?, ?> relationship) {
+        public DomainRegistryBuilder relationship(Relationship<?> relationship) {
             // pre-filter relationship by type
-            if (relationship instanceof ToOneRelationship<?, ?> rel) {
-                RegisteredRelationship<ToOneRelationship<?, ?>> rr = enrichWithMetaInfo(rel);
+            if (relationship instanceof ToOneRelationship<?> rel) {
+                RegisteredRelationship<ToOneRelationship<?>> rr = enrichWithMetaInfo(rel);
                 registerRelationship(rr, (r) ->
                         this.toOneRelationships.computeIfAbsent(
                                 r.getParentResourceType(),
@@ -205,8 +205,8 @@ public class DomainRegistry {
                 );
 
             }
-            if (relationship instanceof ToManyRelationship<?, ?> rel) {
-                RegisteredRelationship<ToManyRelationship<?, ?>> rr = enrichWithMetaInfo(rel);
+            if (relationship instanceof ToManyRelationship<?> rel) {
+                RegisteredRelationship<ToManyRelationship<?>> rr = enrichWithMetaInfo(rel);
                 registerRelationship(rr, (r) ->
                         this.toManyRelationships.computeIfAbsent(
                                 r.getParentResourceType(),
@@ -217,7 +217,7 @@ public class DomainRegistry {
             return this;
         }
 
-        private <T extends Relationship<?, ?>> void registerRelationship(RegisteredRelationship<T> rr,
+        private <T extends Relationship<?>> void registerRelationship(RegisteredRelationship<T> rr,
                                                                          Consumer<RegisteredRelationship<T>> registerRelationshipConsumer) {
             ResourceType resourceType = rr.getParentResourceType();
             RelationshipName relationshipName = rr.getRelationshipName();
@@ -293,7 +293,7 @@ public class DomainRegistry {
             return new RelationshipName(jsonApiRelationship.relationshipName());
         }
 
-        public static ResourceType resolveParentResourceType(Class<? extends Relationship<?,?>> relationshipClass) {
+        public static ResourceType resolveParentResourceType(Class<? extends Relationship<?>> relationshipClass) {
             JsonApiRelationship jsonApiRelationship = relationshipClass.getAnnotation(JsonApiRelationship.class);
             if (jsonApiRelationship == null) {
                 throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
@@ -301,13 +301,13 @@ public class DomainRegistry {
             return resolveResourceType(jsonApiRelationship.parentResource());
         }
 
-        private <T extends Relationship<?, ?>> RegisteredRelationship<T> enrichWithMetaInfo(T relationship) {
+        private <T extends Relationship<?>> RegisteredRelationship<T> enrichWithMetaInfo(T relationship) {
             JsonApiRelationship jsonApiRelationship = relationship.getClass().getAnnotation(JsonApiRelationship.class);
             if (jsonApiRelationship == null) {
                 throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
             }
             ResourceType parentResourceType = resolveResourceType(jsonApiRelationship.parentResource());
-            RelationshipType relationshipType = relationship instanceof ToOneRelationship<?,?>
+            RelationshipType relationshipType = relationship instanceof ToOneRelationship<?>
                     ? RelationshipType.TO_ONE
                     : RelationshipType.TO_MANY;
 

@@ -4,7 +4,6 @@ import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 
 import java.util.Map;
@@ -13,7 +12,7 @@ import java.util.Map;
 @OasRelationshipInfo(
         relationshipTypes = {UserResource.class}
 )
-public class UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserRelationshipInfo> {
+public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> {
 
     @Override
     public String resolveResourceIdentifierType(UserRelationshipInfo userDbEntity) {

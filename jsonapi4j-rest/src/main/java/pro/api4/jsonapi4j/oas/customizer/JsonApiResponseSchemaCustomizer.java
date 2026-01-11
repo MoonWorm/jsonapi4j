@@ -151,7 +151,7 @@ public class JsonApiResponseSchemaCustomizer {
         List<String> relationshipNames = new ArrayList<>();
 
         Map<String, Schema> relationshipsSchemaProperties = new HashMap<>();
-        for (RegisteredRelationship<ToManyRelationship<?, ?>> registeredRelationship
+        for (RegisteredRelationship<ToManyRelationship<?>> registeredRelationship
                 : domainRegistry.getToManyRelationships(resourceType)) {
             ResourceType relResourceType = registeredRelationship.getParentResourceType();
             RelationshipName relationshipName = registeredRelationship.getRelationshipName();
@@ -178,7 +178,7 @@ public class JsonApiResponseSchemaCustomizer {
                 );
             }
         }
-        for (RegisteredRelationship<ToOneRelationship<?, ?>> registeredRelationship
+        for (RegisteredRelationship<ToOneRelationship<?>> registeredRelationship
                 : domainRegistry.getToOneRelationships(resourceType)) {
             ResourceType relResourceType = registeredRelationship.getParentResourceType();
             RelationshipName relationshipName = registeredRelationship.getRelationshipName();

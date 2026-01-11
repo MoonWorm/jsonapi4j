@@ -84,7 +84,7 @@ public class DomainRegistryTests {
     }
 
     @JsonApiRelationship(relationshipName = "to1", parentResource = TestResource.class)
-    private static class TestToOneRelationship implements ToOneRelationship<String, String> {
+    private static class TestToOneRelationship implements ToOneRelationship<String> {
 
         @Override
         public String resolveResourceIdentifierType(String s) {
@@ -98,7 +98,7 @@ public class DomainRegistryTests {
     }
 
     @JsonApiRelationship(relationshipName = "to2", parentResource = TestResource.class)
-    private static class TestToManyRelationship implements ToManyRelationship<String, String> {
+    private static class TestToManyRelationship implements ToManyRelationship<String> {
 
         @Override
         public String resolveResourceIdentifierType(String s) {

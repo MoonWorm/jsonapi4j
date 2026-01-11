@@ -87,7 +87,7 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
     }
 
     @Override
-    public Object extractPluginInfoFromRelationship(Relationship<?, ?> relationship) {
+    public Object extractPluginInfoFromRelationship(Relationship<?> relationship) {
         return relationship.getClass().getAnnotation(OasRelationshipInfo.class);
     }
 

@@ -16,7 +16,7 @@ public interface JsonApi4jPlugin {
         return null;
     }
 
-    default Object extractPluginInfoFromRelationship(Relationship<?, ?> relationship) {
+    default Object extractPluginInfoFromRelationship(Relationship<?> relationship) {
         return null;
     }
 

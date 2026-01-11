@@ -12,11 +12,11 @@ import java.util.Set;
 public class SpringContextJsonApi4jDomainScanner extends SpringContextScanner {
 
     private final ObjectProvider<Set<Resource<?>>> resourcesProvider;
-    private final ObjectProvider<Set<Relationship<?, ?>>> relationshipsProvider;
+    private final ObjectProvider<Set<Relationship<?>>> relationshipsProvider;
 
     @Autowired
     public SpringContextJsonApi4jDomainScanner(ObjectProvider<Set<Resource<?>>> resourcesProvider,
-                                               ObjectProvider<Set<Relationship<?, ?>>> relationshipsProvider) {
+                                               ObjectProvider<Set<Relationship<?>>> relationshipsProvider) {
         this.resourcesProvider = resourcesProvider;
         this.relationshipsProvider = relationshipsProvider;
     }
@@ -25,7 +25,7 @@ public class SpringContextJsonApi4jDomainScanner extends SpringContextScanner {
         return get(resourcesProvider);
     }
 
-    public Set<Relationship<?, ?>> getRelationships() {
+    public Set<Relationship<?>> getRelationships() {
         return get(relationshipsProvider);
     }
 
