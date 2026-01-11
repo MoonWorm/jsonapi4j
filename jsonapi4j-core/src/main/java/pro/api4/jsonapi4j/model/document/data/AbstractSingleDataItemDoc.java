@@ -9,6 +9,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public abstract class AbstractSingleDataItemDoc<DATA_ITEM extends ResourceIdentifierObject> extends BaseDoc {
 
+    public static final String DATA_FIELD = "data";
+
     private final DATA_ITEM data;
 
     public AbstractSingleDataItemDoc(DATA_ITEM data,

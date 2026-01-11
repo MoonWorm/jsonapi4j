@@ -17,6 +17,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class LinksObject {
 
+    public static final String SELF_FIELD = "self";
+    public static final String RELATED_FIELD = "related";
+    public static final String NEXT_FIELD = "next";
+
     private String self;
     private Object related;
     private String next;

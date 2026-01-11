@@ -6,6 +6,7 @@ import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.operation.RegisteredOperation;
 
 import java.util.Set;
 
@@ -28,11 +29,15 @@ public final class OasOperationInfoUtil {
 
     }
 
-    public static Info resolveOperationOasInfo(ResourceType resourceType,
-                                               RelationshipName relationshipName,
-                                               OperationType operationType,
+    public static Info resolveOperationOasInfo(RegisteredOperation.OperationMeta operationMeta,
                                                String customResourceNameSingle,
                                                String customResourceNamePlural) {
+        OperationType operationType = operationMeta.getOperationType();
+        ResourceType resourceType = operationMeta.getResourceType();
+        RelationshipName relationshipName = operationMeta.getRelationshipName();
+
+
+
         String urlCompatibleUniqueName = resolveOperationUrlCompatibleName(
                 operationType,
                 resourceType,

@@ -16,7 +16,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static pro.api4.jsonapi4j.domain.DomainRegistry.DomainRegistryBuilder.*;
 import static pro.api4.jsonapi4j.domain.annotation.JsonApiDomainAnnotationsUtil.*;
 import static pro.api4.jsonapi4j.operation.OperationType.*;
 

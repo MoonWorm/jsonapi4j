@@ -160,94 +160,107 @@ public class JsonApiOperationsCustomizer {
     private Operation createResourceOperation(ResourceType resourceType,
                                               OperationType operationType) {
         RegisteredOperation<?> registeredOperation = operationsRegistry.getRegisteredResourceOperation(resourceType, operationType, false);
-        return createOperation(
-                resourceType,
-                null,
-                operationType,
-                registeredOperation
-        );
+        return createOperation(registeredOperation);
     }
 
     private Operation createRelationshipOperation(ResourceType resourceType,
                                                   RelationshipName relationshipName,
                                                   OperationType operationType) {
         RegisteredOperation<?> registeredOperation = operationsRegistry.getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, false);
-        return createOperation(
-                resourceType,
-                relationshipName,
-                operationType,
-                registeredOperation
-        );
+        return createOperation(registeredOperation);
     }
 
-    private Operation createOperation(ResourceType resourceType,
-                                      RelationshipName relationshipName,
-                                      OperationType operationType,
-                                      RegisteredOperation<?> registeredOperation) {
+    private Operation createOperation(RegisteredOperation<?> registeredOperation) {
         if (registeredOperation == null) {
-            log.warn("Can't generate OAS info for {} operation. It wasn't registered for {} resource.", operationType.name(), resourceType.getType());
             return null;
         }
+        return createOperation(registeredOperation.getOperationMeta());
+    }
 
-        Object oasOperationInfoObject = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (oasOperationInfoObject == null) {
+    private Operation createOperation(RegisteredOperation.OperationMeta operationMeta) {
+        Object oasOperationInfoObject = emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        if (!(oasOperationInfoObject instanceof OasOperationInfo)) {
             log.warn(
                     "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
-                    operationType.name(),
-                    resourceType.getType(),
+                    operationMeta.getOperationType().name(),
+                    operationMeta.getResourceType().getType(),
                     OasOperationInfo.class.getSimpleName()
             );
             return null;
         }
+        OasOperationInfo oasOperationInfo = (OasOperationInfo) oasOperationInfoObject;
 
-        String resourceNameSingle = null;
-        String resourceNamePlural = null;
+        ResourceType resourceType = operationMeta.getResourceType();
+        OperationType operationType = operationMeta.getOperationType();
+
         RegisteredResource<?> registeredResource = domainRegistry.getResource(resourceType);
         Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
-            if (StringUtils.isNotBlank(oasResourceInfo.resourceNameSingle())) {
-                resourceNameSingle = oasResourceInfo.resourceNameSingle();
-            }
-            if (StringUtils.isNotBlank(oasResourceInfo.resourceNamePlural())) {
-                resourceNamePlural = oasResourceInfo.resourceNamePlural();
-            }
-        }
-
-        Class<?> payloadType = null;
-        OasOperationInfo oasOperationInfo = null;
-        if (oasOperationInfoObject instanceof OasOperationInfo) {
-            oasOperationInfo = (OasOperationInfo) oasOperationInfoObject;
-            if (oasOperationInfo.payloadType() != OasOperationInfo.NotApplicable.class) {
-                payloadType = oasOperationInfo.payloadType();
-            }
-        }
-
         OasOperationInfoUtil.Info operationOasInfo = OasOperationInfoUtil.resolveOperationOasInfo(
-                resourceType,
-                relationshipName,
-                operationType,
-                resourceNameSingle,
-                resourceNamePlural
+                operationMeta,
+                getResourceCustomNameSingle(oasResourceInfoObject),
+                getResourceCustomNamePlural(oasResourceInfoObject)
         );
-
         List<String> supportedIncludes = getSupportedIncludes(operationOasInfo);
 
-        String payloadSchemaName = getSchemaName(payloadType);
-
+        Operation oasOperation = new Operation();
+        // summary
+        oasOperation.setSummary(operationOasInfo.getSummary());
+        // description
+        oasOperation.setDescription(operationOasInfo.getDescription());
+        // tags
+        oasOperation.setTags(Collections.singletonList(operationOasInfo.getOperationTag()));
+        // parameters
+        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, operationOasInfo.isPaginationSupported()));
+        // request body
+        String payloadSchemaName = getSchemaName(getPayloadType(oasOperationInfoObject));
+        if (StringUtils.isNotBlank(payloadSchemaName)) {
+            oasOperation.setRequestBody(new RequestBody().content(new Content().addMediaType(JsonApiMediaType.MEDIA_TYPE, new MediaType().schema(new Schema().$ref(payloadSchemaName)))));
+        }
+        // responses
         String happyPathResponseDocSchemaName = OasSchemaNamesUtil.happyPathResponseDocSchemaName(
                 resourceType,
                 operationType
         );
-
-        return createOasOperation(
-                oasOperationInfo,
-                operationOasInfo,
-                operationType.getHttpStatus(),
-                payloadSchemaName,
-                happyPathResponseDocSchemaName,
-                operationOasInfo.getSupportedHttpErrorCodes(),
-                supportedIncludes
+        oasOperation.setResponses(
+                generateResponses(
+                        String.valueOf(operationType.getHttpStatus()),
+                        happyPathResponseDocSchemaName,
+                        operationOasInfo.getSupportedHttpErrorCodes()
+                )
         );
+        // security requirements
+        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.securityConfig()));
+        // oas extensions
+        addOperationExtensions(oasOperation, operationOasInfo.getUrlCompatibleUniqueName(), supportedIncludes);
+
+        return oasOperation;
+    }
+
+    private Class<?> getPayloadType(Object oasOperationInfoObject) {
+        if (oasOperationInfoObject instanceof OasOperationInfo oasOperationInfo) {
+            if (oasOperationInfo.payloadType() != OasOperationInfo.NotApplicable.class) {
+                return oasOperationInfo.payloadType();
+            }
+        }
+        return null;
+    }
+
+    private String getResourceCustomNameSingle(Object oasResourceInfoObject) {
+        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
+            if (StringUtils.isNotBlank(oasResourceInfo.resourceNameSingle())) {
+                return oasResourceInfo.resourceNameSingle();
+            }
+        }
+        return null;
+    }
+
+    private String getResourceCustomNamePlural(Object oasResourceInfoObject) {
+        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
+            if (StringUtils.isNotBlank(oasResourceInfo.resourceNamePlural())) {
+                return oasResourceInfo.resourceNamePlural();
+            }
+        }
+        return null;
     }
 
     private List<String> getSupportedIncludes(OasOperationInfoUtil.Info operationOasInfo) {
@@ -265,46 +278,13 @@ public class JsonApiOperationsCustomizer {
         return Collections.emptyList();
     }
 
-    private Operation createOasOperation(OasOperationInfo oasOperationInfo,
-                                         OasOperationInfoUtil.Info operationOasInfo,
-                                         int httpStatus,
-                                         String payloadSchemaName,
-                                         String happyPathResponseDocSchemaName,
-                                         Set<HttpStatusCodes> supportedHttpErrorCodes,
-                                         List<String> supportedIncludes) {
-
-        Operation oasOperation = new Operation();
-        oasOperation.setSummary(operationOasInfo.getSummary());
-        oasOperation.setDescription(operationOasInfo.getDescription());
-        oasOperation.setTags(Collections.singletonList(operationOasInfo.getOperationTag()));
-
-        // request body
-        if (StringUtils.isNotBlank(payloadSchemaName)) {
-            oasOperation.setRequestBody(new RequestBody().content(new Content().addMediaType(JsonApiMediaType.MEDIA_TYPE, new MediaType().schema(new Schema().$ref(payloadSchemaName)))));
-        }
-
-        // responses
-        oasOperation.setResponses(
-                generateResponses(
-                        String.valueOf(httpStatus),
-                        happyPathResponseDocSchemaName,
-                        supportedHttpErrorCodes
-                )
-        );
-
-        // parameters
+    private List<Parameter> generateParameters(OasOperationInfo oasOperationInfo,
+                                               List<String> supportedIncludes,
+                                               boolean isPaginatedSupported) {
         List<Parameter> parameters = new ArrayList<>();
         parameters.addAll(generateCustomParameters(oasOperationInfo));
-        parameters.addAll(generateJsonApiParameters(supportedIncludes, operationOasInfo.isPaginationSupported()));
-        oasOperation.setParameters(parameters);
-
-        // security requirements
-        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo != null ? oasOperationInfo.securityConfig() : null));
-
-        // oas extensions
-        addOperationExtensions(oasOperation, operationOasInfo.getUrlCompatibleUniqueName(), supportedIncludes);
-
-        return oasOperation;
+        parameters.addAll(generateJsonApiParameters(supportedIncludes, isPaginatedSupported));
+        return parameters;
     }
 
     private ApiResponses generateResponses(String status,

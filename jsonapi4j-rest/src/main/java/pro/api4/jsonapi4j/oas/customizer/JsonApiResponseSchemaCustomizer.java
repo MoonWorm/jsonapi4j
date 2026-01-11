@@ -8,6 +8,7 @@ import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
 import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.oas.customizer.util.OasSchemaNamesUtil;
@@ -18,6 +19,8 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
 import static pro.api4.jsonapi4j.oas.customizer.util.OasSchemaNamesUtil.*;
 import static pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.*;
 
@@ -29,8 +32,35 @@ public class JsonApiResponseSchemaCustomizer {
     private final OperationsRegistry operationsRegistry;
 
     public void customise(OpenAPI openApi) {
+        registerLinksObjectSchema(openApi);
+        registerResourceIdentifierObjectSchema(openApi);
         registerErrorDocSchemas(openApi);
         registerDataDocsSchemas(openApi);
+    }
+
+    private void registerLinksObjectSchema(OpenAPI openApi) {
+        Schema<?> linksObjectSchema = generateSchemaFromType(LinksObject.class);
+        ((Schema) linksObjectSchema.getProperties().get(LinksObject.SELF_FIELD))
+                .example("http://example.com/users")
+                .description("Request self-pointing link");
+        ((Schema) linksObjectSchema.getProperties().get(LinksObject.NEXT_FIELD))
+                .example("http://example.com/users?page[cursor]=xyz")
+                .description("Link pointing to the next page of resources (when applicable)");
+        ((Schema) linksObjectSchema.getProperties().get(LinksObject.RELATED_FIELD))
+                .example("http://example.com/users/123")
+                .description("Related resource link (when applicable)");
+        registerSchemaIfNotExists(linksObjectSchema, openApi);
+    }
+
+    private void registerResourceIdentifierObjectSchema(OpenAPI openApi) {
+        Schema<?> resourceIdentifierObjectSchema = generateSchemaFromType(ResourceIdentifierObject.class);
+        ((Schema) resourceIdentifierObjectSchema.getProperties().get(ID_FIELD))
+                .example("12345")
+                .description("Linked resourc unique identifier");
+        ((Schema) resourceIdentifierObjectSchema.getProperties().get(TYPE_FIELD))
+                .example("articles")
+                .description("Linked resource type");
+        registerSchemaIfNotExists(resourceIdentifierObjectSchema, openApi);
     }
 
     private void registerErrorDocSchemas(OpenAPI openApi) {
@@ -97,7 +127,6 @@ public class JsonApiResponseSchemaCustomizer {
             schemas.add(multipleResourcesDocSchemas.getPrimarySchema());
             schemas.addAll(multipleResourcesDocSchemas.getNestedSchemas());
         }
-
         Schema<?> resourceIdentifierSchema = generateSchemaFromType(ResourceIdentifierObject.class);
         boolean isAnyToManyRelationshipsConfigured
                 = operationsRegistry.isAnyToManyRelationshipOperationConfigured(resourceType);
@@ -271,6 +300,16 @@ public class JsonApiResponseSchemaCustomizer {
                                                            Schema<?> attributesSchema,
                                                            Optional<Schema<?>> relationshipsSchema) {
         PrimaryAndNestedSchemas resourceSchema = generateAllSchemasFromType(ResourceObject.class);
+
+        ((Schema) resourceSchema.getPrimarySchema().getProperties().get(ID_FIELD))
+                .example("12345")
+                .description("Resource unique identifier");
+        ((Schema) resourceSchema.getPrimarySchema().getProperties().get(TYPE_FIELD))
+                .example(registeredResource.getResourceType().getType())
+                .description("Resource type");
+
+        resourceSchema.getPrimarySchema().setRequired(List.of(ID_FIELD, TYPE_FIELD));
+
         resourceSchema.getPrimarySchema().setName(resourceSchemaName(registeredResource.getResourceType()));
         resourceSchema.getPrimarySchema().getProperties().put("attributes", new Schema<>().$ref(attributesSchema.getName()));
         relationshipsSchema.ifPresentOrElse(rs -> {

@@ -20,6 +20,9 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class BaseDoc {
 
+    public static final String LINKS_FIELD = "links";
+    public static final String META_FIELD = "meta";
+
     private LinksObject links;
     private Object meta;
 
