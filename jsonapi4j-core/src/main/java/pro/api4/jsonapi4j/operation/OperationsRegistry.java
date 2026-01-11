@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static pro.api4.jsonapi4j.domain.DomainRegistry.DomainRegistryBuilder.*;
+import static pro.api4.jsonapi4j.domain.annotation.JsonApiDomainAnnotationsUtil.*;
 import static pro.api4.jsonapi4j.operation.OperationType.*;
 
-// TODO: keep only 'registered' methods
 public class OperationsRegistry {
 
     private final Map<ResourceType, RegisteredOperation<ReadResourceByIdOperation<?>>> readResourceByIdOperations;
@@ -66,24 +66,12 @@ public class OperationsRegistry {
         return builder(Collections.emptyList()).build();
     }
 
-    @SuppressWarnings("LombokGetterMayBeUsed")
     public Set<ResourceType> getResourceTypesWithAnyOperationConfigured() {
         return this.resourceTypesWithAnyOperationConfigured;
     }
 
     public Set<RelationshipName> getRelationshipNamesWithAnyOperationConfigured(ResourceType resourceType) {
         return SetUtils.emptyIfNull(this.relationshipNamesWithAnyOperationConfigured.get(resourceType));
-    }
-
-    public ResourceOperation getResourceOperation(ResourceType resourceType,
-                                                  OperationType operationType,
-                                                  boolean orElseThrow) {
-        RegisteredOperation<? extends ResourceOperation> registeredOperation
-                = getRegisteredResourceOperation(resourceType, operationType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<? extends ResourceOperation> getRegisteredResourceOperation(
@@ -115,25 +103,13 @@ public class OperationsRegistry {
 
     public boolean isResourceOperationConfigured(ResourceType resourceType,
                                                  OperationType operationType) {
-        return getResourceOperation(resourceType, operationType, false) != null;
+        return getRegisteredResourceOperation(resourceType, operationType, false) != null;
     }
 
     public boolean isAnyResourceOperationConfigured(ResourceType resourceType) {
         return OperationType.getResourceOperationTypes()
                 .stream()
                 .anyMatch(operationType -> isResourceOperationConfigured(resourceType, operationType));
-    }
-
-    public RelationshipOperation getRelationshipOperation(ResourceType resourceType,
-                                                          RelationshipName relationshipName,
-                                                          OperationType operationType,
-                                                          boolean orElseThrow) {
-        RegisteredOperation<? extends RelationshipOperation> registeredOperation
-                = getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<? extends RelationshipOperation> getRegisteredRelationshipOperation(
@@ -166,14 +142,14 @@ public class OperationsRegistry {
     public boolean isRelationshipOperationConfigured(ResourceType resourceType,
                                                      RelationshipName relationshipName,
                                                      OperationType operationType) {
-        return getRelationshipOperation(resourceType, relationshipName, operationType, false) != null;
+        return getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, false) != null;
     }
 
     public boolean isToManyRelationshipOperationConfigured(ResourceType resourceType,
                                                            RelationshipName relationshipName,
                                                            OperationType operationType) {
         return operationType.getSubType() == OperationType.SubType.TO_MANY_RELATIONSHIP
-                && getRelationshipOperation(resourceType, relationshipName, operationType, false) != null;
+                && isRelationshipOperationConfigured(resourceType, relationshipName, operationType);
     }
 
     public boolean isAnyToManyRelationshipOperationConfigured(ResourceType resourceType,
@@ -195,7 +171,7 @@ public class OperationsRegistry {
                                                           RelationshipName relationshipName,
                                                           OperationType operationType) {
         return operationType.getSubType() == OperationType.SubType.TO_ONE_RELATIONSHIP
-                && getRelationshipOperation(resourceType, relationshipName, operationType, false) != null;
+                && isRelationshipOperationConfigured(resourceType, relationshipName, operationType);
     }
 
     public boolean isAnyToOneRelationshipOperationConfigured(ResourceType resourceType,
@@ -213,16 +189,6 @@ public class OperationsRegistry {
                                 || updateToOneRelationshipOperations.containsKey(resourceType));
     }
 
-    public ReadResourceByIdOperation<?> getReadResourceByIdOperation(ResourceType resourceType,
-                                                                     boolean orElseThrow) {
-        RegisteredOperation<ReadResourceByIdOperation<?>> registeredOperation
-                = getRegisteredReadResourceByIdOperation(resourceType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
-    }
-
     public RegisteredOperation<ReadResourceByIdOperation<?>> getRegisteredReadResourceByIdOperation(
             ResourceType resourceType,
             boolean orElseThrow
@@ -234,16 +200,6 @@ public class OperationsRegistry {
             return null;
         }
         return readResourceByIdOperations.get(resourceType);
-    }
-
-    public ReadMultipleResourcesOperation<?> getReadMultipleResourcesOperation(ResourceType resourceType,
-                                                                               boolean orElseThrow) {
-        RegisteredOperation<ReadMultipleResourcesOperation<?>> registeredOperation
-                = getRegisteredReadMultipleResourcesOperation(resourceType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<ReadMultipleResourcesOperation<?>> getRegisteredReadMultipleResourcesOperation(
@@ -259,16 +215,6 @@ public class OperationsRegistry {
         return readMultipleResourcesOperations.get(resourceType);
     }
 
-    public CreateResourceOperation<?> getCreateResourceOperation(ResourceType resourceType,
-                                                                 boolean orElseThrow) {
-        RegisteredOperation<CreateResourceOperation<?>> registeredOperation
-                = getRegisteredCreateResourceOperation(resourceType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
-    }
-
     public RegisteredOperation<CreateResourceOperation<?>> getRegisteredCreateResourceOperation(
             ResourceType resourceType,
             boolean orElseThrow
@@ -280,16 +226,6 @@ public class OperationsRegistry {
             return null;
         }
         return createResourceOperations.get(resourceType);
-    }
-
-    public UpdateResourceOperation getUpdateResourceOperation(ResourceType resourceType,
-                                                              boolean orElseThrow) {
-        RegisteredOperation<UpdateResourceOperation> registeredOperation
-                = getRegisteredUpdateResourceOperation(resourceType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<UpdateResourceOperation> getRegisteredUpdateResourceOperation(
@@ -305,16 +241,6 @@ public class OperationsRegistry {
         return updateResourceOperations.get(resourceType);
     }
 
-    public DeleteResourceOperation getDeleteResourceOperation(ResourceType resourceType,
-                                                              boolean orElseThrow) {
-        RegisteredOperation<DeleteResourceOperation> registeredOperation
-                = getRegisteredDeleteResourceOperation(resourceType, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
-    }
-
     public RegisteredOperation<DeleteResourceOperation> getRegisteredDeleteResourceOperation(
             ResourceType resourceType,
             boolean orElseThrow
@@ -326,17 +252,6 @@ public class OperationsRegistry {
             return null;
         }
         return deleteResourceOperations.get(resourceType);
-    }
-
-    public ReadToOneRelationshipOperation<?, ?> getReadToOneRelationshipOperation(ResourceType resourceType,
-                                                                                  RelationshipName relationshipName,
-                                                                                  boolean orElseThrow) {
-        RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
-                = getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> getRegisteredReadToOneRelationshipOperation(
@@ -352,17 +267,6 @@ public class OperationsRegistry {
             return null;
         }
         return readToOneRelationshipOperations.get(resourceType).get(relationshipName);
-    }
-
-    public ReadToManyRelationshipOperation<?, ?> getReadToManyRelationshipOperation(ResourceType resourceType,
-                                                                                    RelationshipName relationshipName,
-                                                                                    boolean orElseThrow) {
-        RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
-                = getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> getRegisteredReadToManyRelationshipOperation(
@@ -387,13 +291,6 @@ public class OperationsRegistry {
         );
     }
 
-    public List<UpdateToOneRelationshipOperation> getUpdateToOneRelationshipOperations(ResourceType resourceType) {
-        return getRegisteredUpdateToOneRelationshipOperations(resourceType)
-                .stream()
-                .map(RegisteredOperation::getOperation)
-                .toList();
-    }
-
     public List<RegisteredOperation<UpdateToOneRelationshipOperation>> getRegisteredUpdateToOneRelationshipOperations(
             ResourceType resourceType
     ) {
@@ -401,17 +298,6 @@ public class OperationsRegistry {
                 .values()
                 .stream()
                 .toList();
-    }
-
-    public UpdateToOneRelationshipOperation getUpdateToOneRelationshipOperation(ResourceType resourceType,
-                                                                                RelationshipName relationshipName,
-                                                                                boolean orElseThrow) {
-        RegisteredOperation<UpdateToOneRelationshipOperation> registeredOperation
-                = getRegisteredUpdateToOneRelationshipOperation(resourceType, relationshipName, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
     }
 
     public RegisteredOperation<UpdateToOneRelationshipOperation> getRegisteredUpdateToOneRelationshipOperation(
@@ -429,17 +315,6 @@ public class OperationsRegistry {
         return updateToOneRelationshipOperations.get(resourceType).get(relationshipName);
     }
 
-    public UpdateToManyRelationshipOperation getUpdateToManyRelationshipOperation(ResourceType resourceType,
-                                                                                  RelationshipName relationshipName,
-                                                                                  boolean orElseThrow) {
-        RegisteredOperation<UpdateToManyRelationshipOperation> registeredOperation
-                = getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
-        if (registeredOperation != null) {
-            return registeredOperation.getOperation();
-        }
-        return null;
-    }
-
     public RegisteredOperation<UpdateToManyRelationshipOperation> getRegisteredUpdateToManyRelationshipOperation(
             ResourceType resourceType,
             RelationshipName relationshipName,
@@ -453,13 +328,6 @@ public class OperationsRegistry {
             return null;
         }
         return updateToManyRelationshipOperations.get(resourceType).get(relationshipName);
-    }
-
-    public List<UpdateToManyRelationshipOperation> getUpdateToManyRelationshipOperationsFor(ResourceType resourceType) {
-        return getRegisteredUpdateToManyRelationshipOperationsFor(resourceType)
-                .stream()
-                .map(RegisteredOperation::getOperation)
-                .toList();
     }
 
     public List<RegisteredOperation<UpdateToManyRelationshipOperation>> getRegisteredUpdateToManyRelationshipOperationsFor(
@@ -495,40 +363,6 @@ public class OperationsRegistry {
             result.addAll(relationshipOperations.values());
         });
         return Collections.unmodifiableList(result);
-    }
-
-    public Object getPluginInfo(ResourceType resourceType,
-                                OperationType operationType,
-                                String pluginName) {
-        return MapUtils.emptyIfNull(getPluginsInfo(resourceType, operationType)).get(pluginName);
-    }
-
-    public Map<String, Object> getPluginsInfo(ResourceType resourceType,
-                                              OperationType operationType) {
-        RegisteredOperation<? extends ResourceOperation> registeredOperation
-                = getRegisteredResourceOperation(resourceType, operationType, false);
-        if (registeredOperation != null) {
-            return registeredOperation.getPluginInfo();
-        }
-        return null;
-    }
-
-    public Object getPluginInfo(ResourceType resourceType,
-                                RelationshipName relationshipName,
-                                OperationType operationType,
-                                String pluginName) {
-        return MapUtils.emptyIfNull(getPluginsInfo(resourceType, relationshipName, operationType)).get(pluginName);
-    }
-
-    public Map<String, Object> getPluginsInfo(ResourceType resourceType,
-                                              RelationshipName relationshipName,
-                                              OperationType operationType) {
-        RegisteredOperation<? extends RelationshipOperation> registeredOperation
-                = getRegisteredRelationshipOperation(resourceType, relationshipName, operationType, false);
-        if (registeredOperation != null) {
-            return registeredOperation.getPluginInfo();
-        }
-        return null;
     }
 
     @Slf4j

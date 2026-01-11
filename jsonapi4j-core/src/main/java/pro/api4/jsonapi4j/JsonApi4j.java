@@ -721,12 +721,12 @@ public class JsonApi4j {
         }
 
         private boolean hasReadToManyRelationshipsBatchImplementation(RegisteredRelationship<?> registeredRelationship) {
-            ReadToManyRelationshipOperation<?, ?> operation = operationsRegistry.getReadToManyRelationshipOperation(
+            RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> operation = operationsRegistry.getRegisteredReadToManyRelationshipOperation(
                     resourceType,
                     registeredRelationship.getRelationshipName(),
                     false
             );
-            return operation instanceof BatchReadToManyRelationshipOperation;
+            return operation != null && operation.getOperation() instanceof BatchReadToManyRelationshipOperation;
         }
 
         private <RESOURCE_DTO> Map<RelationshipName, ToOneRelationshipResolver<JsonApiRequest, RESOURCE_DTO>> getToOneRelationshipResolvers(
@@ -853,12 +853,12 @@ public class JsonApi4j {
         }
 
         private boolean hasReadToOneRelationshipBatchImplementation(RegisteredRelationship<?> registeredRelationship) {
-            ReadToOneRelationshipOperation<?, ?> operation = operationsRegistry.getReadToOneRelationshipOperation(
+            RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation = operationsRegistry.getRegisteredReadToOneRelationshipOperation(
                     resourceType,
                     registeredRelationship.getRelationshipName(),
                     false
             );
-            return operation instanceof BatchReadToOneRelationshipOperation;
+            return registeredOperation != null && registeredOperation.getOperation() instanceof BatchReadToOneRelationshipOperation;
         }
 
         private <RESOURCE_DTO> RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> getRelationshipRequestSupplier(
