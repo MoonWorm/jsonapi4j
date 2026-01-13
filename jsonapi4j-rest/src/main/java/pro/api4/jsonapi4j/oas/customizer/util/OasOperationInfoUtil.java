@@ -36,8 +36,6 @@ public final class OasOperationInfoUtil {
         ResourceType resourceType = operationMeta.getResourceType();
         RelationshipName relationshipName = operationMeta.getRelationshipName();
 
-
-
         String urlCompatibleUniqueName = resolveOperationUrlCompatibleName(
                 operationType,
                 resourceType,

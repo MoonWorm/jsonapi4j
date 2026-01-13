@@ -179,7 +179,7 @@ public class JsonApiOperationsCustomizer {
 
     private Operation createOperation(RegisteredOperation.OperationMeta operationMeta) {
         Object oasOperationInfoObject = emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (!(oasOperationInfoObject instanceof OasOperationInfo)) {
+        if (!(oasOperationInfoObject instanceof OasOperationInfo oasOperationInfo)) {
             log.warn(
                     "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
                     operationMeta.getOperationType().name(),
@@ -188,29 +188,28 @@ public class JsonApiOperationsCustomizer {
             );
             return null;
         }
-        OasOperationInfo oasOperationInfo = (OasOperationInfo) oasOperationInfoObject;
 
         ResourceType resourceType = operationMeta.getResourceType();
         OperationType operationType = operationMeta.getOperationType();
 
         RegisteredResource<?> registeredResource = domainRegistry.getResource(resourceType);
         Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        OasOperationInfoUtil.Info operationOasInfo = OasOperationInfoUtil.resolveOperationOasInfo(
+        OasOperationInfoUtil.Info extraOasOperationInfo = OasOperationInfoUtil.resolveOperationOasInfo(
                 operationMeta,
                 getResourceCustomNameSingle(oasResourceInfoObject),
                 getResourceCustomNamePlural(oasResourceInfoObject)
         );
-        List<String> supportedIncludes = getSupportedIncludes(operationOasInfo);
+        List<String> supportedIncludes = getSupportedIncludes(extraOasOperationInfo);
 
         Operation oasOperation = new Operation();
         // summary
-        oasOperation.setSummary(operationOasInfo.getSummary());
+        oasOperation.setSummary(extraOasOperationInfo.getSummary());
         // description
-        oasOperation.setDescription(operationOasInfo.getDescription());
+        oasOperation.setDescription(extraOasOperationInfo.getDescription());
         // tags
-        oasOperation.setTags(Collections.singletonList(operationOasInfo.getOperationTag()));
+        oasOperation.setTags(Collections.singletonList(extraOasOperationInfo.getOperationTag()));
         // parameters
-        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, operationOasInfo.isPaginationSupported()));
+        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, extraOasOperationInfo.isPaginationSupported()));
         // request body
         String payloadSchemaName = getSchemaName(getPayloadType(oasOperationInfoObject));
         if (StringUtils.isNotBlank(payloadSchemaName)) {
@@ -225,13 +224,13 @@ public class JsonApiOperationsCustomizer {
                 generateResponses(
                         String.valueOf(operationType.getHttpStatus()),
                         happyPathResponseDocSchemaName,
-                        operationOasInfo.getSupportedHttpErrorCodes()
+                        extraOasOperationInfo.getSupportedHttpErrorCodes()
                 )
         );
         // security requirements
         oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.securityConfig()));
         // oas extensions
-        addOperationExtensions(oasOperation, operationOasInfo.getUrlCompatibleUniqueName(), supportedIncludes);
+        addOperationExtensions(oasOperation, extraOasOperationInfo.getUrlCompatibleUniqueName(), supportedIncludes);
 
         return oasOperation;
     }

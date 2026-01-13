@@ -11,11 +11,9 @@ import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.IdSupplier;
@@ -41,7 +39,6 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
 /**
  * <p>
@@ -164,7 +161,7 @@ public class JsonApi4j {
                 = (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
 
         OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                = getOutboundAccessControlSettingsForRelationship(toOneRelationshipCasted);
+                = getOutboundAccessControlSettingsForRelationship(registeredRelationship);
 
         ResourceTypeAndIdResolver<RELATIONSHIP_DTO> typeAndIdResolver
                 = getResourceIdentifierTypeAndIdResolver(toOneRelationshipCasted);
@@ -221,7 +218,7 @@ public class JsonApi4j {
                 = (MultipleDataItemsSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
 
         OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                = getOutboundAccessControlSettingsForRelationship(toManyRelationshipCasted);
+                = getOutboundAccessControlSettingsForRelationship(registeredRelationship);
 
         ResourceTypeAndIdResolver<RELATIONSHIP_DTO> typeAndIdResolver
                 = getResourceIdentifierTypeAndIdResolver(toManyRelationshipCasted);
@@ -260,7 +257,7 @@ public class JsonApi4j {
     }
 
     private AccessControlModel getInboundAccessControlSettings(RegisteredOperation<?> registeredOperation) {
-        Object accessControlModel = emptyIfNull(registeredOperation.getPluginInfo()).get(JsonApiAccessControlPlugin.NAME);
+        Object accessControlModel = registeredOperation.getPluginInfo().get(JsonApiAccessControlPlugin.NAME);
         if (accessControlModel instanceof AccessControlModel acm) {
             return acm;
         }
@@ -268,24 +265,13 @@ public class JsonApi4j {
     }
 
     private OutboundAccessControlForJsonApiResourceIdentifier getOutboundAccessControlSettingsForRelationship(
-            Relationship<?> relationship
+            RegisteredRelationship<? extends Relationship<?>> registeredRelationship
     ) {
-        AccessControlModel resourceIdentifierClassLevel = AccessControlModel.fromClassAnnotation(
-                relationship.getClass()
-        );
-
-        AccessControlModel resourceIdentifierMetaFieldLevel = AccessControlModel.fromAnnotation(
-                ReflectionUtils.fetchAnnotationForMethod(
-                        relationship.getClass(),
-                        "resolveResourceIdentifierMeta",
-                        AccessControl.class
-                )
-        );
-
-        return OutboundAccessControlForJsonApiResourceIdentifier.builder()
-                .resourceIdentifierClassLevel(resourceIdentifierClassLevel)
-                .resourceIdentifierMetaFieldLevel(resourceIdentifierMetaFieldLevel)
-                .build();
+        Object accessControlModelForResourceIdentifier = registeredRelationship.getPluginInfo().get(JsonApiAccessControlPlugin.NAME);
+        if (accessControlModelForResourceIdentifier instanceof OutboundAccessControlForJsonApiResourceIdentifier acm) {
+            return acm;
+        }
+        return null;
     }
 
     private <RELATIONSHIP_DTO> ResourceTypeAndIdResolver<RELATIONSHIP_DTO> getResourceIdentifierTypeAndIdResolver(
@@ -388,7 +374,7 @@ public class JsonApi4j {
                     .concurrentRelationshipResolution(executor)
                     .accessControlEvaluator(accessControlEvaluator)
                     .inboundAccessControlSettings(inboundAccessControlSettings)
-                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(resourceConfig))
+                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(registeredResource))
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toManyRelationshipResolvers(getToManyRelationshipsResolvers(resourceConfig::resolveResourceId))
@@ -498,7 +484,7 @@ public class JsonApi4j {
                     .concurrentRelationshipResolution(executor)
                     .accessControlEvaluator(accessControlEvaluator)
                     .inboundAccessControlSettings(inboundAccessControlSettings)
-                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(resourceConfig))
+                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(registeredResource))
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toManyRelationshipResolvers(getToManyRelationshipsResolvers(resourceConfig::resolveResourceId))
@@ -546,40 +532,13 @@ public class JsonApi4j {
         }
 
         private OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
-                Resource<?> resourceConfig
+                RegisteredResource<Resource<?>> registeredResource
         ) {
-            AccessControlModel resourceClassLevel = AccessControlModel.fromClassAnnotation(resourceConfig.getClass());
-
-            AccessControlModel resourceAttributesFieldLevel = AccessControlModel.fromAnnotation(
-                    ReflectionUtils.fetchAnnotationForMethod(
-                            resourceConfig.getClass(),
-                            "resolveAttributes",
-                            AccessControl.class
-                    )
-            );
-
-            AccessControlModel resourceLinksFieldLevel = AccessControlModel.fromAnnotation(
-                    ReflectionUtils.fetchAnnotationForMethod(
-                            resourceConfig.getClass(),
-                            "resolveResourceLinks",
-                            AccessControl.class
-                    )
-            );
-
-            AccessControlModel resourceMetaFieldLevel = AccessControlModel.fromAnnotation(
-                    ReflectionUtils.fetchAnnotationForMethod(
-                            resourceConfig.getClass(),
-                            "resolveResourceMeta",
-                            AccessControl.class
-                    )
-            );
-
-            return OutboundAccessControlForJsonApiResource.builder()
-                    .resourceClassLevel(resourceClassLevel)
-                    .resourceAttributesFieldLevel(resourceAttributesFieldLevel)
-                    .resourceLinksFieldLevel(resourceLinksFieldLevel)
-                    .resourceMetaFieldLevel(resourceMetaFieldLevel)
-                    .build();
+            Object accessControlModelForResource = registeredResource.getPluginInfo().get(JsonApiAccessControlPlugin.NAME);
+            if (accessControlModelForResource instanceof OutboundAccessControlForJsonApiResource acm) {
+                return acm;
+            }
+            return null;
         }
 
         private <REQUEST, DATA_SOURCE_DTO> Map<RelationshipName, DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> getDefaultRelationshipResolvers(
@@ -661,8 +620,7 @@ public class JsonApi4j {
                                     registeredRelationship ->
                                             (req, dataSourceDtos) ->
                                                     resolveToManyRelationshipsInBatch(
-                                                            registeredRelationship.getRelationshipName(),
-                                                            registeredRelationship.getRelationship(),
+                                                            registeredRelationship,
                                                             dataSourceDtos,
                                                             resourceIdSupplier,
                                                             req
@@ -672,16 +630,17 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToManyRelationshipsDoc> resolveToManyRelationshipsInBatch(
-                RelationshipName relationshipName,
-                ToManyRelationship<?> toManyRelationship,
+                RegisteredRelationship<ToManyRelationship<?>> registeredRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest parentRequest
         ) {
 
+            RelationshipName relationshipName = registeredRelationship.getRelationshipName();
+
             @SuppressWarnings("unchecked")
             ToManyRelationship<RELATIONSHIP_DTO> toManyRelationshipCasted
-                    = (ToManyRelationship<RELATIONSHIP_DTO>) toManyRelationship;
+                    = (ToManyRelationship<RELATIONSHIP_DTO>) registeredRelationship.getRelationship();
 
             RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> registeredOperation
                     = operationsRegistry.getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, true);
@@ -694,7 +653,7 @@ public class JsonApi4j {
                     = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                    = getOutboundAccessControlSettingsForRelationship(toManyRelationship);
+                    = getOutboundAccessControlSettingsForRelationship(registeredRelationship);
 
             RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier = getRelationshipRequestSupplier(
                     resourceIdSupplier,
@@ -793,8 +752,7 @@ public class JsonApi4j {
                                     registeredRelationship ->
                                             (req, dataSourceDtos) ->
                                                     resolveToOneRelationshipInBatch(
-                                                            registeredRelationship.getRelationshipName(),
-                                                            registeredRelationship.getRelationship(),
+                                                            registeredRelationship,
                                                             dataSourceDtos,
                                                             resourceIdSupplier,
                                                             req
@@ -804,16 +762,17 @@ public class JsonApi4j {
         }
 
         private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToOneRelationshipDoc> resolveToOneRelationshipInBatch(
-                RelationshipName relationshipName,
-                ToOneRelationship<?> toOneRelationship,
+                RegisteredRelationship<ToOneRelationship<?>> registeredRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
                 JsonApiRequest request
         ) {
 
+            RelationshipName relationshipName = registeredRelationship.getRelationshipName();
+
             @SuppressWarnings("unchecked")
             ToOneRelationship<RELATIONSHIP_DTO> toOneRelationshipCasted
-                    = (ToOneRelationship<RELATIONSHIP_DTO>) toOneRelationship;
+                    = (ToOneRelationship<RELATIONSHIP_DTO>) registeredRelationship.getRelationship();
 
             RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> registeredOperation
                     = operationsRegistry.getRegisteredReadToOneRelationshipOperation(resourceType, relationshipName, true);
@@ -826,7 +785,7 @@ public class JsonApi4j {
                     = getInboundAccessControlSettings(registeredOperation);
 
             OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                    = getOutboundAccessControlSettingsForRelationship(toOneRelationship);
+                    = getOutboundAccessControlSettingsForRelationship(registeredRelationship);
 
             RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier = getRelationshipRequestSupplier(
                     resourceIdSupplier,
