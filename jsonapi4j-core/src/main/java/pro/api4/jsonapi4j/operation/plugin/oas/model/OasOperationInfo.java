@@ -13,7 +13,7 @@ public @interface OasOperationInfo {
 
     SecurityConfig securityConfig() default @SecurityConfig;
 
-    Parameter[] parameters() default  {};
+    Parameter[] parameters() default {};
 
     Class<?> payloadType() default NotApplicable.class;
 

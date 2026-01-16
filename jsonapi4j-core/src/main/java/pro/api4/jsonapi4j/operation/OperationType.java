@@ -6,13 +6,8 @@ import lombok.Getter;
 import java.util.Arrays;
 import java.util.List;
 
-import static pro.api4.jsonapi4j.operation.OperationType.Method.DELETE;
-import static pro.api4.jsonapi4j.operation.OperationType.Method.GET;
-import static pro.api4.jsonapi4j.operation.OperationType.Method.PATCH;
-import static pro.api4.jsonapi4j.operation.OperationType.Method.POST;
-import static pro.api4.jsonapi4j.operation.OperationType.SubType.TO_MANY_RELATIONSHIP;
-import static pro.api4.jsonapi4j.operation.OperationType.SubType.RESOURCE;
-import static pro.api4.jsonapi4j.operation.OperationType.SubType.TO_ONE_RELATIONSHIP;
+import static pro.api4.jsonapi4j.operation.OperationType.Method.*;
+import static pro.api4.jsonapi4j.operation.OperationType.SubType.*;
 
 @Getter
 @AllArgsConstructor
@@ -53,6 +48,20 @@ public enum OperationType {
         return Arrays.stream(values())
                 .filter(ot -> ot.getSubType() == TO_ONE_RELATIONSHIP
                         || ot.getSubType() == TO_MANY_RELATIONSHIP)
+                .toList();
+    }
+
+    // ones that has {resourceId} in the URL
+    public static List<OperationType> getExistingResourceAwareOperations() {
+        return Arrays.stream(values())
+                .filter(operationType ->
+                        operationType == OperationType.READ_RESOURCE_BY_ID
+                                || operationType == OperationType.UPDATE_RESOURCE
+                                || operationType == OperationType.DELETE_RESOURCE
+                                || operationType == OperationType.READ_TO_ONE_RELATIONSHIP
+                                || operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP
+                                || operationType == OperationType.READ_TO_MANY_RELATIONSHIP
+                                || operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP)
                 .toList();
     }
 

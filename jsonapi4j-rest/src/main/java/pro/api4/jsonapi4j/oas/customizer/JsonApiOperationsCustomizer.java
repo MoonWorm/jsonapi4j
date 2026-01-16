@@ -39,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.request.ResourceAwareRequest;
 
 import java.util.*;
 
@@ -209,7 +210,7 @@ public class JsonApiOperationsCustomizer {
         // tags
         oasOperation.setTags(Collections.singletonList(extraOasOperationInfo.getOperationTag()));
         // parameters
-        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, extraOasOperationInfo.isPaginationSupported()));
+        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, extraOasOperationInfo));
         // request body
         String payloadSchemaName = getSchemaName(getPayloadType(oasOperationInfoObject));
         if (StringUtils.isNotBlank(payloadSchemaName)) {
@@ -279,11 +280,13 @@ public class JsonApiOperationsCustomizer {
 
     private List<Parameter> generateParameters(OasOperationInfo oasOperationInfo,
                                                List<String> supportedIncludes,
-                                               boolean isPaginatedSupported) {
-        List<Parameter> parameters = new ArrayList<>();
-        parameters.addAll(generateCustomParameters(oasOperationInfo));
-        parameters.addAll(generateJsonApiParameters(supportedIncludes, isPaginatedSupported));
-        return parameters;
+                                               OasOperationInfoUtil.Info extraOperationInfo) {
+        Map<String, Parameter> parameters = new LinkedHashMap<>();
+        // generate Json:Api default parameters first
+        generateJsonApiParameters(supportedIncludes, extraOperationInfo).forEach(p -> parameters.put(p.getName(), p));
+        // custom parameters can override Json:Api default parameters
+        generateCustomParameters(oasOperationInfo).forEach(p -> parameters.put(p.getName(), p));
+        return List.copyOf(parameters.values());
     }
 
     private ApiResponses generateResponses(String status,
@@ -419,13 +422,16 @@ public class JsonApiOperationsCustomizer {
     }
 
     private List<Parameter> generateJsonApiParameters(List<String> availableIncludes,
-                                                      boolean isPaginationSupported) {
+                                                      OasOperationInfoUtil.Info extraOperationInfo) {
         List<Parameter> params = new ArrayList<>();
         if (availableIncludes != null && !availableIncludes.isEmpty()) {
             params.add(createIncludeParam(availableIncludes));
         }
-        if (isPaginationSupported) {
+        if (extraOperationInfo.isPaginationSupported()) {
             params.add(createCursorParam());
+        }
+        if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
+            params.add(createDefaultIdPathParam());
         }
         return params;
     }
@@ -456,6 +462,15 @@ public class JsonApiOperationsCustomizer {
         cursorParam.setIn("query");
         cursorParam.setRequired(false);
         cursorParam.setDescription("Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified");
+        cursorParam.setSchema(new StringSchema());
+        return cursorParam;
+    }
+
+    private Parameter createDefaultIdPathParam() {
+        Parameter cursorParam = new Parameter();
+        cursorParam.setName("id");
+        cursorParam.setIn("path");
+        cursorParam.setDescription("Resource id. Required");
         cursorParam.setSchema(new StringSchema());
         return cursorParam;
     }
