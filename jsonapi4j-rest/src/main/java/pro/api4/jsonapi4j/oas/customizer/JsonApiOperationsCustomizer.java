@@ -5,13 +5,15 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.oas.customizer.util.OasSchemaNamesUtil;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.NotApplicable;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.operation.RegisteredOperation;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
@@ -39,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.request.ResourceAwareRequest;
 
 import java.util.*;
 
@@ -180,12 +181,12 @@ public class JsonApiOperationsCustomizer {
 
     private Operation createOperation(RegisteredOperation.OperationMeta operationMeta) {
         Object oasOperationInfoObject = emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (!(oasOperationInfoObject instanceof OasOperationInfo oasOperationInfo)) {
+        if (!(oasOperationInfoObject instanceof OasOperationInfoModel oasOperationInfo)) {
             log.warn(
                     "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
                     operationMeta.getOperationType().name(),
                     operationMeta.getResourceType().getType(),
-                    OasOperationInfo.class.getSimpleName()
+                    OasOperationInfoModel.class.getSimpleName()
             );
             return null;
         }
@@ -229,7 +230,7 @@ public class JsonApiOperationsCustomizer {
                 )
         );
         // security requirements
-        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.securityConfig()));
+        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.getSecurityConfig()));
         // oas extensions
         addOperationExtensions(oasOperation, extraOasOperationInfo.getUrlCompatibleUniqueName(), supportedIncludes);
 
@@ -238,7 +239,7 @@ public class JsonApiOperationsCustomizer {
 
     private Class<?> getPayloadType(Object oasOperationInfoObject) {
         if (oasOperationInfoObject instanceof OasOperationInfo oasOperationInfo) {
-            if (oasOperationInfo.payloadType() != OasOperationInfo.NotApplicable.class) {
+            if (oasOperationInfo.payloadType() != NotApplicable.class) {
                 return oasOperationInfo.payloadType();
             }
         }
@@ -246,18 +247,18 @@ public class JsonApiOperationsCustomizer {
     }
 
     private String getResourceCustomNameSingle(Object oasResourceInfoObject) {
-        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
-            if (StringUtils.isNotBlank(oasResourceInfo.resourceNameSingle())) {
-                return oasResourceInfo.resourceNameSingle();
+        if (oasResourceInfoObject instanceof OasResourceInfoModel oasResourceInfo) {
+            if (StringUtils.isNotBlank(oasResourceInfo.getResourceNameSingle())) {
+                return oasResourceInfo.getResourceNameSingle();
             }
         }
         return null;
     }
 
     private String getResourceCustomNamePlural(Object oasResourceInfoObject) {
-        if (oasResourceInfoObject instanceof OasResourceInfo oasResourceInfo) {
-            if (StringUtils.isNotBlank(oasResourceInfo.resourceNamePlural())) {
-                return oasResourceInfo.resourceNamePlural();
+        if (oasResourceInfoObject instanceof OasResourceInfoModel oasResourceInfo) {
+            if (StringUtils.isNotBlank(oasResourceInfo.getResourceNamePlural())) {
+                return oasResourceInfo.getResourceNamePlural();
             }
         }
         return null;
@@ -278,7 +279,7 @@ public class JsonApiOperationsCustomizer {
         return Collections.emptyList();
     }
 
-    private List<Parameter> generateParameters(OasOperationInfo oasOperationInfo,
+    private List<Parameter> generateParameters(OasOperationInfoModel oasOperationInfo,
                                                List<String> supportedIncludes,
                                                OasOperationInfoUtil.Info extraOperationInfo) {
         Map<String, Parameter> parameters = new LinkedHashMap<>();
@@ -385,34 +386,34 @@ public class JsonApiOperationsCustomizer {
         }
     }
 
-    private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfo.SecurityConfig securityConfig) {
+    private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfoModel.SecurityConfig securityConfig) {
         if (securityConfig != null) {
             List<SecurityRequirement> securityRequirements = new ArrayList<>();
-            if (securityConfig.clientCredentialsSupported()) {
+            if (securityConfig.isClientCredentialsSupported()) {
                 securityRequirements.add(new SecurityRequirement().addList(OAUTH2_CLIENT_CREDENTIALS));
             }
-            if (securityConfig.pkceSupported()) {
-                securityRequirements.add(new SecurityRequirement().addList(OAUTH2_AUTHORIZATION_CODE_PKCE, Arrays.asList(securityConfig.requiredScopes())));
+            if (securityConfig.isPkceSupported()) {
+                securityRequirements.add(new SecurityRequirement().addList(OAUTH2_AUTHORIZATION_CODE_PKCE, securityConfig.getRequiredScopes()));
             }
             return securityRequirements;
         }
         return null;
     }
 
-    private List<Parameter> generateCustomParameters(OasOperationInfo oasOperationInfo) {
+    private List<Parameter> generateCustomParameters(OasOperationInfoModel oasOperationInfo) {
         if (oasOperationInfo != null) {
-            return Arrays.stream(oasOperationInfo.parameters()).map(
-                    parameterConfig -> {
+            return oasOperationInfo.getParameters().stream().map(
+                    p -> {
                         Parameter parameter = new Parameter();
-                        parameter.setName(parameterConfig.name());
-                        parameter.setDescription(parameterConfig.description());
-                        parameter.setRequired(parameterConfig.required());
-                        parameter.setIn(parameterConfig.in().getName());
-                        if (parameterConfig.array()) {
-                            parameter.setSchema(new ArraySchema().items(new Schema().type(parameterConfig.type().getType()).example(parameterConfig.example())));
+                        parameter.setName(p.getName());
+                        parameter.setDescription(p.getDescription());
+                        parameter.setRequired(p.isRequired());
+                        parameter.setIn(p.getIn().getName());
+                        if (p.isArray()) {
+                            parameter.setSchema(new ArraySchema().items(new Schema().type(p.getType().getType()).example(p.getExample())));
                         } else {
-                            parameter.setExample(parameterConfig.example());
-                            parameter.setSchema(new Schema().type(parameterConfig.type().getType()));
+                            parameter.setExample(p.getExample());
+                            parameter.setSchema(new Schema().type(p.getType().getType()));
                         }
                         return parameter;
                     }

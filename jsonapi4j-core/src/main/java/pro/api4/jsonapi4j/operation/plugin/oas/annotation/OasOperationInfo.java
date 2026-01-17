@@ -1,6 +1,8 @@
-package pro.api4.jsonapi4j.operation.plugin.oas.model;
+package pro.api4.jsonapi4j.operation.plugin.oas.annotation;
 
-import lombok.Getter;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.NotApplicable;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.Type;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -16,30 +18,6 @@ public @interface OasOperationInfo {
     Parameter[] parameters() default {};
 
     Class<?> payloadType() default NotApplicable.class;
-
-    @Getter
-    enum In {
-        QUERY("query"), PATH("path"), HEADER("header");
-
-        private final String name;
-
-        In(String name) {
-            this.name = name;
-        }
-
-    }
-
-    @Getter
-    enum Type {
-        STRING("string"), NUMBER("number"), INTEGER("integer"), BOOLEAN("boolean");
-
-        private String type;
-
-        Type(String type) {
-            this.type = type;
-        }
-
-    }
 
     @Target({})
     @Retention(RetentionPolicy.RUNTIME)
@@ -59,10 +37,6 @@ public @interface OasOperationInfo {
         boolean required() default true;
         boolean array() default false;
         Type type() default Type.STRING;
-    }
-
-    class NotApplicable {
-
     }
 
 }

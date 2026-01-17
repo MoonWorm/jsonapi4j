@@ -6,7 +6,8 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
         parameters = {
                 @OasOperationInfo.Parameter(
                         name = "id",
-                        in = OasOperationInfo.In.PATH,
+                        in = In.PATH,
                         description = "User unique identifier",
                         example = "3"
                 )

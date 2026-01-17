@@ -1,4 +1,6 @@
-package pro.api4.jsonapi4j.domain.plugin.oas.model;
+package pro.api4.jsonapi4j.domain.plugin.oas.annotation;
+
+import pro.api4.jsonapi4j.domain.plugin.oas.model.NoAttributes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,9 +16,5 @@ public @interface OasResourceInfo {
     String resourceNamePlural() default  "";
 
     Class<?> attributes() default NoAttributes.class;
-
-    class NoAttributes {
-
-    }
 
 }

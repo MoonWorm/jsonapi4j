@@ -5,9 +5,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo.Parameter;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
@@ -28,7 +29,7 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountr
         parameters = {
                 @Parameter(
                         name = "id",
-                        in = OasOperationInfo.In.PATH,
+                        in = In.PATH,
                         description = "Country unique identifier (ISO 3166)",
                         example = "US"
                 )

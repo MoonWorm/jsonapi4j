@@ -1,6 +1,7 @@
-package pro.api4.jsonapi4j.domain.plugin.oas.model;
+package pro.api4.jsonapi4j.domain.plugin.oas.annotation;
 
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.NoLinkageMeta;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,9 +15,5 @@ public @interface OasRelationshipInfo {
     Class<?> resourceLinkageMetaType() default NoLinkageMeta.class;
 
     Class<? extends Resource<?>>[] relationshipTypes() default {};
-
-    class NoLinkageMeta {
-
-    }
 
 }

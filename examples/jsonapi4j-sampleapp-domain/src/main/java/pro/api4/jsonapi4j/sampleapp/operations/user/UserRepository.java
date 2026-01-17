@@ -3,9 +3,10 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.Parameter;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo.SecurityConfig;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo.Parameter;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.operation.ResourceRepository;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -34,7 +35,7 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
             parameters = {
                     @Parameter(
                             name = "id",
-                            in = OasOperationInfo.In.PATH,
+                            in = In.PATH,
                             description = "User unique identifier",
                             example = "3"
                     )

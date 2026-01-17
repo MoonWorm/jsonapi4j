@@ -3,7 +3,8 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -33,7 +34,7 @@ public class UserRelativesRepository implements ToManyRelationshipBatchAwareRepo
             parameters = {
                     @OasOperationInfo.Parameter(
                             name = "id",
-                            in = OasOperationInfo.In.PATH,
+                            in = In.PATH,
                             description = "User unique identifier",
                             example = "3"
                     )

@@ -6,8 +6,9 @@ import io.swagger.v3.oas.models.media.Schema;
 import lombok.Data;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.*;
-import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfo;
-import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfo;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.NoLinkageMeta;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfoModel;
+import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -157,8 +158,8 @@ public class JsonApiResponseSchemaCustomizer {
     private PrimaryAndNestedSchemas generateJsonApiAttributesSchema(RegisteredResource<Resource<?>> registeredResource) {
         PrimaryAndNestedSchemas result;
         Object pluginInfo = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (pluginInfo != null && (pluginInfo instanceof OasResourceInfo oasResourceInfo)) {
-            Class<?> attClass = oasResourceInfo.attributes();
+        if (pluginInfo != null && (pluginInfo instanceof OasResourceInfoModel oasResourceInfo)) {
+            Class<?> attClass = oasResourceInfo.getAttributes();
             result = generateAllSchemasFromType(attClass);
         } else {
             result = new PrimaryAndNestedSchemas(new Schema(), Collections.emptyList());
@@ -188,12 +189,12 @@ public class JsonApiResponseSchemaCustomizer {
 
             Object pluginInfo = emptyIfNull(registeredRelationship.getPluginInfo()).get(JsonApiOasPlugin.NAME);
             if (pluginInfo != null
-                    && (pluginInfo instanceof OasRelationshipInfo oasRelationshipInfo)
-                    && oasRelationshipInfo.resourceLinkageMetaType() != OasRelationshipInfo.NoLinkageMeta.class) {
+                    && (pluginInfo instanceof OasRelationshipInfoModel oasRelationshipInfo)
+                    && oasRelationshipInfo.getResourceLinkageMetaType() != NoLinkageMeta.class) {
                 PrimaryAndNestedSchemas customToManyRelationshipsDocSchema = generateCustomToManyRelationshipsDocSchema(
                         relResourceType,
                         relationshipName,
-                        oasRelationshipInfo.resourceLinkageMetaType()
+                        oasRelationshipInfo.getResourceLinkageMetaType()
                 );
                 result.addToNested(customToManyRelationshipsDocSchema);
                 relationshipsSchemaProperties.put(
@@ -215,12 +216,12 @@ public class JsonApiResponseSchemaCustomizer {
 
             Object pluginInfo = emptyIfNull(registeredRelationship.getPluginInfo()).get(JsonApiOasPlugin.NAME);
             if (pluginInfo != null
-                    && (pluginInfo instanceof OasRelationshipInfo oasRelationshipInfo)
-                    && oasRelationshipInfo.resourceLinkageMetaType() != OasRelationshipInfo.NoLinkageMeta.class) {
+                    && (pluginInfo instanceof OasRelationshipInfoModel oasRelationshipInfo)
+                    && oasRelationshipInfo.getResourceLinkageMetaType() != NoLinkageMeta.class) {
                 PrimaryAndNestedSchemas customToOneRelationshipDocSchema = generateCustomToOneRelationshipDocSchema(
                         relResourceType,
                         relationshipName,
-                        oasRelationshipInfo.resourceLinkageMetaType()
+                        oasRelationshipInfo.getResourceLinkageMetaType()
                 );
                 relationshipsSchemaProperties.put(
                         relationshipName.getName(),
@@ -374,9 +375,9 @@ public class JsonApiResponseSchemaCustomizer {
                 .stream()
                 .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
                 .filter(Objects::nonNull)
-                .filter(r -> r instanceof OasRelationshipInfo)
-                .map(r -> (OasRelationshipInfo) r)
-                .flatMap(r -> Arrays.stream(r.relationshipTypes()))
+                .filter(r -> r instanceof OasRelationshipInfoModel)
+                .map(r -> (OasRelationshipInfoModel) r)
+                .flatMap(r -> r.getRelationshipTypes().stream())
                 .map(r -> domainRegistry.getResource(r))
                 .map(RegisteredResource::getResourceType);
         Stream<ResourceType> toOneRelationshipResourceTypes = domainRegistry
@@ -384,9 +385,9 @@ public class JsonApiResponseSchemaCustomizer {
                 .stream()
                 .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
                 .filter(Objects::nonNull)
-                .filter(r -> r instanceof OasRelationshipInfo)
-                .map(r -> (OasRelationshipInfo) r)
-                .flatMap(r -> Arrays.stream(r.relationshipTypes()))
+                .filter(r -> r instanceof OasRelationshipInfoModel)
+                .map(r -> (OasRelationshipInfoModel) r)
+                .flatMap(r -> r.getRelationshipTypes().stream())
                 .map(r -> domainRegistry.getResource(r))
                 .map(RegisteredResource::getResourceType);
         List<ResourceType> resourcesForRelationships = Stream.concat(

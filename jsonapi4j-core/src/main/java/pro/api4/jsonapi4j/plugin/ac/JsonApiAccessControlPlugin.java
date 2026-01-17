@@ -11,7 +11,8 @@ import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlFor
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 
 import java.util.Map;
-import java.util.function.Supplier;
+
+import static pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel.merge;
 
 public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
 
@@ -28,31 +29,31 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
                 = AccessControlModel.fromFieldsAnnotations(operation.getClass());
         AccessControlModel classLevel = AccessControlModel.fromClassAnnotation(operation.getClass());
         if (ReadResourceByIdOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("readById"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("readById"));
         }
         if (ReadMultipleResourcesOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("readPage"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("readPage"));
         }
         if (CreateResourceOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("create"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("create"));
         }
         if (UpdateResourceOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("update"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("update"));
         }
         if (DeleteResourceOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("delete"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("delete"));
         }
         if (ReadToOneRelationshipOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("readOne"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("readOne"));
         }
         if (ReadToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("readMany"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("readMany"));
         }
         if (UpdateToOneRelationshipOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("update"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("update"));
         }
         if (UpdateToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
-            return getOrDefault(() -> methodsAnnotations.get("update"), classLevel);
+            return merge(classLevel, methodsAnnotations.get("update"));
         }
         return classLevel;
     }
@@ -105,15 +106,6 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
                 .resourceIdentifierClassLevel(resourceIdentifierClassLevel)
                 .resourceIdentifierMetaFieldLevel(resourceIdentifierMetaFieldLevel)
                 .build();
-    }
-
-    private Object getOrDefault(Supplier<AccessControlModel> primarySupplier,
-                                AccessControlModel secondary) {
-        AccessControlModel primary = primarySupplier.get();
-        if (primary == null) {
-            return secondary;
-        }
-        return primary;
     }
 
 }

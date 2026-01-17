@@ -3,7 +3,8 @@ package pro.api4.jsonapi4j.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.Data;
 import pro.api4.jsonapi4j.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.NotApplicable;
+import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.operation.RegisteredOperation;
@@ -38,7 +39,7 @@ public class JsonApiRequestBodySchemaCustomizer {
         if (operation != null) {
             if (emptyIfNull(operation.getPluginInfo()).get(JsonApiOasPlugin.NAME) instanceof OasOperationInfo oasOperationInfo) {
                 Class<?> payloadType = oasOperationInfo.payloadType();
-                if (payloadType != null && !OasOperationInfo.NotApplicable.class.isAssignableFrom(payloadType)) {
+                if (payloadType != null && !NotApplicable.class.isAssignableFrom(payloadType)) {
                     PrimaryAndNestedSchemas schemas = generateAllSchemasFromType(payloadType);
                     registerSchemaIfNotExists(schemas.getPrimarySchema(), openApi);
                     schemas.getNestedSchemas().forEach(s -> registerSchemaIfNotExists(s, openApi));
