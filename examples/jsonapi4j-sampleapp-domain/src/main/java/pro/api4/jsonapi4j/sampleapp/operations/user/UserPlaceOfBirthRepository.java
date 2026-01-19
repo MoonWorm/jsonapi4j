@@ -1,17 +1,18 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
-import pro.api4.jsonapi4j.operation.ToOneRelationshipBatchAwareRepository;
+import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.ToOneRelationshipRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
@@ -24,7 +25,9 @@ import java.util.stream.Collectors;
         relationship = UserPlaceOfBirthRelationship.class
 )
 @RequiredArgsConstructor
-public class UserPlaceOfBirthRepository implements ToOneRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
+public class UserPlaceOfBirthRepository implements
+        ToOneRelationshipRepository<UserDbEntity, DownstreamCountry>,
+        BatchReadToOneRelationshipOperation<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;
     private final UserDb userDb;

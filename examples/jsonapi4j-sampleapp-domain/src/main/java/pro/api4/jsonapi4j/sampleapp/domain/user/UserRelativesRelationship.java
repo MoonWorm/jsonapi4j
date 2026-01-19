@@ -15,13 +15,13 @@ import java.util.Map;
 public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> {
 
     @Override
-    public String resolveResourceIdentifierType(UserRelationshipInfo userDbEntity) {
+    public String resolveResourceIdentifierType(UserRelationshipInfo userRelationshipInfo) {
         return "users";
     }
 
     @Override
-    public String resolveResourceIdentifierId(UserRelationshipInfo userDbEntity) {
-        return userDbEntity.getRelativeUserId();
+    public String resolveResourceIdentifierId(UserRelationshipInfo userRelationshipInfo) {
+        return userRelationshipInfo.getRelativeUserId();
     }
 
     @Override

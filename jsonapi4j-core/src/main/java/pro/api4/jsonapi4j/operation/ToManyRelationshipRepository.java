@@ -5,17 +5,24 @@ import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 public interface ToManyRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> extends
-        ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>,
-        UpdateToManyRelationshipOperation {
+        UpdateToManyRelationshipOperation, ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> {
 
     @Override
-    default CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest) {
-        throw new OperationNotFoundException(OperationType.READ_TO_ONE_RELATIONSHIP);
+    default CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest request) {
+        throw new OperationNotFoundException(
+                OperationType.READ_TO_MANY_RELATIONSHIP,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
     }
 
     @Override
     default void update(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.UPDATE_TO_MANY_RELATIONSHIP);
+        throw new OperationNotFoundException(
+                OperationType.UPDATE_TO_MANY_RELATIONSHIP,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
     }
 
     @Override

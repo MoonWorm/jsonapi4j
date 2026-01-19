@@ -1,17 +1,18 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
-import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
+import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.ToManyRelationshipRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,9 @@ import java.util.stream.Collectors;
 @JsonApiRelationshipOperation(
         relationship = UserRelativesRelationship.class
 )
-public class UserRelativesRepository implements ToManyRelationshipBatchAwareRepository<UserDbEntity, UserRelationshipInfo> {
+public class UserRelativesRepository implements
+        ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo>,
+        BatchReadToManyRelationshipOperation<UserDbEntity, UserRelationshipInfo> {
 
     private final UserDb userDb;
 

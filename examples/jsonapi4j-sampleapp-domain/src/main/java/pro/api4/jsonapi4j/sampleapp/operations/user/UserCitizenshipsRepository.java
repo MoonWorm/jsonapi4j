@@ -4,10 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.operation.ToManyRelationshipBatchAwareRepository;
+import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.ToManyRelationshipRepository;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.plugin.oas.model.In;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
@@ -16,13 +17,13 @@ import pro.api4.jsonapi4j.plugin.ac.impl.ownership.ResourceIdFromUrlPathExtracto
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
+import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,7 +51,9 @@ import java.util.stream.Collectors;
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
 @RequiredArgsConstructor
-public class UserCitizenshipsRepository implements ToManyRelationshipBatchAwareRepository<UserDbEntity, DownstreamCountry> {
+public class UserCitizenshipsRepository implements
+        ToManyRelationshipRepository<UserDbEntity, DownstreamCountry>,
+        BatchReadToManyRelationshipOperation<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;
     private final UserDb userDb;
@@ -112,7 +115,7 @@ public class UserCitizenshipsRepository implements ToManyRelationshipBatchAwareR
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        ToManyRelationshipBatchAwareRepository.super.validateUpdateToMany(request);
+        ToManyRelationshipRepository.super.validateUpdateToMany(request);
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
         if (payload == null) {
             throw new InvalidPayloadException("Payload is required for this operation type but it's missing.");

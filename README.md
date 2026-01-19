@@ -47,7 +47,7 @@ flowchart TD
     U[users] -->|relatives| U
 ```
 
-Then, let's implement a few operations for these resources - reading multiple `users`, and retrieving which are the other `users` the current user has as `relatives`.
+Then, let's implement a few operations - reading multiple `users`, and retrieving which are the other `users` the current user has as `relatives`.
 
 ## 3. Define the JSON:API Resource for Users
 
@@ -247,25 +247,31 @@ To implement this, we'll create a class that implements the `ToManyRelationship`
 ```java
 @Component
 @JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class) // 1.
-public class UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserDbEntity> { // 2.
+public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> { // 2.
 
     @Override // 3.
-    public String resolveResourceIdentifierType(UserDbEntity userDbEntity) {
+    public String resolveResourceIdentifierType(UserRelationshipInfo userRelationshipInfo) {
         return "users";
     }
 
     @Override // 4.
-    public String resolveResourceIdentifierId(UserDbEntity userDbEntity) {
-        return userDbEntity.getId();
+    public String resolveResourceIdentifierId(UserRelationshipInfo userRelationshipInfo) {
+        return userRelationshipInfo.getRelativeUserId();
+    }
+
+    @Override // 5.
+    public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, UserRelationshipInfo userRelationshipInfo) {
+        return Map.of("relationshipType", userRelationshipInfo.getRelationshipType());
     }
 
 }
 ```
 
-1. `@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)` - defines the name of the relationship - `relatives` and identifies which resource this relationship belongs to - `UserResource`
-2. `UserRelativesRelationship implements ToManyRelationship<UserDbEntity, UserDbEntity>` - this relationship must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model that represents relationship resource and internal model of the parent resource. In this particular case both types are represented by the same model - `UserDbEntity`.   
-3. `String resolveResourceIdentifierType(UserDbEntity userDbEntity)` - determines the type of the related resource - `users`. In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
-4. `String resolveResourceIdentifierId(UserDbEntity userDbEntity)` - resolves the unique identifier of the user
+1. `@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)` - defines the name of the relationship - `relatives` and identifies which resource this relationship belongs to - `UserResource`.
+2. `UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo>` - this relationship must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with a type - internal model that represents relationship linkage - `UserRelationshipInfo`.   
+3. `String resolveResourceIdentifierType(UserRelationshipInfo userRelationshipInfo)` - determines the type of the related resource - `users`. In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
+4. `String resolveResourceIdentifierId(UserRelationshipInfo userRelationshipInfo)` - resolves the unique identifier of the user.
+5. `Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, UserRelationshipInfo userRelationshipInfo)` - optional, we can place the information about the nature of relationships between two people into 'meta' object of the JSON:API Resource Identifier. Please refer the [JSON:API specification](https://jsonapi.org/format/#document-resource-identifier-objects) for more details.
 
 ## 6. Add the Missing Relationship Operation
 
@@ -275,8 +281,8 @@ To do this, implement `UserRelativesRepository` - this tells **JsonApi4j** how t
 
 ```java
 @Component
-@JsonApiRelationshipOperation(resource = UserResource.class, relationship = UserRelativesRelationship.class) // 1.
-public class UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserDbEntity> { // 2.
+@JsonApiRelationshipOperation(relationship = UserRelativesRelationship.class) // 1.
+public class UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo> { // 2.
     
     private final UserDb userDb;
     
@@ -285,19 +291,36 @@ public class UserRelativesRepository implements ToManyRelationshipRepository<Use
     }
     
     @Override
-    public CursorPageableResponse<UserDbEntity> readMany(JsonApiRequest request) { // 3.
-        List<String> relativeIds = userDb.getUserRelatives(request.getResourceId());
-        List<UserDbEntity> relatives = userDb.readByIds(relativeIds);
-        return CursorPageableResponse.fromItemsPageable(relatives, request.getCursor(), 2); // 4. 
+    public CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request) { // 3.
+        return CursorPageableResponse.fromItemsPageable(
+                userDb.getUserRelatives(request.getResourceId()),
+                request.getCursor(),
+                2 // 4.
+        ); 
     }
     
 }
 ```
 
-1. `@JsonApiRelationshipOperation(resource = UserResource.class, relationship = UserRelativesRelationship.class)` uniquely identify which resource and relationship this operation belongs to (`UserResource` and `UserRelativesRelationship` accordingly).
-2. `UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserDbEntity>` - this repository must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model that represents relationship resource and internal model of the parent resource. In this particular case both types are represented by the same model - `UserDbEntity`.
-3. `CursorPageableResponse<UserDbEntity> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipRepository`.
-4. Let's set page limit to 2 to showcase the pagination
+1. `@JsonApiRelationshipOperation(relationship = UserRelativesRelationship.class)` identifies which relationship this operation belongs to.
+2. `UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo>` - this repository must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model of the parent resource (`UserDbEntity`) and internal model that represents relationship resource (`UserRelationshipInfo`).
+3. `CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipRepository`.
+4. Let's set page size to 2 in order to showcase the pagination
+
+Here is the internal modal that represents user relatives linkage:
+```java
+public class UserRelationshipInfo {
+
+    private final String relativeUserId;
+    private final RelationshipType relationshipType;
+
+    public enum RelationshipType {
+        HUSBAND, WIFE, SON, DAUGHTER, MOTHER, FATHER, BROTHER
+    }
+    
+    // getters/setters/...
+}
+```
 
 We also need to extend our existing `UserDb` to include information about user relatives.
 ```java
@@ -306,16 +329,42 @@ public class UserDb {
     
     //  ...
 
-    private Map<String, List<String>> userRelatives = new ConcurrentHashMap<>();
+    private Map<String, List<UserRelationshipInfo>> userRalatives = new ConcurrentHashMap<>();
     {
-        userRalatives.put("1", List.of("2"));
-        userRalatives.put("2", List.of("1", "4"));
+        userRalatives.put(
+                "1",
+                List.of(
+                        new UserRelationshipInfo("2", RelationshipType.HUSBAND),
+                        new UserRelationshipInfo("3", RelationshipType.BROTHER)
+                )
+        );
+        userRalatives.put(
+                "2",
+                List.of(
+                        new UserRelationshipInfo("1", RelationshipType.WIFE),
+                        new UserRelationshipInfo("4", RelationshipType.SON)
+                )
+        );
         userRalatives.put("3", Collections.emptyList());
-        userRalatives.put("4", List.of("1"));
-        userRalatives.put("5", List.of("1", "2", "4"));
+        userRalatives.put(
+                "4",
+                List.of(
+                        new UserRelationshipInfo("1", RelationshipType.FATHER),
+                        new UserRelationshipInfo("2", RelationshipType.MOTHER)
+                )
+        );
+        userRalatives.put(
+                "5",
+                List.of(
+                        new UserRelationshipInfo("1", RelationshipType.BROTHER),
+                        new UserRelationshipInfo("2", RelationshipType.DAUGHTER),
+                        new UserRelationshipInfo("3", RelationshipType.FATHER),
+                        new UserRelationshipInfo("4", RelationshipType.BROTHER)
+                )
+        );
     }
 
-    public List<String> getUserRelatives(String userId) {
+    public List<UserRelationshipInfo> getUserRelatives(String userId) {
         return userRalatives.get(userId);
     }
 
@@ -340,7 +389,7 @@ Response:
     "related": {
       "users": {
         "href": "/users?filter[id]=1,2",
-        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": [
             "1",
@@ -354,11 +403,17 @@ Response:
   "data": [
     {
       "id": "1",
-      "type": "users"
+      "type": "users",
+      "meta": {
+        "relationshipType": "BROTHER"
+      }
     },
     {
       "id": "2",
-      "type": "users"
+      "type": "users",
+      "meta": {
+        "relationshipType": "DAUGHTER"
+      }
     }
   ]
 }
@@ -382,7 +437,7 @@ Response:
     "related": {
       "users": {
         "href": "/users?filter[id]=1,2",
-        "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": [
             "1",
@@ -396,11 +451,17 @@ Response:
   "data": [
     {
       "id": "1",
-      "type": "users"
+      "type": "users",
+      "meta": {
+        "relationshipType": "BROTHER"
+      }
     },
     {
       "id": "2",
-      "type": "users"
+      "type": "users",
+      "meta": {
+        "relationshipType": "DAUGHTER"
+      }
     }
   ],
   "included": [
@@ -409,7 +470,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "John Doe",
-        "email": "john@doe.com"
+        "email": "john@doe.com", 
+        "creditCardNumber": "123456789"
       },
       "relationships": {
         "relatives": {
@@ -427,7 +489,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jane Doe",
-        "email": "jane@doe.com"
+        "email": "jane@doe.com", 
+        "creditCardNumber": "222456789"
       },
       "relationships": {
         "relatives": {
@@ -460,7 +523,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "John Doe",
-        "email": "john@doe.com"
+        "email": "john@doe.com",
+        "creditCardNumber": "123456789"
       },
       "relationships": {
         "relatives": {
@@ -478,7 +542,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jane Doe",
-        "email": "jane@doe.com"
+        "email": "jane@doe.com",
+        "creditCardNumber": "222456789"
       },
       "relationships": {
         "relatives": {
@@ -512,15 +577,14 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jack Doe",
-        "email": "jack@doe.com"
+        "email": "jack@doe.com",
+        "creditCardNumber": "333456789"
       },
       "relationships": {
         "relatives": {
           "links": {
             "self": "/users/3/relationships/relatives",
-            "related": {
-
-            }
+            "related": {}
           },
           "data": []
         }
@@ -534,7 +598,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jessy Doe",
-        "email": "jessy@doe.com"
+        "email": "jessy@doe.com",
+        "creditCardNumber": "444456789"
       },
       "relationships": {
         "relatives": {
@@ -542,11 +607,12 @@ Response:
             "self": "/users/4/relationships/relatives",
             "related": {
               "users": {
-                "href": "/users?filter[id]=1",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "href": "/users?filter[id]=1,2",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
-                    "1"
+                    "1",
+                    "2"
                   ]
                 }
               }
@@ -555,7 +621,17 @@ Response:
           "data": [
             {
               "id": "1",
-              "type": "users"
+              "type": "users",
+              "meta": {
+                "relationshipType": "FATHER"
+              }
+            },
+            {
+              "id": "2",
+              "type": "users",
+              "meta": {
+                "relationshipType": "MOTHER"
+              }
             }
           ]
         }
@@ -567,11 +643,31 @@ Response:
   ],
   "included": [
     {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com",
+        "creditCardNumber": "222456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    },
+    {
       "id": "1",
       "type": "users",
       "attributes": {
         "fullName": "John Doe",
-        "email": "john@doe.com"
+        "email": "john@doe.com",
+        "creditCardNumber": "123456789"
       },
       "relationships": {
         "relatives": {
@@ -588,7 +684,7 @@ Response:
 }
 ```
 
-User '3' has no relatives. While user '4' has one relative with id '1'. The corresponding user resource can be found in the "included" section.
+User '3' has no relatives. While user '4' has one relative with id '1' and '2'. The corresponding user resource can be found in the "included" section.
 
 ### Fetch a Specific Page of Users with Relatives and their Relatives
 
@@ -609,15 +705,14 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jack Doe",
-        "email": "jack@doe.com"
+        "email": "jack@doe.com",
+        "creditCardNumber": "333456789"
       },
       "relationships": {
         "relatives": {
           "links": {
             "self": "/users/3/relationships/relatives",
-            "related": {
-
-            }
+            "related": {}
           },
           "data": []
         }
@@ -631,7 +726,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jessy Doe",
-        "email": "jessy@doe.com"
+        "email": "jessy@doe.com",
+        "creditCardNumber": "444456789"
       },
       "relationships": {
         "relatives": {
@@ -639,11 +735,12 @@ Response:
             "self": "/users/4/relationships/relatives",
             "related": {
               "users": {
-                "href": "/users?filter[id]=1",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "href": "/users?filter[id]=1,2",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
-                    "1"
+                    "1",
+                    "2"
                   ]
                 }
               }
@@ -652,7 +749,17 @@ Response:
           "data": [
             {
               "id": "1",
-              "type": "users"
+              "type": "users",
+              "meta": {
+                "relationshipType": "FATHER"
+              }
+            },
+            {
+              "id": "2",
+              "type": "users",
+              "meta": {
+                "relationshipType": "MOTHER"
+              }
             }
           ]
         }
@@ -664,11 +771,50 @@ Response:
   ],
   "included": [
     {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com",
+        "creditCardNumber": "222456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    },
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com",
+        "creditCardNumber": "444456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/4"
+      }
+    },
+    {
       "id": "1",
       "type": "users",
       "attributes": {
         "fullName": "John Doe",
-        "email": "john@doe.com"
+        "email": "john@doe.com",
+        "creditCardNumber": "123456789"
       },
       "relationships": {
         "relatives": {
@@ -677,7 +823,7 @@ Response:
             "related": {
               "users": {
                 "href": "/users?filter[id]=2,3",
-                "describedby": "https://github.com/MoonWorm/jsonapi4j/tree/main/schemas/oas-schema-to-many-relationships-related-link.yaml",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
                     "2",
@@ -690,13 +836,85 @@ Response:
           "data": [
             {
               "id": "2",
-              "type": "users"
+              "type": "users",
+              "meta": {
+                "relationshipType": "HUSBAND"
+              }
             },
             {
               "id": "3",
-              "type": "users"
+              "type": "users",
+              "meta": {
+                "relationshipType": "BROTHER"
+              }
             }
           ]
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com",
+        "creditCardNumber": "222456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=1,4",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "1",
+                    "4"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users",
+              "meta": {
+                "relationshipType": "WIFE"
+              }
+            },
+            {
+              "id": "4",
+              "type": "users",
+              "meta": {
+                "relationshipType": "SON"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    },
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com",
+        "creditCardNumber": "123456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives"
+          }
         }
       },
       "links": {
@@ -708,7 +926,8 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jack Doe",
-        "email": "jack@doe.com"
+        "email": "jack@doe.com",
+        "creditCardNumber": "333456789"
       },
       "relationships": {
         "relatives": {
@@ -720,30 +939,16 @@ Response:
       "links": {
         "self": "/users/3"
       }
-    },
-    {
-      "id": "2",
-      "type": "users",
-      "attributes": {
-        "fullName": "Jane Doe",
-        "email": "jane@doe.com"
-      },
-      "relationships": {
-        "relatives": {
-          "links": {
-            "self": "/users/2/relationships/relatives"
-          }
-        }
-      },
-      "links": {
-        "self": "/users/2"
-      }
     }
   ]
 }
 ```
 
-User '3' has no relatives. While user '4' has one relative with id '1'. User '1' has relatives '2' and '3'. All the mentioned user resources can be found in the "included" section.
+User '3' has no relatives. While user '4' has one relative with id '1' and '2'. User '1' has relatives '2' and '3' and user '2' has relatives '1' and '4'. All the mentioned user resources can be found in the "included" section.
+
+# Extending the existing domain
+
+Let's proceed with the domain from the above and showcase few more features.
 
 # Contributing 
 

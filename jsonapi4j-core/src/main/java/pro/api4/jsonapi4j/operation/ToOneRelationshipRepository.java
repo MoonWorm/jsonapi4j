@@ -4,18 +4,24 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 public interface ToOneRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> extends
-        ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>,
-        UpdateToOneRelationshipOperation
-{
+        UpdateToOneRelationshipOperation, ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> {
 
     @Override
-    default RELATIONSHIP_DTO readOne(JsonApiRequest relationshipRequest) {
-        throw new OperationNotFoundException(OperationType.READ_TO_MANY_RELATIONSHIP);
+    default RELATIONSHIP_DTO readOne(JsonApiRequest request) {
+        throw new OperationNotFoundException(
+                OperationType.READ_TO_ONE_RELATIONSHIP,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
     }
 
     @Override
     default void update(JsonApiRequest request) {
-        throw new OperationNotFoundException(OperationType.UPDATE_TO_ONE_RELATIONSHIP);
+        throw new OperationNotFoundException(
+                OperationType.UPDATE_TO_ONE_RELATIONSHIP,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
     }
 
     @Override

@@ -10,6 +10,6 @@ public class UserRelationshipInfo {
     private final RelationshipType relationshipType;
 
     public enum RelationshipType {
-        HUSBAND, WIFE, SON, DAUGHTER, MOTHER, FATHER, BROTHER;
+        HUSBAND, WIFE, SON, DAUGHTER, MOTHER, FATHER, BROTHER
     }
 }
