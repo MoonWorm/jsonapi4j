@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.processor.single.relationship;
 
-import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
@@ -15,7 +15,7 @@ import org.apache.commons.lang3.Validate;
 
 import java.util.Optional;
 
-import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 
 @Slf4j
 public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {

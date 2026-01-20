@@ -2,9 +2,9 @@ package pro.api4.jsonapi4j.processor.multi.resource;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.impl.AnonymizationResult;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForCustomClass;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.AnonymizationResult;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
-import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.processor.util.AccessControlUtil.getEffectiveOutboundAccessControlSettings;
 
 

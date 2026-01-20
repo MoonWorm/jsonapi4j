@@ -1,11 +1,11 @@
 package pro.api4.jsonapi4j.processor;
 
-import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import lombok.Getter;
 import lombok.With;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 
 import java.util.concurrent.Executor;
 

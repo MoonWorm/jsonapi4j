@@ -2,17 +2,17 @@ package pro.api4.jsonapi4j.plugin.ac;
 
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 
 import java.util.Map;
 
-import static pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel.merge;
+import static pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel.merge;
 
 public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
 

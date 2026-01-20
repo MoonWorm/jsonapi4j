@@ -1,11 +1,11 @@
 package pro.api4.jsonapi4j.sampleapp.domain.user;
 
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlOwnership;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 

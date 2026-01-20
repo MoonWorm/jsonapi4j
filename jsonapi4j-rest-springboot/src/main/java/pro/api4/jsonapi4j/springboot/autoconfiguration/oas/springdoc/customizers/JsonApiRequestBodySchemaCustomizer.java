@@ -14,7 +14,7 @@ public class JsonApiRequestBodySchemaCustomizer implements OpenApiCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
-        new pro.api4.jsonapi4j.oas.customizer.JsonApiRequestBodySchemaCustomizer(
+        new pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiRequestBodySchemaCustomizer(
                 operationsRegistry
         ).customise(openApi);
     }

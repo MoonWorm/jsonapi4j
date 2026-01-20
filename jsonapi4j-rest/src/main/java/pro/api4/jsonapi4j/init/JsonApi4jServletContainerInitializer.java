@@ -7,21 +7,21 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.oas.OasServlet;
+import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.filter.ac.DefaultPrincipalResolver;
-import pro.api4.jsonapi4j.servlet.filter.ac.JsonApi4jAccessControlFilter;
-import pro.api4.jsonapi4j.servlet.filter.ac.PrincipalResolver;
-import pro.api4.jsonapi4j.servlet.filter.cd.CompoundDocsFilter;
+import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
+import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import jakarta.servlet.FilterRegistration;
@@ -127,7 +127,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
     private void registerAccessControlFilter(ServletContext servletContext, String rootPath) {
         PrincipalResolver principalResolver = initJsonApi4jPrincipalResolver(servletContext);
-        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_ACCESS_CONTROL_FILTER_NAME, new JsonApi4jAccessControlFilter(principalResolver));
+        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_ACCESS_CONTROL_FILTER_NAME, new PrincipalResolvingFilter(principalResolver));
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
                 false, // supposed to be matched before any declared filter mappings of the ServletContext

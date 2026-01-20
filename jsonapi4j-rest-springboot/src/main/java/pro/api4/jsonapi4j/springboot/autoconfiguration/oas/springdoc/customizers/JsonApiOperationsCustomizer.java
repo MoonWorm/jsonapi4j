@@ -27,7 +27,7 @@ public class JsonApiOperationsCustomizer implements OpenApiCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
-        new pro.api4.jsonapi4j.oas.customizer.JsonApiOperationsCustomizer(
+        new pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiOperationsCustomizer(
                 jsonApiRootPath,
                 domainRegistry,
                 operationsRegistry,

@@ -18,7 +18,7 @@ public class CommonOpenApiCustomizer implements OpenApiCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
-        new pro.api4.jsonapi4j.oas.customizer.CommonOpenApiCustomizer(
+        new pro.api4.jsonapi4j.plugin.oas.customizer.CommonOpenApiCustomizer(
                 oasProperties,
                 operationsRegistry
         ).customise(openApi);

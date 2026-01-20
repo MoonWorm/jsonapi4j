@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.servlet.filter.cd.CompoundDocsFilter;
+import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;

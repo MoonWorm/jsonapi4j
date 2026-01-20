@@ -19,7 +19,7 @@ public class JsonApiResponseSchemaCustomizer implements OpenApiCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
-        new pro.api4.jsonapi4j.oas.customizer.JsonApiResponseSchemaCustomizer(
+        new pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiResponseSchemaCustomizer(
                 domainRegistry,
                 operationsRegistry
         ).customise(openApi);

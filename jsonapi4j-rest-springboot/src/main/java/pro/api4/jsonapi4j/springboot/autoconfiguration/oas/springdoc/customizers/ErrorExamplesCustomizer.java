@@ -7,7 +7,7 @@ public class ErrorExamplesCustomizer implements OpenApiCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
-        new pro.api4.jsonapi4j.oas.customizer.ErrorExamplesCustomizer()
+        new pro.api4.jsonapi4j.plugin.oas.customizer.ErrorExamplesCustomizer()
                 .customise(openApi);
     }
 

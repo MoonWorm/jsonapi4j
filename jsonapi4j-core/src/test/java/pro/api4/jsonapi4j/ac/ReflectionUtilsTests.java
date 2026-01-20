@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.ac;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.impl.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;

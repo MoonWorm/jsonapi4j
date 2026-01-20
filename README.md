@@ -946,9 +946,15 @@ Response:
 
 User '3' has no relatives. While user '4' has one relative with id '1' and '2'. User '1' has relatives '2' and '3' and user '2' has relatives '1' and '4'. All the mentioned user resources can be found in the "included" section.
 
-# Extending the existing domain
+# Advanced features
 
 Let's proceed with the domain from the above and showcase few more features.
+
+## Access Control Plugin
+TBA
+
+## OpenApi Plugin
+TBA
 
 # Contributing 
 

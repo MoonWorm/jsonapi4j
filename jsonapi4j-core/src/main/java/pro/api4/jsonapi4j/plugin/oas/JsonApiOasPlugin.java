@@ -2,13 +2,13 @@ package pro.api4.jsonapi4j.plugin.oas;
 
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.domain.plugin.oas.annotation.OasRelationshipInfo;
-import pro.api4.jsonapi4j.domain.plugin.oas.annotation.OasResourceInfo;
-import pro.api4.jsonapi4j.domain.plugin.oas.model.OasRelationshipInfoModel;
-import pro.api4.jsonapi4j.domain.plugin.oas.model.OasResourceInfoModel;
-import pro.api4.jsonapi4j.operation.plugin.oas.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
+import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
+import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.operation.*;
-import pro.api4.jsonapi4j.operation.plugin.oas.model.OasOperationInfoModel;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 
 import java.util.function.Supplier;

@@ -8,7 +8,7 @@ import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
-import pro.api4.jsonapi4j.servlet.filter.ac.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;

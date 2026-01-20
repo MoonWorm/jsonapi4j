@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.processor.single;
 
-import pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.impl.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
-import static pro.api4.jsonapi4j.plugin.ac.impl.AccessControlEvaluator.retrieveDataIfAllowed;
+import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.retrieveDataIfAllowed;
 
 public class SingleDataItemsRetrievalStage {
 

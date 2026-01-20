@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.domain.user;
 
 import pro.api4.jsonapi4j.domain.ToManyRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
-import pro.api4.jsonapi4j.domain.plugin.oas.annotation.OasRelationshipInfo;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 

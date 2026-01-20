@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.domain.user;
 
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
-import pro.api4.jsonapi4j.domain.plugin.oas.annotation.OasResourceInfo;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 @JsonApiResource(resourceType = "users")
