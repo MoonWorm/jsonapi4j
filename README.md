@@ -387,7 +387,9 @@ Finally, this operation will be available under `GET /users/{userId}/relationshi
 
 Request: [/users/5/relationships/relatives](http://localhost:8080/jsonapi/users/5/relationships/relatives)
 
-Response:
+<details>
+<summary>Response</summary>
+
 ```json
 {
   "links": {
@@ -425,6 +427,8 @@ Response:
 }
 ```
 
+</details>
+
 It's worth noting that 'relatives' relationship has its own pagination. The link to the next page can be found in the response under `links` -> `next`.
 
 For example, to fetch the second page of a user's relatives relationship, try:
@@ -434,7 +438,8 @@ For example, to fetch the second page of a user's relatives relationship, try:
 
 Request: [/users/5/relationships/relatives?include=relatives](http://localhost:8080/jsonapi/users/5/relationships/relatives?include=relatives)
 
-Response:
+<details>
+<summary>Response</summary>
 
 ```json
 {
@@ -476,7 +481,7 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "John Doe",
-        "email": "john@doe.com", 
+        "email": "john@doe.com",
         "creditCardNumber": "123456789"
       },
       "relationships": {
@@ -495,7 +500,7 @@ Response:
       "type": "users",
       "attributes": {
         "fullName": "Jane Doe",
-        "email": "jane@doe.com", 
+        "email": "jane@doe.com",
         "creditCardNumber": "222456789"
       },
       "relationships": {
@@ -513,11 +518,15 @@ Response:
 }
 ```
 
+</details>
+
 ### Fetch Multiple Users by IDs
 
 Request: [/users?filter[id]=1,2](http://localhost:8080/jsonapi/users?filter[id]=1,2)
 
-Response:
+<details>
+<summary>Response</summary>
+
 ```json
 {
   "links": {
@@ -566,11 +575,15 @@ Response:
 }
 ```
 
+</details>
+
 ### Fetch a Specific Page of Users with Relatives
 
 Request: [/users?page[cursor]=DoJu&include=relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives)
 
-Response:
+<details>
+<summary>Response</summary>
+
 ```json
 {
   "links": {
@@ -690,6 +703,8 @@ Response:
 }
 ```
 
+</details>
+
 User '3' has no relatives. While user '4' has one relative with id '1' and '2'. The corresponding user resource can be found in the "included" section.
 
 ### Fetch a Specific Page of Users with Relatives and their Relatives
@@ -698,7 +713,9 @@ Now let's read the same users, but with 2-levels of relatives, e.g. with relativ
 
 Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives.relatives)
 
-Response:
+<details>
+<summary>Response</summary>
+
 ```json
 {
   "links": {
@@ -950,6 +967,8 @@ Response:
 }
 ```
 
+</details>
+
 User '3' has no relatives. While user '4' has one relative with id '1' and '2'. User '1' has relatives '2' and '3' and user '2' has relatives '1' and '4'. All the mentioned user resources can be found in the "included" section.
 
 # Advanced features
@@ -983,6 +1002,10 @@ public class UserAttributes {
 2. `@AccessControl(scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"), ownership = @AccessControlOwnership(ownerIdFieldPath = "id"))` on a `creditCardNumber` field level reveal the value for users that: 1. The owners of the corresponding `users` resource 2. Have granted `users.sensitive.read` OAuth2 scope to the requesting app.
 
 Thus, if we send the next request: [/users?filter[id]=4,5](http://localhost:8080/jsonapi/users?filter[id]=4,5) without any HTTP Headers we will the next response:
+
+<details>
+<summary>Response</summary>
+
 ```json
 {
     "links": {
@@ -1021,6 +1044,8 @@ Thus, if we send the next request: [/users?filter[id]=4,5](http://localhost:8080
 }
 ```
 
+</details>
+
 There is no visible `attributes` sections because the request was made on behalf of unauthenticated user. 
 
 Let's add two HTTP Headers: 
@@ -1029,52 +1054,57 @@ Let's add two HTTP Headers:
 
 And the response for the same request now looks like:
 
+<details>
+<summary>Response</summary>
+
 ```json
 {
-    "links": {
-        "self": "/users?filter%5Bid%5D=4%2C5"
-    },
-    "data": [
-        {
-            "id": "4",
-            "type": "users",
-            "attributes": {
-                "fullName": "Jessy Doe",
-                "email": "jessy@doe.com"
-            },
-            "relationships": {               
-                "relatives": {
-                    "links": {
-                        "self": "/users/4/relationships/relatives"
-                    }
-                }
-            },
-            "links": {
-                "self": "/users/4"
-            }
-        },
-        {
-            "id": "5",
-            "type": "users",
-            "attributes": {
-                "fullName": "Jared Doe",
-                "email": "jared@doe.com",
-                "creditCardNumber": "555456789"
-            },
-            "relationships": {               
-                "relatives": {
-                    "links": {
-                        "self": "/users/5/relationships/relatives"
-                    }
-                }
-            },
-            "links": {
-                "self": "/users/5"
-            }
+  "links": {
+    "self": "/users?filter%5Bid%5D=4%2C5"
+  },
+  "data": [
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives"
+          }
         }
-    ]
+      },
+      "links": {
+        "self": "/users/4"
+      }
+    },
+    {
+      "id": "5",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jared Doe",
+        "email": "jared@doe.com",
+        "creditCardNumber": "555456789"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/5/relationships/relatives"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/5"
+      }
+    }
+  ]
 }
 ```
+
+</details>
 
 It's worth noting that we can now see `attributes` sections for both requested users. But for user '5' (authenticated user) we can also see `creditCardNumber`. 
 
