@@ -199,6 +199,10 @@ public class UserDb {
 You can now run your application (for example, on port `8080` by setting Spring Boot's property to `server.port=8080`) and send the next HTTP request: [/users?page[cursor]=DoJu](http://localhost:8080/jsonapi/users?page[cursor]=DoJu).
 
 And then you should receive a paginated, JSON:API-compliant response such as:
+
+<details>
+<summary>Response</summary>
+
 ```json
 {
   "data": [
@@ -233,6 +237,8 @@ And then you should receive a paginated, JSON:API-compliant response such as:
   }
 }
 ```
+
+</details>
 
 Try to remove `page[cursor]=xxx` query parameter - it will just start reading user resources from the very beginning.
 
