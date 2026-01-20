@@ -951,10 +951,142 @@ User '3' has no relatives. While user '4' has one relative with id '1' and '2'. 
 Let's proceed with the domain from the above and showcase few more features.
 
 ## Access Control Plugin
-TBA
+
+Let's extend our domain model by restricting access to `users` resources for non-authenticated users. In addition to that we're going to restrict access to `creditCardNumber` field in `UserAttributes` for non-resource owners.  
+
+In order to achieve that we just need to place `@AccessControl` annotation on top of `UserAttributes` class and above `creditCardNumber` field like that: 
+
+```java
+@AccessControl(authenticated = Authenticated.AUTHENTICATED) // 1.
+public class UserAttributes {
+    
+    private final String fullName;
+    private final String email;
+
+    // 2.
+    @AccessControl(
+            scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
+            ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+    )
+    private final String creditCardNumber;
+
+}
+```
+
+1. `@AccessControl(authenticated = Authenticated.AUTHENTICATED)` on a class level restricts access to the entire JSON:API Attributes Object for all non-authenticated users.
+2. `@AccessControl(scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"), ownership = @AccessControlOwnership(ownerIdFieldPath = "id"))` on a `creditCardNumber` field level reveal the value for users that: 1. The owners of the corresponding `users` resource 2. Have granted `users.sensitive.read` OAuth2 scope to the requesting app.
+
+Thus, if we send the next request: [/users?filter[id]=4,5](http://localhost:8080/jsonapi/users?filter[id]=4,5) without any HTTP Headers we will the next response:
+```json
+{
+    "links": {
+        "self": "/users?filter%5Bid%5D=4%2C5"
+    },
+    "data": [
+        {
+            "id": "4",
+            "type": "users",
+            "relationships": {
+                "relatives": {
+                    "links": {
+                        "self": "/users/4/relationships/relatives"
+                    }
+                }
+            },
+            "links": {
+                "self": "/users/4"
+            }
+        },
+        {
+            "id": "5",
+            "type": "users",
+            "relationships": {               
+                "relatives": {
+                    "links": {
+                        "self": "/users/5/relationships/relatives"
+                    }
+                }
+            },
+            "links": {
+                "self": "/users/5"
+            }
+        }
+    ]
+}
+```
+
+There is no visible `attributes` sections because the request was made on behalf of unauthenticated user. 
+
+Let's add two HTTP Headers: 
+1. `X-Authenticated-User-Id: 5`
+2. `X-Authenticated-User-Granted-Scopes: users.sensitive.read`
+
+And the response for the same request now looks like:
+
+```json
+{
+    "links": {
+        "self": "/users?filter%5Bid%5D=4%2C5"
+    },
+    "data": [
+        {
+            "id": "4",
+            "type": "users",
+            "attributes": {
+                "fullName": "Jessy Doe",
+                "email": "jessy@doe.com"
+            },
+            "relationships": {               
+                "relatives": {
+                    "links": {
+                        "self": "/users/4/relationships/relatives"
+                    }
+                }
+            },
+            "links": {
+                "self": "/users/4"
+            }
+        },
+        {
+            "id": "5",
+            "type": "users",
+            "attributes": {
+                "fullName": "Jared Doe",
+                "email": "jared@doe.com",
+                "creditCardNumber": "555456789"
+            },
+            "relationships": {               
+                "relatives": {
+                    "links": {
+                        "self": "/users/5/relationships/relatives"
+                    }
+                }
+            },
+            "links": {
+                "self": "/users/5"
+            }
+        }
+    ]
+}
+```
+
+It's worth noting that we can now see `attributes` sections for both requested users. But for user '5' (authenticated user) we can also see `creditCardNumber`. 
+
+For more configuration options like setting a custom principal resolver or other examples for setting access control rules for both inbound and outbound access please refer the official [documentation](https://api4.pro/).  
 
 ## OpenApi Plugin
-TBA
+
+JsonApi4j has OpenAPI Specification support by default. 
+
+You can get OpenAPI Specification in desired format (json or yaml) by accessing [/oas](http://localhost:8080/jsonapi/oas) URL. 
+
+Here is the Swagger UI you can generate based on the OpenAPI Specification by doing zero configuration: 
+
+![Swagger UI](/docs/swagger-ui-screenshot.png)
+
+JsonApi4j generates JSON:API parameters and a full set of Schemas based on the declared domain.
+
+For more configuration options and details please refer the official [documentation](https://api4.pro/).
 
 # Contributing 
 
