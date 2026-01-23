@@ -399,17 +399,17 @@ public class OperationsRegistry {
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
         }
 
-        public OperationsRegistryBuilder repository(ResourceRepository<?> repository) {
-            return this.operation(repository);
+        public OperationsRegistryBuilder operations(ResourceOperations<?> operations) {
+            return this.operation(operations);
         }
 
 
-        public OperationsRegistryBuilder repository(ToOneRelationshipRepository<?, ?> repository) {
-            return this.operation(repository);
+        public OperationsRegistryBuilder operations(ToOneRelationshipOperations<?, ?> operations) {
+            return this.operation(operations);
         }
 
-        public OperationsRegistryBuilder repository(ToManyRelationshipRepository<?, ?> repository) {
-            return this.operation(repository);
+        public OperationsRegistryBuilder operations(ToManyRelationshipOperations<?, ?> operations) {
+            return this.operation(operations);
         }
 
         public OperationsRegistryBuilder operation(ResourceOperation operation) {

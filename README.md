@@ -54,7 +54,6 @@ Then, let's implement a few operations - reading multiple `users`, and retrievin
 As mentioned above, let's start by defining our first JSON:API resource - `user` resource.
 
 ```java
-@Component
 @JsonApiResource(resourceType = "users") // 1.
 public class UserResource implements Resource<UserDbEntity> { // 2.
 
@@ -121,9 +120,8 @@ Now that we've defined our resource and attributes, let's implement the first op
 This operation will be available under `GET /users`.
 
 ```java
-@Component
 @JsonApiResourceOperation(resource = UserResource.class) // 1.
-public class UserRepository implements ResourceRepository<UserDbEntity> { // 2.
+public class UserOperations implements ResourceOperations<UserDbEntity> { // 2.
 
     private final UserDb userDb; // 3.
     
@@ -145,13 +143,12 @@ public class UserRepository implements ResourceRepository<UserDbEntity> { // 2.
 
 What's happening here:
 1. `@JsonApiResourceOperation(resource = UserResource.class)` - identify which JSON:API resource this operation belongs to (`users`).
-2. `UserRepository implements ResourceRepository<UserDbEntity>` - this class must implement `ResourceRepository`. This interface consist of all available operations that can be implemented for any JSON:API resource. Interface parametrized with `UserDbEntity` - internal model that represents our `users` resource. 
+2. `UserOperations implements ResourceOperations<UserDbEntity>` - this class must implement `ResourceOperations`. This interface consist of all available operations that can be implemented for any JSON:API resource. Interface parametrized with `UserDbEntity` - internal model that represents our `users` resource. 
 3. The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source. In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism. 
-4. As of now we only implement `readPage(...)` method among others available in `ResourceRepository`. 
+4. As of now we only implement `readPage(...)` method among others available in `ResourceOperations`. 
 
 For the sake of this demo, here’s a simple in-memory implementation of `UserDb` to support the operations from above:
 ```java
-@Component
 public class UserDb {
 
     private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
@@ -251,7 +248,6 @@ Each user can have multiple `relatives`, which makes this a **to-many** relation
 To implement this, we'll create a class that implements the `ToManyRelationship` interface:
 
 ```java
-@Component
 @JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class) // 1.
 public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> { // 2.
 
@@ -283,16 +279,15 @@ public class UserRelativesRelationship implements ToManyRelationship<UserRelatio
 
 The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.
 
-To do this, implement `UserRelativesRepository` - this tells **JsonApi4j** how to find the related user relatives.
+To do this, implement `UserRelativesOperations` - this tells **JsonApi4j** how to find the related user relatives.
 
 ```java
-@Component
 @JsonApiRelationshipOperation(relationship = UserRelativesRelationship.class) // 1.
-public class UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo> { // 2.
+public class UserRelativesOperations implements ToManyRelationshipOperations<UserDbEntity, UserRelationshipInfo> { // 2.
     
     private final UserDb userDb;
     
-    public UserRelativesRepository(UserDb userDb) {
+    public UserRelativesOperations(UserDb userDb) {
         this.userDb = userDb;
     }
     
@@ -309,8 +304,8 @@ public class UserRelativesRepository implements ToManyRelationshipRepository<Use
 ```
 
 1. `@JsonApiRelationshipOperation(relationship = UserRelativesRelationship.class)` identifies which relationship this operation belongs to.
-2. `UserRelativesRepository implements ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo>` - this repository must implement `ToManyRelationship` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model of the parent resource (`UserDbEntity`) and internal model that represents relationship resource (`UserRelationshipInfo`).
-3. `CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipRepository`.
+2. `UserRelativesOperations implements ToManyRelationshipOperations<UserDbEntity, UserRelationshipInfo>` - this class must implement `ToManyRelationshipOperations` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model of the parent resource (`UserDbEntity`) and internal model that represents relationship resource (`UserRelationshipInfo`).
+3. `CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipOperations`.
 4. Let's set page size to 2 in order to showcase the pagination
 
 Here is the internal modal that represents user relatives linkage:

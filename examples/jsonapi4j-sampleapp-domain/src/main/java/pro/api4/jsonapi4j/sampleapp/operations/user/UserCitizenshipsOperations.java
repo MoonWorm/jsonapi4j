@@ -5,7 +5,7 @@ import org.apache.commons.collections4.ListUtils;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ToManyRelationshipRepository;
+import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -51,8 +51,8 @@ import java.util.stream.Collectors;
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
 @RequiredArgsConstructor
-public class UserCitizenshipsRepository implements
-        ToManyRelationshipRepository<UserDbEntity, DownstreamCountry>,
+public class UserCitizenshipsOperations implements
+        ToManyRelationshipOperations<UserDbEntity, DownstreamCountry>,
         BatchReadToManyRelationshipOperation<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;
@@ -115,7 +115,7 @@ public class UserCitizenshipsRepository implements
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        ToManyRelationshipRepository.super.validateUpdateToMany(request);
+        ToManyRelationshipOperations.super.validateUpdateToMany(request);
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
         if (payload == null) {
             throw new InvalidPayloadException("Payload is required for this operation type but it's missing.");

@@ -4,7 +4,7 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
-public interface ToManyRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> extends
+public interface ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> extends
         UpdateToManyRelationshipOperation, ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> {
 
     @Override

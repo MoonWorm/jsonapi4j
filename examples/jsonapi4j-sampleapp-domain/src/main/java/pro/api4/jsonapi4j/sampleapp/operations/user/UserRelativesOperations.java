@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ToManyRelationshipRepository;
+import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 @JsonApiRelationshipOperation(
         relationship = UserRelativesRelationship.class
 )
-public class UserRelativesRepository implements
-        ToManyRelationshipRepository<UserDbEntity, UserRelationshipInfo>,
+public class UserRelativesOperations implements
+        ToManyRelationshipOperations<UserDbEntity, UserRelationshipInfo>,
         BatchReadToManyRelationshipOperation<UserDbEntity, UserRelationshipInfo> {
 
     private final UserDb userDb;

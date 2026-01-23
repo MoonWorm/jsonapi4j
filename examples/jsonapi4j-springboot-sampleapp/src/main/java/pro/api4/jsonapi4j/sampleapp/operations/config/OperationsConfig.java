@@ -10,7 +10,7 @@ import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputPa
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
-import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyRepository;
+import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.*;
 
 @Configuration
@@ -18,39 +18,39 @@ import pro.api4.jsonapi4j.sampleapp.operations.user.*;
 public class OperationsConfig {
 
     @Bean
-    public CurrencyRepository currencyRepository(CountriesClient countriesClient) {
-        return new CurrencyRepository(countriesClient);
+    public CurrencyOperations currencyOperations(CountriesClient countriesClient) {
+        return new CurrencyOperations(countriesClient);
     }
 
     @Bean
-    public UserRepository userRepository(
+    public UserOperations userOperations(
             UserDb userDb,
             UserInputParamsValidator userValidator,
             CountryInputParamsValidator countryValidator
     ) {
-        return new UserRepository(userDb, userValidator, countryValidator);
+        return new UserOperations(userDb, userValidator, countryValidator);
     }
 
     @Bean
-    public UserCitizenshipsRepository userCitizenshipsRepository(
+    public UserCitizenshipsOperations userCitizenshipsOperations(
             CountriesClient countriesClient,
             UserDb userDb,
             CountryInputParamsValidator validator
     ) {
-        return new UserCitizenshipsRepository(countriesClient, userDb, validator);
+        return new UserCitizenshipsOperations(countriesClient, userDb, validator);
     }
 
     @Bean
-    public UserPlaceOfBirthRepository userPlaceOfBirthRepository(
+    public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
             CountriesClient client,
             UserDb userDb
     ) {
-        return new UserPlaceOfBirthRepository(client, userDb);
+        return new UserPlaceOfBirthOperations(client, userDb);
     }
 
     @Bean
-    public UserRelativesRepository userRelativesRepository(UserDb userDb) {
-        return new UserRelativesRepository(userDb);
+    public UserRelativesOperations userRelativesOperations(UserDb userDb) {
+        return new UserRelativesOperations(userDb);
     }
 
     @Bean

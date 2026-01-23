@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.operations.currency;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
-import pro.api4.jsonapi4j.operation.ResourceRepository;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
@@ -22,7 +22,7 @@ import java.util.List;
 
 @JsonApiResourceOperation(resource = CurrencyResource.class)
 @RequiredArgsConstructor
-public class CurrencyRepository implements ResourceRepository<DownstreamCurrencyWithCode> {
+public class CurrencyOperations implements ResourceOperations<DownstreamCurrencyWithCode> {
 
     private final CountriesClient client;
 
@@ -78,7 +78,7 @@ public class CurrencyRepository implements ResourceRepository<DownstreamCurrency
 
     @Override
     public void validateReadMultiple(JsonApiRequest request) {
-        ResourceRepository.super.validateReadMultiple(request);
+        ResourceOperations.super.validateReadMultiple(request);
         new JsonApi4jDefaultValidator().validateNonNull(request.getFilters().get(ID_FILTER_NAME));
     }
 

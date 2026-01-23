@@ -53,7 +53,7 @@ public class CookbookApp {
 
         var recipeOperations = new RecipeOperations(recipes);
 
-        var operationsRegistry = OperationsRegistry.builder(plugins).repository(recipeOperations).build();
+        var operationsRegistry = OperationsRegistry.builder(plugins).operations(recipeOperations).build();
         context.setAttribute(JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
         context.setAttribute(JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
 

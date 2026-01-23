@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.operation.ResourceRepository;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
@@ -21,7 +21,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @JsonApiResourceOperation(resource = UserResource.class)
-public class UserRepository implements ResourceRepository<UserDbEntity> {
+public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
     private final UserInputParamsValidator userValidator;
@@ -110,7 +110,7 @@ public class UserRepository implements ResourceRepository<UserDbEntity> {
 
     @Override
     public void validateCreate(JsonApiRequest request) {
-        ResourceRepository.super.validateCreate(request);
+        ResourceOperations.super.validateCreate(request);
         var payload = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
         UserAttributes att = payload.getData().getAttributes();
         userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);

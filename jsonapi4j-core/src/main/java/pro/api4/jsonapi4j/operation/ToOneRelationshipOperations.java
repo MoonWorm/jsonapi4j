@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.operation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
-public interface ToOneRelationshipRepository<RESOURCE_DTO, RELATIONSHIP_DTO> extends
+public interface ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> extends
         UpdateToOneRelationshipOperation, ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> {
 
     @Override

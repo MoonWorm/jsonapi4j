@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe;
 
 import lombok.AllArgsConstructor;
-import pro.api4.jsonapi4j.operation.ResourceRepository;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -10,7 +10,7 @@ import java.util.List;
 
 @JsonApiResourceOperation(resource = DishRecipeResource.class)
 @AllArgsConstructor
-public class RecipeOperations implements ResourceRepository<DishRecipe> {
+public class RecipeOperations implements ResourceOperations<DishRecipe> {
 
     private final List<DishRecipe> recipes;
 
@@ -26,7 +26,7 @@ public class RecipeOperations implements ResourceRepository<DishRecipe> {
 
     @Override
     public void validateReadById(JsonApiRequest request) {
-        ResourceRepository.super.validateReadById(request);
+        ResourceOperations.super.validateReadById(request);
     }
 
 }

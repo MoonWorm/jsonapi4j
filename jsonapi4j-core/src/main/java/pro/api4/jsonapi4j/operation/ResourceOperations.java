@@ -4,7 +4,7 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
-public interface ResourceRepository<RESOURCE_DTO> extends
+public interface ResourceOperations<RESOURCE_DTO> extends
         ReadResourceByIdOperation<RESOURCE_DTO>,
         ReadMultipleResourcesOperation<RESOURCE_DTO>,
         CreateResourceOperation<RESOURCE_DTO>,

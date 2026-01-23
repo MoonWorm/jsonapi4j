@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ToOneRelationshipRepository;
+import pro.api4.jsonapi4j.operation.ToOneRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
         relationship = UserPlaceOfBirthRelationship.class
 )
 @RequiredArgsConstructor
-public class UserPlaceOfBirthRepository implements
-        ToOneRelationshipRepository<UserDbEntity, DownstreamCountry>,
+public class UserPlaceOfBirthOperations implements
+        ToOneRelationshipOperations<UserDbEntity, DownstreamCountry>,
         BatchReadToOneRelationshipOperation<UserDbEntity, DownstreamCountry> {
 
     private final CountriesClient client;
