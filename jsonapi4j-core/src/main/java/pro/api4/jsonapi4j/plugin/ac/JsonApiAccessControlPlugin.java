@@ -6,6 +6,7 @@ import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
+import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
@@ -133,4 +134,8 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
         return new AccessControlToOneRelationshipVisitors(accessControlEvaluator);
     }
 
+    @Override
+    public ToManyRelationshipVisitors toManyRelationshipVisitors() {
+        return new AccessControlToManyRelationshipVisitors(accessControlEvaluator);
+    }
 }

@@ -10,6 +10,8 @@ import java.util.List;
 @ToString(callSuper = true)
 public abstract class AbstractMultipleDataItemsDoc<DATA_ITEM extends ResourceIdentifierObject> extends BaseDoc {
 
+    public static final String DATA_FIELD = "data";
+
     private final List<DATA_ITEM> data;
 
     public AbstractMultipleDataItemsDoc(List<DATA_ITEM> data,

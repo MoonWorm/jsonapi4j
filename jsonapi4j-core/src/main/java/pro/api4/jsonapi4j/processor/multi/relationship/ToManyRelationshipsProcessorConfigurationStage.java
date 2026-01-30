@@ -1,12 +1,12 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.processor.PluginSettings;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext.RelationshipProcessorContextBuilder;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
+
+import java.util.List;
 
 public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
 
@@ -19,24 +19,8 @@ public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
         this.processorContextBuilder = RelationshipProcessorContext.builder();
     }
 
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
-    ) {
-        this.processorContextBuilder.accessControlEvaluator(accessControlEvaluator);
-        return this;
-    }
-
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControl
-    ) {
-        this.processorContextBuilder.outboundAccessControlSettings(outboundAccessControl);
-        return this;
-    }
-
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.processorContextBuilder.inboundAccessControlSettings(inboundAccessControlSettings);
+    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> plugins(List<PluginSettings> plugins) {
+        this.processorContextBuilder.plugins(plugins);
         return this;
     }
 
@@ -50,6 +34,5 @@ public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
                 processorContextBuilder.build()
         );
     }
-
 
 }
