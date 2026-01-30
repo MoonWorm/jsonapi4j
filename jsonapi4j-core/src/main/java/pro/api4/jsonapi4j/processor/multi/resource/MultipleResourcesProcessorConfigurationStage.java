@@ -1,15 +1,15 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
+import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessorConfigurationStage;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiConfigurationStage;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import org.apache.commons.lang3.Validate;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -22,7 +22,7 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
 
     MultipleResourcesProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContextBuilder =  ResourceProcessorContext.builder();
+        this.processorContextBuilder = ResourceProcessorContext.builder();
     }
 
     /**
@@ -41,24 +41,8 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
         return this;
     }
 
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
-    ) {
-        this.processorContextBuilder = this.processorContextBuilder.accessControlEvaluator(accessControlEvaluator);
-        return this;
-    }
-
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResource outboundAccessControlSettings
-    ) {
-        this.processorContextBuilder = this.processorContextBuilder.outboundAccessControlSettings(outboundAccessControlSettings);
-        return this;
-    }
-
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.processorContextBuilder = this.processorContextBuilder.inboundAccessControlSettings(inboundAccessControlSettings);
+    public MultipleResourcesProcessorConfigurationStage<REQUEST> plugins(List<PluginSettings> plugins) {
+        this.processorContextBuilder.plugins(plugins);
         return this;
     }
 

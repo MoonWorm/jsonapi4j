@@ -4,35 +4,35 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
-import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
+import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
+import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
+import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getOutboundAccessControlModel;
 
 @Slf4j
 @Data
-public class AccessControlToManyRelationshipVisitors implements ToManyRelationshipVisitors {
+public class AccessControlMultipleResourcesVisitors implements MultipleResourcesVisitors {
 
     private final AccessControlEvaluator accessControlEvaluator;
 
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
-                                                                 ToManyRelationshipsJsonApiContext<REQUEST, ?> context,
+                                                                 MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
                                                                  JsonApiPluginInfo pluginInfo) {
 
         AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(pluginInfo, request);
@@ -44,7 +44,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
             return DataPreRetrievalPhase.doNothing();
         } else {
             log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
-            ToManyRelationshipsDoc doc = new ToManyRelationshipsDoc(
+            MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
                     null,
                     context.getTopLevelLinksResolver().resolve(request, null, null),
                     context.getTopLevelMetaResolver().resolve(request, null)
@@ -54,18 +54,18 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
     }
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
+    public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
             CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
-            ToManyRelationshipsDoc doc,
-            ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
+            DOC doc,
+            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
         if (doc == null || doc.getData() == null || cursorPageableResponse.getItems() == null) {
-            return DataPostRetrievalPhase.doNothing();
+            return RelationshipsPreRetrievalPhase.doNothing();
         }
 
-        List<ResourceIdentifierObject> data = doc.getData();
+        List<? extends ResourceObject<?, ?>> data = doc.getData();
 
         Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = cursorPageableResponse.getItems().stream()
                 .collect(Collectors.toMap(
@@ -73,22 +73,20 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                         dto -> dto
                 ));
         List<DATA_SOURCE_DTO> nonAnonymizedDtos = new ArrayList<>();
-        List<ResourceIdentifierObject> anonymizedData = new ArrayList<>();
-        for (ResourceIdentifierObject resourceIdentifierObject : data) {
-            AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
+        List<ResourceObject<?, ?>> anonymizedData = new ArrayList<>();
+        for (ResourceObject<?, ?> resourceObject : data) {
+            AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                     accessControlEvaluator,
-                    resourceIdentifierObject,
-                    resourceIdentifierObject,
-                    Optional.ofNullable(getOutboundAccessControlModel(pluginInfo))
-                            .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
-                            .orElse(null)
+                    resourceObject,
+                    resourceObject,
+                    getOutboundAccessControlModel(pluginInfo, resourceObject)
             );
 
             if (anonymizationResult.isNothingAnonymized()) {
                 DATA_SOURCE_DTO nonAnonymizedDto = idAndTypeToDtoMap.get(
                         new IdAndType(
-                                resourceIdentifierObject.getId(),
-                                new ResourceType(resourceIdentifierObject.getType())
+                                resourceObject.getId(),
+                                new ResourceType(resourceObject.getType())
                         )
                 );
                 nonAnonymizedDtos.add(nonAnonymizedDto);
@@ -98,7 +96,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         }
 
         if (nonAnonymizedDtos.size() == cursorPageableResponse.getItems().size()) {
-            return DataPostRetrievalPhase.doNothing();
+            return RelationshipsPreRetrievalPhase.doNothing();
         }
 
         // data
@@ -116,17 +114,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         Object docMeta = context.getTopLevelMetaResolver().resolve(request, nonAnonymizedDtos);
         ReflectionUtils.setFieldValue(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
 
-        return DataPostRetrievalPhase.mutatedDoc(doc);
-    }
-
-    private static OutboundAccessControlForJsonApiResourceIdentifier getOutboundAccessControlModel(
-            JsonApiPluginInfo pluginInfo
-    ) {
-        if (pluginInfo != null
-                && pluginInfo.getRelationshipPluginInfo() instanceof OutboundAccessControlForJsonApiResourceIdentifier acm) {
-            return acm;
-        }
-        return null;
+        return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
     }
 
 }

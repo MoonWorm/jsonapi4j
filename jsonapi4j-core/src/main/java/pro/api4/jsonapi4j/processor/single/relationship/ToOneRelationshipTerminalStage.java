@@ -102,7 +102,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
             if (visitors != null) {
                 DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                        request,
+                        effectiveRequest,
                         dataSourceDto,
                         doc,
                         jsonApiContext,

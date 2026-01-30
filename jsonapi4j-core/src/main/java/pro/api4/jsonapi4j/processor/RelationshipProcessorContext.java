@@ -8,7 +8,6 @@ import lombok.Getter;
 import java.util.Collections;
 import java.util.List;
 
-// TODO remove class? extract just plugins
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter

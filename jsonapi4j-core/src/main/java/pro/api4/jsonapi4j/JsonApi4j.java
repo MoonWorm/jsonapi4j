@@ -485,10 +485,14 @@ public class JsonApi4j {
                 ReadMultipleResourcesOperation<RESOURCE_DTO> readAllExecutable
                         = (ReadMultipleResourcesOperation<RESOURCE_DTO>) registeredReadMultipleOperation.getOperation();
                 readAllExecutable.validate(request);
+                List<PluginSettings> pluginSettings = getPluginSettings(
+                        registeredReadMultipleOperation,
+                        domainRegistry.getResource(resourceType)
+                );
                 return processMultipleResources(
                         request,
                         readAllExecutable::readPage,
-                        getInboundAccessControlSettings(registeredReadMultipleOperation)
+                        pluginSettings
                 );
             } else if (request.getFilters().size() == 1
                     && request.getFilters().containsKey(ReadMultipleResourcesOperation.ID_FILTER_NAME)) {
@@ -501,10 +505,14 @@ public class JsonApi4j {
                 if (readByIdExecutable != null) {
                     ReadMultipleResourcesOperation<RESOURCE_DTO> mimickedReadAllExecutable = mimicReadMultipleResourcesOperationViaSequentialReadByIds(readByIdExecutable);
                     mimickedReadAllExecutable.validate(request);
+                    List<PluginSettings> pluginSettings = getPluginSettings(
+                            registeredReadByIdOperation,
+                            domainRegistry.getResource(resourceType)
+                    );
                     return processMultipleResources(
                             request,
                             mimickedReadAllExecutable::readPage,
-                            getInboundAccessControlSettings(registeredReadByIdOperation)
+                            pluginSettings
                     );
                 }
             }
@@ -530,7 +538,7 @@ public class JsonApi4j {
         private <DATA_SOURCE_DTO> MultipleResourcesDoc<?> processMultipleResources(
                 JsonApiRequest request,
                 MultipleDataItemsSupplier<JsonApiRequest, DATA_SOURCE_DTO> dataSupplier,
-                AccessControlModel inboundAccessControlSettings
+                List<PluginSettings> pluginSettings
         ) {
             RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
             @SuppressWarnings("unchecked")
@@ -539,9 +547,7 @@ public class JsonApi4j {
             return new MultipleResourcesProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
-                    .accessControlEvaluator(accessControlEvaluator)
-                    .inboundAccessControlSettings(inboundAccessControlSettings)
-                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(registeredResource))
+                    .plugins(pluginSettings)
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toManyRelationshipResolvers(getToManyRelationshipsResolvers(resourceConfig::resolveResourceId))

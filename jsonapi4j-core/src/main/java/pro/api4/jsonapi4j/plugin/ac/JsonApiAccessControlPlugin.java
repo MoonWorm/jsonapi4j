@@ -4,10 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.operation.*;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
-import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
-import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
+import pro.api4.jsonapi4j.plugin.*;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
@@ -127,6 +124,11 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
     @Override
     public SingleResourceVisitors singleResourceVisitors() {
         return new AccessControlSingleResourceVisitors(accessControlEvaluator);
+    }
+
+    @Override
+    public MultipleResourcesVisitors multipleResourcesVisitors() {
+        return new AccessControlMultipleResourcesVisitors(accessControlEvaluator);
     }
 
     @Override

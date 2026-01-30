@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -69,43 +70,45 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             }
         }
 
-        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = retrieveData(request);
+        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = retrieveData(effectiveRequest);
 
         // return if downstream response is null or inbound access is not allowed or the response is null
         if (cursorPageableResponse == null) {
             // top-level links
-            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, null, null);
+            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null, null);
             // top-level meta
-            Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, null);
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, null);
             // compose doc
             return docSupplier.get(Collections.emptyList(), docLinks, docMeta);
         }
 
+        // data
         List<ResourceIdentifierObject> data = null;
         if (cursorPageableResponse.getItems() != null) {
-            data = cursorPageableResponse.getItems().stream()
-                    .map(dto -> {
-                        // id and type
-                        IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dto);
-                        // resource identifier meta
-                        Object resourceIdentifierMeta = jsonApiMembersResolver.resolveResourceMeta(request, dto);
-                        // compose resource identifier
-                        return new ResourceIdentifierObject(
-                                idAndType.getId(),
-                                idAndType.getType().getType(),
-                                resourceIdentifierMeta
-                        );
-                    }).toList();
+            data = new ArrayList<>();
+            for (DATA_SOURCE_DTO dataSourceDto : cursorPageableResponse.getItems()) {
+                // id and type
+                IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dataSourceDto);
+                // resource identifier meta
+                Object resourceIdentifierMeta = jsonApiMembersResolver.resolveResourceMeta(effectiveRequest, dataSourceDto);
+                // compose resource identifier
+                ResourceIdentifierObject resourceIdentifierObject = new ResourceIdentifierObject(
+                        idAndType.getId(),
+                        idAndType.getType().getType(),
+                        resourceIdentifierMeta
+                );
+                data.add(resourceIdentifierObject);
+            }
         }
 
         // top-level links
         LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
-                request,
+                effectiveRequest,
                 cursorPageableResponse.getItems(),
                 cursorPageableResponse.getNextCursor()
         );
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, cursorPageableResponse.getItems());
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, cursorPageableResponse.getItems());
 
         DOC doc = docSupplier.get(data, docLinks, docMeta);
 
@@ -114,7 +117,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
             if (visitors != null) {
                 DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                        request,
+                        effectiveRequest,
                         cursorPageableResponse,
                         doc,
                         jsonApiContext,

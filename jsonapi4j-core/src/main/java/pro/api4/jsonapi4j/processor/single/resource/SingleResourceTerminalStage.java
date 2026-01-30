@@ -151,7 +151,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
             SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
             if (visitors != null) {
                 DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                        request,
+                        effectiveRequest,
                         dataSourceDto,
                         jsonApiContext,
                         plugin.getInfo()
@@ -166,13 +166,12 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
             }
         }
 
-        // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, dataSourceDto);
-        // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, dataSourceDto);
-
-        // return if downstream response is null or inbound access is not allowed
         if (dataSourceDto == null) {
+            // top-level links
+            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null);
+            // top-level meta
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, null);
+
             return docSupplier.get(null, docLinks, docMeta);
         }
 
@@ -186,7 +185,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(effectiveRequest, dataSourceDto);
 
         // compose resource without relationships
-        RESOURCE resource = resourceSupplier.get(
+        RESOURCE data = resourceSupplier.get(
                 idAndType.getId(),
                 idAndType.getType().getType(),
                 att,
@@ -195,15 +194,20 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 resourceMeta
         );
 
+        // top-level links
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, dataSourceDto);
+        // top-level meta
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, dataSourceDto);
+
         // compose doc
-        DOC doc = docSupplier.get(resource, docLinks, docMeta);
+        DOC doc = docSupplier.get(data, docLinks, docMeta);
 
         // PHASE: onRelationshipsPreRetrieval
         for (PluginSettings plugin : plugins) {
             SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
             if (visitors != null) {
                 RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
-                        request,
+                        effectiveRequest,
                         dataSourceDto,
                         doc,
                         jsonApiContext,
@@ -219,11 +223,13 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
             }
         }
 
-        if (resource == null) {
+        data = doc.getData();
+
+        if (data == null) {
             return docSupplier.get(null, docLinks, docMeta);
         }
 
-        // resolve and set relationships
+        // resolve relationships
         RELATIONSHIPS relationships = jsonApiMembersResolver.resolveResourceRelationshipsInParallel(
                 effectiveRequest,
                 dataSourceDto,
@@ -238,7 +244,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
             SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
             if (visitors != null) {
                 RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
-                        request,
+                        effectiveRequest,
                         dataSourceDto,
                         doc,
                         jsonApiContext,

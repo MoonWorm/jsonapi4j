@@ -7,14 +7,12 @@ import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
-import pro.api4.jsonapi4j.processor.util.AccessControlUtil;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
+import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getOutboundAccessControlModel;
 
 @Slf4j
 @Data
@@ -57,15 +55,11 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
             return RelationshipsPreRetrievalPhase.doNothing();
         }
         ResourceObject<?, ?> resource = doc.getData();
-        OutboundAccessControlForCustomClass outboundAccessControlSettings = getOutboundAccessControlModel(
-                pluginInfo,
-                resource
-        );
         AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                 accessControlEvaluator,
                 resource,
                 resource,
-                outboundAccessControlSettings
+                getOutboundAccessControlModel(pluginInfo, resource)
         );
 
         if (anonymizationResult.isNothingAnonymized()) {
@@ -79,20 +73,6 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
 
         ReflectionUtils.setFieldValue(doc, SingleResourceDoc.DATA_FIELD, anonymizationResult.targetObject());
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
-    }
-
-    private static <RESOURCE extends ResourceObject<?, ?>> OutboundAccessControlForCustomClass getOutboundAccessControlModel(
-            JsonApiPluginInfo pluginInfo,
-            RESOURCE resource
-    ) {
-        OutboundAccessControlForJsonApiResource fromResourceDeclaration = null;
-        if (pluginInfo != null && pluginInfo.getResourcePluginInfo() instanceof OutboundAccessControlForJsonApiResource acm) {
-            fromResourceDeclaration = acm;
-        }
-        return AccessControlUtil.getEffectiveOutboundAccessControlSettings(
-                resource,
-                fromResourceDeclaration
-        );
     }
 
 }

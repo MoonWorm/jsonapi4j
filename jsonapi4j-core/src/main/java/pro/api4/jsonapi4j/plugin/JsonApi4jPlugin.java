@@ -35,6 +35,11 @@ public interface JsonApi4jPlugin {
         };
     }
 
+    default MultipleResourcesVisitors multipleResourcesVisitors() {
+        return new MultipleResourcesVisitors() {
+        };
+    }
+
     default ToOneRelationshipVisitors toOneRelationshipVisitors() {
         return new ToOneRelationshipVisitors() {
         };
@@ -44,6 +49,5 @@ public interface JsonApi4jPlugin {
         return new ToManyRelationshipVisitors() {
         };
     }
-
 
 }
