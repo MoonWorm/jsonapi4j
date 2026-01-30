@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
@@ -196,7 +197,11 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
         processingItems.forEach(processingItem -> {
             DATA_SOURCE_DTO resourceDto = processingItem.getResourceDto();
             if (relationshipsMap.containsKey(resourceDto)) {
-                processingItem.getAnonymizationResult().targetObject().setRelationships(relationshipsMap.get(resourceDto));
+                ReflectionUtils.setFieldValue(
+                        processingItem.getAnonymizationResult().targetObject(),
+                        ResourceObject.RELATIONSHIPS_FIELD,
+                        relationshipsMap.get(resourceDto)
+                );
             }
         });
 

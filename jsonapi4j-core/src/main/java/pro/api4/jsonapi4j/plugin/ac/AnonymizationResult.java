@@ -17,4 +17,12 @@ public record AnonymizationResult<T>(
         return !isFullyAnonymized;
     }
 
+    public boolean isAnyAnonymized() {
+        return isFullyAnonymized || !anonymizedFields.isEmpty();
+    }
+
+    public boolean isNothingAnonymized() {
+        return !isAnyAnonymized();
+    }
+
 }

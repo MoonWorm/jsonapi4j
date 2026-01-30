@@ -9,15 +9,14 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.IdSupplier;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
+import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
@@ -33,8 +32,7 @@ import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcess
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -63,6 +61,9 @@ public class JsonApi4j {
 
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
+    @With
+    @Builder.Default
+    private List<JsonApi4jPlugin> plugins = Collections.emptyList();
     @With
     @Builder.Default
     private AccessControlEvaluator accessControlEvaluator = AccessControlEvaluator.createDefault();
@@ -147,7 +148,7 @@ public class JsonApi4j {
             RelationshipName relationshipName,
             JsonApiRequest relationshipRequest,
             SingleDataItemSupplier<JsonApiRequest, ?> executable,
-            AccessControlModel inboundAccessControlSettings
+            List<PluginSettings> pluginSettings
     ) {
         RegisteredRelationship<ToOneRelationship<?>> registeredRelationship
                 = domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName);
@@ -160,17 +161,12 @@ public class JsonApi4j {
         SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> executableCasted
                 = (SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO>) executable;
 
-        OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-                = getOutboundAccessControlSettingsForRelationship(registeredRelationship);
-
         ResourceTypeAndIdResolver<RELATIONSHIP_DTO> typeAndIdResolver
                 = getResourceIdentifierTypeAndIdResolver(toOneRelationshipCasted);
 
         return new ToOneRelationshipProcessor()
                 .forRequest(relationshipRequest)
-                .accessControlEvaluator(accessControlEvaluator)
-                .inboundAccessControlSettings(inboundAccessControlSettings)
-                .outboundAccessControlSettings(outboundAccessControlSettings)
+                .plugins(pluginSettings)
                 .dataSupplier(executableCasted)
                 .topLevelLinksResolver(getSingleDataTopLevelLinksResolver(toOneRelationshipCasted, resourceType, relationshipName))
                 .topLevelMetaResolver(toOneRelationshipCasted::resolveRelationshipMeta)
@@ -282,6 +278,28 @@ public class JsonApi4j {
         );
     }
 
+    private List<PluginSettings> getPluginSettings(RegisteredOperation<?> registeredOperation,
+                                                   RegisteredResource<?> registeredResource) {
+        return getPluginSettings(registeredOperation, registeredResource, null);
+    }
+
+
+    private List<PluginSettings> getPluginSettings(
+            RegisteredOperation<?> registeredOperation,
+            RegisteredResource<?> registeredResource,
+            RegisteredRelationship<?> registeredRelationship) {
+        List<PluginSettings> result = new ArrayList<>();
+        for (JsonApi4jPlugin plugin : plugins) {
+            JsonApiPluginInfo info = new JsonApiPluginInfo(
+                    registeredOperation.getPluginInfo().get(plugin.pluginName()),
+                    registeredResource.getPluginInfo().get(plugin.pluginName()),
+                    registeredRelationship != null ? registeredRelationship.getPluginInfo().get(plugin.pluginName()) : null
+            );
+            result.add(PluginSettings.builder().plugin(plugin).info(info).build());
+        }
+        return result.stream().sorted(Comparator.comparingInt(p -> p.getPlugin().precedence())).toList();
+    }
+
     public class ResourceTypeStepSelected {
 
         private final ResourceType resourceType;
@@ -307,10 +325,21 @@ public class JsonApi4j {
                     = (ReadResourceByIdOperation<RESOURCE_DTO>) registeredOperation.getOperation();
             executable.validate(request);
 
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
+
+            @SuppressWarnings("unchecked")
+            Resource<RESOURCE_DTO> resourceConfig = (Resource<RESOURCE_DTO>) registeredResource.getResource();
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    registeredResource
+            );
+
             return processSingleResource(
                     request,
+                    resourceConfig,
                     executable::readById,
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
@@ -324,10 +353,21 @@ public class JsonApi4j {
 
             executable.validate(request);
 
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
+
+            @SuppressWarnings("unchecked")
+            Resource<RESOURCE_DTO> resourceConfig = (Resource<RESOURCE_DTO>) registeredResource.getResource();
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    registeredResource
+            );
+
             return processSingleResource(
                     request,
+                    resourceConfig,
                     executable::create,
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
@@ -337,10 +377,21 @@ public class JsonApi4j {
 
             UpdateResourceOperation executable = registeredOperation.getOperation();
             executable.validate(request);
+
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
+
+            Resource<?> resourceConfig = registeredResource.getResource();
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    registeredResource
+            );
+
             processSingleResourceNoResponse(
                     request,
+                    resourceConfig,
                     executable::update,
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
@@ -352,29 +403,33 @@ public class JsonApi4j {
 
             executable.validate(request);
 
+            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
+
+            Resource<?> resourceConfig = registeredResource.getResource();
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    registeredResource
+            );
+
             processSingleResourceNoResponse(
                     request,
+                    resourceConfig,
                     executable::delete,
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
         private <RESOURCE_DTO> SingleResourceDoc<?> processSingleResource(
                 JsonApiRequest request,
+                Resource<RESOURCE_DTO> resourceConfig,
                 SingleDataItemSupplier<JsonApiRequest, RESOURCE_DTO> dataSupplier,
-                AccessControlModel inboundAccessControlSettings
+                List<PluginSettings> pluginSettings
         ) {
-            RegisteredResource<Resource<?>> registeredResource = domainRegistry.getResource(resourceType);
-            @SuppressWarnings("unchecked")
-            Resource<RESOURCE_DTO> resourceConfig
-                    = (Resource<RESOURCE_DTO>) registeredResource.getResource();
-
             return new SingleResourceProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executor)
-                    .accessControlEvaluator(accessControlEvaluator)
-                    .inboundAccessControlSettings(inboundAccessControlSettings)
-                    .outboundAccessControlSettings(getOutboundRequirementsForResourceOperation(registeredResource))
+                    .plugins(pluginSettings)
                     .dataSupplier(dataSupplier)
                     .defaultRelationships(getDefaultRelationshipResolvers(resourceConfig::resolveResourceId))
                     .toManyRelationshipResolvers(getToManyRelationshipsResolvers(resourceConfig::resolveResourceId))
@@ -397,9 +452,10 @@ public class JsonApi4j {
             return (req, dto) -> {
                 LinksObject linksObject = resourceConfig.resolveTopLevelLinksForSingleResourceDoc(req, dto);
                 if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
+                    String id = req.getResourceId();
                     return SingleResourceDocLinksDefaultResolvers.<JsonApiRequest, RESOURCE_DTO>defaultTopLevelLinksResolver(
                             resourceType,
-                            resourceConfig::resolveResourceId
+                            d -> id
                     ).resolve(req, dto);
                 }
                 return linksObject;
@@ -408,15 +464,18 @@ public class JsonApi4j {
 
         private void processSingleResourceNoResponse(
                 JsonApiRequest request,
+                Resource<?> resourceConfig,
                 Consumer<JsonApiRequest> executable,
-                AccessControlModel inboundAccessControlSettings
+                List<PluginSettings> pluginSettings
         ) {
-            processSingleResource(request,
+            processSingleResource(
+                    request,
+                    resourceConfig,
                     req -> {
                         executable.accept(req);
                         return null;
                     },
-                    inboundAccessControlSettings
+                    pluginSettings
             );
         }
 
@@ -529,6 +588,24 @@ public class JsonApi4j {
                 }
                 return linksObject;
             };
+        }
+
+        private OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
+                List<PluginSettings> pluginSettings
+        ) {
+            JsonApiPluginInfo acPluginInfo = pluginSettings.stream()
+                    .filter(p -> JsonApiAccessControlPlugin.NAME.equals(p.getPlugin().pluginName()))
+                    .findFirst()
+                    .map(PluginSettings::getInfo)
+                    .orElse(null);
+            Object accessControlModelForResource = null;
+            if (acPluginInfo != null) {
+                accessControlModelForResource = acPluginInfo.getResourcePluginInfo();
+            }
+            if (accessControlModelForResource instanceof OutboundAccessControlForJsonApiResource acm) {
+                return acm;
+            }
+            return null;
         }
 
         private OutboundAccessControlForJsonApiResource getOutboundRequirementsForResourceOperation(
@@ -699,7 +776,7 @@ public class JsonApi4j {
                                     RegisteredRelationship::getRelationshipName,
                                     registeredRelationship ->
                                             (req, dataSourceDto) ->
-                                                    resolveSingleDataRelationshipDoc(
+                                                    resolveToOneRelationshipDoc(
                                                             registeredRelationship.getRelationshipName(),
                                                             dataSourceDto,
                                                             resourceIdSupplier,
@@ -709,7 +786,7 @@ public class JsonApi4j {
                     );
         }
 
-        private <RESOURCE_DTO, RELATIONSHIP_DTO> ToOneRelationshipDoc resolveSingleDataRelationshipDoc(
+        private <RESOURCE_DTO, RELATIONSHIP_DTO> ToOneRelationshipDoc resolveToOneRelationshipDoc(
                 RelationshipName relationshipName,
                 RESOURCE_DTO dataSourceDto,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
@@ -731,12 +808,18 @@ public class JsonApi4j {
             SingleDataItemSupplier<JsonApiRequest, RELATIONSHIP_DTO> dataSupplier
                     = relRequest -> executable.readOneForResource(relRequest, dataSourceDto);
 
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName)
+            );
+
             return resolveToOneRelationshipDocCommon(
                     resourceType,
                     relationshipName,
                     relationshipRequest,
                     dataSupplier,
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
@@ -954,6 +1037,12 @@ public class JsonApi4j {
 
             executable.validate(relationshipRequest);
 
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName)
+            );
+
             return resolveToOneRelationshipDocCommon(
                     resourceType,
                     relationshipName,
@@ -970,7 +1059,7 @@ public class JsonApi4j {
                             );
                         }
                     },
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
@@ -982,6 +1071,12 @@ public class JsonApi4j {
                     = registeredOperation.getOperation();
 
             executable.validate(relationshipRequest);
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName)
+            );
 
             executeCastedNoResponse(
                     relationshipRequest,
@@ -997,14 +1092,14 @@ public class JsonApi4j {
                             );
                         }
                     },
-                    getInboundAccessControlSettings(registeredOperation)
+                    pluginSettings
             );
         }
 
         private void executeCastedNoResponse(
                 JsonApiRequest relationshipRequest,
                 Consumer<JsonApiRequest> executable,
-                AccessControlModel inboundAccessControlSettings
+                List<PluginSettings> pluginSettings
         ) {
             resolveToOneRelationshipDocCommon(
                     resourceType,
@@ -1014,7 +1109,7 @@ public class JsonApi4j {
                         executable.accept(req);
                         return null;
                     },
-                    inboundAccessControlSettings
+                    pluginSettings
             );
         }
     }

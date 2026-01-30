@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.model.document.data;
 
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 
 /**
  * Spec ref: <a href="https://jsonapi.org/format/#document-resource-objects">Resource Object</a>
@@ -56,14 +56,6 @@ public class ResourceObject<A, R> extends ResourceIdentifierObject {
 
     public LinksObject getLinks() {
         return links;
-    }
-
-    public void setAttributes(A attributes) {
-        this.attributes = attributes;
-    }
-
-    public void setRelationships(R relationships) {
-        this.relationships = relationships;
     }
 
 }

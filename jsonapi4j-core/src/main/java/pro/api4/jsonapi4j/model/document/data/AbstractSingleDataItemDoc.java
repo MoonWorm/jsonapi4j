@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.model.document.data;
 
 
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 
 @EqualsAndHashCode(of = {"data"}, callSuper = false)
 @ToString(callSuper = true)

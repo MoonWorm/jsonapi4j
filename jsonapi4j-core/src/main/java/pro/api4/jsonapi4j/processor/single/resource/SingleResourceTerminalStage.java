@@ -2,34 +2,33 @@ package pro.api4.jsonapi4j.processor.single.resource;
 
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.AnonymizationResult;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
-import pro.api4.jsonapi4j.processor.ResourceSupplier;
+import pro.api4.jsonapi4j.plugin.*;
+import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPostRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPreRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPostRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPreRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemsRetrievalStage;
 import pro.api4.jsonapi4j.processor.util.CustomCollectors;
+import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
-
-import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
-import static pro.api4.jsonapi4j.processor.util.AccessControlUtil.getEffectiveOutboundAccessControlSettings;
 
 public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
     private final REQUEST request;
     private final SingleDataItemSupplier<REQUEST, DATA_SOURCE_DTO> dataSupplier;
     private final ResourceProcessorContext processorContext;
+    private final SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> jsonApiContext;
     private final SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> jsonApiMembersResolver;
 
     SingleResourceTerminalStage(REQUEST request,
@@ -39,6 +38,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         this.request = request;
         this.dataSupplier = dataSupplier;
         this.processorContext = processorContext;
+        this.jsonApiContext = jsonApiContext;
         this.jsonApiMembersResolver = new SingleResourceJsonApiMembersResolver<>(
                 jsonApiContext,
                 processorContext.getExecutor()
@@ -121,18 +121,55 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         Validate.notNull(resourceSupplier);
         Validate.notNull(docSupplier);
 
-        AccessControlEvaluator accessControlEvaluator
-                = processorContext.getAccessControlEvaluator();
+        REQUEST effectiveRequest = this.request;
+        List<PluginSettings> plugins = this.processorContext.getPlugins();
 
-        DATA_SOURCE_DTO dataSourceDto = new SingleDataItemsRetrievalStage(
-                accessControlEvaluator,
-                processorContext.getInboundAccessControlSettings()
-        ).retrieveData(request, dataSupplier);
+        // PHASE: onDataPreRetrieval
+        for (PluginSettings plugin : plugins) {
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                        effectiveRequest,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+                }
+            }
+        }
+
+        // RETRIEVE DATA
+        DATA_SOURCE_DTO dataSourceDto = retrieveData(effectiveRequest);
+
+        // PHASE: onDataPostRetrieval
+        for (PluginSettings plugin : plugins) {
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                        request,
+                        dataSourceDto,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPostRetrievalPhase<REQUEST>) dataPostRetrievalPhase).getResult();
+                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                }
+            }
+        }
 
         // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, dataSourceDto);
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, dataSourceDto);
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, dataSourceDto);
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, dataSourceDto);
 
         // return if downstream response is null or inbound access is not allowed
         if (dataSourceDto == null) {
@@ -144,9 +181,9 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         // attributes
         ATTRIBUTES att = jsonApiMembersResolver.resolveAttributes(dataSourceDto);
         // resource links
-        LinksObject resourceLinks = jsonApiMembersResolver.resolveResourceLinks(request, dataSourceDto);
+        LinksObject resourceLinks = jsonApiMembersResolver.resolveResourceLinks(effectiveRequest, dataSourceDto);
         // resource meta
-        Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(request, dataSourceDto);
+        Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(effectiveRequest, dataSourceDto);
 
         // compose resource without relationships
         RESOURCE resource = resourceSupplier.get(
@@ -158,38 +195,71 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 resourceMeta
         );
 
-        if (resource == null) {
-            return docSupplier.get(null, docLinks, docMeta);
+        // compose doc
+        DOC doc = docSupplier.get(resource, docLinks, docMeta);
+
+        // PHASE: onRelationshipsPreRetrieval
+        for (PluginSettings plugin : plugins) {
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
+                        request,
+                        dataSourceDto,
+                        doc,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+                } else if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+                }
+            }
         }
 
-        // apply settings from annotations if any
-        OutboundAccessControlForCustomClass outboundAccessControlSettings = getEffectiveOutboundAccessControlSettings(
-                resource,
-                processorContext.getOutboundAccessControlSettings()
-        );
-
-        // anonymize resource if needed
-        AnonymizationResult<RESOURCE> resourceAnonymizationResult = anonymizeObjectIfNeeded(
-                accessControlEvaluator,
-                resource,
-                resource,
-                outboundAccessControlSettings
-        );
-
-        if (resourceAnonymizationResult.isFullyAnonymized()) {
+        if (resource == null) {
             return docSupplier.get(null, docLinks, docMeta);
         }
 
         // resolve and set relationships
         RELATIONSHIPS relationships = jsonApiMembersResolver.resolveResourceRelationshipsInParallel(
-                request,
+                effectiveRequest,
                 dataSourceDto,
                 relationshipsSupplier
         );
-        resource.setRelationships(relationships);
 
-        // compose doc
-        return docSupplier.get(resource, docLinks, docMeta);
+        // set relationships
+        ReflectionUtils.setFieldValue(doc.getData(), ResourceObject.RELATIONSHIPS_FIELD, relationships);
+
+        // PHASE: onRelationshipsPostRetrieval
+        for (PluginSettings plugin : plugins) {
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
+                        request,
+                        dataSourceDto,
+                        doc,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+                } else if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+                }
+            }
+        }
+
+        // return doc
+        return doc;
+    }
+
+    private DATA_SOURCE_DTO retrieveData(REQUEST req) {
+        return DataRetrievalUtil.retrieveDataNullable(() -> dataSupplier.get(req));
     }
 
 }

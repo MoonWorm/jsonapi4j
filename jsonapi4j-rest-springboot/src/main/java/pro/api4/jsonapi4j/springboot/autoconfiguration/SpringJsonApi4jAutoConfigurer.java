@@ -19,14 +19,14 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.plugin.oas.OasServlet;
-import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
@@ -51,9 +51,9 @@ import java.util.concurrent.Executors;
 public class SpringJsonApi4jAutoConfigurer {
 
     @Bean
-    public List<JsonApi4jPlugin> defaultPlugins() {
+    public List<JsonApi4jPlugin> defaultPlugins(AccessControlEvaluator accessControlEvaluator) {
         return List.of(
-                new JsonApiAccessControlPlugin(),
+                new JsonApiAccessControlPlugin(accessControlEvaluator),
                 new JsonApiOasPlugin()
         );
     }
@@ -88,12 +88,14 @@ public class SpringJsonApi4jAutoConfigurer {
     public JsonApi4j jsonApi4j(
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry,
+            List<JsonApi4jPlugin> defaultPlugins,
             AccessControlEvaluator accessControlEvaluator,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService
     ) {
         return JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
+                .plugins(defaultPlugins)
                 .accessControlEvaluator(accessControlEvaluator)
                 .executor(jsonApiExecutorService)
                 .build();
@@ -126,9 +128,7 @@ public class SpringJsonApi4jAutoConfigurer {
     @Bean(name = "jsonApi4jDispatcherServlet")
     public ServletRegistrationBean<?> jsonApi4jDispatcherServlet(
             JsonApi4jProperties properties,
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry,
-            AccessControlEvaluator accessControlEvaluator,
+            JsonApi4j jsonApi4j,
             ErrorHandlerFactoriesRegistry errorHandlerFactory,
             @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
             @Qualifier("jsonApi4jExecutorService") ExecutorService executorService
@@ -144,9 +144,7 @@ public class SpringJsonApi4jAutoConfigurer {
 
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
                 new JsonApi4jDispatcherServlet(
-                        domainRegistry,
-                        operationsRegistry,
-                        accessControlEvaluator, executorService,
+                        jsonApi4j,
                         errorHandlerFactory,
                         objectMapper
                 ),
