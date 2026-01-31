@@ -184,7 +184,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         // resource meta
         Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(effectiveRequest, dataSourceDto);
 
-        // compose resource without relationships
+        // compose data (resource without relationships)
         RESOURCE data = resourceSupplier.get(
                 idAndType.getId(),
                 idAndType.getType().getType(),
