@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
@@ -31,6 +32,8 @@ import jakarta.servlet.ServletRegistration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -53,6 +56,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
+    public static final String PLUGINS_ATT_NAME = "jsonapi4jPlugins";
     public static final String ACCESS_CONTROL_EVALUATOR_ATT_NAME = "jsonapi4jAccessControlEvaluator";
     public static final String ERROR_HANDLER_FACTORY_ATT_NAME = "jsonapi4jErrorHandlerFactory";
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
@@ -99,6 +103,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         ExecutorService executorService = initExecutorService(servletContext);
         DomainRegistry domainRegistry = initDomainRegistry(servletContext);
         OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
+        List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
 
         // dispatcher servlet
         String dispatcherServletMapping = properties.getRootPath() + "/*";
@@ -107,6 +112,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 dispatcherServletMapping,
                 domainRegistry,
                 operationsRegistry,
+                plugins,
                 objectMapper,
                 executorService
         );
@@ -200,6 +206,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                                            String servletMapping,
                                            DomainRegistry domainRegistry,
                                            OperationsRegistry operationsRegistry,
+                                           List<JsonApi4jPlugin> plugins,
                                            ObjectMapper objectMapper,
                                            ExecutorService executorService) {
         AccessControlEvaluator accessControlEvaluator = initAccessControlEvaluator(servletContext);
@@ -210,6 +217,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 new JsonApi4jDispatcherServlet(
                         domainRegistry,
                         operationsRegistry,
+                        plugins,
                         accessControlEvaluator,
                         executorService,
                         errorHandlerFactory,
@@ -258,6 +266,16 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             or = OperationsRegistry.empty();
         }
         return or;
+    }
+
+    private List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+        //noinspection unchecked
+        List<JsonApi4jPlugin> plugins = (List<JsonApi4jPlugin>) servletContext.getAttribute(PLUGINS_ATT_NAME);
+        if (plugins == null) {
+            LOG.warn("List<JsonApiPlugin> not found in servlet context. Setting an empty list.");
+            plugins = Collections.emptyList();
+        }
+        return plugins;
     }
 
     private AccessControlEvaluator initAccessControlEvaluator(ServletContext servletContext) {

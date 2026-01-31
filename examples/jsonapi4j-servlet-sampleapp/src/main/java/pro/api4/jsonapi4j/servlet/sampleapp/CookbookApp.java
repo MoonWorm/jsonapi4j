@@ -42,7 +42,6 @@ public class CookbookApp {
         );
 
         List<JsonApi4jPlugin> plugins = List.of(
-                new JsonApiAccessControlPlugin(),
                 new JsonApiOasPlugin()
         );
 

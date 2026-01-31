@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -25,6 +26,7 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRe
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class JsonApi4jDispatcherServlet extends HttpServlet {
@@ -55,6 +57,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
     public JsonApi4jDispatcherServlet(DomainRegistry domainRegistry,
                                       OperationsRegistry operationsRegistry,
+                                      List<JsonApi4jPlugin> plugins,
                                       AccessControlEvaluator accessControlEvaluator,
                                       ExecutorService executorService,
                                       ErrorHandlerFactoriesRegistry errorHandlerFactory,
@@ -63,6 +66,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 JsonApi4j.builder()
                         .domainRegistry(domainRegistry)
                         .operationsRegistry(operationsRegistry)
+                        .plugins(plugins)
                         .executor(executorService)
                         .accessControlEvaluator(accessControlEvaluator)
                         .build(),

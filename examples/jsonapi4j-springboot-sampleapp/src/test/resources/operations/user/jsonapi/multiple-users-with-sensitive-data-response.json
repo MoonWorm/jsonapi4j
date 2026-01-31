@@ -13,6 +13,11 @@
         "creditCardNumber": "123456789"
       },
       "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/1/relationships/citizenships"
+          }
+        },
         "placeOfBirth": {
           "links": {
             "self": "/users/1/relationships/placeOfBirth",
@@ -69,6 +74,11 @@
         "email": "jane@doe.com"
       },
       "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/2/relationships/citizenships"
+          }
+        },
         "placeOfBirth": {
           "links": {
             "self": "/users/2/relationships/placeOfBirth",

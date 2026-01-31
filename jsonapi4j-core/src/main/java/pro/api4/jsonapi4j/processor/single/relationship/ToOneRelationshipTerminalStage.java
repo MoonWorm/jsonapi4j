@@ -1,21 +1,20 @@
 package pro.api4.jsonapi4j.processor.single.relationship;
 
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.AnonymizationResult;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemsRetrievalStage;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
+import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPostRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPreRetrievalPhase;
+import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
+import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
-import java.util.Optional;
-
-import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
+import java.util.List;
 
 @Slf4j
 public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
@@ -23,6 +22,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
     private final REQUEST request;
     private final SingleDataItemSupplier<REQUEST, DATA_SOURCE_DTO> dataSupplier;
     private final RelationshipProcessorContext processorContext;
+    private final ToOneRelationshipJsonApiContext<REQUEST, DATA_SOURCE_DTO> jsonApiContext;
     private final ToOneRelationshipJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO> jsonApiMembersResolver;
 
     ToOneRelationshipTerminalStage(REQUEST request,
@@ -32,6 +32,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         this.request = request;
         this.dataSupplier = dataSupplier;
         this.processorContext = processorContext;
+        this.jsonApiContext = jsonApiContext;
         this.jsonApiMembersResolver = new ToOneRelationshipJsonApiMembersResolver<>(
                 jsonApiContext
         );
@@ -43,64 +44,89 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // validation
         Validate.notNull(docSupplier);
 
-        AccessControlEvaluator accessControlEvaluator
-                = processorContext.getAccessControlEvaluator();
+        REQUEST effectiveRequest = this.request;
+        List<PluginSettings> plugins = this.processorContext.getPlugins();
 
-        DATA_SOURCE_DTO dataSourceDto = new SingleDataItemsRetrievalStage(
-                accessControlEvaluator,
-                processorContext.getInboundAccessControlSettings()
-        ).retrieveData(request, dataSupplier);
+        // PHASE: onDataPreRetrieval
+        for (PluginSettings plugin : plugins) {
+            ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
+            if (visitors != null) {
+                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                        effectiveRequest,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+                }
+            }
+        }
+
+        DATA_SOURCE_DTO dataSourceDto = retrieveData(effectiveRequest);
 
         // return if downstream response is null or inbound access is not allowed
         if (dataSourceDto == null) {
             // doc links
-            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(request, null);
+            LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null);
             // doc meta
-            Object docMeta = jsonApiMembersResolver.resolveDocMeta(request, null);
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, null);
             return docSupplier.get(null, docLinks, docMeta);
         }
 
         // resource id and type
         IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dataSourceDto);
         // resource meta
-        Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(request, dataSourceDto);
+        Object resourceMeta = jsonApiMembersResolver.resolveResourceMeta(effectiveRequest, dataSourceDto);
         // compose data
-        ResourceIdentifierObject resourceIdentifierObject = new ResourceIdentifierObject(
+        ResourceIdentifierObject data = new ResourceIdentifierObject(
                 idAndType.getId(),
                 idAndType.getType().getType(),
                 resourceMeta
         );
 
-        AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
-                accessControlEvaluator,
-                resourceIdentifierObject,
-                resourceIdentifierObject,
-                Optional.ofNullable(processorContext.getOutboundAccessControlSettings())
-                        .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
-                        .orElse(null)
-        );
-
-        // anonymize resource identifier if needed
-        ResourceIdentifierObject data = anonymizationResult.targetObject();
-
         // top-level links
-        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
-                request,
-                anonymizationResult.isFullyAnonymized() ? null : dataSourceDto
-        );
+        LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, dataSourceDto);
 
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(
-                request,
-                anonymizationResult.isFullyAnonymized() ? null :dataSourceDto
-        );
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, dataSourceDto);
 
         // compose response
-        return docSupplier.get(data, docLinks, docMeta);
+        DOC doc = docSupplier.get(data, docLinks, docMeta);
+
+        // PHASE: onDataPostRetrieval
+        for (PluginSettings plugin : plugins) {
+            ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
+            if (visitors != null) {
+                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                        effectiveRequest,
+                        dataSourceDto,
+                        doc,
+                        jsonApiContext,
+                        plugin.getInfo()
+                );
+                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                }
+            }
+        }
+
+        return doc;
     }
 
     public ToOneRelationshipDoc toToOneRelationshipDoc() {
         return toToOneRelationshipDoc(ToOneRelationshipDoc::new);
+    }
+
+    private DATA_SOURCE_DTO retrieveData(REQUEST req) {
+        return DataRetrievalUtil.retrieveDataNullable(() -> dataSupplier.get(req));
     }
 
 }

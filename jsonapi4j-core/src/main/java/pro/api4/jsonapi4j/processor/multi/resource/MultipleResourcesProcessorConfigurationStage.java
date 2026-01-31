@@ -1,14 +1,15 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
-import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiConfigurationStage;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
+import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
+import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessorConfigurationStage;
+import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiConfigurationStage;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -17,11 +18,11 @@ import java.util.concurrent.Executor;
 public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
 
     private final REQUEST request;
-    private ResourceProcessorContext processorContext;
+    private ResourceProcessorContextBuilder processorContextBuilder;
 
     MultipleResourcesProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext =  new ResourceProcessorContext();
+        this.processorContextBuilder = ResourceProcessorContext.builder();
     }
 
     /**
@@ -36,28 +37,12 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
     public MultipleResourcesProcessorConfigurationStage<REQUEST> concurrentRelationshipResolution(
             Executor executor
     ) {
-        this.processorContext = this.processorContext.withExecutor(executor);
+        this.processorContextBuilder = this.processorContextBuilder.executor(executor);
         return this;
     }
 
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
-    ) {
-        this.processorContext = this.processorContext.withAccessControlEvaluator(accessControlEvaluator);
-        return this;
-    }
-
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResource outboundAccessControlSettings
-    ) {
-        this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
-        return this;
-    }
-
-    public MultipleResourcesProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
+    public MultipleResourcesProcessorConfigurationStage<REQUEST> plugins(List<PluginSettings> plugins) {
+        this.processorContextBuilder.plugins(plugins);
         return this;
     }
 
@@ -76,7 +61,7 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
         return new MultipleResourcesJsonApiConfigurationStage<>(
                 request,
                 dataSupplier,
-                processorContext
+                processorContextBuilder.build()
         );
     }
 

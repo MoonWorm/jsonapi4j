@@ -1,11 +1,12 @@
 package pro.api4.jsonapi4j.plugin.ac;
 
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.operation.*;
+import pro.api4.jsonapi4j.plugin.*;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.operation.*;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
@@ -14,13 +15,25 @@ import java.util.Map;
 
 import static pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel.merge;
 
+@Slf4j
 public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
 
     public static final String NAME = JsonApiAccessControlPlugin.class.getSimpleName();
 
+    private final AccessControlEvaluator accessControlEvaluator;
+
+    public JsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
+        this.accessControlEvaluator = accessControlEvaluator;
+    }
+
     @Override
     public String pluginName() {
         return NAME;
+    }
+
+    @Override
+    public int precedence() {
+        return JsonApi4jPlugin.HIGH_PRECEDENCE;
     }
 
     @Override
@@ -108,4 +121,23 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
                 .build();
     }
 
+    @Override
+    public SingleResourceVisitors singleResourceVisitors() {
+        return new AccessControlSingleResourceVisitors(accessControlEvaluator);
+    }
+
+    @Override
+    public MultipleResourcesVisitors multipleResourcesVisitors() {
+        return new AccessControlMultipleResourcesVisitors(accessControlEvaluator);
+    }
+
+    @Override
+    public ToOneRelationshipVisitors toOneRelationshipVisitors() {
+        return new AccessControlToOneRelationshipVisitors(accessControlEvaluator);
+    }
+
+    @Override
+    public ToManyRelationshipVisitors toManyRelationshipVisitors() {
+        return new AccessControlToManyRelationshipVisitors(accessControlEvaluator);
+    }
 }

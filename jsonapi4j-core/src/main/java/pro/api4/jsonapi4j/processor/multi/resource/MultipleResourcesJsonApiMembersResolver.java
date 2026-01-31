@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
+import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
 import pro.api4.jsonapi4j.processor.ResourceJsonApiMembersResolver;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
@@ -57,7 +58,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                 : null;
     }
 
-    public <RELATIONSHIPS> Map<DATA_SOURCE_DTO, RELATIONSHIPS> resolveResourceRelationshipsInParallel(
+    public <RELATIONSHIPS> Map<IdAndType, RELATIONSHIPS> resolveResourceRelationshipsInParallel(
             REQUEST request,
             List<DATA_SOURCE_DTO> dtos,
             RelationshipsSupplier<RELATIONSHIPS> relationshipsSupplier
@@ -90,7 +91,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
         return dtos.stream()
                 .collect(
                         CustomCollectors.toMapThatSupportsNullValues(
-                                dto -> dto,
+                                this::resolveResourceIdAndType,
                                 dto -> relationshipsSupplier.get(
                                         toManyRelationshipsByDto.get(dto),
                                         toOneRelationshipByDto.get(dto)

@@ -1,12 +1,12 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
@@ -16,11 +16,11 @@ public class SingleResourceProcessorConfigurationStage<REQUEST> {
 
     private final REQUEST request;
 
-    private ResourceProcessorContext processorContext;
+    private ResourceProcessorContextBuilder processorContextBuilder;
 
     SingleResourceProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = new ResourceProcessorContext();
+        this.processorContextBuilder = ResourceProcessorContext.builder();
     }
 
     /**
@@ -35,28 +35,12 @@ public class SingleResourceProcessorConfigurationStage<REQUEST> {
     public SingleResourceProcessorConfigurationStage<REQUEST> concurrentRelationshipResolution(
             Executor executor
     ) {
-        this.processorContext = this.processorContext.withExecutor(executor);
+        this.processorContextBuilder = this.processorContextBuilder.executor(executor);
         return this;
     }
 
-    public SingleResourceProcessorConfigurationStage<REQUEST> accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
-    ) {
-        this.processorContext = this.processorContext.withAccessControlEvaluator(accessControlEvaluator);
-        return this;
-    }
-
-    public SingleResourceProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResource outboundAccessControlSettings
-    ) {
-        this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControlSettings);
-        return this;
-    }
-
-    public SingleResourceProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
+    public SingleResourceProcessorConfigurationStage<REQUEST> plugins(List<PluginSettings> plugins) {
+        this.processorContextBuilder = this.processorContextBuilder.plugins(plugins);
         return this;
     }
 
@@ -75,7 +59,7 @@ public class SingleResourceProcessorConfigurationStage<REQUEST> {
         return new SingleResourceJsonApiConfigurationStage<>(
                 request,
                 dataSupplier,
-                processorContext
+                processorContextBuilder.build()
         );
     }
 

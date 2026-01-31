@@ -4,31 +4,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.PluginSettings;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceMetaResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
 import pro.api4.jsonapi4j.processor.resolvers.SingleDataItemDocLinksResolver;
 import pro.api4.jsonapi4j.processor.resolvers.SingleDataItemDocMetaResolver;
+import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcessor;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 class BatchToOneRelationshipProcessor {
 
-    private AccessControlEvaluator accessControlEvaluator;
-    private AccessControlModel inboundAccessControlSettings;
-    private OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings;
+    private List<PluginSettings> plugins = Collections.emptyList();
 
     <REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> BatchToOneRelationshipJsonApiConfigurationStage<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier(
             BatchSingleResourcesDataSupplier<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier
@@ -39,24 +32,10 @@ class BatchToOneRelationshipProcessor {
         );
     }
 
-    public BatchToOneRelationshipProcessor accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
+    public BatchToOneRelationshipProcessor plugins(
+            List<PluginSettings> plugins
     ) {
-        this.accessControlEvaluator = accessControlEvaluator;
-        return this;
-    }
-
-    public BatchToOneRelationshipProcessor inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.inboundAccessControlSettings = inboundAccessControlSettings;
-        return this;
-    }
-
-    public BatchToOneRelationshipProcessor outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings
-    ) {
-        this.outboundAccessControlSettings = outboundAccessControlSettings;
+        this.plugins = plugins;
         return this;
     }
 
@@ -127,9 +106,7 @@ class BatchToOneRelationshipProcessor {
 
         private final BatchSingleResourcesDataSupplier<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> dataSupplier;
 
-        private final AccessControlEvaluator accessControlEvaluator;
-        private final AccessControlModel inboundAccessControlSettings;
-        private final OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControlSettings;
+        private final List<PluginSettings> plugins;
 
         private final SingleDataItemDocLinksResolver<REQUEST, RELATIONSHIP_DTO> topLevelLinksResolver;
         private final SingleDataItemDocMetaResolver<REQUEST, RELATIONSHIP_DTO> topLevelMetaResolver;
@@ -143,9 +120,7 @@ class BatchToOneRelationshipProcessor {
         ) {
             this.dataSupplier = dataSupplier;
 
-            this.accessControlEvaluator = processorConfigurations.accessControlEvaluator;
-            this.inboundAccessControlSettings = processorConfigurations.inboundAccessControlSettings;
-            this.outboundAccessControlSettings = processorConfigurations.outboundAccessControlSettings;
+            this.plugins = processorConfigurations.plugins;
 
             this.topLevelLinksResolver = jsonApiConfigurations.topLevelLinksResolver;
             this.topLevelMetaResolver = jsonApiConfigurations.topLevelMetaResolver;
@@ -177,35 +152,12 @@ class BatchToOneRelationshipProcessor {
                             )
                     ));
 
-            // filter out dtos that are not allowed based on the corresponding request
-            final List<RESOURCE_DTO> resourceDtosFiltered;
-            if (accessControlEvaluator != null && inboundAccessControlSettings != null) {
-                resourceDtosFiltered = resourceDtosToRelationshipRequestMap.entrySet()
-                        .stream()
-                        .map(e ->
-                                accessControlEvaluator.retrieveDataIfAllowed(
-                                        e.getValue(),
-                                        e::getKey,
-                                        inboundAccessControlSettings
-                                )
-                        )
-                        .filter(Objects::nonNull)
-                        .toList();
-            } else {
-                resourceDtosFiltered = resourceDtos;
-            }
-
-            if (CollectionUtils.isEmpty(resourceDtosFiltered)) {
-                log.debug("Inbound Access control evaluation is failed for all relationship requests. Returning empty map.");
-                return Collections.emptyMap();
-            }
-
             //
             // Resolve relationships in batch
             //
             Map<RESOURCE_DTO, RELATIONSHIP_DTO> responseMap =
                     DataRetrievalUtil.retrieveDataNullable(
-                            () -> dataSupplier.get(originalRequest, resourceDtosFiltered)
+                            () -> dataSupplier.get(originalRequest, resourceDtos)
                     );
 
             if (MapUtils.isEmpty(responseMap)) {
@@ -213,74 +165,21 @@ class BatchToOneRelationshipProcessor {
                 return Collections.emptyMap();
             }
 
-            return responseMap.entrySet().stream().collect(
-                    Collectors.toUnmodifiableMap(
+            return resourceDtosToRelationshipRequestMap.entrySet().stream()
+                    .collect(Collectors.toUnmodifiableMap(
                             Map.Entry::getKey,
                             e -> {
-                                RESOURCE_DTO resourceDto = e.getKey();
-                                REQUEST relationshipRequest = resourceDtosToRelationshipRequestMap.get(resourceDto);
-                                RELATIONSHIP_DTO relationshipDto = e.getValue();
-                                return composeToOneRelationshipDoc(relationshipRequest, relationshipDto);
+                                return new ToOneRelationshipProcessor()
+                                        .forRequest(e.getValue())
+                                        .plugins(this.plugins)
+                                        .dataSupplier(r -> responseMap.get(e.getKey()))
+                                        .topLevelLinksResolver(this.topLevelLinksResolver)
+                                        .topLevelMetaResolver(this.topLevelMetaResolver)
+                                        .resourceIdentifierMetaResolver(this.resourceMetaResolver)
+                                        .resourceTypeAndIdSupplier(this.resourceIdentifierTypeAndIdResolver)
+                                        .toToOneRelationshipDoc();
                             }
-                    )
-            );
-        }
-
-        private ToOneRelationshipDoc composeToOneRelationshipDoc(REQUEST relationshipRequest,
-                                                                 RELATIONSHIP_DTO relationshipDto) {
-            ResourceIdentifierObject data = composeData(relationshipRequest, relationshipDto);
-
-            // hide DTO if Resource Identifier was anonymized
-            RELATIONSHIP_DTO relationshipDtoEffective = data == null ? null : relationshipDto;
-
-            // doc-level links
-            LinksObject docLinks = topLevelLinksResolver != null
-                    ? topLevelLinksResolver.resolve(relationshipRequest, relationshipDtoEffective)
-                    : null;
-            // doc-level meta
-            Object docMeta = topLevelMetaResolver != null
-                    ? topLevelMetaResolver.resolve(relationshipRequest, relationshipDtoEffective)
-                    : null;
-
-            return new ToOneRelationshipDoc(data, docLinks, docMeta);
-        }
-
-        private ResourceIdentifierObject composeData(REQUEST relationshipRequest,
-                                                     RELATIONSHIP_DTO relationshipDto) {
-            ResourceIdentifierObject data = null;
-            if (relationshipDto != null) {
-                // id and type
-                IdAndType idAndType = resourceIdentifierTypeAndIdResolver.resolveTypeAndId(relationshipDto);
-
-                // validate none of these is null
-                Validate.notNull(idAndType);
-                Validate.notNull(idAndType.getId());
-                Validate.notNull(idAndType.getType());
-
-                // resource meta
-                Object resourceMeta = resourceMetaResolver != null
-                        ? resourceMetaResolver.resolve(relationshipRequest, relationshipDto)
-                        : null;
-
-                // compose resource identifier
-                ResourceIdentifierObject resourceIdentifier = new ResourceIdentifierObject(
-                        idAndType.getId(),
-                        idAndType.getType().getType(),
-                        resourceMeta
-                );
-
-                // anonymize if needed
-                if (accessControlEvaluator != null && outboundAccessControlSettings != null) {
-                    data = accessControlEvaluator.anonymizeObjectIfNeeded(
-                            resourceIdentifier,
-                            resourceIdentifier,
-                            outboundAccessControlSettings.toOutboundRequirementsForCustomClass()
-                    ).targetObject();
-                } else {
-                    data = resourceIdentifier;
-                }
-            }
-            return data;
+                    ));
         }
 
     }

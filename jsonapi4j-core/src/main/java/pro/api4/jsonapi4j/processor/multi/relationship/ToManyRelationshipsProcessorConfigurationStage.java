@@ -1,41 +1,26 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
-import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
+import pro.api4.jsonapi4j.processor.RelationshipProcessorContext.RelationshipProcessorContextBuilder;
+import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
+
+import java.util.List;
 
 public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
 
     private final REQUEST request;
 
-    private RelationshipProcessorContext processorContext;
+    private final RelationshipProcessorContextBuilder processorContextBuilder;
 
     ToManyRelationshipsProcessorConfigurationStage(REQUEST request) {
         this.request = request;
-        this.processorContext = new RelationshipProcessorContext();
+        this.processorContextBuilder = RelationshipProcessorContext.builder();
     }
 
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> accessControlEvaluator(
-            AccessControlEvaluator accessControlEvaluator
-    ) {
-        this.processorContext = this.processorContext.withAccessControlEvaluator(accessControlEvaluator);
-        return this;
-    }
-
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> outboundAccessControlSettings(
-            OutboundAccessControlForJsonApiResourceIdentifier outboundAccessControl
-    ) {
-        this.processorContext = this.processorContext.withOutboundAccessControlSettings(outboundAccessControl);
-        return this;
-    }
-
-    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> inboundAccessControlSettings(
-            AccessControlModel inboundAccessControlSettings
-    ) {
-        this.processorContext = this.processorContext.withInboundAccessControlSettings(inboundAccessControlSettings);
+    public ToManyRelationshipsProcessorConfigurationStage<REQUEST> plugins(List<PluginSettings> plugins) {
+        this.processorContextBuilder.plugins(plugins);
         return this;
     }
 
@@ -46,9 +31,8 @@ public class ToManyRelationshipsProcessorConfigurationStage<REQUEST> {
         return new ToManyRelationshipsJsonApiConfigurationStage<>(
                 request,
                 dataSupplier,
-                processorContext
+                processorContextBuilder.build()
         );
     }
-
 
 }
