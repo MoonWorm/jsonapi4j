@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
@@ -58,7 +57,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     public JsonApi4jDispatcherServlet(DomainRegistry domainRegistry,
                                       OperationsRegistry operationsRegistry,
                                       List<JsonApi4jPlugin> plugins,
-                                      AccessControlEvaluator accessControlEvaluator,
                                       ExecutorService executorService,
                                       ErrorHandlerFactoriesRegistry errorHandlerFactory,
                                       ObjectMapper objectMapper) {
@@ -68,7 +66,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                         .operationsRegistry(operationsRegistry)
                         .plugins(plugins)
                         .executor(executorService)
-                        .accessControlEvaluator(accessControlEvaluator)
                         .build(),
                 errorHandlerFactory,
                 objectMapper

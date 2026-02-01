@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.plugin.ac.tier;
+package pro.api4.jsonapi4j.principal.tier;
 
 public interface AccessTierRegistry {
 

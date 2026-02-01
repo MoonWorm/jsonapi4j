@@ -13,10 +13,10 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlOwnershipModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
-import pro.api4.jsonapi4j.plugin.ac.principal.AuthenticatedPrincipalContextHolder;
+import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.plugin.ac.scope.ScopesUtils;
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTier;
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTierRegistry;
+import pro.api4.jsonapi4j.principal.tier.AccessTier;
+import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;

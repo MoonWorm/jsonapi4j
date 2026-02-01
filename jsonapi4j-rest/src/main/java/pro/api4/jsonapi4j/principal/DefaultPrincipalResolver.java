@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.principal;
 
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTier;
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTierRegistry;
-import pro.api4.jsonapi4j.plugin.ac.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.principal.tier.AccessTier;
+import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
+import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;

@@ -11,11 +11,6 @@ import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
-import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
@@ -64,9 +59,6 @@ public class JsonApi4j {
     @With
     @Builder.Default
     private List<JsonApi4jPlugin> plugins = Collections.emptyList();
-    @With
-    @Builder.Default
-    private AccessControlEvaluator accessControlEvaluator = AccessControlEvaluator.createDefault();
     @With
     @Builder.Default
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;

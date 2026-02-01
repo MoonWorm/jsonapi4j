@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.springboot.autoconfiguration.oas;
 
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.SpringJsonApi4JProperties;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.springdoc.customizers.CommonOpenApiCustomizer;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.springdoc.customizers.ErrorExamplesCustomizer;
@@ -21,6 +22,11 @@ import org.springframework.context.annotation.Configuration;
 )
 @Configuration
 public class SpringJsonApi4jOasConfig {
+
+    @Bean
+    public JsonApiOasPlugin jsonApiOasPlugin() {
+        return new JsonApiOasPlugin();
+    }
 
     @Bean
     public OpenApiCustomizer openApiCustomizer(

@@ -12,7 +12,6 @@ import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
@@ -209,7 +208,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                                            List<JsonApi4jPlugin> plugins,
                                            ObjectMapper objectMapper,
                                            ExecutorService executorService) {
-        AccessControlEvaluator accessControlEvaluator = initAccessControlEvaluator(servletContext);
         ErrorHandlerFactoriesRegistry errorHandlerFactory = initErrorHandlerFactory(servletContext);
 
         ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet(
@@ -218,7 +216,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                         domainRegistry,
                         operationsRegistry,
                         plugins,
-                        accessControlEvaluator,
                         executorService,
                         errorHandlerFactory,
                         objectMapper
@@ -276,15 +273,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             plugins = Collections.emptyList();
         }
         return plugins;
-    }
-
-    private AccessControlEvaluator initAccessControlEvaluator(ServletContext servletContext) {
-        AccessControlEvaluator ace = (AccessControlEvaluator) servletContext.getAttribute(ACCESS_CONTROL_EVALUATOR_ATT_NAME);
-        if (ace == null) {
-            LOG.info("AccessControlEvaluator not found in servlet context. Setting a default AccessControlEvaluator.");
-            ace = AccessControlEvaluator.createDefault();
-        }
-        return ace;
     }
 
     private ErrorHandlerFactoriesRegistry initErrorHandlerFactory(ServletContext servletContext) {

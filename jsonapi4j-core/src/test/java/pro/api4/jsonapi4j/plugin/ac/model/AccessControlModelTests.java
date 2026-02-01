@@ -3,8 +3,8 @@ package pro.api4.jsonapi4j.plugin.ac.model;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierAdmin;
-import pro.api4.jsonapi4j.plugin.ac.tier.TierRootAdmin;
+import pro.api4.jsonapi4j.principal.tier.TierAdmin;
+import pro.api4.jsonapi4j.principal.tier.TierRootAdmin;
 
 import java.util.Set;
 

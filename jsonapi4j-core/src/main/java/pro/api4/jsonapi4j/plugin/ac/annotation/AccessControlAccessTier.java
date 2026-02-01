@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.plugin.ac.annotation;
 
+import pro.api4.jsonapi4j.principal.tier.*;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -19,11 +21,11 @@ public @interface AccessControlAccessTier {
      * <p>
      * Other available by default tiers (from lowest to highest):
      * <ol>
-     *     <li>{@link pro.api4.jsonapi4j.plugin.ac.tier.TierRootAdmin#ROOT_ADMIN_ACCESS_TIER}</li>
-     *     <li>{@link pro.api4.jsonapi4j.plugin.ac.tier.TierAdmin#ADMIN_ACCESS_TIER}</li>
-     *     <li>{@link pro.api4.jsonapi4j.plugin.ac.tier.TierPartner#PARTNER_ACCESS_TIER}</li>
-     *     <li>{@link pro.api4.jsonapi4j.plugin.ac.tier.TierPublic#PUBLIC_TIER}</li>
-     *     <li>{@link pro.api4.jsonapi4j.plugin.ac.tier.TierNoAccess#NO_ACCESS_TIER}</li>
+     *     <li>{@link TierRootAdmin#ROOT_ADMIN_ACCESS_TIER}</li>
+     *     <li>{@link TierAdmin#ADMIN_ACCESS_TIER}</li>
+     *     <li>{@link TierPartner#PARTNER_ACCESS_TIER}</li>
+     *     <li>{@link TierPublic#PUBLIC_TIER}</li>
+     *     <li>{@link TierNoAccess#NO_ACCESS_TIER}</li>
      * </ol>
      *
      * @return required access tier

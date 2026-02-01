@@ -6,7 +6,6 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.ingredient.IngredientResource;
 import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipe;

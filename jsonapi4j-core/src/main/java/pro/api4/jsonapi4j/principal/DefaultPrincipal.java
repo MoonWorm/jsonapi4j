@@ -1,7 +1,7 @@
 
-package pro.api4.jsonapi4j.plugin.ac.principal;
+package pro.api4.jsonapi4j.principal;
 
-import pro.api4.jsonapi4j.plugin.ac.tier.AccessTier;
+import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
 import java.util.Set;
 

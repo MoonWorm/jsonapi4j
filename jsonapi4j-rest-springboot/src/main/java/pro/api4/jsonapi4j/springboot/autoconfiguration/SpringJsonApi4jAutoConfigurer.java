@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
@@ -23,7 +24,6 @@ import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
@@ -37,7 +37,10 @@ import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAccessC
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasConfig;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,11 +54,9 @@ import java.util.concurrent.Executors;
 public class SpringJsonApi4jAutoConfigurer {
 
     @Bean
-    public List<JsonApi4jPlugin> defaultPlugins(AccessControlEvaluator accessControlEvaluator) {
-        return List.of(
-                new JsonApiAccessControlPlugin(accessControlEvaluator),
-                new JsonApiOasPlugin()
-        );
+    public List<JsonApi4jPlugin> defaultPlugins(ObjectProvider<List<JsonApi4jPlugin>> pluginsProvider) {
+        List<JsonApi4jPlugin> plugins = pluginsProvider.getIfAvailable();
+        return plugins == null ? Collections.emptyList() : plugins;
     }
 
     @Bean
@@ -89,14 +90,12 @@ public class SpringJsonApi4jAutoConfigurer {
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry,
             List<JsonApi4jPlugin> defaultPlugins,
-            AccessControlEvaluator accessControlEvaluator,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService
     ) {
         return JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .plugins(defaultPlugins)
-                .accessControlEvaluator(accessControlEvaluator)
                 .executor(jsonApiExecutorService)
                 .build();
     }
