@@ -32,14 +32,14 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
 
-- 🔐 **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership.
+- 🔌 **Pluggable architecture.** The Plugin System provides an extension mechanism for **JsonApi4j** that allows developers to hook into the request processing pipeline and enrich JSON:API behavior without modifying core logic. Out from the box provides two plugins - Access Control plugin and OpenAPI plugin.
+
+- 🔐 **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership. Implemented as a separate plugin.
 
 - 🚀 **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently - from relationship resolution to compound document processing - and supports advanced concurrency optimizations, including virtual threads.
 
 - 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.  
   The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
-
-- 🔌 **Pluggable architecture.** Designed for extensibility with rich customization capabilities and support for user-defined plugins.
 
 - 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
 
@@ -83,35 +83,29 @@ Then, let's implement a few operations for these resources - reading multiple us
 As mentioned above, let's start by defining our first JSON:API resource - `user` resource.
 
 ```java
-@Component
+@JsonApiResource(resourceType = "users")
 public class UserResource implements Resource<UserDbEntity> {
 
     @Override
     public String resolveResourceId(UserDbEntity userDbEntity) {
-      return userDbEntity.getId();
+        return userDbEntity.getId();
     }
-  
-    @Override
-    public ResourceType resourceType() {
-      return () -> "users";
-    }
-  
+
     @Override
     public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
-      return new UserAttributes(
-              userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
-              userDbEntity.getEmail(),
-              userDbEntity.getCreditCardNumber()
-      );
+        return new UserAttributes(
+                userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
+                userDbEntity.getEmail(),
+                userDbEntity.getCreditCardNumber()
+        );
     }
 }
 ```
 
 What's happening here:
-
+* `@JsonApiResource(resourceType = "users")` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
 * `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
-* `ResourceType resourceType()` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
-* `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (UserDbEntity) to the public API-facing representation (UserAttributes)
+* `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (`UserDbEntity`) to the public API-facing representation (`UserAttributes`)
 
 Each resource is parametrized with a type: 
 * `UserDbEntity` - is represented internally.
@@ -154,18 +148,13 @@ Now that we've defined our resource and attributes, let's implement the first op
 This operation will be available under `GET /users`.
 
 ```java
-@Component
-public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperation<UserDbEntity> {
+@JsonApiResourceOperation(resource = UserResource.class)
+public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
     
-    public ReadAllUsersOperation(UserDb userDb) {
+    public UserOperations(UserDb userDb) {
         this.userDb = userDb;
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return () -> "users";
     }
 
     @Override
@@ -180,11 +169,11 @@ public class ReadMultipleUsersOperation implements ReadMultipleResourcesOperatio
 }
 ```
 
-* `resourceType()` - identify which resource this operation belongs to (`users`).
+* `@JsonApiResourceOperation(resource = UserResource.class)` - identify which resource this operation belongs to (`users`).
 
-* The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source.
+The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source.
 In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism.
-For the sake of this demo, here’s a simple in-memory implementation to support the operation above:
+For the sake of this demo, here's a simple in-memory implementation to support the operation above:
 
 ```java
 @Component
@@ -277,21 +266,16 @@ Try to remove `page[cursor]=xxx` query parameter - it will just start reading us
 Similar to the `users` resource, we need to declare a dedicated JSON:API resource representing a `citizenship` - in this case, a resource of type `country`.
 
 ```java
-@Component
+@JsonApiResource(resourceType = "countries")
 public class CountryResource implements Resource<DownstreamCountry> {
 
     @Override
     public String resolveResourceId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2(); // let's use CCA2 code as a unique country identifier
+        return downstreamCountry.getCca2();
     }
 
     @Override
-    public ResourceType resourceType() {
-        return () -> "countries";
-    }
-
-    @Override
-    public CountryAttributes map(DownstreamCountry downstreamCountry) {
+    public CountryAttributes resolveAttributes(DownstreamCountry downstreamCountry) {
         return new CountryAttributes(
                 downstreamCountry.getName().getCommon(),
                 downstreamCountry.getRegion()
@@ -345,27 +329,17 @@ Now that we've defined our first resources, let's establish a relationship betwe
 We'll define a relationship called `citizenships` between the `UserJsonApiResource` and `CountryJsonApiResource`.
 Each user can have multiple `citizenships`, which makes this a **to-many** relationship (represented by an array of resource identifier objects).
 
-To implement this, we'll create a class that implements the ToManyRelationship interface:
+To implement this, we'll create a class that implements the `ToManyRelationship` interface:
 
 ```java
-@Component
-public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
+@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
+public class UserCitizenshipsRelationship implements ToManyRelationship<DownstreamCountry> {
 
     @Override
-    public Relationship relationshipName() {
-        return () -> "citizenships";
+    public String resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
+        return "countries";
     }
-  
-    @Override
-    public ResourceType resourceType() {
-        return () -> "users";
-    }
-  
-    @Override
-    public ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
-        return () -> "countries";
-    }
-  
+
     @Override
     public String resolveResourceIdentifierId(DownstreamCountry downstreamCountry) {
         return downstreamCountry.getCca2();
@@ -374,12 +348,8 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
 }
 ```
 
-* `Relationship relationshipName()` -  defines the name of the relationship (`citizenships`).
-
-* `ResourceType resourceType()` - identifies which resource this relationship belongs to (`users`).
-
+* `@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)` -  defines the name of the relationship (`citizenships`). Also identifies which resource this relationship belongs to (`users`).
 * `ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
-
 * `String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves the unique identifier of each related resource (e.g., the country's CCA2 code).
 
 ### 7. Add the Missing Relationship Operation
@@ -389,49 +359,38 @@ The final piece of the puzzle is teaching the framework how to **resolve the dec
 To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells **JsonApi4j** how to find the related country resources (i.e., which passports or `citizenships` each user has).
 
 ```java
-@Component
-public class ReadUserCitizenshipsRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry> {
+@JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)
+public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, DownstreamCountry> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     private final UserDb userDb;
     
-    public ReadUserCitizenshipsRelationshipOperation(RestCountriesFeignClient client,
-                                                     UserDb userDb) {
+    public UserCitizenshipsOperations(CountriesClient client,
+                                      UserDb userDb) {
         this.client = client;
         this.userDb = userDb;
     }
     
 
     @Override
-    public CursorAwareResponse<DownstreamCountry> read(JsonApiRequest request) {
+    public CursorPageableResponse<DownstreamCountry> readMany(JsonApiRequest request) {
         return CursorPageableResponse.fromItemsPageable(
                 client.readCountriesByIds(userDb.getUserCitizenships(request.getResourceId())),
                 request.getCursor(), 
                 2 // set limit to 2
         );
     }
-
-    @Override
-    public RelationshipName relationshipName() {
-        return () -> "citizenships";
-    }
-
-    @Override
-    public ResourceType resourceType() {
-        return () -> "users";
-    }
     
 }
 ```
 
-* `relationshipName()` and `resourceType()` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
+* `@JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
 
-* `RestCountriesFeignClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
+* `CountriesClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
 For simplicity, let's keep it local for now and simulate its behavior with an in-memory implementation:
 
 ```java
-@Component
-public class RestCountriesFeignClient {
+public class CountriesClient {
 
   private static final Map<String, DownstreamCountry> COUNTRIES = Map.of(
           "NO", new DownstreamCountry("NO", new Name("Norway", "Kingdom of Norway"), "Europe"),
@@ -471,46 +430,45 @@ public class UserDb {
 }
 ```
 
-Finally, this operation will be available under `GET /users/{userId}/relationships/citizenships`.
+Finally, this operation will be available under [/users/1/relationships/citizenships](http://localhost:8080/jsonapi/users/1/relationships/citizenships).
 
 ### 8. Enable Compound Documents (Optional)
 
-To support [Compound Documents](https://jsonapi.org/format/#document-compound-documents), implement `ReadMultipleResourcesOperation<DownstreamCountry>` with an `id` filter. This allows the framework to resolve included resources efficiently when requested via the include query parameter.
+In order to support [JSON:API Compound Documents feature](https://jsonapi.org/format/#document-compound-documents) we must implement an operation that tells the framework how to read multiple resources by `id`. This allows the framework to resolve included resources efficiently when requested via the include query parameter.
 
-While you could also implement `ReadByIdOperation<DownstreamCountry>`, this approach is less efficient because compound documents would be resolved sequentially, one by one, instead of using a single batch request via `filter[id]=x,y,z`.
+While you could also implement an operation that reads a single resource by its `id`, this approach is less efficient because compound documents would be resolved sequentially, one by one, instead of using a single batch request via `filter[id]=x,y,z`.
 
 ```java
-@Component
-public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
+@JsonApiResourceOperation(resource = CountryResource.class)
+public class CountryOperations implements ResourceOperations<DownstreamCountry> {
 
-    private final RestCountriesFeignClient client;
+    private final CountriesClient client;
     
-    public ReadAllCountriesOperation(RestCountriesFeignClient client) {
+    public CountryOperations(CountriesClient client) {
         this.client = client;
     }
 
     @Override
-    public ResourceType resourceType() {
-        return () -> "countries";
-    }
-
-    @Override
-    public CursorPageableResponse<DownstreamCountry> readPage(JsonApiRequest request) {
-        if (request.getFilters().containsKey(ID_FILTER_NAME)) {
+    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
             return CursorPageableResponse.byItems(client.readCountriesByIds(request.getFilters().get(ID_FILTER_NAME)));
-        } else {
-            throw new JsonApi4jException(400, CommonCodes.MISSING_REQUIRED_PARAMETER, "Operation supports 'id' filter only");
-        }
     }
 
 }
 ```
 
-* `resourceType()` - identify which resource this operation belongs to (`countries`).
+* `@JsonApiResourceOperation(resource = CountryResource.class)` - identify which resource this operation belongs to (`countries`).
 
-* `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.  
+* `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.
 
-This operation will be available under `GET /countries?filter[id]=x,y,z`.
+This operation will be available under [/countries?filter[id]=NO,FI,US](http://localhost:8080/jsonapi/countries?filter[id]=NO,FI,US).
+
+Also, ensure Compound Docs feature is enabled:
+```yaml
+jsonapi4j:
+  compound-docs:
+    enabled: true
+    maxHops: 3
+```
 
 Now we can finally start exploring some more exciting HTTP requests. Check out the next section for hands-on examples!
 
