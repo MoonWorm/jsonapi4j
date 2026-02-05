@@ -176,7 +176,6 @@ In a real application, this could be an ORM entity manager, a JOOQ repository, a
 For the sake of this demo, here's a simple in-memory implementation to support the operation above:
 
 ```java
-@Component
 public class UserDb {
 
     private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
@@ -774,8 +773,8 @@ All domain-related interfaces are located in the `jsonapi4j-core` module under t
 Here are the most essential ones:
 
 * `Resource<RESOURCE_DTO>` - implement this interface to declare a new **JSON:API resource**
-* `ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-one relationship**
-* `ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-many relationship**
+* `ToOneRelationship<RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-one relationship**
+* `ToManyRelationship<RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-many relationship**
 
 #### Resource<RESOURCE_DTO>
 
@@ -799,14 +798,13 @@ Optional / Advanced Capabilities:
 * Resource-level **links**. Implement `resolveResourceLinks(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`. By default, generates a "self" link.
 * Resource-level **meta**. Implement `resolveResourceMeta(JsonApiRequest request, RESOURCE_DTO dataSourceDto)`). By default, generates `null`.
 
-#### ToOneRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
+#### ToOneRelationship<RELATIONSHIP_DTO>
 
 This interface is used to define a **To-One relationship** between a JSON:API resource and another related resource. It allows the framework to map and expose single-valued relationships in a JSON:API-compliant response.
 
 Think of this relationship as a 1-to-1 edge in a graph, where one parent resource can reference a single related resource.
 
-Type parameters:
-* `RESOURCE_DTO` - the internal data object or DTO representing the parent resource (e.g., `UserDbEntity`).
+Type parameter:
 * `RELATIONSHIP_DTO` - the internal data object or DTO representing the related resource (e.g., `DownstreamCountry`).
 
 Mandatory / Key Responsibilities:
@@ -816,14 +814,14 @@ Mandatory / Key Responsibilities:
 * Resolve the related resource ID. Implement `resolveResourceIdentifierId(RELATIONSHIP_DTO relationshipDto)`. This should return a unique identifier for the related resource.
 
 Optional / Advanced Capabilities:
-* Customize relationship links. Implement `resolveRelationshipLinks(JsonApiRequest request, RESOURCE_DTO resourceDto, RELATIONSHIP_DTO relationshipDto)`. By default, generates "self" and "related" links for the relationship.
-* Customize relationship meta. Implement `resolveRelationshipMeta(JsonApiRequest request, RESOURCE_DTO resourceDto, RELATIONSHIP_DTO relationshipDto)`. By default, generates `null`.
+* Customize relationship links. Implement `resolveRelationshipLinks(JsonApiRequest request, RELATIONSHIP_DTO relationshipDto)`. By default, generates "self" and "related" links for the relationship.
+* Customize relationship meta. Implement `resolveRelationshipMeta(JsonApiRequest request, RELATIONSHIP_DTO relationshipDto)`. By default, generates `null`.
 
 Notes:
 * A To-One relationship always resolves to a single resource identifier object (or `null`) in the JSON:API response.
 * Multiple relationships can be defined for the same resource by implementing multiple `ToOneRelationship` instances.
 
-#### ToManyRelationship<RESOURCE_DTO, RELATIONSHIP_DTO>
+#### ToManyRelationship<RELATIONSHIP_DTO>
 
 This interface is used to define a **To-Many relationship** between a JSON:API resource and another related resource. It allows the framework to map and expose multivalued relationships in a JSON:API-compliant response.
 
@@ -841,9 +839,11 @@ All operation interfaces are located in the `jsonapi4j-core` module under the `p
 
 By default, all **JsonApi4j** operations are exposed under the `/jsonapi` root path. This prevents conflicts when integrating JSON:API endpoints into an existing application that may have other REST endpoints. To change the root path, simply set the `jsonapi4j.root-path` property.
 
-Here is the list of available operations: 
+Let's dig deeper into supported operations.
 
-Resource-related operations:
+#### Resource-related operations
+
+Here is the list of resource-related operations supported by the framework:
 * `ReadResourceByIdOperation<RESOURCE_DTO>` - available under `GET /{resource-type}/{resource-id}`, supports compound documents JSON:API feature
   * `RESOURCE_DTO readById(JsonApiRequest request)` - reads a single internal object representing a JSON:API resource of the specified type.
 * `ReadMultipleResourcesOperation<RESOURCE_DTO>` - available under `GET /{resource-type}`, supports compound documents, filtering, and ordering JSON:API features 
@@ -855,23 +855,36 @@ Resource-related operations:
 * `DeleteResourceOperation` - available under `DELETE /{resource-type}/{resource-id}`.
   * `void delete(JsonApiRequest request)` - deletes a single object in the backend system.
 
-Relationship-related operations:
+All these operations are assembled into a single interface - `ResourceOperations<RESOURCE_DTO>` - for simplicity. This way, the developer does not need to remember which operation to implement, as everything is defined in one place. You only need to override the methods you actually need. Although the framework supports multiple approaches, this is the recommended way to implement resource-related operations.
+
+#### To-One-Relationship-related operations
+
+Here is the list of To-One-Relationship-related operations supported by the framework:
 * `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents JSON:API feature
-  * `read(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
-  * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation. 
-* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features
-  * `CursorPageableResponse<RELATIONSHIP_DTO> read(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
-  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+  * `readOne(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
+  * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation.
 * `UpdateToOneRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
-  * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend. 
+    * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend.
+
+The same as for resource - all these operations are also assembled into a single interface - `ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`. This is the preferred way to implement operations for To-One relationships.
+
+#### To-Many-Relationship-related operations
+
+Here is the list of To-Many-Relationship-related operations supported by the framework:
+* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features
+  * `CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
 * `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
   * `void update(JsonApiRequest request)` - updates or deletes all resource linkages representing a To-Many JSON:API relationship in the backend.
 
-Validation. 
-* Every operation has an optional `validate(JsonApiRequest request)` method sometimes with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method. 
-  * If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method. This will generate a JSON:API compliant error response.
-  * For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. This will generate a JSON:API compliant error response.
-  * See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
+The same as for other two operation types - all these operations are also assembled into a single interface - `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`. This is the preferred way to implement operations for To-Many relationships.
+
+#### Validation 
+* Every operation has an optional `validate(JsonApiRequest request)` method sometimes with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method.
+* There is more validation-specific methods you can override when implementing `ResourceOperations<RESOURCE_DTO>`, `ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>` or `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`.
+* If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method. This will generate a JSON:API compliant error response.
+* For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. This will generate a JSON:API compliant error response.
+* See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
 
 ### Register custom error handlers
 
@@ -882,11 +895,68 @@ Two error handler factories are registered by default:
 * `DefaultErrorHandlerFactory` - encapsulates the logic for mapping framework-specific exceptions (such as `JsonApi4jException`, `ResourceNotFoundException`, and other technical exceptions) into JSON:API-compliant error documents    
 * `Jsr380ErrorHandlers` - encapsulates the logic for mapping `jakarta.validation.ConstraintViolationException` exception (JSR-380) into JSON:API error documents.
 
-### Access Control
+### Plugin System
+
+#### Overview
+
+The Plugin System provides an extension mechanism for **JsonApi4j** framework that allows developers to hook into the request processing pipeline and enrich or mutate the JSON:API request processing stages without modifying core logic.
+
+Plugins can declare their specific additional metadata by decorating the different JSON:API elements:
+* Operations (e.g. read, create, update, delete)
+* Resources
+* Relationships
+
+Usually, the needed settings are specified via custom annotations that then can be parsed at runtime.
+
+At runtime, **JsonApi4j** discovers and invokes registered plugins, asking each plugin to extract plugin-specific information from the current operation, resource, or relationship. This information is then passed downstream to consumers that understand the plugin's domain (for example, an Access Control evaluator).
+
+The plugin system is:
+* **Non-intrusive** – core execution flow remains unchanged
+* **Annotation-driven** – plugins typically read metadata from annotations
+* **Composable** – multiple plugins can coexist and contribute independently
+* **Type-safe** – plugin contracts are defined via well-known interfaces
+* **Visitor-based and flexible** – each plugin explicitly declares the list of visitor points it implements, making it clear where it can enrich, mutate, or intentionally short-circuit (break) JSON:API request processing
+
+In short, plugins allow **JsonApi4j** to stay minimal and focused, while enabling powerful, opt-in extensions such as OpenAPI schema generation, security policies, and documentation tooling.
+
+#### Plugin System Architecture
+
+The Plugin System is built around a pull-based extension model with visitor-driven consumption.
+
+Plugins do not change the execution flow of **JsonApi4j**.
+Instead, **JsonApi4j** collects plugin-specific information during request processing and exposes it to visitors, which apply that information to a concrete concern (for example, access control enforcement).
+
+In other words:
+* Plugins extract metadata
+* Visitors interpret and act on it
+
+#### Examples
+
+Please refer:
+* `JsonApiAccessControlPlugin`
+* `JsonApiOasPlugin`
+
+These are the plugins that are available for usage by default. They will be described in more details down below. 
+
+### Access Control Plugin
+
+#### Overview
+
+The Access Control Plugin is a plugin available out from the box in the framework that enforces security rules during JSON:API request processing without altering the core execution flow.
+It evaluates access requirements at well-defined stages of the request lifecycle and conditionally allows, anonymizes, or short-circuits parts of the request or response based on the resolved principal context.
+
+Access control is applied in two phases:
+* Inbound evaluation – before any data is fetched. Rules are evaluated against the incoming `JsonApiRequest`. If access is denied, downstream execution is skipped and the response is safely anonymized.
+* Outbound evaluation – after data has been fetched and the JSON:API document has been composed. Rules are evaluated per resource and relationship element, allowing fine-grained control over visibility of attributes, meta, links, and relationship identifiers.
+
+The plugin derives its rules from `@AccessControl` annotations placed on operations, resources, relationships, attributes, or individual fields.
+During execution, it traverses JSON:API structures using explicit visitor points and applies access decisions consistently across resource objects and resource identifier objects.
+
+This design enables declarative, centralized security policies while keeping domain logic and request handling clean, predictable, and specification-compliant.
 
 #### Evaluation stages
 
-Access control evaluation is performed twice during the request lifecycle - during the **inbound** and **outbound** stages.
+As it was mentioned above access control evaluation is performed twice during the request lifecycle - during the **inbound** and **outbound** stages.
 
 ![Access Control Evaluation Stages](access-control-evaluation-stages-medium.png)
 
@@ -896,7 +966,7 @@ During the **inbound** stage, the **JsonApi4j** application has received a reque
 Access control rules are evaluated against the `JsonApiRequest` since no other data is available at this point.
 If access control requirements are not met, data fetching is skipped, and the `data` field in the response will be fully anonymized.
 
-Inbound access control requirements can be defined on an operations level by placing `@AccessControl` annotation on top of the class declaration.
+Inbound access control requirements can be defined on an operations level by placing `@AccessControl` annotation on top of the class declaration. When implementing `ResourceOperations<RESOURCE_DTO>`, `ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>` or `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>` interfaces `@AccessControl` annotation must be placed above the corresponding method. 
 
 ##### Outbound Evaluation Stage
 
@@ -908,17 +978,16 @@ At this point, access control rules are evaluated for each [JSON:API Resource Ob
 Resource documents typically contain full [JSON:API Resource Objects](https://jsonapi.org/format/#document-resource-objects).
 
 Access control requirements can be defined for:
-* Entire Resource Object - if requirements are not met, the whole resource is anonymized.
-* Specific members (e.g., `attributes`, `meta`) - if requirements are not met, only those members are anonymized.
-* Entire `attributes` section - if requirements are not met, all `attributes` are anonymized.
-* Individual `attribute` fields - if requirements are not met, only the affected fields are anonymized.
+* Entire Resource Object - if requirements are not met, the whole resource is anonymized. `@AccessControl` annotation must be placed on top of the class that implements `Resource<RESOURCE_DTO>` interface.
+* Specific members (e.g., `attributes`, `links`, `meta`) - if requirements are not met, only those members are anonymized. `@AccessControl` annotation must be placed above the `resolveAttributes(...)`, `resolveResourceLinks(...)` or other methods accordingly.
+* Individual `attribute` fields - if requirements are not met, only the affected fields are anonymized. `@AccessControl` annotation must be placed for the needed field.
 
 ###### Relationship Documents
 
 Relationship documents contain only [Resource Identifier Objects](https://jsonapi.org/format/#document-resource-identifier-objects).
 Access control rules can be defined for:
-* Entire **Resource Identifier Object** - if requirements are not met, the entire resource identifier will be anonymized.
-* Specific members (e.g., `meta`) - if requirements are not met, only those members will be anonymized.
+* Entire **Resource Identifier Object** - if requirements are not met, the entire resource identifier will be anonymized. `@AccessControl` annotation must be placed on top of the class that implements `ToOneRelationship<RELATIONSHIP_DTO>` or `ToManyRelationship<RELATIONSHIP_DTO>` interface.
+* Specific members (e.g., `meta`) - if requirements are not met, only those members will be anonymized. `@AccessControl` annotation must be placed above the `resolveResourceIdentifierMeta(...)` method.
 
 #### Access Control Requirements
 
@@ -935,7 +1004,7 @@ If any of the specified requirements are not met, the corresponding section - or
 
 #### Setting Principal Context
 
-By default, the framework uses the `DefaultPrincipalResolver`, which relies on the following HTTP headers to resolve the current authentication context:
+By default, the plugin uses the `DefaultPrincipalResolver`, which relies on the following HTTP headers to resolve the current authentication context:
 
 1. `X-Authenticated-User-Id` - identifies whether the request is sent on behalf of an authenticated client or user. Considered authenticated if the value is not null or blank. Also used for ownership checks.
 2. `X-Authenticated-Client-Access-Tier` - defines the principal's access tier. By default, the framework supports the following values: **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN**, and **ROOT_ADMIN**. Custom tiers can be registered by implementing the `AccessTierRegistry` interface.
@@ -963,14 +1032,16 @@ Let's allow new user creation only for authenticated clients with the `ADMIN` ac
 In this case, we'll use the `@AccessControl` annotation to enforce the access rule at the operation level.
 
 ```java
-@AccessControl(
-        authenticated = Authenticated.AUTHENTICATED,
-        tier = @AccessControlAccessTier(ADMIN_ACCESS_TIER)
-)
-@Component
-public class CreateUserOperation implements CreateResourcesOperation<UserDbEntity> {
+public class UserOperations implements ResourceOperations<UserDbEntity> {
 
-    // ...
+    @AccessControl(
+            authenticated = Authenticated.AUTHENTICATED,
+            tier = @AccessControlAccessTier(ADMIN_ACCESS_TIER)
+    )
+    @Override
+    public UserDbEntity create(JsonApiRequest request) {
+        // ...
+    }
 
 }
 ```
@@ -1000,7 +1071,7 @@ public class UserAttributes {
     )
     private final String creditCardNumber;
     
-    // constructors, getters and setters
+    // ...
 
 }
 ```
@@ -1019,20 +1090,12 @@ In the example below we've configured our entire `UserResource` in a way it's vi
 
 ```java
 @AccessControl(authenticated = Authenticated.AUTHENTICATED)
-@Component
 public class UserResource implements Resource<UserDbEntity> {
-
-  // other methods
-
-  @Override
-  public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
-      // method implementation
-  }
 
   @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
   @Override
   public Object resolveResourceMeta(JsonApiRequest request, UserDbEntity dataSourceDto) {
-      // method implementation
+      // ...
   }
   
 }
@@ -1054,16 +1117,13 @@ In the example below we've configured our entire `UserCitizenshipsRelationship` 
         scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
-@Component
-public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEntity, DownstreamCountry> {
-
-  // other methods
+public class UserCitizenshipsRelationship implements ToManyRelationship<DownstreamCountry> {
 
   @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
   @Override
   public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, 
                                               DownstreamCountry downstreamCountry) {
-    // method implementation
+    // ...
   }
 
 }
@@ -1073,9 +1133,11 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<UserDbEn
 1. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value.
 2. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
 
-### OpenAPI Specification
+### OpenAPI Specification Plugin
 
-Since JSON:API defines a predictable set of operations and schemas, OpenAPI specification generation can be fully automated.
+The OpenAPI Specification Plugin builds on top of the JsonApi4j plugin system to provide automatic, always-in-sync API documentation.
+It observes registered resources, relationships, and operations and translates them into an OpenAPI-compliant model.
+Because the specification is derived directly from the same metadata used at runtime, it accurately reflects the actual behavior of your JSON:API endpoints without requiring manual maintenance.
 
 **JsonApi4j** can generate an instance of the `io.swagger.v3.oas.models.OpenAPI` model and expose it through a dedicated endpoint.
 
@@ -1083,7 +1145,12 @@ By default, you can access both the JSON and YAML versions of the generated spec
 It supports an optional `format` query parameter (`json` or `yaml`) - defaulting to `json` if not provided.
 
 Out of the box, **JsonApi4j** generates all schemas and operations automatically.
-However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml` configuration.
+However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml` configuration. 
+
+There are more tunings available by placing the next annotations:
+* `@OasResourceInfo` annotation on top of JSON:API resource declaration
+* `@OasRelationshipInfo` annotation on top of JSON:API To-One or To-Many Relationship declaration
+* `@OasOperationInfo` annotation on top of operation class or any of its methods that represents some particular operation
 
 ### Compound documents
 
