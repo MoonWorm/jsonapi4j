@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -8,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 public class JsonApi4jConfigReader {
 
@@ -49,10 +51,24 @@ public class JsonApi4jConfigReader {
         }
     }
 
+    public static Map<String, Object> readConfigAsMap(String path) throws IOException {
+        try (InputStream is = JsonApi4jProperties.class.getResourceAsStream(path)) {
+            if (is == null) {
+                throw new IOException("Resource not found: " + path);
+            }
+            return getObjectMapper(path).readValue(is, new TypeReference<>() {});
+        }
+    }
+
+    public static <T> T convertToConfig(Map<String, Object> rawConfig,
+                                        Class<T> targetConfigType) {
+        return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(rawConfig, targetConfigType);
+    }
+
     public static JsonApi4jProperties readConfigFromClasspath(String configNameYaml, String configNameJson) throws IOException {
-        try (InputStream in = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
-            if (in != null) {
-                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(in, JsonApi4jProperties.class);
+        try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
+            if (is != null) {
+                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, JsonApi4jProperties.class);
             }
         }
         try (InputStream in = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameJson)) {
@@ -60,6 +76,22 @@ public class JsonApi4jConfigReader {
                 throw new IllegalStateException("No configuration file found");
             }
             return JsonApi4jConfigReader.getJsonObjectMapper().readValue(in, JsonApi4jProperties.class);
+        }
+    }
+
+    public static Map<String, Object> readConfigFromClasspathAsMap(String configNameYaml,
+                                                                   String configNameJson) throws IOException {
+        try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
+            if (is != null) {
+
+                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, new TypeReference<>() {});
+            }
+        }
+        try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameJson)) {
+            if (is == null) {
+                throw new IllegalStateException("No configuration file found");
+            }
+            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(is, new TypeReference<>() {});
         }
     }
 

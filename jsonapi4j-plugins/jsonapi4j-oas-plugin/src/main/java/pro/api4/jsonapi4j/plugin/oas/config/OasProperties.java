@@ -1,13 +1,18 @@
-package pro.api4.jsonapi4j.config;
+package pro.api4.jsonapi4j.plugin.oas.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 import pro.api4.jsonapi4j.principal.tier.TierPublic;
 import lombok.Data;
 
 import java.util.Map;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class OasProperties {
+
+    public static final String OAS_PROPERTY_NAME = "oas";
 
     public static final String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
 

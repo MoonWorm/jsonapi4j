@@ -6,16 +6,17 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.CommonOpenApiCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiOperationsCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiRequestBodySchemaCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiResponseSchemaCustomizer;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 public class OasServlet extends HttpServlet {
 
@@ -27,17 +28,20 @@ public class OasServlet extends HttpServlet {
 
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private final JsonApi4jProperties properties;
+    private final String rootPath;
+    private final OasProperties oasProperties;
 
     private String cachedOasJson;
     private String cachedOasYaml;
 
     public OasServlet(DomainRegistry domainRegistry,
                       OperationsRegistry operationsRegistry,
-                      JsonApi4jProperties properties) {
+                      String rootPath,
+                      OasProperties oasProperties) {
         this.domainRegistry = domainRegistry;
         this.operationsRegistry = operationsRegistry;
-        this.properties = properties;
+        this.rootPath = rootPath;
+        this.oasProperties = oasProperties;
     }
 
     @Override
@@ -54,14 +58,14 @@ public class OasServlet extends HttpServlet {
             return;
         }
         OpenAPI openAPI = new OpenAPI();
-        new CommonOpenApiCustomizer(properties.getOas(), operationsRegistry).customise(openAPI);
+        new CommonOpenApiCustomizer(oasProperties, operationsRegistry).customise(openAPI);
         new JsonApiResponseSchemaCustomizer(domainRegistry, operationsRegistry).customise(openAPI);
         new JsonApiRequestBodySchemaCustomizer(operationsRegistry).customise(openAPI);
         new JsonApiOperationsCustomizer(
-                properties.getRootPath(),
+                rootPath,
                 domainRegistry,
                 operationsRegistry,
-                properties.getOas().getCustomResponseHeaders()
+                oasProperties != null ? oasProperties.getCustomResponseHeaders() : Collections.emptyMap()
         ).customise(openAPI);
         writeOasToResponse(resp, format, openAPI);
     }

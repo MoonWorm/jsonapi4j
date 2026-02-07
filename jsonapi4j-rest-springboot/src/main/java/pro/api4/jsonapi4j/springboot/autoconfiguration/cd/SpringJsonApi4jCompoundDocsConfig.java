@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.springboot.autoconfiguration.cd;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.DomainUrlResolver;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,7 +30,7 @@ import static java.util.stream.Collectors.toMap;
 public class SpringJsonApi4jCompoundDocsConfig {
 
     @Bean
-    public CompoundDocsResolverConfig.DomainUrlResolver jsonapi4jCompoundDocsDomainUrlResolver(
+    public DomainUrlResolver jsonapi4jCompoundDocsDomainUrlResolver(
             JsonApi4jProperties properties
     ) {
         Map<String, URI> mapping = properties.getCompoundDocs().getMapping()
@@ -43,7 +44,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
     public CompoundDocsResolverConfig jsonApi4jCompoundDocsResolverConfig(
             @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
             @Qualifier("jsonApi4jExecutorService") ExecutorService executorService,
-            CompoundDocsResolverConfig.DomainUrlResolver domainUrlResolver,
+            DomainUrlResolver domainUrlResolver,
             JsonApi4jProperties properties
     ) {
         return new CompoundDocsResolverConfig(

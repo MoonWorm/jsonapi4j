@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
 import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.ingredient.IngredientResource;
 import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipe;
 import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipeResource;
@@ -55,8 +56,11 @@ public class CookbookApp {
         context.setAttribute(JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
         context.setAttribute(JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
 
-        var initializer = new JsonApi4jServletContainerInitializer();
-        initializer.onStartup(null, context.getServletContext());
+        var jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
+        jsonApi4jInitializer.onStartup(null, context.getServletContext());
+
+        var oasPluginInitializer = new JsonApiOasServletContainerInitializer();
+        oasPluginInitializer.onStartup(null, context.getServletContext());
 
         server.setHandler(context);
         server.start();

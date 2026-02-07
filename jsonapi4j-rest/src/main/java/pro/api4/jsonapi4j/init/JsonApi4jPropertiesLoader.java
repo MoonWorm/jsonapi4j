@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 
+import java.util.Map;
+
 @Slf4j
 public final class JsonApi4jPropertiesLoader {
 
@@ -36,6 +38,28 @@ public final class JsonApi4jPropertiesLoader {
                 return JsonApi4jConfigReader.readConfig(path);
             }
             return JsonApi4jConfigReader.readConfigFromClasspath(
+                    "jsonapi4j.yaml",
+                    "jsonapi4j.json"
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to load JsonApi4jConfig", e);
+        }
+    }
+
+    public static Map<String, Object> loadConfigAsMap(ServletContext servletContext) {
+        try {
+            String path = System.getProperty("jsonapi4j.config");
+            if (path == null) {
+                path = System.getenv("JSONAPI4J_CONFIG");
+            }
+            if (path == null) {
+                path = servletContext.getInitParameter("jsonapi4j.config");
+            }
+            log.info("Loading configuration from {}", path);
+            if (path != null) {
+                return JsonApi4jConfigReader.readConfigAsMap(path);
+            }
+            return JsonApi4jConfigReader.readConfigFromClasspathAsMap(
                     "jsonapi4j.yaml",
                     "jsonapi4j.json"
             );

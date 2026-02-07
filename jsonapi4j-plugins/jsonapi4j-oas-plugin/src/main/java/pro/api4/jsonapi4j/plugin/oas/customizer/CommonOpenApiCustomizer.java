@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
-import pro.api4.jsonapi4j.config.OasProperties;
-import pro.api4.jsonapi4j.config.OasProperties.OAuth2GrantFlow;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.OAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import io.swagger.v3.oas.models.Components;
@@ -46,53 +46,55 @@ public class CommonOpenApiCustomizer {
     }
 
     private void enrichOpenApiInfo(OpenAPI openApi) {
-        if (oasProperties.getInfo() != null) {
-            if (openApi.getInfo() == null) {
-                openApi.setInfo(new Info());
-            }
-            if (StringUtils.isNotBlank(oasProperties.getInfo().getTitle())) {
-                openApi.getInfo().setTitle(oasProperties.getInfo().getTitle());
-            }
-            if (StringUtils.isNotBlank(oasProperties.getInfo().getVersion())) {
-                openApi.getInfo().setVersion(oasProperties.getInfo().getVersion());
-            }
-            if (StringUtils.isNotBlank(oasProperties.getInfo().getDescription())) {
-                openApi.getInfo().setDescription(oasProperties.getInfo().getDescription());
-            }
-            if (StringUtils.isNotBlank(oasProperties.getInfo().getTermsOfService())) {
-                openApi.getInfo().setTermsOfService(oasProperties.getInfo().getTermsOfService());
-            }
-            if (MapUtils.isEmpty(oasProperties.getInfo().getExtensions())) {
-                openApi.getInfo().setExtensions(oasProperties.getInfo().getExtensions());
-            }
+        if (oasProperties != null) {
+            if (oasProperties.getInfo() != null) {
+                if (openApi.getInfo() == null) {
+                    openApi.setInfo(new Info());
+                }
+                if (StringUtils.isNotBlank(oasProperties.getInfo().getTitle())) {
+                    openApi.getInfo().setTitle(oasProperties.getInfo().getTitle());
+                }
+                if (StringUtils.isNotBlank(oasProperties.getInfo().getVersion())) {
+                    openApi.getInfo().setVersion(oasProperties.getInfo().getVersion());
+                }
+                if (StringUtils.isNotBlank(oasProperties.getInfo().getDescription())) {
+                    openApi.getInfo().setDescription(oasProperties.getInfo().getDescription());
+                }
+                if (StringUtils.isNotBlank(oasProperties.getInfo().getTermsOfService())) {
+                    openApi.getInfo().setTermsOfService(oasProperties.getInfo().getTermsOfService());
+                }
+                if (MapUtils.isEmpty(oasProperties.getInfo().getExtensions())) {
+                    openApi.getInfo().setExtensions(oasProperties.getInfo().getExtensions());
+                }
 
-            if (oasProperties.getInfo().getContact() != null) {
-                if (openApi.getInfo().getContact() == null) {
-                    openApi.getInfo().setContact(new Contact());
+                if (oasProperties.getInfo().getContact() != null) {
+                    if (openApi.getInfo().getContact() == null) {
+                        openApi.getInfo().setContact(new Contact());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getName())) {
+                        openApi.getInfo().getContact().setName(oasProperties.getInfo().getContact().getName());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getUrl())) {
+                        openApi.getInfo().getContact().setUrl(oasProperties.getInfo().getContact().getUrl());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getEmail())) {
+                        openApi.getInfo().getContact().setEmail(oasProperties.getInfo().getContact().getEmail());
+                    }
                 }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getName())) {
-                    openApi.getInfo().getContact().setName(oasProperties.getInfo().getContact().getName());
-                }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getUrl())) {
-                    openApi.getInfo().getContact().setUrl(oasProperties.getInfo().getContact().getUrl());
-                }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getEmail())) {
-                    openApi.getInfo().getContact().setEmail(oasProperties.getInfo().getContact().getEmail());
-                }
-            }
 
-            if (oasProperties.getInfo().getLicense() != null) {
-                if (openApi.getInfo().getLicense() == null) {
-                    openApi.getInfo().setLicense(new License());
-                }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getName())) {
-                    openApi.getInfo().getLicense().setName(oasProperties.getInfo().getLicense().getName());
-                }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getUrl())) {
-                    openApi.getInfo().getLicense().setUrl(oasProperties.getInfo().getLicense().getUrl());
-                }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getIdentifier())) {
-                    openApi.getInfo().getLicense().setIdentifier(oasProperties.getInfo().getLicense().getIdentifier());
+                if (oasProperties.getInfo().getLicense() != null) {
+                    if (openApi.getInfo().getLicense() == null) {
+                        openApi.getInfo().setLicense(new License());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getName())) {
+                        openApi.getInfo().getLicense().setName(oasProperties.getInfo().getLicense().getName());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getUrl())) {
+                        openApi.getInfo().getLicense().setUrl(oasProperties.getInfo().getLicense().getUrl());
+                    }
+                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getIdentifier())) {
+                        openApi.getInfo().getLicense().setIdentifier(oasProperties.getInfo().getLicense().getIdentifier());
+                    }
                 }
             }
         }

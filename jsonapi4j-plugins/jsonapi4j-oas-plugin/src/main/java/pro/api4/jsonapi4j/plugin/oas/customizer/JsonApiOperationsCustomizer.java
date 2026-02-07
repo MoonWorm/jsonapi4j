@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
-import pro.api4.jsonapi4j.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
