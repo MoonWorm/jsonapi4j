@@ -39,10 +39,12 @@
     </scm>
 
     <modules>
+        <module>jsonapi4j-base</module>
         <module>jsonapi4j-core</module>
+        <module>jsonapi4j-plugins</module>
+        <module>jsonapi4j-compound-docs-resolver</module>
         <module>jsonapi4j-rest</module>
         <module>jsonapi4j-rest-springboot</module>
-        <module>jsonapi4j-compound-docs-resolver</module>
         <module>jsonapi4j-report</module>
         <module>examples</module>
     </modules>
@@ -55,6 +57,7 @@
         <spring.version>5.3.14</spring.version>
         <spring.boot.version>3.4.2</spring.boot.version>
         <tomcat-embed-core.version>10.1.11</tomcat-embed-core.version>
+        <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
 
         <!--json/yaml-->
         <jackson.version>2.18.3</jackson.version>
@@ -132,6 +135,13 @@
                 <version>${spring.boot.version}</version>
             </dependency>
 
+            <!-- Servlet API -->
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta.servlet-api.version}</version>
+            </dependency>
+
             <!--Tomcat embed-->
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
@@ -187,6 +197,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
 

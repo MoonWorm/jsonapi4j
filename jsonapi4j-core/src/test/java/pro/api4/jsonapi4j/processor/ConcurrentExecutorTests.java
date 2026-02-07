@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 
 import java.util.List;
 import java.util.Map;

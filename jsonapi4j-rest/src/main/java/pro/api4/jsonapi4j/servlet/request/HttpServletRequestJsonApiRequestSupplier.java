@@ -22,7 +22,6 @@ import pro.api4.jsonapi4j.request.SortAwareRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -66,7 +65,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
         byte[] payload;
         try {
-            payload = IOUtils.toByteArray(servletRequest.getInputStream());
+            payload = servletRequest.getInputStream().readAllBytes();
         } catch (IOException e) {
             log.error("Error while reading request body", e);
             throw new RuntimeException(e);

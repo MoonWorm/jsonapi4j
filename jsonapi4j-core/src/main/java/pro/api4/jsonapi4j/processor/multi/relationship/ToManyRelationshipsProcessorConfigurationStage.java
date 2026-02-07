@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.processor.multi.relationship;
 
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext.RelationshipProcessorContextBuilder;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;

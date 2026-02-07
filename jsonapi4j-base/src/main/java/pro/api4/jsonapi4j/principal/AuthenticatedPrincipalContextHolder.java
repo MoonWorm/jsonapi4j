@@ -1,0 +1,55 @@
+package pro.api4.jsonapi4j.principal;
+
+import pro.api4.jsonapi4j.principal.tier.AccessTier;
+
+import java.util.Optional;
+import java.util.Set;
+
+public class AuthenticatedPrincipalContextHolder {
+
+    private static final ThreadLocal<Principal> PRINCIPAL = new ThreadLocal<>();
+
+    public static void setAuthenticatedPrincipalContext(Principal principal) {
+        PRINCIPAL.set(principal);
+    }
+
+    public static Principal copy() {
+        Principal principal = PRINCIPAL.get();
+        if (principal == null) {
+            return null;
+        }
+        return new Principal() {
+            @Override
+            public String authenticatedUserId() {
+                return principal.authenticatedUserId();
+            }
+
+            @Override
+            public AccessTier authenticatedClientAccessTier() {
+                return principal.authenticatedClientAccessTier();
+            }
+
+            @Override
+            public Set<String> authenticatedClientScopes() {
+                return principal.authenticatedClientScopes();
+            }
+        };
+    }
+
+    public static Optional<AccessTier> getAccessTier() {
+        return Optional.ofNullable(PRINCIPAL.get()).map(Principal::authenticatedClientAccessTier);
+    }
+
+    public static Optional<Set<String>> getScopes() {
+        return Optional.ofNullable(PRINCIPAL.get()).map(Principal::authenticatedClientScopes);
+    }
+
+    public static Optional<String> getAuthenticatedUserId() {
+        return Optional.ofNullable(PRINCIPAL.get()).map(Principal::authenticatedUserId);
+    }
+
+    public static Optional<Principal> getPrincipal() {
+        return Optional.ofNullable(PRINCIPAL.get());
+    }
+
+}

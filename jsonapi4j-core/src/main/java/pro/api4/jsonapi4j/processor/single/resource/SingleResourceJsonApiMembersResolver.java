@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.processor.single.resource;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
 import pro.api4.jsonapi4j.processor.ResourceJsonApiMembersResolver;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
-import pro.api4.jsonapi4j.processor.util.CustomCollectors;
+import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;

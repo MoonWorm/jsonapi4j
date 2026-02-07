@@ -8,7 +8,8 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.request.FiltersAwareRequest;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
@@ -79,7 +80,10 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
     @Override
     public void validateReadMultiple(JsonApiRequest request) {
         ResourceOperations.super.validateReadMultiple(request);
-        new JsonApi4jDefaultValidator().validateNonNull(request.getFilters().get(ID_FILTER_NAME));
+        new JsonApi4jDefaultValidator().validateNonNull(
+                request.getFilters().get(ID_FILTER_NAME),
+                FiltersAwareRequest.getFilterParam(ID_FILTER_NAME)
+        );
     }
 
 }

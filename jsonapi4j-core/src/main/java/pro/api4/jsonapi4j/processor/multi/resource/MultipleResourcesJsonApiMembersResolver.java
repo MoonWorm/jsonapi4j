@@ -13,7 +13,7 @@ import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.processor.util.CustomCollectors;
+import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.processor.util.CustomCollectors.toOrderedMap;
+import static pro.api4.jsonapi4j.util.CustomCollectors.toOrderedMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.toMap;
 

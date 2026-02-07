@@ -46,30 +46,14 @@
         <maven.compiler.target>21</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <base62lib.version>0.1.3</base62lib.version>
-        <spring-expression.version>6.2.2</spring-expression.version>
     </properties>
 
     <dependencies>
-        <!-- Base62 lib - needed for faking limit-offset pagination -->
-        <dependency>
-            <groupId>io.seruco.encoding</groupId>
-            <artifactId>base62</artifactId>
-            <version>${base62lib.version}</version>
-        </dependency>
 
-        <!-- SPeL is used for Scopes expressions -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-expression</artifactId>
-            <version>${spring-expression.version}</version>
-        </dependency>
-
-        <!-- JSR-380 validation -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-base</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- Apache commons -->

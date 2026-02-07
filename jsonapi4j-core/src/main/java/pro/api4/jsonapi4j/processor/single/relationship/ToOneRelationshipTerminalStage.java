@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPreRetrievalPhase;
 import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;

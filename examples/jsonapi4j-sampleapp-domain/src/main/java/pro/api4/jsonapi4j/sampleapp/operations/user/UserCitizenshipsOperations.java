@@ -14,7 +14,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;

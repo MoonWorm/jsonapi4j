@@ -24,6 +24,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>${jetty.version}</version>
@@ -37,10 +45,6 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>5.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-rest</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -1,24 +1,19 @@
 package pro.api4.jsonapi4j.request;
 
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Slf4j
@@ -105,6 +100,32 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
         <T> T deserializeRelationshipDoc(byte[] payload, Class<T> type) throws IOException;
 
+    }
+
+    public static JsonApiRequestBuilder builder() {
+        return new JsonApiRequestBuilder();
+    }
+
+    public static JsonApiRequest composeRelationshipRequest(String resourceId,
+                                                     ResourceType resourceType,
+                                                     RelationshipName relationshipName,
+                                                     OperationType operationType) {
+        return builder()
+                .targetResourceType(resourceType)
+                .operationType(operationType)
+                .resourceId(resourceId)
+                .targetRelationship(relationshipName)
+                .build();
+    }
+
+    public static JsonApiRequest composeResourceRequest(String resourceId,
+                                                        ResourceType resourceType,
+                                                        OperationType operationType) {
+        return builder()
+                .targetResourceType(resourceType)
+                .resourceId(resourceId)
+                .operationType(operationType)
+                .build();
     }
 
 }

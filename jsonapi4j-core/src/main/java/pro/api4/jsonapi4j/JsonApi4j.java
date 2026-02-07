@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
+import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
@@ -25,7 +26,9 @@ import pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipR
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcessor;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
+import pro.api4.jsonapi4j.request.DefaultJsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -495,7 +498,7 @@ public class JsonApi4j {
         ) {
             return request -> {
                 List<RESOURCE_DTO> result = request.getFilters().get(ReadMultipleResourcesOperation.ID_FILTER_NAME).stream().map(id -> {
-                    JsonApiRequest readByIdRequest = JsonApiRequest.composeResourceRequest(
+                    JsonApiRequest readByIdRequest = DefaultJsonApiRequest.composeResourceRequest(
                             id,
                             resourceType,
                             OperationType.READ_RESOURCE_BY_ID
@@ -858,7 +861,7 @@ public class JsonApi4j {
                 Consumer<JsonApiRequest> validator
         ) {
             return (originalRequest, dataSourceDto) -> {
-                JsonApiRequest relationshipRequest = JsonApiRequest.composeRelationshipRequest(
+                JsonApiRequest relationshipRequest = DefaultJsonApiRequest.composeRelationshipRequest(
                         resourceIdSupplier.getId(dataSourceDto),
                         operationMeta.getResourceType(),
                         operationMeta.getRelationshipName(),

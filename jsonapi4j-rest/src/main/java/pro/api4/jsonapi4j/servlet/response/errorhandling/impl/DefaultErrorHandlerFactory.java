@@ -1,11 +1,13 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.model.document.error.ErrorCode;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
@@ -92,15 +94,19 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });
-        this.errorResponseMappers.put(AccessControlMisconfigurationException.class, new ErrorsDocSupplier<AccessControlMisconfigurationException>() {
+        this.errorResponseMappers.put(JsonApi4jConstraintViolationException.class, new ErrorsDocSupplier<JsonApi4jConstraintViolationException>() {
             @Override
-            public ErrorsDoc getErrorResponse(AccessControlMisconfigurationException e) {
-                return ErrorsDocFactory.internalServerErrorsDoc();
+            public ErrorsDoc getErrorResponse(JsonApi4jConstraintViolationException e) {
+                return ErrorsDocFactory.badRequestErrorsDoc(
+                        DefaultErrorCodes.GENERIC_REQUEST_ERROR,
+                        e.getDetail(),
+                        e.getParameter()
+                );
             }
 
             @Override
-            public int getHttpStatus(AccessControlMisconfigurationException e) {
-                return HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR.getCode();
+            public int getHttpStatus(JsonApi4jConstraintViolationException e) {
+                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });
     }

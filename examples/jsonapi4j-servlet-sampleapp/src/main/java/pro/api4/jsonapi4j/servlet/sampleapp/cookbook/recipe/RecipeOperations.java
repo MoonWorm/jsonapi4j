@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe;
 import lombok.AllArgsConstructor;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.List;

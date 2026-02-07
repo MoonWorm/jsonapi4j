@@ -18,20 +18,44 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
 
-        <lombok.version>1.18.36</lombok.version>
+        <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
         <swagger.model.version>2.2.31</swagger.model.version>
+        <lombok.version>1.18.36</lombok.version>
     </properties>
 
     <dependencies>
+        <!-- jsonapi4j -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
+            <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- JSR-380 validation -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${jakarta.validation-api.version}</version>
+        </dependency>
+
+        <!-- OAS annotations -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>${swagger.model.version}</version>
         </dependency>
+
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>

@@ -54,6 +54,14 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-springboot</artifactId>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>pro.api4</groupId>

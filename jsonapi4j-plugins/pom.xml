@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>jsonapi4j</artifactId>
+        <groupId>pro.api4</groupId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>jsonapi4j-plugins</artifactId>
+    <packaging>pom</packaging>
+
+    <name>JsonApi4j - Plugins - Parent Module</name>
+
+    <modules>
+        <module>jsonapi4j-ac-plugin</module>
+        <module>jsonapi4j-oas-plugin</module>
+    </modules>
+
+</project>

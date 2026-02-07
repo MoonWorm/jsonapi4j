@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.Collections;

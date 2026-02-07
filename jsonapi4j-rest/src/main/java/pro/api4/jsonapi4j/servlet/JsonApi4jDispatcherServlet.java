@@ -32,7 +32,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
     private final static Logger LOG = LoggerFactory.getLogger(JsonApi4jDispatcherServlet.class);
 
-    private JsonApi4j jsonApi4j;
+    private final JsonApi4j jsonApi4j;
 
     private final ErrorHandlerFactoriesRegistry errorHandlerFactory;
     private final ObjectMapper objectMapper;

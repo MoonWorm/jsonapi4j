@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;

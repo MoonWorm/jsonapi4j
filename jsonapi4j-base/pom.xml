@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>jsonapi4j</artifactId>
+        <groupId>pro.api4</groupId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>jsonapi4j-base</artifactId>
+
+    <name>JsonApi4j - Base Module</name>
+    <description>Core module that contains base JSON:API classes and interfaces. Can generate JSON:API compliant Java models without bringing any HTTP-layer dependencies</description>
+    <url>https://api4.pro</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>MoonWorm</id>
+            <name>Aliaksei Taliuk</name>
+            <email>aliaksei.taliuk@gmail.com</email>
+            <url>https://github.com/MoonWorm</url>
+            <roles>
+                <role>Author</role>
+                <role>Project Maintainer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/MoonWorm/jsonapi4j.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MoonWorm/jsonapi4j.git</developerConnection>
+        <url>https://github.com/MoonWorm/jsonapi4j</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <base62lib.version>0.1.3</base62lib.version>
+    </properties>
+
+    <dependencies>
+        <!-- Base62 lib - needed for faking limit-offset pagination -->
+        <dependency>
+            <groupId>io.seruco.encoding</groupId>
+            <artifactId>base62</artifactId>
+            <version>${base62lib.version}</version>
+        </dependency>
+
+        <!-- Apache commons -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

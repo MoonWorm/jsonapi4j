@@ -22,36 +22,59 @@ import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
-import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
-import pro.api4.jsonapi4j.plugin.oas.OasServlet;
+import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
+import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
+import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAccessControlConfig;
+import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAcPluginConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasConfig;
+import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPluginConfig;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Configuration
 @Import(value = {
-        SpringJsonApi4jAccessControlConfig.class,
-        SpringJsonApi4jOasConfig.class,
+        SpringJsonApi4jAcPluginConfig.class,
+        SpringJsonApi4jOasPluginConfig.class,
         SpringJsonApi4jCompoundDocsConfig.class,
 })
 @ComponentScan(basePackages = {"pro.api4.jsonapi4j.springboot.autoconfiguration"})
 public class SpringJsonApi4jAutoConfigurer {
+
+    @Bean
+    public AccessTierRegistry jsonapi4jAccessTierRegistry() {
+        return new DefaultAccessTierRegistry();
+    }
+
+    @Bean
+    public PrincipalResolver jsonapi4jPrincipalResolver(
+            AccessTierRegistry accessTierRegistry
+    ) {
+        return new DefaultPrincipalResolver(accessTierRegistry);
+    }
+
+    @Bean
+    public FilterRegistrationBean<?> jsonapi4jPrincipalResolvingFilter(
+            PrincipalResolver jsonApi4jPrincipalResolver,
+            @Qualifier("jsonApi4jDispatcherServlet") ServletRegistrationBean<?> jsonApi4jDispatcherServlet
+    ) {
+        return new FilterRegistrationBean<>(
+                new PrincipalResolvingFilter(jsonApi4jPrincipalResolver),
+                jsonApi4jDispatcherServlet
+        );
+    }
 
     @Bean
     public List<JsonApi4jPlugin> defaultPlugins(ObjectProvider<List<JsonApi4jPlugin>> pluginsProvider) {
@@ -171,33 +194,6 @@ public class SpringJsonApi4jAutoConfigurer {
             //Configuring Tomcat to allow '[' and ']' chars in query params
             connector.setProperty("relaxedQueryChars", "[]");
         });
-    }
-
-    @Bean(name = "jsonApi4jOasServlet")
-    public ServletRegistrationBean<?> jsonApi4jOasServlet(
-            JsonApi4jProperties properties,
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry
-    ) {
-        String jsonapi4jRootPath = properties.getRootPath();
-
-        String effectiveServletUrlMapping;
-        if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {
-            effectiveServletUrlMapping = "/oas/*";
-        } else {
-            effectiveServletUrlMapping = jsonapi4jRootPath + "/oas/*";
-        }
-
-        ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
-                new OasServlet(
-                        domainRegistry,
-                        operationsRegistry,
-                        properties
-                ),
-                effectiveServletUrlMapping
-        );
-        servletRegistration.setLoadOnStartup(2);
-        return servletRegistration;
     }
 
 }

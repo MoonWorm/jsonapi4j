@@ -5,32 +5,33 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.oas.OasServlet;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
-import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
-import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
-import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
+import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.DefaultDomainUrlResolver;
+import pro.api4.jsonapi4j.config.CompoundDocsProperties;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
+import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
+import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
+import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,62 +39,25 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE;
+import static java.util.stream.Collectors.toMap;
+import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfig;
 
 public class JsonApi4jServletContainerInitializer implements ServletContainerInitializer {
 
     public static final String JSONAPI4J_DISPATCHER_SERVLET_NAME = "jsonApi4jDispatcherServlet";
-    public static final String JSONAPI4J_OAS_SERVLET_NAME = "jsonApi4jOasServlet";
-    public static final String JSONAPI4J_ACCESS_CONTROL_FILTER_NAME = "jsonapi4jAccessControlFilter";
+    public static final String JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME = "jsonapi4jAccessControlFilter";
     public static final String JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME = "jsonapi4jRequestBodyCachingFilter";
     public static final String JSONAPI4J_COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
-
-    public static final String JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_INIT_PARAM_NAME = "jsonapi4jCompoundDocsMaxHops";
-    public static final String JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_INIT_PARAM_NAME = "jsonapi4jCompoundDocsErrorStrategy";
 
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
     public static final String PLUGINS_ATT_NAME = "jsonapi4jPlugins";
-    public static final String ACCESS_CONTROL_EVALUATOR_ATT_NAME = "jsonapi4jAccessControlEvaluator";
     public static final String ERROR_HANDLER_FACTORY_ATT_NAME = "jsonapi4jErrorHandlerFactory";
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
-    public static final String DOMAIN_URL_RESOLVER_ATT_NAME = "jsonapi4jDomainUrlResolver";
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonApi4jServletContainerInitializer.class);
-
-    /**
-     * Priority:
-     * 1. System property (jsonapi4j.config)
-     * 2. Environment variable (JSONAPI4J_CONFIG)
-     * 3. Servlet Context Init Parameter (jsonapi4j.config)
-     * 4. Classpath ("jsonapi4j.yaml" or "jsonapi4j.json")
-     * @param servletContext
-     * @return
-     */
-    private JsonApi4jProperties loadConfig(ServletContext servletContext) {
-        try {
-            String path = System.getProperty("jsonapi4j.config");
-            if (path == null) {
-                path = System.getenv("JSONAPI4J_CONFIG");
-            }
-            if (path == null) {
-                path = servletContext.getInitParameter("jsonapi4j.config");
-            }
-            LOG.info("Loading configuration from {}", path);
-            if (path != null) {
-                return JsonApi4jConfigReader.readConfig(path);
-            }
-            return JsonApi4jConfigReader.readConfigFromClasspath(
-                    "jsonapi4j.yaml",
-                    "jsonapi4j.json"
-            );
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to load JsonApi4jConfig", e);
-        }
-    }
 
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
@@ -116,23 +80,23 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 executorService
         );
 
-        // oas servlet
-        registerOasServlet(
-                servletContext,
-                properties,
-                domainRegistry,
-                operationsRegistry
-        );
-
         // filters
-        registerAccessControlFilter(servletContext, dispatcherServletMapping);
+        registerPrincipalResolvingFilter(servletContext, dispatcherServletMapping);
         registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
-        registerCompoundDocsFilter(servletContext, dispatcherServletMapping, objectMapper, executorService);
+        if (properties.getCompoundDocs().isEnabled()) {
+            registerCompoundDocsFilter(
+                    servletContext,
+                    dispatcherServletMapping,
+                    objectMapper,
+                    executorService,
+                    properties.getCompoundDocs()
+            );
+        }
     }
 
-    private void registerAccessControlFilter(ServletContext servletContext, String rootPath) {
+    private void registerPrincipalResolvingFilter(ServletContext servletContext, String rootPath) {
         PrincipalResolver principalResolver = initJsonApi4jPrincipalResolver(servletContext);
-        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_ACCESS_CONTROL_FILTER_NAME, new PrincipalResolvingFilter(principalResolver));
+        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME, new PrincipalResolvingFilter(principalResolver));
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
                 false, // supposed to be matched before any declared filter mappings of the ServletContext
@@ -152,17 +116,22 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private void registerCompoundDocsFilter(ServletContext servletContext,
                                             String rootPath,
                                             ObjectMapper objectMapper,
-                                            ExecutorService executorService) {
-        CompoundDocsResolverConfig.DomainUrlResolver domainUrlResolver = initDomainUrlResolver(servletContext);
-        int compoundDocsMaxHops = getCompoundDocsMaxHops(servletContext);
-        ErrorStrategy errorStrategy = getCompoundDocsErrorStrategy(servletContext);
+                                            ExecutorService executorService,
+                                            CompoundDocsProperties properties) {
         CompoundDocsResolver compoundDocsResolver = new CompoundDocsResolver(
                 new CompoundDocsResolverConfig(
                         objectMapper,
-                        domainUrlResolver,
+                        new DefaultDomainUrlResolver(
+                                MapUtils.emptyIfNull(properties.getMapping())
+                                        .entrySet()
+                                        .stream()
+                                        .collect(toMap(
+                                                Map.Entry::getKey,
+                                                e -> URI.create(e.getValue())
+                                        ))),
                         executorService,
-                        compoundDocsMaxHops,
-                        errorStrategy
+                        properties.getMaxHops(),
+                        properties.getErrorStrategy()
                 )
         );
         FilterRegistration.Dynamic filter = servletContext.addFilter(
@@ -174,22 +143,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 false, // supposed to be matched before any declared filter mappings of the ServletContext
                 rootPath
         );
-    }
-
-    private int getCompoundDocsMaxHops(ServletContext servletContext) {
-        String value = servletContext.getInitParameter(JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_INIT_PARAM_NAME);
-        if (value != null) {
-            return Integer.parseInt(value);
-        }
-        return JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE;
-    }
-
-    private ErrorStrategy getCompoundDocsErrorStrategy(ServletContext servletContext) {
-        String value = servletContext.getInitParameter(JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_INIT_PARAM_NAME);
-        if (value != null) {
-            return ErrorStrategy.valueOf(value);
-        }
-        return JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE;
     }
 
     private PrincipalResolver initJsonApi4jPrincipalResolver(ServletContext servletContext) {
@@ -224,21 +177,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         dispatcherServlet.addMapping(servletMapping);
     }
 
-    private void registerOasServlet(ServletContext servletContext,
-                                    JsonApi4jProperties properties,
-                                    DomainRegistry domainRegistry,
-                                    OperationsRegistry operationsRegistry) {
-        ServletRegistration.Dynamic oasServlet = servletContext.addServlet(
-                JSONAPI4J_OAS_SERVLET_NAME,
-                new OasServlet(
-                        domainRegistry,
-                        operationsRegistry,
-                        properties
-                )
-        );
-        oasServlet.addMapping(properties.getOas().getOasRootPath() + "/*");
-    }
-
     private ExecutorService initExecutorService(ServletContext servletContext) {
         ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
         if (es == null) {
@@ -247,7 +185,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return es;
     }
 
-    private DomainRegistry initDomainRegistry(ServletContext servletContext) {
+    public static DomainRegistry initDomainRegistry(ServletContext servletContext) {
         DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
         if (dr == null) {
             LOG.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
@@ -256,7 +194,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return dr;
     }
 
-    private OperationsRegistry initOperationRegistry(ServletContext servletContext) {
+    public static OperationsRegistry initOperationRegistry(ServletContext servletContext) {
         OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
         if (or == null) {
             LOG.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
@@ -297,16 +235,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         }
         return om;
-    }
-
-    private CompoundDocsResolverConfig.DomainUrlResolver initDomainUrlResolver(ServletContext servletContext) {
-        var r = (CompoundDocsResolverConfig.DomainUrlResolver) servletContext.getAttribute(DOMAIN_URL_RESOLVER_ATT_NAME);
-        if (r == null) {
-            LOG.info("JsonApi4jDomainUrlResolver not found in servlet context. Setting the default DefaultDomainUrlResolver.");
-            r = new CompoundDocsResolverConfig.DefaultDomainUrlResolver(Map.of());
-        }
-        servletContext.setAttribute(DOMAIN_URL_RESOLVER_ATT_NAME, r);
-        return r;
     }
 
 }

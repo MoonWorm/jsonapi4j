@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.processor.util;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.util.Map;
 import java.util.stream.Stream;

@@ -1,12 +1,11 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
-import pro.api4.jsonapi4j.processor.PluginSettings;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessorConfigurationStage;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiConfigurationStage;
 
 import java.util.List;

@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
-import pro.api4.jsonapi4j.processor.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;

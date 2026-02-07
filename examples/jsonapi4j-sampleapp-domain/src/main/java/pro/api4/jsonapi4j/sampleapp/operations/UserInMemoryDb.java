@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.sampleapp.operations;
 
 import org.apache.commons.collections4.ListUtils;
-import pro.api4.jsonapi4j.processor.util.CustomCollectors;
-import pro.api4.jsonapi4j.request.pagination.LimitOffsetToCursorAdapter;
+import pro.api4.jsonapi4j.util.CustomCollectors;
+import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
