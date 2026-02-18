@@ -1,14 +1,15 @@
 package pro.api4.jsonapi4j.filter.cd;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.*;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
+import pro.api4.jsonapi4j.config.CompoundDocsProperties;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MapUtils;
@@ -16,14 +17,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.util.stream.Collectors.toMap;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 public class CompoundDocsFilter implements Filter {
 
@@ -38,10 +44,38 @@ public class CompoundDocsFilter implements Filter {
     );
     private static final Pattern RELATIONSHIP_OPERATION_URL_PATTERN = Pattern.compile("/[^/]+/[^/]+/relationships/([^/]+)");
 
-    private final CompoundDocsResolver resolver;
+    private CompoundDocsResolver resolver;
 
-    public CompoundDocsFilter(CompoundDocsResolver resolver) {
-        this.resolver = resolver;
+    @Override
+    public void init(FilterConfig filterConfig) throws ServletException {
+        ObjectMapper objectMapper = (ObjectMapper) filterConfig.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
+        Validate.notNull(objectMapper);
+
+        JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+        Validate.notNull(properties);
+
+        CompoundDocsProperties compoundDocsProperties = properties.getCompoundDocs();
+        Validate.notNull(compoundDocsProperties);
+
+        ExecutorService executorService = (ExecutorService) filterConfig.getServletContext().getAttribute(EXECUTOR_SERVICE_ATT_NAME);
+        Validate.notNull(executorService);
+
+        resolver = new CompoundDocsResolver(
+                new CompoundDocsResolverConfig(
+                        objectMapper,
+                        new CompoundDocsResolverConfig.DefaultDomainUrlResolver(
+                                MapUtils.emptyIfNull(compoundDocsProperties.getMapping())
+                                        .entrySet()
+                                        .stream()
+                                        .collect(toMap(
+                                                Map.Entry::getKey,
+                                                e -> URI.create(e.getValue())
+                                        ))),
+                        executorService,
+                        compoundDocsProperties.getMaxHops(),
+                        compoundDocsProperties.getErrorStrategy()
+                )
+        );
     }
 
     @Override

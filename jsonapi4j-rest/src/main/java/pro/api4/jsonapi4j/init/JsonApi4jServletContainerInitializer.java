@@ -12,6 +12,7 @@ import jakarta.servlet.ServletRegistration;
 import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.DefaultDomainUrlResolver;
@@ -26,10 +27,6 @@ import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
 import java.net.URI;
 import java.util.Collections;
@@ -49,6 +46,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME = "jsonapi4jRequestBodyCachingFilter";
     public static final String JSONAPI4J_COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
 
+    public static final String JSONAPI4J_PROPERTIES_ATT_NAME = "jsonApi4jProperties";
+    public static final String JSONAPI4J_ATT_NAME = "jsonApi4j";
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
@@ -62,41 +61,53 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
         JsonApi4jProperties properties = loadConfig(servletContext);
-        ObjectMapper objectMapper = initObjectMapper(servletContext);
-        ExecutorService executorService = initExecutorService(servletContext);
-        DomainRegistry domainRegistry = initDomainRegistry(servletContext);
-        OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
-        List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
+        initObjectMapper(servletContext);
 
+        JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
+        if (jsonApi4j == null) {
+            LOG.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
+            DomainRegistry domainRegistry = initDomainRegistry(servletContext);
+            OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
+            List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
+            ExecutorService executorService = initExecutorService(servletContext);
+            jsonApi4j = JsonApi4j.builder()
+                    .domainRegistry(domainRegistry)
+                    .operationsRegistry(operationsRegistry)
+                    .plugins(plugins)
+                    .executor(executorService)
+                    .build();
+            servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
+        }
+
+        // ------------------
         // dispatcher servlet
+        // ------------------
         String dispatcherServletMapping = properties.getRootPath() + "/*";
         registerDispatcherServlet(
                 servletContext,
-                dispatcherServletMapping,
-                domainRegistry,
-                operationsRegistry,
-                plugins,
-                objectMapper,
-                executorService
+                dispatcherServletMapping
         );
 
+        // -------
         // filters
+        // -------
+
         registerPrincipalResolvingFilter(servletContext, dispatcherServletMapping);
+
         registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
         if (properties.getCompoundDocs().isEnabled()) {
+            initExecutorService(servletContext);
             registerCompoundDocsFilter(
                     servletContext,
-                    dispatcherServletMapping,
-                    objectMapper,
-                    executorService,
-                    properties.getCompoundDocs()
+                    dispatcherServletMapping
             );
         }
     }
 
     private void registerPrincipalResolvingFilter(ServletContext servletContext, String rootPath) {
-        PrincipalResolver principalResolver = initJsonApi4jPrincipalResolver(servletContext);
-        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME, new PrincipalResolvingFilter(principalResolver));
+        initJsonApi4jPrincipalResolver(servletContext);
+
+        FilterRegistration.Dynamic filter = servletContext.addFilter(JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME, new PrincipalResolvingFilter());
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
                 false, // supposed to be matched before any declared filter mappings of the ServletContext
@@ -114,29 +125,11 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     }
 
     private void registerCompoundDocsFilter(ServletContext servletContext,
-                                            String rootPath,
-                                            ObjectMapper objectMapper,
-                                            ExecutorService executorService,
-                                            CompoundDocsProperties properties) {
-        CompoundDocsResolver compoundDocsResolver = new CompoundDocsResolver(
-                new CompoundDocsResolverConfig(
-                        objectMapper,
-                        new DefaultDomainUrlResolver(
-                                MapUtils.emptyIfNull(properties.getMapping())
-                                        .entrySet()
-                                        .stream()
-                                        .collect(toMap(
-                                                Map.Entry::getKey,
-                                                e -> URI.create(e.getValue())
-                                        ))),
-                        executorService,
-                        properties.getMaxHops(),
-                        properties.getErrorStrategy()
-                )
-        );
+                                            String rootPath) {
+
         FilterRegistration.Dynamic filter = servletContext.addFilter(
                 JSONAPI4J_COMPOUND_DOCS_FILTER_NAME,
-                new CompoundDocsFilter(compoundDocsResolver)
+                new CompoundDocsFilter()
         );
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
@@ -145,34 +138,20 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         );
     }
 
-    private PrincipalResolver initJsonApi4jPrincipalResolver(ServletContext servletContext) {
+    private void initJsonApi4jPrincipalResolver(ServletContext servletContext) {
         PrincipalResolver pr = (PrincipalResolver) servletContext.getAttribute(PRINCIPAL_RESOLVER_ATT_NAME);
         if (pr == null) {
             LOG.info("JsonApi4jPrincipalResolver not found in servlet context. Setting the default DefaultJsonApi4jPrincipalResolver.");
             pr = new DefaultPrincipalResolver();
+            servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, pr);
         }
-        return pr;
     }
 
     private void registerDispatcherServlet(ServletContext servletContext,
-                                           String servletMapping,
-                                           DomainRegistry domainRegistry,
-                                           OperationsRegistry operationsRegistry,
-                                           List<JsonApi4jPlugin> plugins,
-                                           ObjectMapper objectMapper,
-                                           ExecutorService executorService) {
-        ErrorHandlerFactoriesRegistry errorHandlerFactory = initErrorHandlerFactory(servletContext);
-
+                                           String servletMapping) {
         ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet(
                 JSONAPI4J_DISPATCHER_SERVLET_NAME,
-                new JsonApi4jDispatcherServlet(
-                        domainRegistry,
-                        operationsRegistry,
-                        plugins,
-                        executorService,
-                        errorHandlerFactory,
-                        objectMapper
-                )
+                new JsonApi4jDispatcherServlet()
         );
         dispatcherServlet.addMapping(servletMapping);
     }
@@ -181,6 +160,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
         if (es == null) {
             es = Executors.newCachedThreadPool();
+            servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
         }
         return es;
     }
@@ -190,6 +170,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         if (dr == null) {
             LOG.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
             dr = DomainRegistry.empty();
+            servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, dr);
         }
         return dr;
     }
@@ -199,32 +180,23 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         if (or == null) {
             LOG.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
             or = OperationsRegistry.empty();
+            servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, or);
         }
         return or;
     }
 
-    private List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+    public List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
         //noinspection unchecked
         List<JsonApi4jPlugin> plugins = (List<JsonApi4jPlugin>) servletContext.getAttribute(PLUGINS_ATT_NAME);
         if (plugins == null) {
             LOG.warn("List<JsonApiPlugin> not found in servlet context. Setting an empty list.");
             plugins = Collections.emptyList();
+            servletContext.setAttribute(PLUGINS_ATT_NAME, plugins);
         }
         return plugins;
     }
 
-    private ErrorHandlerFactoriesRegistry initErrorHandlerFactory(ServletContext servletContext) {
-        ErrorHandlerFactoriesRegistry aehf = (ErrorHandlerFactoriesRegistry) servletContext.getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
-        if (aehf == null) {
-            LOG.info("AggregatableErrorHandlerFactory not found in servlet context. Setting a default ErrorHandlerFactory.");
-            aehf = new JsonApi4jErrorHandlerFactoriesRegistry();
-            aehf.registerAll(new DefaultErrorHandlerFactory());
-            aehf.registerAll(new Jsr380ErrorHandlers());
-        }
-        return aehf;
-    }
-
-    private ObjectMapper initObjectMapper(ServletContext servletContext) {
+    private void initObjectMapper(ServletContext servletContext) {
         ObjectMapper om = (ObjectMapper) servletContext.getAttribute(OBJECT_MAPPER_ATT_NAME);
         if (om == null) {
             LOG.info("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
@@ -233,8 +205,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.registerModule(new JavaTimeModule());
             om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, om);
         }
-        return om;
     }
 
 }

@@ -1,0 +1,14 @@
+name: JsonApi4j Quarkus Extension
+#description: JsonApi4j extension that streamlines the framework setup within a Quarkus app
+metadata:
+  keywords:
+    - jsonapi4j
+    - jsonapi
+    - rest
+    - api
+    - java
+
+  guide: "https://api4.pro/"
+  categories:
+    - "api"
+  status: "stable"

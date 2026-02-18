@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -31,10 +32,6 @@ import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAcPluginConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPluginConfig;
@@ -43,6 +40,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 @Configuration
 @Import(value = {
@@ -67,11 +66,10 @@ public class SpringJsonApi4jAutoConfigurer {
 
     @Bean
     public FilterRegistrationBean<?> jsonapi4jPrincipalResolvingFilter(
-            PrincipalResolver jsonApi4jPrincipalResolver,
             @Qualifier("jsonApi4jDispatcherServlet") ServletRegistrationBean<?> jsonApi4jDispatcherServlet
     ) {
         return new FilterRegistrationBean<>(
-                new PrincipalResolvingFilter(jsonApi4jPrincipalResolver),
+                new PrincipalResolvingFilter(),
                 jsonApi4jDispatcherServlet
         );
     }
@@ -135,26 +133,25 @@ public class SpringJsonApi4jAutoConfigurer {
     }
 
     @Bean
-    public ErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry(
-            SpringContextJsonApi4jErrorHandlerFactoriesScanner errorHandlerFactoriesScanner
+    public ServletContextInitializer jsonApi4jServletContextInitializer(
+            JsonApi4jProperties properties,
+            JsonApi4j jsonApi4j,
+            @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
+            @Qualifier("jsonApi4jExecutorService") ExecutorService executorService,
+            PrincipalResolver jsonApi4jPrincipalResolver
     ) {
-        JsonApi4jErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry
-                = new JsonApi4jErrorHandlerFactoriesRegistry();
-        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
-        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
-        errorHandlerFactoriesScanner.getErrorHandlerFactories()
-                .forEach(jsonapi4jErrorHandlerFactoriesRegistry::registerAll);
-        return jsonapi4jErrorHandlerFactoriesRegistry;
+        return servletContext -> {
+            servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, properties);
+            servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
+            servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapper);
+            servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorService);
+
+            servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, jsonApi4jPrincipalResolver);
+        };
     }
 
     @Bean(name = "jsonApi4jDispatcherServlet")
-    public ServletRegistrationBean<?> jsonApi4jDispatcherServlet(
-            JsonApi4jProperties properties,
-            JsonApi4j jsonApi4j,
-            ErrorHandlerFactoriesRegistry errorHandlerFactory,
-            @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
-            @Qualifier("jsonApi4jExecutorService") ExecutorService executorService
-    ) {
+    public ServletRegistrationBean<?> jsonApi4jDispatcherServlet(JsonApi4jProperties properties) {
         String jsonapi4jRootPath = properties.getRootPath();
 
         String effectiveServletUrlMapping;
@@ -165,14 +162,11 @@ public class SpringJsonApi4jAutoConfigurer {
         }
 
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
-                new JsonApi4jDispatcherServlet(
-                        jsonApi4j,
-                        errorHandlerFactory,
-                        objectMapper
-                ),
+                new JsonApi4jDispatcherServlet(),
                 effectiveServletUrlMapping
         );
         servletRegistration.setLoadOnStartup(1);
+        servletRegistration.setName(JSONAPI4J_DISPATCHER_SERVLET_NAME);
         return servletRegistration;
     }
 

@@ -79,6 +79,10 @@ public class JsonApi4jConfigReader {
         }
     }
 
+    public static Map<String, Object> readConfigFromClasspathAsMap(JsonApi4jProperties properties) {
+        return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(properties, new TypeReference<>() {});
+    }
+
     public static Map<String, Object> readConfigFromClasspathAsMap(String configNameYaml,
                                                                    String configNameJson) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {

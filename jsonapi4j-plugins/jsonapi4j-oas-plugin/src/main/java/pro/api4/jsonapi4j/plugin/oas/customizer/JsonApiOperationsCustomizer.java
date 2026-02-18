@@ -186,7 +186,7 @@ public class JsonApiOperationsCustomizer {
                     "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
                     operationMeta.getOperationType().name(),
                     operationMeta.getResourceType().getType(),
-                    OasOperationInfoModel.class.getSimpleName()
+                    OasOperationInfo.class.getSimpleName()
             );
             return null;
         }

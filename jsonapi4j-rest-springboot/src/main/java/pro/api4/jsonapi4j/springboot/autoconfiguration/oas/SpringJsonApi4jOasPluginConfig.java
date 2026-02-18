@@ -4,15 +4,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
-import pro.api4.jsonapi4j.springboot.autoconfiguration.SpringJsonApi4JProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.springdoc.customizers.*;
+
+import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
+import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.oas",
@@ -31,7 +36,7 @@ public class SpringJsonApi4jOasPluginConfig {
 
     @Bean
     public OpenApiCustomizer openApiCustomizer(
-            SpringOasProperties oasProperties,
+            OasProperties oasProperties,
             OperationsRegistry operationsRegistry
     ) {
         return new CommonOpenApiCustomizer(oasProperties, operationsRegistry);
@@ -39,8 +44,8 @@ public class SpringJsonApi4jOasPluginConfig {
 
     @Bean
     public OpenApiCustomizer jsonApiPathsConfigurer(
-            SpringJsonApi4JProperties jsonApi4JProperties,
-            SpringOasProperties oasProperties,
+            JsonApi4jProperties jsonApi4JProperties,
+            OasProperties oasProperties,
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry
     ) {
@@ -69,12 +74,20 @@ public class SpringJsonApi4jOasPluginConfig {
         return new ErrorExamplesCustomizer();
     }
 
+    @Bean
+    public ServletContextInitializer jsonApi4jOasServletContextInitializer(
+            JsonApi4jProperties jsonApi4jProperties,
+            OasProperties oasProperties
+    ) {
+        return servletContext -> {
+            servletContext.setAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.getRootPath());
+            servletContext.setAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME, oasProperties);
+        };
+    }
+
     @Bean(name = "jsonApi4jOasServlet")
     public ServletRegistrationBean<?> jsonApi4jOasServlet(
-            SpringJsonApi4JProperties jsonApi4jProperties,
-            SpringOasProperties oasProperties,
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry
+            JsonApi4jProperties jsonApi4jProperties
     ) {
         String jsonapi4jRootPath = jsonApi4jProperties.getRootPath();
 
@@ -86,12 +99,7 @@ public class SpringJsonApi4jOasPluginConfig {
         }
 
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
-                new OasServlet(
-                        domainRegistry,
-                        operationsRegistry,
-                        jsonapi4jRootPath,
-                        oasProperties
-                ),
+                new OasServlet(),
                 effectiveServletUrlMapping
         );
         servletRegistration.setLoadOnStartup(2);

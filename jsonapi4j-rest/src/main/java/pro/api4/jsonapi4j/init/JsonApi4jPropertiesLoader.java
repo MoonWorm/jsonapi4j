@@ -26,6 +26,10 @@ public final class JsonApi4jPropertiesLoader {
      */
     public static JsonApi4jProperties loadConfig(ServletContext servletContext) {
         try {
+            JsonApi4jProperties fromContext = (JsonApi4jProperties) servletContext.getAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME);
+            if (fromContext != null) {
+                return fromContext;
+            }
             String path = System.getProperty("jsonapi4j.config");
             if (path == null) {
                 path = System.getenv("JSONAPI4J_CONFIG");
@@ -48,6 +52,10 @@ public final class JsonApi4jPropertiesLoader {
 
     public static Map<String, Object> loadConfigAsMap(ServletContext servletContext) {
         try {
+            JsonApi4jProperties fromContext = (JsonApi4jProperties) servletContext.getAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME);
+            if (fromContext != null) {
+                return JsonApi4jConfigReader.readConfigFromClasspathAsMap(fromContext);
+            }
             String path = System.getProperty("jsonapi4j.config");
             if (path == null) {
                 path = System.getenv("JSONAPI4J_CONFIG");

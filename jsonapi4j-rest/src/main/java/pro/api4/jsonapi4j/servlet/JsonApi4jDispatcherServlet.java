@@ -1,19 +1,19 @@
 package pro.api4.jsonapi4j.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
@@ -21,55 +21,57 @@ import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSuppli
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.cache.CacheControlPropagator;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
+
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 public class JsonApi4jDispatcherServlet extends HttpServlet {
 
     private final static Logger LOG = LoggerFactory.getLogger(JsonApi4jDispatcherServlet.class);
 
-    private final JsonApi4j jsonApi4j;
+    private JsonApi4j jsonApi4j;
 
-    private final ErrorHandlerFactoriesRegistry errorHandlerFactory;
-    private final ObjectMapper objectMapper;
+    private ErrorHandlerFactoriesRegistry errorHandlerFactory;
+    private ObjectMapper objectMapper;
 
-    private final JsonApiRequestSupplier<HttpServletRequest> jsonApiRequestSupplier;
+    private JsonApiRequestSupplier<HttpServletRequest> jsonApiRequestSupplier;
 
-    public JsonApi4jDispatcherServlet(JsonApi4j jsonApi4j,
-                                      ErrorHandlerFactoriesRegistry errorHandlerFactory,
-                                      ObjectMapper objectMapper) {
-        this.jsonApi4j = jsonApi4j;
-        this.errorHandlerFactory = errorHandlerFactory;
-        this.objectMapper = objectMapper;
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+
+        jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
+        Validate.notNull(jsonApi4j);
+
+        errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
+        if (errorHandlerFactory == null) {
+            LOG.info("AggregatableErrorHandlerFactory not found in servlet context. Setting a default ErrorHandlerFactory.");
+            errorHandlerFactory = initDefaultErrorHandlerFactory();
+        }
+
+        objectMapper = (ObjectMapper) config.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
+        Validate.notNull(objectMapper);
+
         OperationDetailsResolver operationDetailsResolver = new OperationDetailsResolver(
                 jsonApi4j.getDomainRegistry()
         );
-        this.jsonApiRequestSupplier = new HttpServletRequestJsonApiRequestSupplier(
-                this.objectMapper,
+        jsonApiRequestSupplier = new HttpServletRequestJsonApiRequestSupplier(
+                objectMapper,
                 operationDetailsResolver
         );
     }
 
-    public JsonApi4jDispatcherServlet(DomainRegistry domainRegistry,
-                                      OperationsRegistry operationsRegistry,
-                                      List<JsonApi4jPlugin> plugins,
-                                      ExecutorService executorService,
-                                      ErrorHandlerFactoriesRegistry errorHandlerFactory,
-                                      ObjectMapper objectMapper) {
-        this(
-                JsonApi4j.builder()
-                        .domainRegistry(domainRegistry)
-                        .operationsRegistry(operationsRegistry)
-                        .plugins(plugins)
-                        .executor(executorService)
-                        .build(),
-                errorHandlerFactory,
-                objectMapper
-        );
+    private ErrorHandlerFactoriesRegistry initDefaultErrorHandlerFactory() {
+        ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry = new JsonApi4jErrorHandlerFactoriesRegistry();
+        errorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
+        errorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
+        return errorHandlerFactoriesRegistry;
     }
 
     @Override
@@ -101,13 +103,16 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             CacheControlPropagator.propagateCacheControlIfNeeded(resp);
 
         } catch (Exception e) {
-            int errorStatusCode = errorHandlerFactory.resolveStatusCode(e);
-            ErrorsDoc errorsDoc = errorHandlerFactory.resolveErrorsDoc(e);
-            LOG.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
-            LOG.warn("Stacktrace: ", e);
+            if (errorHandlerFactory != null) {
+                int errorStatusCode = errorHandlerFactory.resolveStatusCode(e);
+                ErrorsDoc errorsDoc = errorHandlerFactory.resolveErrorsDoc(e);
+                LOG.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
+                LOG.warn("Stacktrace: ", e);
 
-            resp.setStatus(errorStatusCode);
-            writeResponseBody(resp, errorsDoc);
+                resp.setStatus(errorStatusCode);
+                writeResponseBody(resp, errorsDoc);
+            }
+            throw e;
         }
     }
 

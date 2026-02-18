@@ -2,9 +2,13 @@ package pro.api4.jsonapi4j.plugin.oas;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.OpenAPI;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
@@ -18,6 +22,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
+import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
+import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;
+
 public class OasServlet extends HttpServlet {
 
     private static final String FORMAT_QUERY_PARAM = "format";
@@ -26,22 +34,34 @@ public class OasServlet extends HttpServlet {
     private static final String YAML_CONTENT_TYPE = "application/yaml";
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    private final DomainRegistry domainRegistry;
-    private final OperationsRegistry operationsRegistry;
-    private final String rootPath;
-    private final OasProperties oasProperties;
+    private DomainRegistry domainRegistry;
+    private OperationsRegistry operationsRegistry;
+    private String rootPath;
+    private OasProperties oasProperties;
 
     private String cachedOasJson;
     private String cachedOasYaml;
 
-    public OasServlet(DomainRegistry domainRegistry,
-                      OperationsRegistry operationsRegistry,
-                      String rootPath,
-                      OasProperties oasProperties) {
-        this.domainRegistry = domainRegistry;
-        this.operationsRegistry = operationsRegistry;
-        this.rootPath = rootPath;
-        this.oasProperties = oasProperties;
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+
+        rootPath = (String) config.getServletContext().getAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME);
+        Validate.notNull(rootPath);
+
+        oasProperties = (OasProperties) config.getServletContext().getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
+        Validate.notNull(oasProperties);
+
+        JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
+        if (jsonApi4j != null) {
+            this.domainRegistry = jsonApi4j.getDomainRegistry();
+            this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+        } else {
+            domainRegistry = (DomainRegistry) config.getServletContext().getAttribute(DOMAIN_REGISTRY_ATT_NAME);
+            operationsRegistry = (OperationsRegistry) config.getServletContext().getAttribute(OPERATION_REGISTRY_ATT_NAME);
+        }
+        Validate.notNull(domainRegistry);
+        Validate.notNull(operationsRegistry);
     }
 
     @Override
