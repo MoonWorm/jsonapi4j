@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -108,9 +109,9 @@ public class CompoundDocsFilter implements Filter {
                             );
                         }
 
-                        response.getWriter().write(responseBodyWithCompoundDocs);
+                        writeUtf8ResponseBody(response, responseBodyWithCompoundDocs);
                     } else {
-                        response.getWriter().write(responseBody);
+                        writeUtf8ResponseBody(response, responseBody);
                     }
                 } catch (Exception e) {
                     LOGGER.error("Failed to close streams for BufferedResponseWrapper", e);
@@ -165,6 +166,10 @@ public class CompoundDocsFilter implements Filter {
             }
         }
         return MapUtils.unmodifiableMap(originalRequestHeaders);
+    }
+
+    private void writeUtf8ResponseBody(ServletResponse response, String responseBody) throws IOException {
+        response.getOutputStream().write(responseBody.getBytes(StandardCharsets.UTF_8));
     }
 
 }

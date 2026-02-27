@@ -46,7 +46,7 @@ public class BufferedResponseWrapper extends HttpServletResponseWrapper implemen
     }
 
     public String getCaptureAsString() {
-        return buffer.toString();
+        return buffer.toString(StandardCharsets.UTF_8);
     }
 
     @Override
@@ -56,4 +56,3 @@ public class BufferedResponseWrapper extends HttpServletResponseWrapper implemen
         outputStream.close();
     }
 }
-
