@@ -1,16 +1,26 @@
 package pro.api4.jsonapi4j.servlet.request;
 
+import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.RegisteredRelationship;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.exception.MethodNotSupportedException;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.operation.OperationType.Method;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -114,6 +124,22 @@ public class OperationDetailsResolver {
         throw new OperationNotFoundException(appRelativePath, methodString);
     }
 
+    public void validateIncludes(Set<String> originalIncludes,
+                                 OperationDetails operationDetails,
+                                 JsonApi4jCompatibilityMode compatibilityMode) {
+        if (compatibilityMode != JsonApi4jCompatibilityMode.STRICT
+                || operationDetails == null
+                || operationDetails.getOperationType() == null
+                || operationDetails.getOperationType().getMethod() != GET
+                || originalIncludes == null
+                || originalIncludes.isEmpty()) {
+            return;
+        }
+        for (String include : originalIncludes) {
+            validateSingleIncludePath(include, operationDetails);
+        }
+    }
+
     private ResourceType resolveResourceType(String resourceTypeStr) {
         return resourceTypeFromStr(resourceTypeStr);
     }
@@ -139,6 +165,99 @@ public class OperationDetailsResolver {
             }
         }
         return null;
+    }
+
+    private void validateSingleIncludePath(String includePath,
+                                           OperationDetails operationDetails) {
+        if (StringUtils.isBlank(includePath)) {
+            throw invalidIncludePath(includePath, "Include path must not be blank");
+        }
+        List<String> pathSegments = Arrays.stream(includePath.split("\\.", -1))
+                .map(String::trim)
+                .toList();
+        if (pathSegments.isEmpty() || pathSegments.stream().anyMatch(StringUtils::isBlank)) {
+            throw invalidIncludePath(includePath, "Include path contains an empty relationship segment");
+        }
+
+        RelationshipName targetRelationshipName = operationDetails.getRelationshipName();
+        if (targetRelationshipName != null && !targetRelationshipName.getName().equals(pathSegments.getFirst())) {
+            throw invalidIncludePath(
+                    includePath,
+                    "Relationship endpoint includes must start with '%s'".formatted(targetRelationshipName.getName())
+            );
+        }
+
+        Set<ResourceType> candidateResourceTypes = new HashSet<>();
+        candidateResourceTypes.add(operationDetails.getResourceType());
+
+        for (String relationshipNameSegment : pathSegments) {
+            Set<ResourceType> nextResourceTypes = new HashSet<>();
+            boolean relationshipFound = false;
+
+            for (ResourceType candidateResourceType : candidateResourceTypes) {
+                List<RegisteredRelationship<? extends Relationship<?>>> matchingRelationships
+                        = resolveRelationshipsByName(candidateResourceType, relationshipNameSegment);
+                if (!matchingRelationships.isEmpty()) {
+                    relationshipFound = true;
+                    matchingRelationships.forEach(relationship ->
+                            nextResourceTypes.addAll(resolveNextResourceTypes(relationship))
+                    );
+                }
+            }
+
+            if (!relationshipFound) {
+                throw invalidIncludePath(
+                        includePath,
+                        "Unknown include path segment '%s'".formatted(relationshipNameSegment)
+                );
+            }
+
+            candidateResourceTypes = nextResourceTypes;
+        }
+    }
+
+    private List<RegisteredRelationship<? extends Relationship<?>>> resolveRelationshipsByName(
+            ResourceType resourceType,
+            String relationshipNameSegment
+    ) {
+        List<RegisteredRelationship<? extends Relationship<?>>> result = new ArrayList<>();
+        domainRegistry.getToManyRelationships(resourceType).forEach(relationship -> {
+            if (relationship.getRelationshipName().getName().equals(relationshipNameSegment)) {
+                result.add(relationship);
+            }
+        });
+        domainRegistry.getToOneRelationships(resourceType).forEach(relationship -> {
+            if (relationship.getRelationshipName().getName().equals(relationshipNameSegment)) {
+                result.add(relationship);
+            }
+        });
+        return result;
+    }
+
+    private Set<ResourceType> resolveNextResourceTypes(RegisteredRelationship<? extends Relationship<?>> relationship) {
+        try {
+            @SuppressWarnings("rawtypes")
+            Relationship rawRelationship = relationship.getRelationship();
+            Object resolvedType = rawRelationship.resolveResourceIdentifierType(null);
+            if (resolvedType instanceof String resolvedTypeString && StringUtils.isNotBlank(resolvedTypeString)) {
+                ResourceType resourceType = resolveResourceType(resolvedTypeString);
+                if (resourceType != null) {
+                    return Set.of(resourceType);
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // no-op: some relationship implementations may need non-null DTO to resolve type
+        }
+        return domainRegistry.getResourceTypes();
+    }
+
+    private BadJsonApiRequestException invalidIncludePath(String includePath,
+                                                          String detail) {
+        return new BadJsonApiRequestException(
+                DefaultErrorCodes.VALUE_INVALID_FORMAT,
+                IncludeAwareRequest.INCLUDE_PARAM,
+                "Invalid include path '%s'. %s".formatted(includePath, detail)
+        );
     }
 
     @Data
