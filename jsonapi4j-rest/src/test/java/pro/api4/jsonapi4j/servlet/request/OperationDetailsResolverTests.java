@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.servlet.request;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.Resource;
@@ -11,10 +12,13 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.http.exception.MethodNotSupportedException;
 import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 
 import java.util.Collections;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class OperationDetailsResolverTests {
@@ -50,6 +54,56 @@ public class OperationDetailsResolverTests {
         assertThatThrownBy(() -> sut.fromUrlAndMethod("/foos/1/relationships/baz", "DELETE"))
                 .isInstanceOf(MethodNotSupportedException.class)
                 .hasMessageContaining("GET, PATCH");
+    }
+
+    @Test
+    public void strictMode_invalidIncludePath_returnsBadRequest() {
+        OperationDetailsResolver sut = new OperationDetailsResolver(testDomainRegistry());
+        OperationDetailsResolver.OperationDetails details = sut.fromUrlAndMethod("/foos", "GET");
+
+        assertThatThrownBy(() -> sut.validateIncludes(
+                Set.of("bars.unknownRel"),
+                details,
+                JsonApi4jCompatibilityMode.STRICT
+        )).isInstanceOf(BadJsonApiRequestException.class)
+                .hasMessageContaining("Invalid include path");
+    }
+
+    @Test
+    public void strictMode_relationshipEndpointIncludeMustStartWithRelationshipName() {
+        OperationDetailsResolver sut = new OperationDetailsResolver(testDomainRegistry());
+        OperationDetailsResolver.OperationDetails details = sut.fromUrlAndMethod("/foos/1/relationships/bars", "GET");
+
+        assertThatThrownBy(() -> sut.validateIncludes(
+                Set.of("baz"),
+                details,
+                JsonApi4jCompatibilityMode.STRICT
+        )).isInstanceOf(BadJsonApiRequestException.class)
+                .hasMessageContaining("must start with 'bars'");
+    }
+
+    @Test
+    public void strictMode_validNestedIncludePath_isAccepted() {
+        OperationDetailsResolver sut = new OperationDetailsResolver(testDomainRegistry());
+        OperationDetailsResolver.OperationDetails details = sut.fromUrlAndMethod("/foos", "GET");
+
+        assertThatCode(() -> sut.validateIncludes(
+                Set.of("bars.baz"),
+                details,
+                JsonApi4jCompatibilityMode.STRICT
+        )).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void legacyMode_skipsIncludePathValidation() {
+        OperationDetailsResolver sut = new OperationDetailsResolver(testDomainRegistry());
+        OperationDetailsResolver.OperationDetails details = sut.fromUrlAndMethod("/foos", "GET");
+
+        assertThatCode(() -> sut.validateIncludes(
+                Set.of("bars.unknownRel"),
+                details,
+                JsonApi4jCompatibilityMode.LEGACY
+        )).doesNotThrowAnyException();
     }
 
     private static void assertOperation(OperationDetailsResolver.OperationDetails details,

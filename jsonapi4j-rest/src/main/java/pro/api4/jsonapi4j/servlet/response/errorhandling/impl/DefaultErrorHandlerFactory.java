@@ -9,6 +9,8 @@ import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
+import pro.api4.jsonapi4j.request.exception.ConflictJsonApiRequestException;
+import pro.api4.jsonapi4j.request.exception.ForbiddenJsonApiRequestException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -92,6 +94,38 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
             @Override
             public int getHttpStatus(BadJsonApiRequestException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            }
+        });
+        this.errorResponseMappers.put(ConflictJsonApiRequestException.class, new ErrorsDocSupplier<ConflictJsonApiRequestException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(ConflictJsonApiRequestException e) {
+                return ErrorsDocFactory.genericErrorsDoc(
+                        HttpStatusCodes.SC_409_CONFLICT.getCode(),
+                        e.getErrorCode(),
+                        e.getMessage(),
+                        e.getParameter()
+                );
+            }
+
+            @Override
+            public int getHttpStatus(ConflictJsonApiRequestException e) {
+                return HttpStatusCodes.SC_409_CONFLICT.getCode();
+            }
+        });
+        this.errorResponseMappers.put(ForbiddenJsonApiRequestException.class, new ErrorsDocSupplier<ForbiddenJsonApiRequestException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(ForbiddenJsonApiRequestException e) {
+                return ErrorsDocFactory.genericErrorsDoc(
+                        HttpStatusCodes.SC_403_FORBIDDEN.getCode(),
+                        e.getErrorCode(),
+                        e.getMessage(),
+                        e.getParameter()
+                );
+            }
+
+            @Override
+            public int getHttpStatus(ForbiddenJsonApiRequestException e) {
+                return HttpStatusCodes.SC_403_FORBIDDEN.getCode();
             }
         });
         this.errorResponseMappers.put(JsonApi4jConstraintViolationException.class, new ErrorsDocSupplier<JsonApi4jConstraintViolationException>() {

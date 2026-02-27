@@ -1,6 +1,6 @@
 {
   "links": {
-    "self": "/currencies?include=currencies&filter%5Bid%5D=NOK"
+    "self": "/currencies?filter%5Bid%5D=NOK"
   },
   "data": [
     {

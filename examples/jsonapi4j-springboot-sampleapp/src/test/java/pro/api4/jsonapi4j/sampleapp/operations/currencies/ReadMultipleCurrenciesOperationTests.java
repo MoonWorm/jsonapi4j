@@ -8,7 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
 
@@ -32,7 +31,6 @@ public class ReadMultipleCurrenciesOperationTests extends RestAssuredUtf8TestBas
     public void test_filterByIdsWithRelationships() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
                 .queryParam(FiltersAwareRequest.getFilterParam(ID_FILTER_NAME), "NOK")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
@@ -45,7 +43,6 @@ public class ReadMultipleCurrenciesOperationTests extends RestAssuredUtf8TestBas
     public void test_readAll_validationError() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
                 .statusCode(400)
