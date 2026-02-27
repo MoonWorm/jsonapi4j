@@ -1,0 +1,3 @@
+rootPath: '/jsonapi'
+compatibility:
+  legacyMode: true

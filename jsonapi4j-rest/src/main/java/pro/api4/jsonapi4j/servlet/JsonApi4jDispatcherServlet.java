@@ -10,6 +10,8 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -48,6 +50,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         Validate.notNull(jsonApi4j);
+        JsonApi4jCompatibilityMode compatibilityMode = resolveCompatibilityMode(config);
+        jsonApi4j = jsonApi4j.withCompatibilityMode(compatibilityMode);
 
         errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
         if (errorHandlerFactory == null) {
@@ -128,6 +132,14 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         } catch (IOException e) {
             LOG.error("Error writing JSON into HttpServletResponse. ", e);
         }
+    }
+
+    private JsonApi4jCompatibilityMode resolveCompatibilityMode(ServletConfig config) {
+        JsonApi4jProperties properties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+        if (properties == null || properties.getCompatibility() == null) {
+            return JsonApi4jCompatibilityMode.STRICT;
+        }
+        return properties.getCompatibility().resolveMode();
     }
 
 }
