@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -548,14 +549,16 @@ public class OperationsRegistry {
                         .put(ro.getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof AddToManyRelationshipOperation o) {
+            if (operation instanceof AddToManyRelationshipOperation o
+                    && hasNonDefaultToManyImplementation(operation, "add")) {
                 RegisteredOperation<AddToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, ADD_TO_MANY_RELATIONSHIP, AddToManyRelationshipOperation.class);
                 addToManyRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
                         .put(ro.getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof RemoveFromManyRelationshipOperation o) {
+            if (operation instanceof RemoveFromManyRelationshipOperation o
+                    && hasNonDefaultToManyImplementation(operation, "remove")) {
                 RegisteredOperation<RemoveFromManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, REMOVE_FROM_MANY_RELATIONSHIP, RemoveFromManyRelationshipOperation.class);
                 removeFromManyRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
@@ -594,6 +597,16 @@ public class OperationsRegistry {
                 }
             });
             return this;
+        }
+
+        private boolean hasNonDefaultToManyImplementation(ResourceOperation operation, String methodName) {
+            try {
+                return operation.getClass()
+                        .getMethod(methodName, JsonApiRequest.class)
+                        .getDeclaringClass() != ToManyRelationshipOperations.class;
+            } catch (NoSuchMethodException ignored) {
+                return false;
+            }
         }
 
         private void logOperationRegistered(RegisteredOperation<?> registeredOperation) {

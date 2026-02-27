@@ -163,6 +163,46 @@ public class OperationsRegistryTests {
         assertThatThrownBy(() -> sut.getRegisteredRemoveFromManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship, true)).isInstanceOf(OperationNotFoundException.class);
         assertThatThrownBy(() -> sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toOneRelationship, true)).isInstanceOf(OperationNotFoundException.class);
     }
+
+    @Test
+    public void registerToManyCompositeWithoutAddAndRemove_checkAddAndRemoveAreNotConfigured() {
+        // given - when
+        TestToManyRelationshipOperationsWithoutAddAndRemove operation = new TestToManyRelationshipOperationsWithoutAddAndRemove();
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+                .operation(operation)
+                .build();
+
+        // then
+        ResourceType fooResource = new ResourceType("foo");
+        RelationshipName toManyRelationship = new RelationshipName("to2");
+        assertThat(sut.getAllOperations()).isNotNull().hasSize(2);
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.ADD_TO_MANY_RELATIONSHIP)).isFalse();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.REMOVE_FROM_MANY_RELATIONSHIP)).isFalse();
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNull();
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toManyRelationship, false)).isNull();
+        assertThatThrownBy(() -> sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toManyRelationship, true)).isInstanceOf(OperationNotFoundException.class);
+    }
+
+    @Test
+    public void registerToManyCompositeWithAddAndRemoveOverrides_checkAddAndRemoveAreConfigured() {
+        // given - when
+        TestToManyRelationshipOperationsWithAddAndRemove operation = new TestToManyRelationshipOperationsWithAddAndRemove();
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+                .operation(operation)
+                .build();
+
+        // then
+        ResourceType fooResource = new ResourceType("foo");
+        RelationshipName toManyRelationship = new RelationshipName("to2");
+        assertThat(sut.getAllOperations()).isNotNull().hasSize(4);
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.ADD_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.REMOVE_FROM_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull();
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull();
+    }
     
     @JsonApiResource(resourceType = "foo")
     private static class TestFooResource implements Resource<String> {
@@ -281,6 +321,46 @@ public class OperationsRegistryTests {
 
         @Override
         public void update(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestToManyRelationshipOperationsWithoutAddAndRemove
+            implements ToManyRelationshipOperations<String, String> {
+
+        @Override
+        public CursorPageableResponse<String> readMany(JsonApiRequest relationshipRequest) {
+            return CursorPageableResponse.empty();
+        }
+
+        @Override
+        public void update(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestToManyRelationshipOperationsWithAddAndRemove
+            implements ToManyRelationshipOperations<String, String> {
+
+        @Override
+        public CursorPageableResponse<String> readMany(JsonApiRequest relationshipRequest) {
+            return CursorPageableResponse.empty();
+        }
+
+        @Override
+        public void update(JsonApiRequest request) {
+
+        }
+
+        @Override
+        public void add(JsonApiRequest request) {
+
+        }
+
+        @Override
+        public void remove(JsonApiRequest request) {
 
         }
     }
