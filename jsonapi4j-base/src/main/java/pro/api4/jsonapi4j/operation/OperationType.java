@@ -20,7 +20,9 @@ public enum OperationType {
     READ_TO_ONE_RELATIONSHIP("Read To-One Relationship", GET, TO_ONE_RELATIONSHIP),
     UPDATE_TO_ONE_RELATIONSHIP("Update/Delete To-One Relationship", PATCH, TO_ONE_RELATIONSHIP),
     READ_TO_MANY_RELATIONSHIP("Read To-Many Relationship", GET, TO_MANY_RELATIONSHIP),
-    UPDATE_TO_MANY_RELATIONSHIP("Update/Delete To-Many Relationship", PATCH, TO_MANY_RELATIONSHIP);
+    UPDATE_TO_MANY_RELATIONSHIP("Update/Delete To-Many Relationship", PATCH, TO_MANY_RELATIONSHIP),
+    ADD_TO_MANY_RELATIONSHIP("Add To-Many Relationship Linkage", POST, TO_MANY_RELATIONSHIP),
+    REMOVE_FROM_MANY_RELATIONSHIP("Remove From To-Many Relationship Linkage", DELETE, TO_MANY_RELATIONSHIP);
 
     private final String name;
     private final Method method;
@@ -61,7 +63,9 @@ public enum OperationType {
                                 || operationType == OperationType.READ_TO_ONE_RELATIONSHIP
                                 || operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP
                                 || operationType == OperationType.READ_TO_MANY_RELATIONSHIP
-                                || operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP)
+                                || operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP
+                                || operationType == OperationType.ADD_TO_MANY_RELATIONSHIP
+                                || operationType == OperationType.REMOVE_FROM_MANY_RELATIONSHIP)
                 .toList();
     }
 

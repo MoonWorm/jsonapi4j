@@ -31,6 +31,8 @@ public class JsonApiRequestBodySchemaCustomizer {
                     registerPayloadSchemas(operationsRegistry.getRegisteredUpdateResourceOperation(resourceType, false), openApi);
                     operationsRegistry.getRegisteredUpdateToOneRelationshipOperations(resourceType).forEach(o -> registerPayloadSchemas(o, openApi));
                     operationsRegistry.getRegisteredUpdateToManyRelationshipOperationsFor(resourceType).forEach(o -> registerPayloadSchemas(o, openApi));
+                    operationsRegistry.getRegisteredAddToManyRelationshipOperationsFor(resourceType).forEach(o -> registerPayloadSchemas(o, openApi));
+                    operationsRegistry.getRegisteredRemoveFromManyRelationshipOperationsFor(resourceType).forEach(o -> registerPayloadSchemas(o, openApi));
                 });
     }
 

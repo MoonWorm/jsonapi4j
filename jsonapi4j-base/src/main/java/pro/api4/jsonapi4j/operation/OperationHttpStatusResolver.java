@@ -30,7 +30,9 @@ public final class OperationHttpStatusResolver {
             case UPDATE_RESOURCE,
                  DELETE_RESOURCE,
                  UPDATE_TO_ONE_RELATIONSHIP,
-                 UPDATE_TO_MANY_RELATIONSHIP -> effectiveMode == JsonApi4jCompatibilityMode.LEGACY ? 202 : 204;
+                 UPDATE_TO_MANY_RELATIONSHIP,
+                 ADD_TO_MANY_RELATIONSHIP,
+                 REMOVE_FROM_MANY_RELATIONSHIP -> effectiveMode == JsonApi4jCompatibilityMode.LEGACY ? 202 : 204;
         };
     }
 

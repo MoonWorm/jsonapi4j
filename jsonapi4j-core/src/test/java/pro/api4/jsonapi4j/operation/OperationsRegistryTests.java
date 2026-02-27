@@ -40,6 +40,8 @@ public class OperationsRegistryTests {
         TestReadToManyRelationshipOperation readToManyRelationshipOperation = new TestReadToManyRelationshipOperation();
         TestUpdateToOneRelationshipOperation updateToOneRelationshipOperation = new TestUpdateToOneRelationshipOperation();
         TestUpdateToManyRelationshipOperation updateToManyRelationshipOperation = new TestUpdateToManyRelationshipOperation();
+        TestAddToManyRelationshipOperation addToManyRelationshipOperation = new TestAddToManyRelationshipOperation();
+        TestRemoveFromManyRelationshipOperation removeFromManyRelationshipOperation = new TestRemoveFromManyRelationshipOperation();
         OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
                 .operation(readByIdOperation)
                 .operation(readMultipleResourcesOperation)
@@ -50,13 +52,15 @@ public class OperationsRegistryTests {
                 .operation(readToManyRelationshipOperation)
                 .operation(updateToOneRelationshipOperation)
                 .operation(updateToManyRelationshipOperation)
+                .operation(addToManyRelationshipOperation)
+                .operation(removeFromManyRelationshipOperation)
                 .build();
 
         // then
         ResourceType fooResource = new ResourceType("foo");
         RelationshipName toOneRelationship = new RelationshipName("to1");
         RelationshipName toManyRelationship = new RelationshipName("to2");
-        assertThat(sut.getAllOperations()).isNotNull().hasSize(9);
+        assertThat(sut.getAllOperations()).isNotNull().hasSize(11);
         assertThat(sut.getResourceTypesWithAnyOperationConfigured()).isNotNull().isEqualTo(Set.of(fooResource));
         assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(fooResource)).isEqualTo(Set.of(toOneRelationship, toManyRelationship));
         assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(new ResourceType("non-existing"))).isEmpty();
@@ -65,6 +69,8 @@ public class OperationsRegistryTests {
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.ADD_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.REMOVE_FROM_MANY_RELATIONSHIP)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
         assertThat(sut.isAnyResourceOperationConfigured(fooResource)).isTrue();
@@ -85,6 +91,8 @@ public class OperationsRegistryTests {
         assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"))).isFalse();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.ADD_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.REMOVE_FROM_MANY_RELATIONSHIP)).isTrue();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"), OperationType.READ_TO_MANY_RELATIONSHIP)).isFalse();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
@@ -140,6 +148,20 @@ public class OperationsRegistryTests {
         assertThat(sut.getRegisteredUpdateToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
         assertThatThrownBy(() -> sut.getRegisteredUpdateToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
         assertThatThrownBy(() -> sut.getRegisteredUpdateToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(addToManyRelationshipOperation);
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(addToManyRelationshipOperation);
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship, false)).isNull();
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toOneRelationship, false)).isNull();
+        assertThatThrownBy(() -> sut.getRegisteredAddToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getRegisteredAddToManyRelationshipOperation(fooResource, toOneRelationship, true)).isInstanceOf(OperationNotFoundException.class);
+
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(removeFromManyRelationshipOperation);
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(removeFromManyRelationshipOperation);
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship, false)).isNull();
+        assertThat(sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toOneRelationship, false)).isNull();
+        assertThatThrownBy(() -> sut.getRegisteredRemoveFromManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship, true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getRegisteredRemoveFromManyRelationshipOperation(fooResource, toOneRelationship, true)).isInstanceOf(OperationNotFoundException.class);
     }
     
     @JsonApiResource(resourceType = "foo")
@@ -259,6 +281,24 @@ public class OperationsRegistryTests {
 
         @Override
         public void update(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestAddToManyRelationshipOperation implements AddToManyRelationshipOperation {
+
+        @Override
+        public void add(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestRemoveFromManyRelationshipOperation implements RemoveFromManyRelationshipOperation {
+
+        @Override
+        public void remove(JsonApiRequest request) {
 
         }
     }
