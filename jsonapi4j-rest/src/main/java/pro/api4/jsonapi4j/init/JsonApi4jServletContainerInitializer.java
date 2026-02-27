@@ -61,6 +61,9 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
         JsonApi4jProperties properties = loadConfig(servletContext);
+        servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, properties);
+
+        var compatibilityMode = properties.getCompatibility().resolveMode();
         initObjectMapper(servletContext);
 
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
@@ -75,9 +78,12 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                     .operationsRegistry(operationsRegistry)
                     .plugins(plugins)
                     .executor(executorService)
+                    .compatibilityMode(compatibilityMode)
                     .build();
-            servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
+        } else {
+            jsonApi4j = jsonApi4j.withCompatibilityMode(compatibilityMode);
         }
+        servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
 
         // ------------------
         // dispatcher servlet

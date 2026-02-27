@@ -13,4 +13,12 @@ public class JsonApi4jProperties {
 
     private String rootPath = JSONAPI4J_DEFAULT_ROOT_PATH;
     private CompoundDocsProperties compoundDocs = new CompoundDocsProperties();
+    private CompatibilityProperties compatibility = new CompatibilityProperties();
+
+    public CompatibilityProperties getCompatibility() {
+        if (compatibility == null) {
+            compatibility = new CompatibilityProperties();
+        }
+        return compatibility;
+    }
 }

@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j;
 
 import lombok.*;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
@@ -65,6 +66,9 @@ public class JsonApi4j {
     @With
     @Builder.Default
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
+    @With
+    @Builder.Default
+    private JsonApi4jCompatibilityMode compatibilityMode = JsonApi4jCompatibilityMode.STRICT;
 
     public Object execute(JsonApiRequest request) {
         if (request.getTargetRelationshipName() == null) {
