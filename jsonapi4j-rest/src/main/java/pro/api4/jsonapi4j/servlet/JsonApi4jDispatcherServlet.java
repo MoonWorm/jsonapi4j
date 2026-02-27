@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.OperationHttpStatusResolver;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -89,7 +90,10 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
             Object dataDoc = jsonApi4j.execute(jsonApiRequest);
 
-            int status = targetOperationType.getHttpStatus();
+            int status = OperationHttpStatusResolver.resolveSuccessStatus(
+                    targetOperationType,
+                    jsonApi4j.getCompatibilityMode()
+            );
             resp.setStatus(status);
             LOG.info("Setting response status code: {}", status);
 
