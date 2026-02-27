@@ -1231,14 +1231,31 @@ Here are some practical tips for optimizing your **JsonApi4j** application:
 
 Fine-tuning these areas can help you balance performance, resource usage, and response time according to your system's scale and complexity.
 
-## JSON:API Specification Deviations
+## JSON:API Compatibility
 
-While **JsonApi4j** adheres closely to the JSON:API specification, it introduces a few deliberate deviations and simplifications aimed at improving performance, maintainability, and developer experience:
-1.	Flat resource structure - encourages top-level resources like `/users` and `/articles` instead of nested structures such as `/users/{userId}/articles`. This design enables automatic link generation and simplifies Compound Document resolution.
-2.	No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (planned for a future release).
-3.	No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) (lid). Use the standard id field for client-generated identifiers instead.
-4.	Pagination strategy - while the JSON:API spec is agnostic about pagination style (e.g. `page[number]` / `page[size]`), **JsonApi4j** standardizes on cursor-based pagination (`page[cursor]`).
-5.	No support for JSON:API Profiles or Extensions (may be added later).
-6.	Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
-7.	Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.
+**JsonApi4j** targets JSON:API 1.1 server responsibilities with strict behavior enabled by default.
+For migration scenarios, you can enable compatibility mode with `jsonapi4j.compatibility.legacyMode=true`.
 
+| Area | Strict mode (`legacyMode=false`) | Legacy mode (`legacyMode=true`) |
+| --- | --- | --- |
+| Content negotiation | Enforces JSON:API media type rules for `Content-Type` and `Accept`, including `ext` / `profile` URI-list value format validation. Invalid requests return `415` / `406`. | Keeps tolerant parsing behavior for migration safety. |
+| Response media type | Emits `Content-Type: application/vnd.api+json` for JSON:API responses (no `charset` parameter). | Same behavior. |
+| Mutation success statuses | Uses JSON:API-aligned synchronous defaults: create `POST` -> `201`; `PATCH` / `DELETE` / relationship linkage mutations -> `204`. | Keeps create `POST` -> `201` and preserves historical mutation `202` behavior for non-create mutations. |
+| To-many relationship linkage methods | Supports `GET`, `PATCH`, `POST`, and `DELETE` on `/relationships/{toMany}` when corresponding operations are registered. | Same behavior. |
+| Request validation and error semantics | Enforces strict request-boundary validation and returns JSON:API-aligned `400`, `403`, and `409` responses for invalid payload/identity/include rules. | Keeps compatibility-path behavior where legacy mode relaxes strict validation. |
+| Relationship self links | Emits relationship `self` links only when matching read-linkage operation support exists. | Preserves prior compatibility behavior. |
+| Sparse fieldsets | Supports `fields[TYPE]` for primary and included resources. | Same behavior. |
+| Local identifiers (`lid`) | Supports `lid` in resource objects and resource identifiers for local-id workflows. | Same behavior. |
+| Extensions and profiles capability model | Supports configured extension URIs (`jsonapi4j.compatibility.supportedExtensions`) and rejects unsupported requested `ext` values in strict mode. `profile` handling follows JSON:API rules (unknown profiles are ignored). | Keeps tolerant parsing behavior. |
+
+Compatibility/feature behavior is summarized in [spec-compliance.md](spec-compliance.md).
+JSON:API Atomic Operations extension remains out of scope.
+
+### Framework Behavior Notes
+
+| Topic | Behavior |
+| --- | --- |
+| Resource URL design | Encourages flat top-level resources (`/users`, `/articles`) instead of nested resource URLs (`/users/{id}/articles`) to keep routing/link generation consistent. |
+| Pagination strategy | Uses cursor-based pagination (`page[cursor]`) as the default framework convention. |
+| Relationship resolution strategy | Relationship linkage under `relationships.{name}.data` is not auto-expanded by default; related resources are resolved explicitly via relationship operations/compound docs. |
+| Compound docs prerequisites | For efficient include resolution, implement either filter-by-id (`GET /{type}?filter[id]=...`) or read-by-id (`GET /{type}/{id}`) operations. |
