@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
+import pro.api4.jsonapi4j.processor.exception.InvalidCursorException;
+import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
@@ -44,11 +46,37 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
         this.errorResponseMappers.put(DataRetrievalException.class, new ErrorsDocSupplier<DataRetrievalException>() {
             @Override
             public ErrorsDoc getErrorResponse(DataRetrievalException e) {
+                OperationNotFoundException operationNotFoundException = findCause(e, OperationNotFoundException.class);
+                if (operationNotFoundException != null) {
+                    return ErrorsDocFactory.resourceNotFoundErrorsDoc(operationNotFoundException.getMessage());
+                }
+                ResourceNotFoundException resourceNotFoundException = findCause(e, ResourceNotFoundException.class);
+                if (resourceNotFoundException != null) {
+                    return ErrorsDocFactory.resourceNotFoundErrorsDoc(resourceNotFoundException.getMessage());
+                }
+                InvalidCursorException invalidCursorException = findCause(e, InvalidCursorException.class);
+                if (invalidCursorException != null) {
+                    return ErrorsDocFactory.badRequestInvalidCursorErrorsDoc(invalidCursorException.getCursor());
+                }
+                InvalidPayloadException invalidPayloadException = findCause(e, InvalidPayloadException.class);
+                if (invalidPayloadException != null) {
+                    return ErrorsDocFactory.badRequestInvalidPayloadErrorsDoc(invalidPayloadException.getMessage());
+                }
                 return ErrorsDocFactory.badGatewayErrorsDoc(e.getMessage());
             }
 
             @Override
             public int getHttpStatus(DataRetrievalException e) {
+                if (findCause(e, OperationNotFoundException.class) != null) {
+                    return HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode();
+                }
+                if (findCause(e, ResourceNotFoundException.class) != null) {
+                    return HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode();
+                }
+                if (findCause(e, InvalidCursorException.class) != null
+                        || findCause(e, InvalidPayloadException.class) != null) {
+                    return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+                }
                 return HttpStatusCodes.SC_502_BAD_GATEWAY_ERROR.getCode();
             }
         });
@@ -93,6 +121,28 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
 
             @Override
             public int getHttpStatus(BadJsonApiRequestException e) {
+                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            }
+        });
+        this.errorResponseMappers.put(InvalidPayloadException.class, new ErrorsDocSupplier<InvalidPayloadException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(InvalidPayloadException e) {
+                return ErrorsDocFactory.badRequestInvalidPayloadErrorsDoc(e.getMessage());
+            }
+
+            @Override
+            public int getHttpStatus(InvalidPayloadException e) {
+                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            }
+        });
+        this.errorResponseMappers.put(InvalidCursorException.class, new ErrorsDocSupplier<InvalidCursorException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(InvalidCursorException e) {
+                return ErrorsDocFactory.badRequestInvalidCursorErrorsDoc(e.getCursor());
+            }
+
+            @Override
+            public int getHttpStatus(InvalidCursorException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });
@@ -148,6 +198,18 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
     @Override
     public Map<Class<? extends Throwable>, ErrorsDocSupplier<?>> getErrorResponseMappers() {
         return this.errorResponseMappers;
+    }
+
+    private static <T extends Throwable> T findCause(Throwable throwable,
+                                                     Class<T> targetType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (targetType.isInstance(current)) {
+                return targetType.cast(current);
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 
 }
