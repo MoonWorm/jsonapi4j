@@ -10,7 +10,16 @@ public class NotAcceptableException extends JsonApi4jException {
     private String expectedAccept;
 
     public NotAcceptableException(String actualAccept, String expectedAccept) {
-        this("Not acceptable. The server doesn't support any of the requested by client acceptable content types: " + (actualAccept == null ? "<empty>" : actualAccept) + ". Supported content types: " + expectedAccept);
+        super(
+                HttpStatusCodes.SC_406_NOT_ACCEPTABLE.getCode(),
+                DefaultErrorCodes.NOT_ACCEPTABLE,
+                "Not acceptable. The server doesn't support any of the requested by client acceptable content types: "
+                        + (actualAccept == null ? "<empty>" : actualAccept)
+                        + ". Supported content types: "
+                        + expectedAccept
+        );
+        this.actualAccept = actualAccept;
+        this.expectedAccept = expectedAccept;
     }
 
     public NotAcceptableException() {
@@ -21,7 +30,7 @@ public class NotAcceptableException extends JsonApi4jException {
         super(
                 HttpStatusCodes.SC_406_NOT_ACCEPTABLE.getCode(),
                 DefaultErrorCodes.NOT_ACCEPTABLE,
-                HttpStatusCodes.SC_406_NOT_ACCEPTABLE.getDescription()
+                message
         );
     }
 

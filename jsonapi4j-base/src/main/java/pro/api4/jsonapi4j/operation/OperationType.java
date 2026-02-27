@@ -66,15 +66,7 @@ public enum OperationType {
     }
 
     public int getHttpStatus() {
-        if (GET == getMethod()) {
-            return 200;
-        } else if (POST == getMethod()) {
-            return 201;
-        } else if (PATCH == getMethod() || DELETE == getMethod()) {
-            return 202;
-        } else {
-            throw new IllegalArgumentException("Unsupported operation method: " + getMethod());
-        }
+        return OperationHttpStatusResolver.resolveSuccessStatus(this);
     }
 
     public enum Method {

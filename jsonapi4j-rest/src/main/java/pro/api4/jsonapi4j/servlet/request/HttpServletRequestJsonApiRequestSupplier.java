@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.servlet.request;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
@@ -47,10 +48,29 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     private final ObjectMapper jsonMapper;
     private final OperationDetailsResolver operationDetailsResolver;
+    private final JsonApi4jCompatibilityMode compatibilityMode;
+
+    public HttpServletRequestJsonApiRequestSupplier(ObjectMapper jsonMapper,
+                                                    OperationDetailsResolver operationDetailsResolver) {
+        this(jsonMapper, operationDetailsResolver, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public HttpServletRequestJsonApiRequestSupplier(ObjectMapper jsonMapper,
+                                                    OperationDetailsResolver operationDetailsResolver,
+                                                    JsonApi4jCompatibilityMode compatibilityMode) {
+        this.jsonMapper = jsonMapper;
+        this.operationDetailsResolver = operationDetailsResolver;
+        this.compatibilityMode = compatibilityMode == null
+                ? JsonApi4jCompatibilityMode.STRICT
+                : compatibilityMode;
+    }
 
     @Override
     public JsonApiRequest from(HttpServletRequest servletRequest) {
-        if (!JsonApiMediaType.isAccepted(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()))) {
+        if (!JsonApiMediaType.isAccepted(
+                servletRequest.getHeader(HttpHeaders.ACCEPT.getName()),
+                compatibilityMode
+        )) {
             throw new NotAcceptableException(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()), JsonApiMediaType.MEDIA_TYPE);
         }
 
@@ -73,7 +93,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
         if (isMethodSupportBody(method)
                 && payload.length > 0
-                && !JsonApiMediaType.isMatches(servletRequest.getContentType())) {
+                && !JsonApiMediaType.isMatches(servletRequest.getContentType(), compatibilityMode)) {
             throw new UnsupportedMediaTypeException(servletRequest.getContentType(), JsonApiMediaType.MEDIA_TYPE);
         }
 

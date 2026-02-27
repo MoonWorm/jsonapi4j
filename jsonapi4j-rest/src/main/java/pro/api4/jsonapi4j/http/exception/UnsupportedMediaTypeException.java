@@ -10,7 +10,17 @@ public class UnsupportedMediaTypeException extends JsonApi4jException {
     private String expectedMediaType;
 
     public UnsupportedMediaTypeException(String actualMediaType, String expectedMediaType) {
-        this("Unsupported Media Type: " + (actualMediaType == null ? "<empty>" : actualMediaType) + ". The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - " + expectedMediaType + ".");
+        super(
+                HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE.getCode(),
+                DefaultErrorCodes.UNSUPPORTED_MEDIA_TYPE,
+                "Unsupported Media Type: "
+                        + (actualMediaType == null ? "<empty>" : actualMediaType)
+                        + ". The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - "
+                        + expectedMediaType
+                        + "."
+        );
+        this.actualMediaType = actualMediaType;
+        this.expectedMediaType = expectedMediaType;
     }
 
     public UnsupportedMediaTypeException() {

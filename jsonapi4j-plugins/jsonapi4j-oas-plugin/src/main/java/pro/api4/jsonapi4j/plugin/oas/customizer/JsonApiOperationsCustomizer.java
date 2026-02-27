@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
@@ -11,6 +12,7 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.operation.OperationHttpStatusResolver;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
@@ -64,6 +66,28 @@ public class JsonApiOperationsCustomizer {
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders;
+    private final JsonApi4jCompatibilityMode compatibilityMode;
+
+    public JsonApiOperationsCustomizer(String rootPath,
+                                       DomainRegistry domainRegistry,
+                                       OperationsRegistry operationsRegistry,
+                                       Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders) {
+        this(rootPath, domainRegistry, operationsRegistry, customResponseHeaders, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public JsonApiOperationsCustomizer(String rootPath,
+                                       DomainRegistry domainRegistry,
+                                       OperationsRegistry operationsRegistry,
+                                       Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders,
+                                       JsonApi4jCompatibilityMode compatibilityMode) {
+        this.rootPath = rootPath;
+        this.domainRegistry = domainRegistry;
+        this.operationsRegistry = operationsRegistry;
+        this.customResponseHeaders = customResponseHeaders;
+        this.compatibilityMode = compatibilityMode == null
+                ? JsonApi4jCompatibilityMode.STRICT
+                : compatibilityMode;
+    }
 
     public void customise(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
@@ -224,7 +248,12 @@ public class JsonApiOperationsCustomizer {
         );
         oasOperation.setResponses(
                 generateResponses(
-                        String.valueOf(operationType.getHttpStatus()),
+                        String.valueOf(
+                                OperationHttpStatusResolver.resolveSuccessStatus(
+                                        operationType,
+                                        compatibilityMode
+                                )
+                        ),
                         happyPathResponseDocSchemaName,
                         extraOasOperationInfo.getSupportedHttpErrorCodes()
                 )
@@ -294,15 +323,13 @@ public class JsonApiOperationsCustomizer {
                                            String happyPathResponseDocSchemaName,
                                            Set<HttpStatusCodes> supportedHttpErrorCodes) {
         ApiResponses responses = new ApiResponses();
-        if (StringUtils.isNotBlank(happyPathResponseDocSchemaName)) {
-            responses.addApiResponse(
-                    status,
-                    generateHappyPathResponse(
-                            happyPathResponseDocSchemaName,
-                            emptyIfNull(customResponseHeaders).get(status)
-                    )
-            );
-        }
+        responses.addApiResponse(
+                status,
+                generateHappyPathResponse(
+                        happyPathResponseDocSchemaName,
+                        emptyIfNull(customResponseHeaders).get(status)
+                )
+        );
         responses.putAll(generateErrorResponses(supportedHttpErrorCodes));
         return responses;
     }
