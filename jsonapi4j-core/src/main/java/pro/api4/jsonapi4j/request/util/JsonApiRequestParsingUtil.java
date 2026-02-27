@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.request.util;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import org.apache.commons.collections4.CollectionUtils;
@@ -15,6 +16,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -102,6 +104,27 @@ public final class JsonApiRequestParsingUtil {
         return sortBy;
     }
 
+    public static Map<String, Set<String>> parseSparseFieldsets(Map<String, List<String>> params) {
+        Map<String, Set<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+            String paramName = entry.getKey();
+            if (SparseFieldsetsAwareRequest.isSparseFieldsetParam(paramName)) {
+                String resourceType = SparseFieldsetsAwareRequest.extractResourceType(paramName);
+                if (StringUtils.isBlank(resourceType)) {
+                    throw new BadJsonApiRequestException(
+                            DefaultErrorCodes.VALUE_INVALID_FORMAT,
+                            paramName,
+                            "Invalid sparse fieldset parameter format. Expected fields[TYPE]."
+                    );
+                }
+                Set<String> fields = parseCommaSeparatedParam(entry.getValue())
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                result.put(resourceType, fields);
+            }
+        }
+        return result;
+    }
+
     public static String parseCursor(List<String> cursorParamValue) {
         if (CollectionUtils.isEmpty(cursorParamValue)) {
             return null;
@@ -138,6 +161,7 @@ public final class JsonApiRequestParsingUtil {
         return !paramName.equals(CursorAwareRequest.CURSOR_PARAM) &&
                 !paramName.equals(IncludeAwareRequest.INCLUDE_PARAM) &&
                 !isJsonApiFilterParam(paramName) &&
+                !SparseFieldsetsAwareRequest.isSparseFieldsetParam(paramName) &&
                 !paramName.equals(SortAwareRequest.SORT_PARAM);
     }
 

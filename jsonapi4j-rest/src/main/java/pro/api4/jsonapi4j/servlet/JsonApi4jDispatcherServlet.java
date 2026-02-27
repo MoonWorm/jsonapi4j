@@ -23,6 +23,7 @@ import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.cache.CacheControlPropagator;
+import pro.api4.jsonapi4j.servlet.response.SparseFieldsetsResponseFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
@@ -106,7 +107,12 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 }
             }
 
-            writeResponseBody(resp, dataDoc);
+            Object responseBody = SparseFieldsetsResponseFilter.apply(
+                    dataDoc,
+                    jsonApiRequest.getSparseFieldsets(),
+                    objectMapper
+            );
+            writeResponseBody(resp, responseBody);
 
             CacheControlPropagator.propagateCacheControlIfNeeded(resp);
 

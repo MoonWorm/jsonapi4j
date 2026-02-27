@@ -6,11 +6,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ActiveProfiles("compound-docs-test")
@@ -75,6 +78,30 @@ public class CompoundDocsOperationsTests extends RestAssuredUtf8TestBase {
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body(jsonEquals(ResourceUtil.readResourceFile("operations/to-many-relationship-compound-docs-response.json")));
+    }
+
+    @Test
+    public void test_readByIdWithIncludesAndSparseFieldsets() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "placeOfBirth.currencies")
+                .queryParam(SparseFieldsetsAwareRequest.toFieldsetParamName("users"), "fullName,placeOfBirth")
+                .queryParam(SparseFieldsetsAwareRequest.toFieldsetParamName("countries"), "name,currencies,unknownField")
+                .queryParam(SparseFieldsetsAwareRequest.toFieldsetParamName("currencies"), "symbol,unknownField")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("data.attributes.fullName", equalTo("John Doe"))
+                .body("data.attributes.email", nullValue())
+                .body("data.relationships.placeOfBirth", org.hamcrest.Matchers.notNullValue())
+                .body("data.relationships.citizenships", nullValue())
+                .body("included.find { it.type == 'countries' }.attributes.name", equalTo("United States"))
+                .body("included.find { it.type == 'countries' }.attributes.region", nullValue())
+                .body("included.find { it.type == 'currencies' }.attributes.symbol", equalTo("$"))
+                .body("included.find { it.type == 'currencies' }.attributes.name", nullValue());
     }
 
 }

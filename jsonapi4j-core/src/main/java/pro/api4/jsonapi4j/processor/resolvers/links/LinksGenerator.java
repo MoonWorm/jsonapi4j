@@ -6,6 +6,7 @@ import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.CustomQueryParamsAwareRequest;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -57,6 +58,7 @@ public final class LinksGenerator {
         if (propagateIncludes) {
             populateIncludes(selfLinkParams);
         }
+        populateSparseFieldsets(selfLinkParams);
         if (propagateCursor) {
             populateCursor(selfLinkParams);
         }
@@ -82,6 +84,7 @@ public final class LinksGenerator {
         if (propagateIncludes) {
             populateIncludes(selfLinkParams);
         }
+        populateSparseFieldsets(selfLinkParams);
         if (propagateCursor) {
             populateCursor(selfLinkParams);
         }
@@ -111,6 +114,7 @@ public final class LinksGenerator {
         if (propagateIncludes) {
             populateIncludes(nextLinkParams);
         }
+        populateSparseFieldsets(nextLinkParams);
         if (propagateCursor) {
             nextLinkParams.put(CursorAwareRequest.CURSOR_PARAM, nextCursor);
         }
@@ -140,6 +144,14 @@ public final class LinksGenerator {
         if (request instanceof CustomQueryParamsAwareRequest r) {
             if (MapUtils.isNotEmpty(r.getCustomQueryParams())) {
                 linkParams.putAll(r.asSingleValueMap());
+            }
+        }
+    }
+
+    private void populateSparseFieldsets(Map<String, String> linkParams) {
+        if (request instanceof SparseFieldsetsAwareRequest r) {
+            if (r.hasSparseFieldsets()) {
+                linkParams.putAll(r.asSingleValueMapOfSparseFieldsets());
             }
         }
     }

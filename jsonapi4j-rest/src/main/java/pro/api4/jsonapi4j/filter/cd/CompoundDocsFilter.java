@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
+import pro.api4.jsonapi4j.servlet.response.SparseFieldsetsResponseFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.MapUtils;
@@ -46,10 +47,11 @@ public class CompoundDocsFilter implements Filter {
     private static final Pattern RELATIONSHIP_OPERATION_URL_PATTERN = Pattern.compile("/[^/]+/[^/]+/relationships/([^/]+)");
 
     private CompoundDocsResolver resolver;
+    private ObjectMapper objectMapper;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        ObjectMapper objectMapper = (ObjectMapper) filterConfig.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
+        objectMapper = (ObjectMapper) filterConfig.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
         Validate.notNull(objectMapper);
 
         JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
@@ -108,6 +110,11 @@ public class CompoundDocsFilter implements Filter {
                                     getOriginalRequestHeaders(httpRequest)
                             );
                         }
+                        responseBodyWithCompoundDocs = SparseFieldsetsResponseFilter.apply(
+                                responseBodyWithCompoundDocs,
+                                getSparseFieldsetsQueryParam(httpRequest),
+                                objectMapper
+                        );
 
                         writeUtf8ResponseBody(response, responseBodyWithCompoundDocs);
                     } else {
@@ -155,6 +162,16 @@ public class CompoundDocsFilter implements Filter {
             return null;
         }
         return JsonApiRequestParsingUtil.parseOriginalIncludes(Arrays.asList(value));
+    }
+
+    private Map<String, Set<String>> getSparseFieldsetsQueryParam(HttpServletRequest httpRequest) {
+        return JsonApiRequestParsingUtil.parseSparseFieldsets(
+                httpRequest.getParameterMap().entrySet().stream()
+                        .collect(toMap(
+                                Map.Entry::getKey,
+                                e -> Arrays.asList(e.getValue())
+                        ))
+        );
     }
 
     private Map<String, String> getOriginalRequestHeaders(HttpServletRequest httpRequest) {

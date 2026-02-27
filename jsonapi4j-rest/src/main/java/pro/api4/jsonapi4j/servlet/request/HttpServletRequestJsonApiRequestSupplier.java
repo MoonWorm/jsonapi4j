@@ -45,6 +45,7 @@ import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEff
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFilter;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOriginalIncludes;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseResourceIdFromThePath;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseSparseFieldsets;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseSortBy;
 import static java.util.stream.Collectors.toMap;
 
@@ -111,6 +112,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         Map<String, List<String>> filters = parseFilter(params);
         Set<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
         Set<String> originalIncludes = parseOriginalIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
+        Map<String, Set<String>> sparseFieldsets = parseSparseFieldsets(params);
         Map<String, SortAwareRequest.SortOrder> sortBy = parseSortBy(params.get(SortAwareRequest.SORT_PARAM));
         Map<String, List<String>> customQueryParams = parseCustomQueryParams(params);
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
@@ -157,6 +159,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setFilters(filters);
         jsonApiRequest.setEffectiveIncludes(effectiveIncludes);
         jsonApiRequest.setOriginalIncludes(originalIncludes);
+        jsonApiRequest.setSparseFieldsets(sparseFieldsets);
         jsonApiRequest.setCursor(cursor);
         jsonApiRequest.setSortBy(sortBy);
         jsonApiRequest.setCustomQueryParams(customQueryParams);

@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -227,17 +228,61 @@ public class HttpServletRequestJsonApiRequestSupplierValidationTests {
         assertThat(jsonApiRequest.getOperationType()).isEqualTo(OperationType.UPDATE_RESOURCE);
     }
 
+    @Test
+    public void getRequest_sparseFieldsets_areParsedIntoRequestModel() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users/1", "GET")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.READ_RESOURCE_BY_ID,
+                        new ResourceType("users"),
+                        null
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+
+        HttpServletRequest request = mockRequest(
+                "GET",
+                "/users/1",
+                "application/vnd.api+json",
+                "",
+                Map.of(
+                        "fields[users]", new String[]{"fullName,email"},
+                        "fields[countries]", new String[]{"name"}
+                )
+        );
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+
+        assertThat(jsonApiRequest.getSparseFieldsets())
+                .containsEntry("users", Set.of("fullName", "email"))
+                .containsEntry("countries", Set.of("name"));
+        assertThat(jsonApiRequest.getCustomQueryParams()).isEmpty();
+    }
+
     private static HttpServletRequest mockRequest(String method,
                                                   String pathInfo,
                                                   String contentType,
                                                   String payload) throws IOException {
+        return mockRequest(method, pathInfo, contentType, payload, Map.of());
+    }
+
+    private static HttpServletRequest mockRequest(String method,
+                                                  String pathInfo,
+                                                  String contentType,
+                                                  String payload,
+                                                  Map<String, String[]> params) throws IOException {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn("application/vnd.api+json");
         when(request.getMethod()).thenReturn(method);
         when(request.getInputStream()).thenReturn(inputStream(payload));
         when(request.getContentType()).thenReturn(contentType);
         when(request.getPathInfo()).thenReturn(pathInfo);
-        when(request.getParameterMap()).thenReturn(Map.of());
+        when(request.getParameterMap()).thenReturn(params);
         return request;
     }
 

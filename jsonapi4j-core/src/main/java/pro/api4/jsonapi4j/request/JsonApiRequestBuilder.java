@@ -25,6 +25,7 @@ public class JsonApiRequestBuilder {
     private Map<String, List<String>> filterBy = new HashMap<>();
     private Set<String> effectiveIncludes = new HashSet<>();
     private Set<String> originalIncludes = new HashSet<>();
+    private Map<String, Set<String>> sparseFieldsets = new HashMap<>();
     private String cursor = null;
     private Map<String, SortAwareRequest.SortOrder> sortBy = new HashMap<>();
     private Map<String, List<String>> queryParams = new HashMap<>();
@@ -88,6 +89,13 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
+    public JsonApiRequestBuilder sparseFieldsets(Map<String, Set<String>> sparseFieldsets) {
+        if (sparseFieldsets != null) {
+            this.sparseFieldsets.putAll(sparseFieldsets);
+        }
+        return this;
+    }
+
     public JsonApiRequest build() {
         DefaultJsonApiRequest request = new DefaultJsonApiRequest(new DefaultJsonApiRequest.BodyDeserializer() {
             @Override
@@ -112,6 +120,8 @@ public class JsonApiRequestBuilder {
         request.setOperationType(operationType);
         request.setFilters(filterBy);
         request.setEffectiveIncludes(effectiveIncludes);
+        request.setOriginalIncludes(originalIncludes);
+        request.setSparseFieldsets(sparseFieldsets);
         request.setCursor(cursor);
         request.setSortBy(sortBy);
         request.setCustomQueryParams(queryParams);
