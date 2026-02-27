@@ -23,7 +23,18 @@ public final class DefaultRelationshipResolvers {
             ResourceType resourceType,
             IdSupplier<DATA_SOURCE_DTO> idSupplier
     ) {
+        return defaultRelationshipResolver(resourceType, idSupplier, true);
+    }
+
+    public static <REQUEST, DATA_SOURCE_DTO> DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO> defaultRelationshipResolver(
+            ResourceType resourceType,
+            IdSupplier<DATA_SOURCE_DTO> idSupplier,
+            boolean emitSelfLink
+    ) {
         return (relationship, request, dataSourceDto) -> {
+            if (!emitSelfLink) {
+                return new BaseDoc((LinksObject) null);
+            }
             String relationshipBasePath = LinksGenerator.relationshipBasePath(
                     resourceType,
                     idSupplier.getId(dataSourceDto),
