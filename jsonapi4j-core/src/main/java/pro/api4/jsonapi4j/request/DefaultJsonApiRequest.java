@@ -31,6 +31,7 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
     private Set<String> effectiveIncludes = new HashSet<>();
     private Set<String> originalIncludes = new HashSet<>();
+    private Map<String, Set<String>> sparseFieldsets = new HashMap<>();
 
     private String cursor = null;
     private Map<String, List<String>> customQueryParams = new HashMap<>();

@@ -7,6 +7,7 @@ public interface JsonApiRequest extends
         RelationshipAwareRequest,
         CursorAwareRequest,
         IncludeAwareRequest,
+        SparseFieldsetsAwareRequest,
         FiltersAwareRequest,
         SortAwareRequest,
         CustomQueryParamsAwareRequest,
