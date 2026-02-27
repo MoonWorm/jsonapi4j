@@ -14,7 +14,7 @@ import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ActiveProfiles("compound-docs-test")
-public class CompoundDocsOperationsTests {
+public class CompoundDocsOperationsTests extends RestAssuredUtf8TestBase {
 
     @Value("${jsonapi4j.root-path}")
     private String jsonApiRootPath;

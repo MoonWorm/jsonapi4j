@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.sampleapp.operations.country;
 
+import pro.api4.jsonapi4j.sampleapp.operations.RestAssuredUtf8TestBase;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,7 +16,7 @@ import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("integration-test")
-public class ReadCountryCurrenciesOperationTests {
+public class ReadCountryCurrenciesOperationTests extends RestAssuredUtf8TestBase {
 
     @Value("${jsonapi4j.root-path}")
     private String jsonApiRootPath;

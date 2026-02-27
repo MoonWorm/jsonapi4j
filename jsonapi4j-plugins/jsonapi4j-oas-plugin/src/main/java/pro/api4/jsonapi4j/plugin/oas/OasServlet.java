@@ -9,7 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
@@ -38,6 +40,7 @@ public class OasServlet extends HttpServlet {
     private OperationsRegistry operationsRegistry;
     private String rootPath;
     private OasProperties oasProperties;
+    private JsonApi4jCompatibilityMode compatibilityMode = JsonApi4jCompatibilityMode.STRICT;
 
     private String cachedOasJson;
     private String cachedOasYaml;
@@ -52,10 +55,18 @@ public class OasServlet extends HttpServlet {
         oasProperties = (OasProperties) config.getServletContext().getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
         Validate.notNull(oasProperties);
 
+        JsonApi4jProperties properties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+        if (properties != null && properties.getCompatibility() != null) {
+            this.compatibilityMode = properties.getCompatibility().resolveMode();
+        }
+
         JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j != null) {
             this.domainRegistry = jsonApi4j.getDomainRegistry();
             this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+            if (properties == null || properties.getCompatibility() == null) {
+                this.compatibilityMode = jsonApi4j.getCompatibilityMode();
+            }
         } else {
             domainRegistry = (DomainRegistry) config.getServletContext().getAttribute(DOMAIN_REGISTRY_ATT_NAME);
             operationsRegistry = (OperationsRegistry) config.getServletContext().getAttribute(OPERATION_REGISTRY_ATT_NAME);
@@ -85,7 +96,8 @@ public class OasServlet extends HttpServlet {
                 rootPath,
                 domainRegistry,
                 operationsRegistry,
-                oasProperties != null ? oasProperties.getCustomResponseHeaders() : Collections.emptyMap()
+                oasProperties != null ? oasProperties.getCustomResponseHeaders() : Collections.emptyMap(),
+                compatibilityMode
         ).customise(openAPI);
         writeOasToResponse(resp, format, openAPI);
     }
