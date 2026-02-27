@@ -25,6 +25,14 @@ public class OperationHttpStatusResolverTests {
                 OperationType.UPDATE_TO_MANY_RELATIONSHIP,
                 JsonApi4jCompatibilityMode.STRICT
         )).isEqualTo(204);
+        assertThat(OperationHttpStatusResolver.resolveSuccessStatus(
+                OperationType.ADD_TO_MANY_RELATIONSHIP,
+                JsonApi4jCompatibilityMode.STRICT
+        )).isEqualTo(204);
+        assertThat(OperationHttpStatusResolver.resolveSuccessStatus(
+                OperationType.REMOVE_FROM_MANY_RELATIONSHIP,
+                JsonApi4jCompatibilityMode.STRICT
+        )).isEqualTo(204);
     }
 
     @Test
@@ -67,6 +75,14 @@ public class OperationHttpStatusResolverTests {
         )).isEqualTo(202);
         assertThat(OperationHttpStatusResolver.resolveSuccessStatus(
                 OperationType.UPDATE_TO_MANY_RELATIONSHIP,
+                JsonApi4jCompatibilityMode.LEGACY
+        )).isEqualTo(202);
+        assertThat(OperationHttpStatusResolver.resolveSuccessStatus(
+                OperationType.ADD_TO_MANY_RELATIONSHIP,
+                JsonApi4jCompatibilityMode.LEGACY
+        )).isEqualTo(202);
+        assertThat(OperationHttpStatusResolver.resolveSuccessStatus(
+                OperationType.REMOVE_FROM_MANY_RELATIONSHIP,
                 JsonApi4jCompatibilityMode.LEGACY
         )).isEqualTo(202);
     }

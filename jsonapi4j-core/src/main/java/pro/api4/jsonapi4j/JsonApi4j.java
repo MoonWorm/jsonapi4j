@@ -136,6 +136,18 @@ public class JsonApi4j {
                         .updateToManyRelationship(request);
                 return null;
             }
+            case ADD_TO_MANY_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .addToManyRelationship(request);
+                return null;
+            }
+            case REMOVE_FROM_MANY_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .removeFromManyRelationship(request);
+                return null;
+            }
             default -> throw new IllegalArgumentException(
                     "Unsupported JSON:API request, unknown operation type: " + request.getOperationType()
             );
@@ -954,6 +966,70 @@ public class JsonApi4j {
                     request -> {
                         try {
                             executable.update(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    pluginSettings
+            );
+        }
+
+        public void addToManyRelationship(JsonApiRequest relationshipRequest) {
+            RegisteredOperation<AddToManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredAddToManyRelationshipOperation(resourceType, relationshipName, true);
+
+            AddToManyRelationshipOperation executable = registeredOperation.getOperation();
+
+            executable.validate(relationshipRequest);
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
+            );
+
+            executeCastedNoResponse(
+                    relationshipRequest,
+                    request -> {
+                        try {
+                            executable.add(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationType(),
+                                    registeredOperation.getResourceType(),
+                                    registeredOperation.getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    pluginSettings
+            );
+        }
+
+        public void removeFromManyRelationship(JsonApiRequest relationshipRequest) {
+            RegisteredOperation<RemoveFromManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredRemoveFromManyRelationshipOperation(resourceType, relationshipName, true);
+
+            RemoveFromManyRelationshipOperation executable = registeredOperation.getOperation();
+
+            executable.validate(relationshipRequest);
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
+            );
+
+            executeCastedNoResponse(
+                    relationshipRequest,
+                    request -> {
+                        try {
+                            executable.remove(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
                                     registeredOperation.getOperationType(),

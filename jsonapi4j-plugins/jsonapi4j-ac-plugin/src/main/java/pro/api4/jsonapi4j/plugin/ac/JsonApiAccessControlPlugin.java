@@ -68,6 +68,12 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
         if (UpdateToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return merge(classLevel, methodsAnnotations.get("update"));
         }
+        if (AddToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return merge(classLevel, methodsAnnotations.get("add"));
+        }
+        if (RemoveFromManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return merge(classLevel, methodsAnnotations.get("remove"));
+        }
         return classLevel;
     }
 

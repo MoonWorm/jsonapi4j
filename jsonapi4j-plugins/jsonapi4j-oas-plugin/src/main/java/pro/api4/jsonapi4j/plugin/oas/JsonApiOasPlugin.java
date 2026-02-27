@@ -101,6 +101,22 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
                     classLevelModel
             );
         }
+        if (AddToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return getOrDefault(
+                    () -> OasOperationInfoModel.fromAnnotation(
+                            fetchAnnotationForMethod(operation.getClass(), "add", OasOperationInfo.class)
+                    ),
+                    classLevelModel
+            );
+        }
+        if (RemoveFromManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return getOrDefault(
+                    () -> OasOperationInfoModel.fromAnnotation(
+                            fetchAnnotationForMethod(operation.getClass(), "remove", OasOperationInfo.class)
+                    ),
+                    classLevelModel
+            );
+        }
         return classLevelModel;
     }
 

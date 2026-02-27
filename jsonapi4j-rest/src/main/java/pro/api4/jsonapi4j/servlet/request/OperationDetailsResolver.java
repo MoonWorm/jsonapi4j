@@ -95,10 +95,19 @@ public class OperationDetailsResolver {
                 } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP) {
                     return new OperationDetails(OperationType.UPDATE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 }
-            } else {
+            } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP && methodEnum == POST) {
+                return new OperationDetails(OperationType.ADD_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+            } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP && methodEnum == DELETE) {
+                return new OperationDetails(OperationType.REMOVE_FROM_MANY_RELATIONSHIP, resourceType, relationshipName);
+            } else if (relationshipSubType == OperationType.SubType.TO_ONE_RELATIONSHIP) {
                 throw new MethodNotSupportedException(
                         methodString,
                         Stream.of(GET, PATCH).map(Enum::name).collect(Collectors.joining(", "))
+                );
+            } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP) {
+                throw new MethodNotSupportedException(
+                        methodString,
+                        Stream.of(GET, PATCH, POST, DELETE).map(Enum::name).collect(Collectors.joining(", "))
                 );
             }
         }
