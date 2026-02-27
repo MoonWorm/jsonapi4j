@@ -29,7 +29,6 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandler
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
@@ -67,7 +66,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         );
         jsonApiRequestSupplier = new HttpServletRequestJsonApiRequestSupplier(
                 objectMapper,
-                operationDetailsResolver
+                operationDetailsResolver,
+                compatibilityMode
         );
     }
 
@@ -123,9 +123,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     private void writeResponseBody(HttpServletResponse resp, Object body) {
         try {
             if (body != null) {
-                resp.setContentType(JsonApiMediaType.MEDIA_TYPE);
+                resp.setHeader("Content-Type", JsonApiMediaType.MEDIA_TYPE);
                 LOG.info("Setting response Content-Type to: {}", JsonApiMediaType.MEDIA_TYPE);
-                resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
                 LOG.info("Writing response body: {}", body);
                 objectMapper.writeValue(resp.getOutputStream(), body);
             }
