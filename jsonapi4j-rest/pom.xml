@@ -12,7 +12,7 @@
     <artifactId>jsonapi4j-rest</artifactId>
 
     <name>JsonApi4j - Rest Module</name>
-    <description>Servlet API framework base. Can be used as is or for integrations with other frameworks e.g. Spring Boot, Quarkus, etc</description>
+    <description>Servlet API framework base. Can be used as is or as a foundation for the supported Spring Boot integration.</description>
     <url>https://api4.pro</url>
     <licenses>
         <license>
@@ -131,6 +131,11 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

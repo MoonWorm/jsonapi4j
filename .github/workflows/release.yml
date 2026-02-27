@@ -11,6 +11,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_MODULES: ".,jsonapi4j-base,jsonapi4j-core,jsonapi4j-plugins,jsonapi4j-plugins/jsonapi4j-ac-plugin,jsonapi4j-plugins/jsonapi4j-oas-plugin,jsonapi4j-rest,jsonapi4j-rest-springboot,jsonapi4j-compound-docs-resolver"
 
     steps:
       - name: Checkout
@@ -43,5 +45,14 @@ jobs:
               }
             ]
 
-      - name: Build, Sign, and Publish to Sonatype Central
-        run: mvn clean deploy -pl '.,jsonapi4j-base,jsonapi4j-core,jsonapi4j-plugins,jsonapi4j-plugins/jsonapi4j-ac-plugin,jsonapi4j-plugins/jsonapi4j-oas-plugin,jsonapi4j-rest,jsonapi4j-rest-springboot,jsonapi4j-compound-docs-resolver' -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+      - name: Verify Spring Boot-only release module set
+        run: |
+          echo "$RELEASE_MODULES" | grep -q 'jsonapi4j-rest-springboot'
+
+          if echo "$RELEASE_MODULES" | grep -q 'jsonapi4j-rest-quarkus'; then
+            echo "Release module set must not contain Quarkus artifacts."
+            exit 1
+          fi
+
+      - name: Build, Sign, and Publish supported artifacts to Sonatype Central
+        run: mvn clean deploy -pl "$RELEASE_MODULES" -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}

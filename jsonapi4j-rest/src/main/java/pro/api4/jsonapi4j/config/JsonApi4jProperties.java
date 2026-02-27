@@ -14,11 +14,19 @@ public class JsonApi4jProperties {
     private String rootPath = JSONAPI4J_DEFAULT_ROOT_PATH;
     private CompoundDocsProperties compoundDocs = new CompoundDocsProperties();
     private CompatibilityProperties compatibility = new CompatibilityProperties();
+    private ExecutorProperties executor = new ExecutorProperties();
 
     public CompatibilityProperties getCompatibility() {
         if (compatibility == null) {
             compatibility = new CompatibilityProperties();
         }
         return compatibility;
+    }
+
+    public ExecutorProperties getExecutor() {
+        if (executor == null) {
+            executor = new ExecutorProperties();
+        }
+        return executor;
     }
 }

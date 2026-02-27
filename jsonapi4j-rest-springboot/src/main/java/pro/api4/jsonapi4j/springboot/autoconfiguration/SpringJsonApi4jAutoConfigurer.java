@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.config.ExecutorProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -39,7 +41,11 @@ import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPlu
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
@@ -101,9 +107,45 @@ public class SpringJsonApi4jAutoConfigurer {
                 .build();
     }
 
-    @Bean("jsonApi4jExecutorService")
-    public ExecutorService jsonApi4jExecutorService() {
-        return Executors.newCachedThreadPool();
+    @Bean(name = "jsonApi4jExecutorService", destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(name = "jsonApi4jExecutorService")
+    public ExecutorService jsonApi4jExecutorService(JsonApi4jProperties properties) {
+        ExecutorProperties executorProperties = properties == null
+                ? new ExecutorProperties()
+                : properties.getExecutor();
+
+        int corePoolSize = Math.max(1, executorProperties.getCorePoolSize());
+        int maxPoolSize = Math.max(corePoolSize, executorProperties.getMaxPoolSize());
+        int queueCapacity = Math.max(1, executorProperties.getQueueCapacity());
+        long keepAliveSeconds = Math.max(0L, executorProperties.getKeepAliveSeconds());
+        String threadNamePrefix = StringUtils.isBlank(executorProperties.getThreadNamePrefix())
+                ? ExecutorProperties.JSONAPI4J_EXECUTOR_THREAD_NAME_PREFIX_DEFAULT_VALUE
+                : executorProperties.getThreadNamePrefix().trim();
+
+        ThreadFactory threadFactory = new ThreadFactory() {
+            private final AtomicInteger index = new AtomicInteger(1);
+
+            @Override
+            public Thread newThread(Runnable runnable) {
+                Thread thread = new Thread(runnable);
+                thread.setName(threadNamePrefix + index.getAndIncrement());
+                thread.setDaemon(false);
+                return thread;
+            }
+        };
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                corePoolSize,
+                maxPoolSize,
+                keepAliveSeconds,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(queueCapacity),
+                threadFactory,
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+        executor.allowCoreThreadTimeOut(executorProperties.isAllowCoreThreadTimeout());
+
+        return executor;
     }
 
     @Bean

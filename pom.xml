@@ -45,7 +45,6 @@
         <module>jsonapi4j-compound-docs-resolver</module>
         <module>jsonapi4j-rest</module>
         <module>jsonapi4j-rest-springboot</module>
-        <module>jsonapi4j-rest-quarkus</module>
         <module>jsonapi4j-report</module>
         <module>examples</module>
     </modules>
@@ -57,9 +56,6 @@
         <!--spting/web-->
         <spring.version>5.3.14</spring.version>
         <spring.boot.version>3.4.2</spring.boot.version>
-
-        <!--quarkus-->
-        <quarkus.version>3.31.3</quarkus.version>
 
         <tomcat-embed-core.version>10.1.11</tomcat-embed-core.version>
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
@@ -139,19 +135,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${spring.boot.version}</version>
-            </dependency>
-
-            <!--Quarkus-->
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-core</artifactId>
-                <version>${quarkus.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-core-deployment</artifactId>
-                <version>${quarkus.version}</version>
             </dependency>
 
             <!-- Servlet API -->

@@ -126,8 +126,12 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         }
 
         String path = getPath(servletRequest);
-        log.info("Received JSON:API request for the path {} and method {}", path, method);
-        log.info("Converting HttpServletRequest to JsonApiRequest...");
+        log.info(
+                "Received JSON:API request. requestId={}, method={}, path={}",
+                resolveRequestId(servletRequest),
+                method,
+                path
+        );
         String resourceId = parseResourceIdFromThePath(path);
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
@@ -186,7 +190,20 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setCustomQueryParams(customQueryParams);
         jsonApiRequest.setPayload(payload);
         validateStrictJsonApiRequest(jsonApiRequest);
-        log.info("Composed JsonApiRequest: {}", jsonApiRequest);
+        if (log.isDebugEnabled()) {
+            log.debug(
+                    "Composed JsonApiRequest metadata: operation={}, resourceType={}, resourceId={}, relationship={}, filters={}, includeCount={}, sparseFieldsetTypes={}, sortFields={}, customQueryParams={}",
+                    targetOperationType,
+                    targetResourceType == null ? null : targetResourceType.getType(),
+                    resourceId,
+                    targetRelationshipName == null ? null : targetRelationshipName.getName(),
+                    filters.keySet(),
+                    originalIncludes.size(),
+                    sparseFieldsets.keySet(),
+                    sortBy.keySet(),
+                    customQueryParams.keySet()
+            );
+        }
         return jsonApiRequest;
     }
 
@@ -369,11 +386,21 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     private String getPath(HttpServletRequest request) {
         String path = request.getPathInfo();
-        log.info("Request path: {}", path);
         if(path == null) {
             return "/";
         }
         return Paths.get(path).normalize().toString();
+    }
+
+    private String resolveRequestId(HttpServletRequest request) {
+        if (request == null) {
+            return "n/a";
+        }
+        String requestId = request.getHeader("X-Request-Id");
+        if (StringUtils.isBlank(requestId)) {
+            requestId = request.getHeader("X-Correlation-Id");
+        }
+        return StringUtils.isBlank(requestId) ? "n/a" : requestId;
     }
 
     private Map<String, List<String>> getParams(HttpServletRequest request) {

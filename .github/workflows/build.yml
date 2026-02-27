@@ -17,6 +17,19 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
+      - name: Enforce Spring Boot-only integration policy
+        run: |
+          grep -q '<module>jsonapi4j-rest-springboot</module>' pom.xml
+
+          if grep -q 'jsonapi4j-rest-quarkus' pom.xml; then
+            echo "Quarkus module must not be present in the root reactor."
+            exit 1
+          fi
+
+          if grep -Eq 'io\.quarkus|quarkus\.version' pom.xml; then
+            echo "Quarkus dependency-management entries must not be present in the root POM."
+            exit 1
+          fi
       - name: Build with Maven
         run: mvn -B verify
       - name: Upload coverage reports to Codecov

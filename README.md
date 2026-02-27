@@ -15,6 +15,17 @@ There are some **application examples** available in [examples/](https://github.
 
 Detailed **documentation** is available [here](https://moonworm.github.io/jsonapi4j/).
 
+# Support Policy
+
+`jsonapi4j-rest-springboot` is the only supported integration path for **JsonApi4j**.
+
+`jsonapi4j-rest-quarkus` has been intentionally de-scoped and removed from active support.
+
+Migration note for existing `jsonapi4j-rest-quarkus` users:
+1. Replace `pro.api4:jsonapi4j-rest-quarkus` with `pro.api4:jsonapi4j-rest-springboot`.
+2. Use Spring Boot auto-configuration and register your domain/operation components as Spring beans.
+3. If you cannot migrate immediately, integrate through `jsonapi4j-rest` directly as a temporary bridge, but treat it as an unsupported path.
+
 # Quick start
 
 Let's take a quick look at what a typical **JsonApi4j**-based application looks like in code.  

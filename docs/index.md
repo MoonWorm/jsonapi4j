@@ -27,8 +27,7 @@ Modern systems often consist of multiple services that need to expose and consum
 
 Whether you're standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
 
-- ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks - including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
-  The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
+- ⚙️ **Servlet-based core with Spring Boot support.** The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), and the officially supported integration path is [Spring Boot](https://spring.io/projects/spring-boot).
 
 - 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
 
@@ -46,6 +45,18 @@ Whether you're standardizing your organization's API layer or building a new ser
 ## Sample Apps
 
 Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory — check them out for practical guidance on using the framework.
+
+## Support Policy
+
+The officially supported integration path for **JsonApi4j** is `jsonapi4j-rest-springboot` (Spring Boot).
+
+`jsonapi4j-rest-quarkus` has been intentionally de-scoped and is no longer maintained.
+
+### Migration Note for Existing `jsonapi4j-rest-quarkus` Users
+
+1. Replace `pro.api4:jsonapi4j-rest-quarkus` with `pro.api4:jsonapi4j-rest-springboot`.
+2. Use Spring Boot auto-configuration and register resources/relationships/operations as Spring beans.
+3. If immediate migration is not possible, integrate via `jsonapi4j-rest` directly as a temporary bridge, but treat this as an unsupported path.
 
 ## Getting Started
 
@@ -739,8 +750,8 @@ Response:
 Each module is published as a separate artifact in Maven Central.
 
 - 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor, ideal for embedding into non-web services (e.g., CLI tools) that need to handle JSON:API input/output without bringing in HTTP-related dependencies.
-- 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — the Servlet API–based HTTP layer for integration with any Java web framework. Can be used directly in plain Servlet applications or as a foundation for building native integrations for frameworks like Spring Boot, Quarkus, etc.
-- 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto-configuration module that integrates **JsonApi4j** seamlessly into a Spring environment.
+- 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — the Servlet API–based HTTP layer that can be embedded directly in plain Servlet applications and serves as the foundation for framework adapters.
+- 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — the officially supported [Spring Boot](https://spring.io/projects/spring-boot) integration module.
 - 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone **compound documents resolver** that automatically fetches and populates the `included` section of JSON:API responses. Perfect for API Gateway-level use or microservice response composition layers.
 
 Here's how transitive dependencies between modules are structured in the framework:
@@ -1189,7 +1200,7 @@ If a bulk operation isn't implemented, the framework falls back to sequential "r
 That's why it's important to implement either "filter[id]" or "read-by-id" operations giving the priority to the first one.
 
 Since each additional level may trigger new batches of requests, it's important to use this feature judiciously.
-You can control and limit the depth and breadth of includes using the `CompoundDocsProperties` configuration - for example, the `maxHops` property defines the maximum allowed relationship depth.
+You can limit include expansion depth using `CompoundDocsProperties.maxHops`.
 
 #### Deployment & Configuration
 
@@ -1224,10 +1235,17 @@ Here are some practical tips for optimizing your **JsonApi4j** application:
   * `Executors.newCachedThreadPool()` for dynamic scaling
   * `Executors.newFixedThreadPool(10)` for predictable concurrency
   * `Executors.newVirtualThreadPerTaskExecutor()` to experiment with Project Loom virtual threads
-* **Adjust JsonApi4j configuration properties**. Some properties can significantly influence performance, especially for Compound Documents:
+* **Adjust JsonApi4j configuration properties**. Some properties can significantly influence behavior and performance, especially for Compound Documents:
   * `jsonapi4j.compound-docs.maxHops=1` - limits relationship nesting depth to one level
-  * `jsonapi4j.compound-docs.maxIncludedResources=100` - caps the total number of included resources resolved per request
-  * Otherwise, granting overly broad access can generate an unsustainable load on the backend system.
+  * `jsonapi4j.compound-docs.errorStrategy=FAIL` - fail fast instead of ignoring downstream include resolution errors
+  * `jsonapi4j.compound-docs.mapping.*` - centralize include relationship mappings when compound docs are resolved through intermediate endpoints
+* **Tune the default bounded executor**. Spring Boot auto-configuration uses a bounded executor by default, configurable via:
+  * `jsonapi4j.executor.corePoolSize`
+  * `jsonapi4j.executor.maxPoolSize`
+  * `jsonapi4j.executor.queueCapacity`
+  * `jsonapi4j.executor.keepAliveSeconds`
+  * `jsonapi4j.executor.allowCoreThreadTimeout`
+  * `jsonapi4j.executor.threadNamePrefix`
 
 Fine-tuning these areas can help you balance performance, resource usage, and response time according to your system's scale and complexity.
 

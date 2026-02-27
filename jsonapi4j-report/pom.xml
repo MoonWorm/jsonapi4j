@@ -17,6 +17,11 @@
     <dependencies>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-base</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
             <version>${revision}</version>
         </dependency>
@@ -28,6 +33,16 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-springboot</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>
@@ -83,6 +98,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.3</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>

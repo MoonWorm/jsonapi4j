@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +33,14 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandler
 import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 public class JsonApi4jDispatcherServlet extends HttpServlet {
 
     private final static Logger LOG = LoggerFactory.getLogger(JsonApi4jDispatcherServlet.class);
+    private final static int MAX_DEBUG_BODY_LOG_CHARS = 512;
 
     private JsonApi4j jsonApi4j;
 
@@ -89,6 +92,11 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req,
                            HttpServletResponse resp) {
+        long startedAtNanos = System.nanoTime();
+        String requestId = resolveRequestId(req);
+        String requestMethod = req == null ? "n/a" : req.getMethod();
+        String requestPath = resolveRequestPath(req);
+        int responseStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
         try {
             JsonApiRequest jsonApiRequest = jsonApiRequestSupplier.from(req);
@@ -102,14 +110,14 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                     jsonApi4j.getCompatibilityMode()
             );
             resp.setStatus(status);
-            LOG.info("Setting response status code: {}", status);
+            responseStatusCode = status;
 
             if (targetOperationType == OperationType.CREATE_RESOURCE) {
                 SingleResourceDoc<?> singleResourceDoc = (SingleResourceDoc<?>) dataDoc;
                 if (singleResourceDoc != null) {
                     String location = URI.create("/" + targetResourceType.getType() + "/" + singleResourceDoc.getData().getId()).toString();
                     resp.setHeader("Location", location);
-                    LOG.info("Setting HTTP Location header: {}", location);
+                    LOG.debug("Setting HTTP Location header: {}", location);
                 }
             }
 
@@ -121,18 +129,44 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             writeResponseBody(resp, responseBody);
 
             CacheControlPropagator.propagateCacheControlIfNeeded(resp);
+            responseStatusCode = resolveStatusCode(resp, status);
 
         } catch (Exception e) {
             if (errorHandlerFactory != null) {
                 int errorStatusCode = errorHandlerFactory.resolveStatusCode(e);
                 ErrorsDoc errorsDoc = errorHandlerFactory.resolveErrorsDoc(e);
-                LOG.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
-                LOG.warn("Stacktrace: ", e);
+                responseStatusCode = errorStatusCode;
+                logHandledException(
+                        e,
+                        requestId,
+                        requestMethod,
+                        requestPath,
+                        errorStatusCode
+                );
 
                 resp.setStatus(errorStatusCode);
                 writeResponseBody(resp, errorsDoc);
+                return;
             }
+            LOG.error(
+                    "JSON:API request failed without a registered error handler. requestId={}, method={}, path={}",
+                    requestId,
+                    requestMethod,
+                    requestPath,
+                    e
+            );
             throw e;
+        } finally {
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAtNanos);
+            int resolvedStatusCode = resolveStatusCode(resp, responseStatusCode);
+            LOG.info(
+                    "Completed JSON:API request. requestId={}, method={}, path={}, status={}, durationMs={}",
+                    requestId,
+                    requestMethod,
+                    requestPath,
+                    resolvedStatusCode,
+                    durationMs
+            );
         }
     }
 
@@ -140,13 +174,88 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         try {
             if (body != null) {
                 resp.setHeader("Content-Type", JsonApiMediaType.MEDIA_TYPE);
-                LOG.info("Setting response Content-Type to: {}", JsonApiMediaType.MEDIA_TYPE);
-                LOG.info("Writing response body: {}", body);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Writing response body (redacted): {}", redactAndTruncateBody(body));
+                }
                 objectMapper.writeValue(resp.getOutputStream(), body);
             }
         } catch (IOException e) {
             LOG.error("Error writing JSON into HttpServletResponse. ", e);
         }
+    }
+
+    private int resolveStatusCode(HttpServletResponse resp,
+                                  int fallbackStatusCode) {
+        if (resp == null) {
+            return fallbackStatusCode;
+        }
+        int effectiveStatusCode = resp.getStatus();
+        return effectiveStatusCode > 0 ? effectiveStatusCode : fallbackStatusCode;
+    }
+
+    private String resolveRequestId(HttpServletRequest request) {
+        if (request == null) {
+            return "n/a";
+        }
+        String requestId = request.getHeader("X-Request-Id");
+        if (StringUtils.isBlank(requestId)) {
+            requestId = request.getHeader("X-Correlation-Id");
+        }
+        return StringUtils.isBlank(requestId) ? "n/a" : requestId;
+    }
+
+    private String resolveRequestPath(HttpServletRequest request) {
+        if (request == null) {
+            return "n/a";
+        }
+        String requestPath = request.getRequestURI();
+        if (StringUtils.isBlank(requestPath)) {
+            return "/";
+        }
+        return requestPath;
+    }
+
+    private String redactAndTruncateBody(Object body) {
+        try {
+            String serializedBody = objectMapper.writeValueAsString(body);
+            String redactedBody = serializedBody.replaceAll(
+                    "(?i)(\"(?:password|passwd|secret|token|authorization|apiKey|creditCardNumber|ssn)\"\\s*:\\s*\")[^\"]*(\")",
+                    "$1***$2"
+            );
+            if (redactedBody.length() > MAX_DEBUG_BODY_LOG_CHARS) {
+                return redactedBody.substring(0, MAX_DEBUG_BODY_LOG_CHARS) + "...(truncated)";
+            }
+            return redactedBody;
+        } catch (Exception e) {
+            return body == null ? "null" : body.getClass().getName();
+        }
+    }
+
+    private void logHandledException(Exception exception,
+                                     String requestId,
+                                     String requestMethod,
+                                     String requestPath,
+                                     int statusCode) {
+        if (statusCode >= 500) {
+            LOG.error(
+                    "Handled JSON:API server error. requestId={}, method={}, path={}, status={}, message={}",
+                    requestId,
+                    requestMethod,
+                    requestPath,
+                    statusCode,
+                    exception == null ? null : exception.getMessage(),
+                    exception
+            );
+            return;
+        }
+        LOG.warn(
+                "Handled JSON:API client error. requestId={}, method={}, path={}, status={}, message={}",
+                requestId,
+                requestMethod,
+                requestPath,
+                statusCode,
+                exception == null ? null : exception.getMessage()
+        );
     }
 
     private JsonApi4jProperties resolveProperties(ServletConfig config) {
