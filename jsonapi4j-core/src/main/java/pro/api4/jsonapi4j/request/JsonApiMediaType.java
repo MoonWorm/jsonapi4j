@@ -4,11 +4,14 @@ import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public final class JsonApiMediaType {
 
@@ -30,14 +33,25 @@ public final class JsonApiMediaType {
 
     public static boolean isMatches(String mediaType,
                                     JsonApi4jCompatibilityMode compatibilityMode) {
+        return isMatches(mediaType, compatibilityMode, Collections.emptySet(), Collections.emptySet());
+    }
+
+    public static boolean isMatches(String mediaType,
+                                    JsonApi4jCompatibilityMode compatibilityMode,
+                                    Set<String> supportedExtensions,
+                                    Set<String> supportedProfiles) {
         if (compatibilityMode == JsonApi4jCompatibilityMode.LEGACY) {
             return isMatchesLegacy(mediaType);
         }
+        Set<String> normalizedSupportedExtensions = normalizeSupportedUris(supportedExtensions);
+        Set<String> normalizedSupportedProfiles = normalizeSupportedUris(supportedProfiles);
         ParsedMediaType parsedMediaType = ParsedMediaType.parse(mediaType);
         if (parsedMediaType == null || !parsedMediaType.isJsonApi()) {
             return false;
         }
-        return parsedMediaType.hasOnlyParameters(JSONAPI_ALLOWED_PARAMS);
+        return parsedMediaType.hasOnlyParameters(JSONAPI_ALLOWED_PARAMS)
+                && parsedMediaType.hasOnlySupportedExtensions(normalizedSupportedExtensions)
+                && parsedMediaType.hasCompliantProfileHandling(normalizedSupportedProfiles);
     }
 
     public static boolean isAccepted(String accepts) {
@@ -46,9 +60,18 @@ public final class JsonApiMediaType {
 
     public static boolean isAccepted(String accepts,
                                      JsonApi4jCompatibilityMode compatibilityMode) {
+        return isAccepted(accepts, compatibilityMode, Collections.emptySet(), Collections.emptySet());
+    }
+
+    public static boolean isAccepted(String accepts,
+                                     JsonApi4jCompatibilityMode compatibilityMode,
+                                     Set<String> supportedExtensions,
+                                     Set<String> supportedProfiles) {
         if (compatibilityMode == JsonApi4jCompatibilityMode.LEGACY) {
             return isAcceptedLegacy(accepts);
         }
+        Set<String> normalizedSupportedExtensions = normalizeSupportedUris(supportedExtensions);
+        Set<String> normalizedSupportedProfiles = normalizeSupportedUris(supportedProfiles);
         if (accepts == null) {
             return true;
         }
@@ -63,11 +86,23 @@ public final class JsonApiMediaType {
             if (!parsedMediaType.isJsonApi()) {
                 continue;
             }
-            if (parsedMediaType.hasOnlyParametersForAccept(JSONAPI_ALLOWED_PARAMS)) {
+            if (parsedMediaType.hasOnlyParametersForAccept(JSONAPI_ALLOWED_PARAMS)
+                    && parsedMediaType.hasOnlySupportedExtensions(normalizedSupportedExtensions)
+                    && parsedMediaType.hasCompliantProfileHandling(normalizedSupportedProfiles)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static Set<String> normalizeSupportedUris(Set<String> uris) {
+        if (uris == null || uris.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return uris.stream()
+                .filter(uri -> uri != null && !uri.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private static boolean isMatchesLegacy(String mediaType) {
@@ -191,6 +226,23 @@ public final class JsonApiMediaType {
                     && hasValidJsonApiParameterValues();
         }
 
+        boolean hasOnlySupportedExtensions(Set<String> supportedExtensions) {
+            List<String> extensionUris = parseUriListParameter(parameters.get(EXT_PARAM));
+            if (extensionUris.isEmpty()) {
+                return true;
+            }
+            return supportedExtensions.containsAll(extensionUris);
+        }
+
+        boolean hasCompliantProfileHandling(Set<String> supportedProfiles) {
+            // JSON:API 1.1 requires servers to ignore unknown profiles. We intentionally don't reject unsupported
+            // profiles and only validate the URI-list value format in hasValidJsonApiParameterValues().
+            if (supportedProfiles == null) {
+                return true;
+            }
+            return true;
+        }
+
         double getQuality() {
             if (!parameters.containsKey(Q_PARAM)) {
                 return 1d;
@@ -208,26 +260,32 @@ public final class JsonApiMediaType {
         }
 
         private boolean isValidUriListParameter(String value) {
+            return !parseUriListParameter(value).isEmpty() || value == null;
+        }
+
+        private List<String> parseUriListParameter(String value) {
             if (value == null) {
-                return true;
+                return Collections.emptyList();
             }
             if (!isQuoted(value) || value.length() <= 2) {
-                return false;
+                return Collections.emptyList();
             }
             String uriList = value.substring(1, value.length() - 1);
             if (uriList.isBlank()) {
-                return false;
+                return Collections.emptyList();
             }
             if (uriList.chars().anyMatch(c -> Character.isWhitespace(c) && c != ' ')) {
-                return false;
+                return Collections.emptyList();
             }
             String[] uris = uriList.split(" ");
+            List<String> parsedUris = new ArrayList<>();
             for (String uriValue : uris) {
                 if (uriValue.isBlank() || !isValidAbsoluteUri(uriValue)) {
-                    return false;
+                    return Collections.emptyList();
                 }
+                parsedUris.add(uriValue);
             }
-            return true;
+            return parsedUris;
         }
 
         private boolean isQuoted(String value) {

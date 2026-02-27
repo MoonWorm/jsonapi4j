@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -105,6 +106,124 @@ public class HttpServletRequestJsonApiRequestSupplierMediaNegotiationTests {
         when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn("application/vnd.api+json;ext=\"foo\"");
 
         assertThatThrownBy(() -> sut.from(request)).isInstanceOf(NotAcceptableException.class);
+    }
+
+    @Test
+    public void strictMode_unsupportedExtensionInContentType_returns415() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users", "POST")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.CREATE_RESOURCE,
+                        new ResourceType("users"),
+                        null
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT,
+                Set.of("https://example.com/ext/supported"),
+                Set.of()
+        );
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn("application/vnd.api+json");
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getInputStream()).thenReturn(inputStream("{}"));
+        when(request.getContentType()).thenReturn("application/vnd.api+json;ext=\"https://example.com/ext/unsupported\"");
+        when(request.getPathInfo()).thenReturn("/users");
+
+        assertThatThrownBy(() -> sut.from(request)).isInstanceOf(UnsupportedMediaTypeException.class);
+    }
+
+    @Test
+    public void strictMode_supportedExtensionInContentType_isAccepted() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users", "POST")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.CREATE_RESOURCE,
+                        new ResourceType("users"),
+                        null
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT,
+                Set.of("https://example.com/ext/supported"),
+                Set.of()
+        );
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn("application/vnd.api+json");
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getInputStream()).thenReturn(inputStream("""
+                {
+                  "data": {
+                    "type": "users"
+                  }
+                }
+                """));
+        when(request.getContentType()).thenReturn("application/vnd.api+json;ext=\"https://example.com/ext/supported\"");
+        when(request.getPathInfo()).thenReturn("/users");
+        when(request.getParameterMap()).thenReturn(Map.of());
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+        assertThat(jsonApiRequest).isNotNull();
+    }
+
+    @Test
+    public void strictMode_onlyUnsupportedExtensionsInAccept_returns406() {
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                mock(OperationDetailsResolver.class),
+                JsonApi4jCompatibilityMode.STRICT,
+                Set.of("https://example.com/ext/supported"),
+                Set.of()
+        );
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn(
+                "application/vnd.api+json;ext=\"https://example.com/ext/unsupported\""
+        );
+
+        assertThatThrownBy(() -> sut.from(request)).isInstanceOf(NotAcceptableException.class);
+    }
+
+    @Test
+    public void strictMode_unknownProfilesInAccept_areIgnored() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users", "GET")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.READ_MULTIPLE_RESOURCES,
+                        new ResourceType("users"),
+                        null
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT,
+                Set.of(),
+                Set.of("https://example.com/profile/known")
+        );
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(HttpHeaders.ACCEPT.getName())).thenReturn(
+                "application/vnd.api+json;profile=\"https://example.com/profile/unknown\""
+        );
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getInputStream()).thenReturn(inputStream(""));
+        when(request.getContentType()).thenReturn(null);
+        when(request.getPathInfo()).thenReturn("/users");
+        when(request.getParameterMap()).thenReturn(Map.of());
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+        assertThat(jsonApiRequest).isNotNull();
+        assertThat(jsonApiRequest.getOperationType()).isEqualTo(OperationType.READ_MULTIPLE_RESOURCES);
     }
 
     @Test

@@ -4,6 +4,8 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 
+import java.beans.ConstructorProperties;
+
 /**
  * Spec ref: <a href="https://jsonapi.org/format/#document-resource-objects">Resource Object</a>
  */
@@ -19,16 +21,35 @@ public class ResourceObject<A, R> extends ResourceIdentifierObject {
     private R relationships;
     private LinksObject links;
 
+    @ConstructorProperties({
+            ID_FIELD,
+            LID_FIELD,
+            TYPE_FIELD,
+            ATTRIBUTES_FIELD,
+            RELATIONSHIPS_FIELD,
+            LINKS_FIELD,
+            META_FIELD
+    })
+    public ResourceObject(String id,
+                          String lid,
+                          String type,
+                          A attributes,
+                          R relationships,
+                          LinksObject links,
+                          Object meta) {
+        super(id, lid, type, meta);
+        this.attributes = attributes;
+        this.relationships = relationships;
+        this.links = links;
+    }
+
     public ResourceObject(String id,
                           String type,
                           A attributes,
                           R relationships,
                           LinksObject links,
                           Object meta) {
-        super(id, type, meta);
-        this.attributes = attributes;
-        this.relationships = relationships;
-        this.links = links;
+        this(id, null, type, attributes, relationships, links, meta);
     }
 
     public ResourceObject(String id,

@@ -31,6 +31,7 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandler
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
@@ -51,7 +52,10 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         Validate.notNull(jsonApi4j);
-        JsonApi4jCompatibilityMode compatibilityMode = resolveCompatibilityMode(config);
+        JsonApi4jProperties properties = resolveProperties(config);
+        JsonApi4jCompatibilityMode compatibilityMode = resolveCompatibilityMode(properties);
+        Set<String> supportedExtensions = resolveSupportedExtensions(properties);
+        Set<String> supportedProfiles = resolveSupportedProfiles(properties);
         jsonApi4j = jsonApi4j.withCompatibilityMode(compatibilityMode);
 
         errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
@@ -69,7 +73,9 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         jsonApiRequestSupplier = new HttpServletRequestJsonApiRequestSupplier(
                 objectMapper,
                 operationDetailsResolver,
-                compatibilityMode
+                compatibilityMode,
+                supportedExtensions,
+                supportedProfiles
         );
     }
 
@@ -143,12 +149,29 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         }
     }
 
-    private JsonApi4jCompatibilityMode resolveCompatibilityMode(ServletConfig config) {
-        JsonApi4jProperties properties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+    private JsonApi4jProperties resolveProperties(ServletConfig config) {
+        return (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+    }
+
+    private JsonApi4jCompatibilityMode resolveCompatibilityMode(JsonApi4jProperties properties) {
         if (properties == null || properties.getCompatibility() == null) {
             return JsonApi4jCompatibilityMode.STRICT;
         }
         return properties.getCompatibility().resolveMode();
+    }
+
+    private Set<String> resolveSupportedExtensions(JsonApi4jProperties properties) {
+        if (properties == null || properties.getCompatibility() == null) {
+            return Set.of();
+        }
+        return properties.getCompatibility().resolveSupportedExtensions();
+    }
+
+    private Set<String> resolveSupportedProfiles(JsonApi4jProperties properties) {
+        if (properties == null || properties.getCompatibility() == null) {
+            return Set.of();
+        }
+        return properties.getCompatibility().resolveSupportedProfiles();
     }
 
 }

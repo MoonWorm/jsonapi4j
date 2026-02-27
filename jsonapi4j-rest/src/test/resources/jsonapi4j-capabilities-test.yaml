@@ -1,0 +1,6 @@
+compatibility:
+  legacyMode: false
+  supportedExtensions:
+    - "https://example.com/ext/supported"
+  supportedProfiles:
+    - "https://example.com/profile/known"

@@ -9,6 +9,10 @@ import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
@@ -18,6 +22,7 @@ import pro.api4.jsonapi4j.request.exception.ForbiddenJsonApiRequestException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -262,6 +267,164 @@ public class HttpServletRequestJsonApiRequestSupplierValidationTests {
                 .containsEntry("users", Set.of("fullName", "email"))
                 .containsEntry("countries", Set.of("name"));
         assertThat(jsonApiRequest.getCustomQueryParams()).isEmpty();
+    }
+
+    @Test
+    public void strictMode_toOneRelationship_withLidAndNoId_isAllowed() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users/123/relationships/manager", "PATCH")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.UPDATE_TO_ONE_RELATIONSHIP,
+                        new ResourceType("users"),
+                        new RelationshipName("manager")
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+
+        HttpServletRequest request = mockRequest(
+                "PATCH",
+                "/users/123/relationships/manager",
+                "application/vnd.api+json",
+                """
+                        {
+                          "data": {
+                            "type": "users",
+                            "lid": "tmp-manager-1"
+                          }
+                        }
+                        """
+        );
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+        assertThat(jsonApiRequest).isNotNull();
+    }
+
+    @Test
+    public void strictMode_toManyRelationship_withLidAndNoId_isAllowedAndDeserialized() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users/123/relationships/relatives", "POST")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.ADD_TO_MANY_RELATIONSHIP,
+                        new ResourceType("users"),
+                        new RelationshipName("relatives")
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+
+        HttpServletRequest request = mockRequest(
+                "POST",
+                "/users/123/relationships/relatives",
+                "application/vnd.api+json",
+                """
+                        {
+                          "data": [
+                            {
+                              "type": "users",
+                              "lid": "tmp-relative-1"
+                            }
+                          ]
+                        }
+                        """
+        );
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+        ToManyRelationshipsDoc relationshipDoc = jsonApiRequest.getToManyRelationshipDocPayload();
+        assertThat(relationshipDoc.getData()).hasSize(1);
+        ResourceIdentifierObject identifierObject = relationshipDoc.getData().getFirst();
+        assertThat(identifierObject.getId()).isNull();
+        assertThat(identifierObject.getLid()).isEqualTo("tmp-relative-1");
+        assertThat(identifierObject.getType()).isEqualTo("users");
+    }
+
+    @Test
+    public void strictMode_toManyRelationship_missingIdAndLid_returnsBadRequest() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users/123/relationships/relatives", "POST")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.ADD_TO_MANY_RELATIONSHIP,
+                        new ResourceType("users"),
+                        new RelationshipName("relatives")
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+
+        HttpServletRequest request = mockRequest(
+                "POST",
+                "/users/123/relationships/relatives",
+                "application/vnd.api+json",
+                """
+                        {
+                          "data": [
+                            {
+                              "type": "users"
+                            }
+                          ]
+                        }
+                        """
+        );
+
+        assertThatThrownBy(() -> sut.from(request))
+                .isInstanceOf(BadJsonApiRequestException.class)
+                .hasMessageContaining("id or lid");
+    }
+
+    @Test
+    public void strictMode_createResource_withLidAndNoId_isDeserialized() throws IOException {
+        OperationDetailsResolver operationDetailsResolver = mock(OperationDetailsResolver.class);
+        when(operationDetailsResolver.fromUrlAndMethod("/users", "POST")).thenReturn(
+                new OperationDetailsResolver.OperationDetails(
+                        OperationType.CREATE_RESOURCE,
+                        new ResourceType("users"),
+                        null
+                )
+        );
+
+        HttpServletRequestJsonApiRequestSupplier sut = new HttpServletRequestJsonApiRequestSupplier(
+                new ObjectMapper(),
+                operationDetailsResolver,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+
+        HttpServletRequest request = mockRequest(
+                "POST",
+                "/users",
+                "application/vnd.api+json",
+                """
+                        {
+                          "data": {
+                            "type": "users",
+                            "lid": "tmp-user-1",
+                            "attributes": {
+                              "fullName": "John Doe"
+                            }
+                          }
+                        }
+                        """
+        );
+
+        JsonApiRequest jsonApiRequest = sut.from(request);
+        SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap>> payload =
+                jsonApiRequest.getSingleResourceDocPayload(LinkedHashMap.class, LinkedHashMap.class);
+
+        assertThat(payload).isNotNull();
+        assertThat(payload.getData().getId()).isNull();
+        assertThat(payload.getData().getLid()).isEqualTo("tmp-user-1");
+        assertThat(payload.getData().getType()).isEqualTo("users");
     }
 
     private static HttpServletRequest mockRequest(String method,

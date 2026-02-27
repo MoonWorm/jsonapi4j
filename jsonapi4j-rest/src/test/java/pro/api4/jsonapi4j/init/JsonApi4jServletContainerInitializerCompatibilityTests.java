@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
+import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSupplier;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -34,19 +35,7 @@ public class JsonApi4jServletContainerInitializerCompatibilityTests {
         System.setProperty("jsonapi4j.config", "/jsonapi4j-legacy-test.yaml");
         try {
             Map<String, Object> attributes = new HashMap<>();
-            ServletContext servletContext = mock(ServletContext.class);
-
-            when(servletContext.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0)));
-            doAnswer(invocation -> {
-                attributes.put(invocation.getArgument(0), invocation.getArgument(1));
-                return null;
-            }).when(servletContext).setAttribute(anyString(), any());
-
-            ServletRegistration.Dynamic servletRegistration = mock(ServletRegistration.Dynamic.class);
-            when(servletContext.addServlet(anyString(), any(Servlet.class))).thenReturn(servletRegistration);
-
-            FilterRegistration.Dynamic filterRegistration = mock(FilterRegistration.Dynamic.class);
-            when(servletContext.addFilter(anyString(), any(Filter.class))).thenReturn(filterRegistration);
+            ServletContext servletContext = mockServletContext(attributes);
 
             JsonApi4jServletContainerInitializer initializer = new JsonApi4jServletContainerInitializer();
             initializer.onStartup(Collections.emptySet(), servletContext);
@@ -76,5 +65,55 @@ public class JsonApi4jServletContainerInitializerCompatibilityTests {
                 System.setProperty("jsonapi4j.config", previousConfigPath);
             }
         }
+    }
+
+    @Test
+    public void supportedExtensionsAndProfilesFromConfig_areWiredIntoRequestSupplier() throws Exception {
+        String previousConfigPath = System.getProperty("jsonapi4j.config");
+        System.setProperty("jsonapi4j.config", "/jsonapi4j-capabilities-test.yaml");
+        try {
+            Map<String, Object> attributes = new HashMap<>();
+            ServletContext servletContext = mockServletContext(attributes);
+
+            JsonApi4jServletContainerInitializer initializer = new JsonApi4jServletContainerInitializer();
+            initializer.onStartup(Collections.emptySet(), servletContext);
+
+            JsonApi4jDispatcherServlet dispatcherServlet = new JsonApi4jDispatcherServlet();
+            ServletConfig servletConfig = mock(ServletConfig.class);
+            when(servletConfig.getServletContext()).thenReturn(servletContext);
+            dispatcherServlet.init(servletConfig);
+
+            Field requestSupplierField = JsonApi4jDispatcherServlet.class.getDeclaredField("jsonApiRequestSupplier");
+            requestSupplierField.setAccessible(true);
+            HttpServletRequestJsonApiRequestSupplier requestSupplier =
+                    (HttpServletRequestJsonApiRequestSupplier) requestSupplierField.get(dispatcherServlet);
+
+            assertThat(requestSupplier.getSupportedExtensions()).containsExactly("https://example.com/ext/supported");
+            assertThat(requestSupplier.getSupportedProfiles()).containsExactly("https://example.com/profile/known");
+        } finally {
+            if (previousConfigPath == null) {
+                System.clearProperty("jsonapi4j.config");
+            } else {
+                System.setProperty("jsonapi4j.config", previousConfigPath);
+            }
+        }
+    }
+
+    private ServletContext mockServletContext(Map<String, Object> attributes) {
+        ServletContext servletContext = mock(ServletContext.class);
+
+        when(servletContext.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0)));
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(servletContext).setAttribute(anyString(), any());
+
+        ServletRegistration.Dynamic servletRegistration = mock(ServletRegistration.Dynamic.class);
+        when(servletContext.addServlet(anyString(), any(Servlet.class))).thenReturn(servletRegistration);
+
+        FilterRegistration.Dynamic filterRegistration = mock(FilterRegistration.Dynamic.class);
+        when(servletContext.addFilter(anyString(), any(Filter.class))).thenReturn(filterRegistration);
+
+        return servletContext;
     }
 }

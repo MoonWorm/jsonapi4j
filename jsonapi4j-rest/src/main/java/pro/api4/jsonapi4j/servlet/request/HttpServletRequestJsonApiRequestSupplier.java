@@ -32,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +58,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
     private final ObjectMapper jsonMapper;
     private final OperationDetailsResolver operationDetailsResolver;
     private final JsonApi4jCompatibilityMode compatibilityMode;
+    private final Set<String> supportedExtensions;
+    private final Set<String> supportedProfiles;
 
     public HttpServletRequestJsonApiRequestSupplier(ObjectMapper jsonMapper,
                                                     OperationDetailsResolver operationDetailsResolver) {
@@ -65,18 +69,30 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
     public HttpServletRequestJsonApiRequestSupplier(ObjectMapper jsonMapper,
                                                     OperationDetailsResolver operationDetailsResolver,
                                                     JsonApi4jCompatibilityMode compatibilityMode) {
+        this(jsonMapper, operationDetailsResolver, compatibilityMode, Collections.emptySet(), Collections.emptySet());
+    }
+
+    public HttpServletRequestJsonApiRequestSupplier(ObjectMapper jsonMapper,
+                                                    OperationDetailsResolver operationDetailsResolver,
+                                                    JsonApi4jCompatibilityMode compatibilityMode,
+                                                    Set<String> supportedExtensions,
+                                                    Set<String> supportedProfiles) {
         this.jsonMapper = jsonMapper;
         this.operationDetailsResolver = operationDetailsResolver;
         this.compatibilityMode = compatibilityMode == null
                 ? JsonApi4jCompatibilityMode.STRICT
                 : compatibilityMode;
+        this.supportedExtensions = normalizeSupportedUris(supportedExtensions);
+        this.supportedProfiles = normalizeSupportedUris(supportedProfiles);
     }
 
     @Override
     public JsonApiRequest from(HttpServletRequest servletRequest) {
         if (!JsonApiMediaType.isAccepted(
                 servletRequest.getHeader(HttpHeaders.ACCEPT.getName()),
-                compatibilityMode
+                compatibilityMode,
+                supportedExtensions,
+                supportedProfiles
         )) {
             throw new NotAcceptableException(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()), JsonApiMediaType.MEDIA_TYPE);
         }
@@ -100,7 +116,12 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
         if (isMethodSupportBody(method)
                 && payload.length > 0
-                && !JsonApiMediaType.isMatches(servletRequest.getContentType(), compatibilityMode)) {
+                && !JsonApiMediaType.isMatches(
+                        servletRequest.getContentType(),
+                        compatibilityMode,
+                        supportedExtensions,
+                        supportedProfiles
+                )) {
             throw new UnsupportedMediaTypeException(servletRequest.getContentType(), JsonApiMediaType.MEDIA_TYPE);
         }
 
@@ -280,8 +301,13 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         if (StringUtils.isBlank(getTextOrNull(resourceIdentifier.get("type")))) {
             throw invalidPayload(parameterPrefix + ".type", "Resource identifier type must not be blank");
         }
-        if (StringUtils.isBlank(getTextOrNull(resourceIdentifier.get("id")))) {
-            throw invalidPayload(parameterPrefix + ".id", "Resource identifier id must not be blank");
+        String id = getTextOrNull(resourceIdentifier.get("id"));
+        String lid = getTextOrNull(resourceIdentifier.get("lid"));
+        if (StringUtils.isBlank(id) && StringUtils.isBlank(lid)) {
+            throw invalidPayload(
+                    parameterPrefix + ".id",
+                    "Resource identifier must include non-blank id or lid"
+            );
         }
     }
 
@@ -326,6 +352,19 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     private boolean isMethodSupportBody(String method) {
         return !"GET".equals(method) && !"HEAD".equals(method) && !"TRACE".equals(method);
+    }
+
+    private Set<String> normalizeSupportedUris(Set<String> uris) {
+        if (uris == null || uris.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String uri : uris) {
+            if (uri != null && !uri.isBlank()) {
+                normalized.add(uri.trim());
+            }
+        }
+        return normalized;
     }
 
     private String getPath(HttpServletRequest request) {
