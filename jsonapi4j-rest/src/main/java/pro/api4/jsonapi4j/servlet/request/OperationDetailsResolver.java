@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.servlet.request;
 
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -23,9 +24,20 @@ import static pro.api4.jsonapi4j.operation.OperationType.Method.fromString;
 public class OperationDetailsResolver {
 
     private final DomainRegistry domainRegistry;
+    @SuppressWarnings("unused")
+    // Reserved for strict/legacy routing branching in subsequent parity phases.
+    private final JsonApi4jCompatibilityMode compatibilityMode;
 
     public OperationDetailsResolver(DomainRegistry domainRegistry) {
+        this(domainRegistry, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public OperationDetailsResolver(DomainRegistry domainRegistry,
+                                    JsonApi4jCompatibilityMode compatibilityMode) {
         this.domainRegistry = domainRegistry;
+        this.compatibilityMode = compatibilityMode == null
+                ? JsonApi4jCompatibilityMode.STRICT
+                : compatibilityMode;
     }
 
     public OperationDetails fromUrlAndMethod(String appRelativePath,

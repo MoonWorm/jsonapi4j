@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.request;
 
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
+
 public final class JsonApiMediaType {
 
     public static final String TYPE = "application";
@@ -10,6 +12,11 @@ public final class JsonApiMediaType {
     }
 
     public static boolean isMatches(String mediaType) {
+        return isMatches(mediaType, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public static boolean isMatches(String mediaType,
+                                    JsonApi4jCompatibilityMode compatibilityMode) {
         if (mediaType == null) {
             return false;
         }
@@ -23,6 +30,11 @@ public final class JsonApiMediaType {
     }
 
     public static boolean isAccepted(String accepts) {
+        return isAccepted(accepts, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public static boolean isAccepted(String accepts,
+                                     JsonApi4jCompatibilityMode compatibilityMode) {
         if (accepts == null) {
             return true;
         } else {

@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.processor.resolvers.links.toplevel;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
@@ -30,8 +31,26 @@ public final class ToManyRelationshipLinksDefaultResolvers {
             ResourceTypeSupplier<RELATIONSHIP_DTO> relationshipResourceTypeResolver,
             IdSupplier<RELATIONSHIP_DTO> relationshipIdSupplier
     ) {
+        return defaultLinksResolver(
+                resourceType,
+                parentResourceId,
+                relationshipName,
+                relationshipResourceTypeResolver,
+                relationshipIdSupplier,
+                JsonApi4jCompatibilityMode.STRICT
+        );
+    }
+
+    public static <REQUEST, RELATIONSHIP_DTO> MultipleDataItemsDocLinksResolver<REQUEST, RELATIONSHIP_DTO> defaultLinksResolver(
+            ResourceType resourceType,
+            String parentResourceId,
+            RelationshipName relationshipName,
+            ResourceTypeSupplier<RELATIONSHIP_DTO> relationshipResourceTypeResolver,
+            IdSupplier<RELATIONSHIP_DTO> relationshipIdSupplier,
+            JsonApi4jCompatibilityMode compatibilityMode
+    ) {
         return (request, dataSourceDtos, nextCursor) -> {
-            LinksGenerator linksGenerator = new LinksGenerator(request);
+            LinksGenerator linksGenerator = new LinksGenerator(request, compatibilityMode);
 
             String relationshipBasePath = LinksGenerator.relationshipBasePath(resourceType, parentResourceId, relationshipName);
 

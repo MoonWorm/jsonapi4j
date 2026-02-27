@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor.resolvers.links;
 
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
@@ -23,9 +24,20 @@ import java.util.stream.Collectors;
 public final class LinksGenerator {
 
     private final Object request;
+    @SuppressWarnings("unused")
+    // Reserved for strict/legacy branching in subsequent parity phases.
+    private final JsonApi4jCompatibilityMode compatibilityMode;
 
     public LinksGenerator(Object request) {
+        this(request, JsonApi4jCompatibilityMode.STRICT);
+    }
+
+    public LinksGenerator(Object request,
+                          JsonApi4jCompatibilityMode compatibilityMode) {
         this.request = request;
+        this.compatibilityMode = compatibilityMode == null
+                ? JsonApi4jCompatibilityMode.STRICT
+                : compatibilityMode;
     }
 
     public static String resourcesBasePath(ResourceType resourceType) {

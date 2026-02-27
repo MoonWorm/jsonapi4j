@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j;
 
 import lombok.*;
+import pro.api4.jsonapi4j.compatibility.JsonApi4jCompatibilityMode;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
@@ -65,6 +66,9 @@ public class JsonApi4j {
     @With
     @Builder.Default
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
+    @With
+    @Builder.Default
+    private JsonApi4jCompatibilityMode compatibilityMode = JsonApi4jCompatibilityMode.STRICT;
 
     public Object execute(JsonApiRequest request) {
         if (request.getTargetRelationshipName() == null) {
@@ -183,7 +187,8 @@ public class JsonApi4j {
                         req.getResourceId(),
                         relationshipName,
                         resourceTypeStr -> new ResourceType(toOneRelationshipCasted.resolveResourceIdentifierType(resourceTypeStr)),
-                        toOneRelationshipCasted::resolveResourceIdentifierId
+                        toOneRelationshipCasted::resolveResourceIdentifierId,
+                        compatibilityMode
                 ).resolve(req, dto);
             }
             return linksObject;
@@ -235,7 +240,8 @@ public class JsonApi4j {
                         req.getResourceId(),
                         relationshipName,
                         resourceTypeStr -> new ResourceType(toManyRelationshipCasted.resolveResourceIdentifierType(resourceTypeStr)),
-                        toManyRelationshipCasted::resolveResourceIdentifierId
+                        toManyRelationshipCasted::resolveResourceIdentifierId,
+                        compatibilityMode
                 ).resolve(req, dtos, nextCursor);
             }
             return linksObject;
@@ -427,7 +433,8 @@ public class JsonApi4j {
                     String id = req.getResourceId();
                     return SingleResourceDocLinksDefaultResolvers.<JsonApiRequest, RESOURCE_DTO>defaultTopLevelLinksResolver(
                             resourceType,
-                            d -> id
+                            d -> id,
+                            compatibilityMode
                     ).resolve(req, dto);
                 }
                 return linksObject;
@@ -546,7 +553,8 @@ public class JsonApi4j {
                 if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
                     return ResourceLinksDefaultResolvers.defaultResourceLinksResolver(
                             resourceType,
-                            resourceConfig::resolveResourceId
+                            resourceConfig::resolveResourceId,
+                            compatibilityMode
                     ).resolve(req, dto);
                 }
                 return linksObject;
@@ -561,7 +569,8 @@ public class JsonApi4j {
                 LinksObject linksObject = resourceConfig.resolveTopLevelLinksForMultiResourcesDoc(req, dtos, nextCursor);
                 if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
                     return MultiResourcesDocLinksDefaultResolvers.<JsonApiRequest, DATA_SOURCE_DTO>defaultTopLevelLinksResolver(
-                            resourceType
+                            resourceType,
+                            compatibilityMode
                     ).resolve(req, dtos, nextCursor);
                 }
                 return linksObject;
@@ -577,7 +586,8 @@ public class JsonApi4j {
                                     r -> r,
                                     r -> DefaultRelationshipResolvers.defaultRelationshipResolver(
                                             resourceType,
-                                            resourceIdSupplier
+                                            resourceIdSupplier,
+                                            compatibilityMode
                                     )
                             )
                     );

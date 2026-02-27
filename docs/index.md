@@ -464,6 +464,8 @@ This operation will be available under [/countries?filter[id]=NO,FI,US](http://l
 Also, ensure Compound Docs feature is enabled:
 ```yaml
 jsonapi4j:
+  compatibility:
+    legacyMode: false
   compound-docs:
     enabled: true
     maxHops: 3
@@ -838,6 +840,8 @@ The JSON:API specification defines a limited set of standard operations. Some va
 All operation interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.operation` package.
 
 By default, all **JsonApi4j** operations are exposed under the `/jsonapi` root path. This prevents conflicts when integrating JSON:API endpoints into an existing application that may have other REST endpoints. To change the root path, simply set the `jsonapi4j.root-path` property.
+
+Compatibility mode is configured via `jsonapi4j.compatibility.legacyMode` and defaults to `false` (strict mode). Set it to `true` to preserve legacy behavior during migration.
 
 Let's dig deeper into supported operations.
 
@@ -1241,4 +1245,3 @@ While **JsonApi4j** adheres closely to the JSON:API specification, it introduces
 5.	No support for JSON:API Profiles or Extensions (may be added later).
 6.	Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
 7.	Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.
-

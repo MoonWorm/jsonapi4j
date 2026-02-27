@@ -11,6 +11,8 @@ integrations:
 
 jsonapi4j:
   root-path: '/jsonapi'
+  compatibility:
+    legacy-mode: false
   compound-docs:
     enabled: true
     maxHops: 3

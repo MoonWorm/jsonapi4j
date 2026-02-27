@@ -1,4 +1,6 @@
 rootPath: '/jsonapi'
+compatibility:
+  legacyMode: false
 compoundDocs:
   enabled: true
   maxHops: 3

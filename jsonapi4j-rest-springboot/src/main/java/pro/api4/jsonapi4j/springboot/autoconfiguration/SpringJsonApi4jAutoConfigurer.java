@@ -111,13 +111,15 @@ public class SpringJsonApi4jAutoConfigurer {
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry,
             List<JsonApi4jPlugin> defaultPlugins,
-            @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService
+            @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
+            JsonApi4jProperties properties
     ) {
         return JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .plugins(defaultPlugins)
                 .executor(jsonApiExecutorService)
+                .compatibilityMode(properties.getCompatibility().resolveMode())
                 .build();
     }
 
