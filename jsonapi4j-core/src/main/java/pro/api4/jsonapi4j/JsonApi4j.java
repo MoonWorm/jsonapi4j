@@ -593,10 +593,36 @@ public class JsonApi4j {
                                     r -> r,
                                     r -> DefaultRelationshipResolvers.defaultRelationshipResolver(
                                             resourceType,
-                                            resourceIdSupplier
+                                            resourceIdSupplier,
+                                            shouldEmitDefaultRelationshipSelfLink(r)
                                     )
                             )
                     );
+        }
+
+        private boolean shouldEmitDefaultRelationshipSelfLink(RelationshipName relationshipName) {
+            if (compatibilityMode == JsonApi4jCompatibilityMode.LEGACY) {
+                return true;
+            }
+            return hasReadRelationshipOperation(relationshipName);
+        }
+
+        private boolean hasReadRelationshipOperation(RelationshipName relationshipName) {
+            if (domainRegistry.getToOneRelationshipNames(resourceType).contains(relationshipName)) {
+                return operationsRegistry.getRegisteredReadToOneRelationshipOperation(
+                        resourceType,
+                        relationshipName,
+                        false
+                ) != null;
+            }
+            if (domainRegistry.getToManyRelationshipNames(resourceType).contains(relationshipName)) {
+                return operationsRegistry.getRegisteredReadToManyRelationshipOperation(
+                        resourceType,
+                        relationshipName,
+                        false
+                ) != null;
+            }
+            return false;
         }
 
         private <RESOURCE_DTO> Map<RelationshipName, ToManyRelationshipResolver<JsonApiRequest, RESOURCE_DTO>> getToManyRelationshipsResolvers(
