@@ -13,6 +13,7 @@
     <modules>
         <module>jsonapi4j-sampleapp-domain</module>
         <module>jsonapi4j-springboot-sampleapp</module>
+        <module>jsonapi4j-quarkus-sampleapp</module>
         <module>jsonapi4j-servlet-sampleapp</module>
     </modules>
 
@@ -35,6 +36,11 @@
             <dependency>
                 <groupId>pro.api4</groupId>
                 <artifactId>jsonapi4j-rest-springboot</artifactId>
+                <version>${jsonapi4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pro.api4</groupId>
+                <artifactId>jsonapi4j-rest-quarkus</artifactId>
                 <version>${jsonapi4j.version}</version>
             </dependency>
             <dependency>

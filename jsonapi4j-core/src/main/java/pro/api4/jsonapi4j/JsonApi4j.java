@@ -56,13 +56,12 @@ import static java.util.stream.Collectors.toMap;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class JsonApi4j {
-
-    private final DomainRegistry domainRegistry;
-    private final OperationsRegistry operationsRegistry;
-    @With
+    @Builder.Default
+    private DomainRegistry domainRegistry = DomainRegistry.empty();
+    @Builder.Default
+    private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
     @Builder.Default
     private List<JsonApi4jPlugin> plugins = Collections.emptyList();
-    @With
     @Builder.Default
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
 

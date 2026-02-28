@@ -8,7 +8,6 @@ import lombok.Data;
 public class JsonApi4jProperties {
 
     public static final String ROOT_PATH_PROPERTY_NAME = "rootPath";
-
     public static final String JSONAPI4J_DEFAULT_ROOT_PATH = "/jsonapi";
 
     private String rootPath = JSONAPI4J_DEFAULT_ROOT_PATH;

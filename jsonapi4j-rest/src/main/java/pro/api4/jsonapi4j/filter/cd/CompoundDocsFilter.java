@@ -6,7 +6,6 @@ import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
-import pro.api4.jsonapi4j.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
@@ -29,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toMap;
+import static pro.api4.jsonapi4j.config.CompoundDocsProperties.*;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 public class CompoundDocsFilter implements Filter {
@@ -48,23 +48,28 @@ public class CompoundDocsFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        ObjectMapper objectMapper = (ObjectMapper) filterConfig.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
+        ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
         Validate.notNull(objectMapper);
 
         JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-        Validate.notNull(properties);
 
-        CompoundDocsProperties compoundDocsProperties = properties.getCompoundDocs();
-        Validate.notNull(compoundDocsProperties);
+        Map<String, String> mapping = JSONAPI4J_COMPOUND_DOCS_MAPPING_DEFAULT_VALUE;
+        int maxHops = JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE;
+        CompoundDocsResolverConfig.ErrorStrategy errorStrategy = JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE;
+        if (properties != null && properties.getCompoundDocs() != null) {
+            mapping = properties.getCompoundDocs().getMapping();
+            maxHops = properties.getCompoundDocs().getMaxHops();
+            errorStrategy = properties.getCompoundDocs().getErrorStrategy();
+        }
 
-        ExecutorService executorService = (ExecutorService) filterConfig.getServletContext().getAttribute(EXECUTOR_SERVICE_ATT_NAME);
+        ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
         Validate.notNull(executorService);
 
         resolver = new CompoundDocsResolver(
                 new CompoundDocsResolverConfig(
                         objectMapper,
                         new CompoundDocsResolverConfig.DefaultDomainUrlResolver(
-                                MapUtils.emptyIfNull(compoundDocsProperties.getMapping())
+                                MapUtils.emptyIfNull(mapping)
                                         .entrySet()
                                         .stream()
                                         .collect(toMap(
@@ -72,8 +77,8 @@ public class CompoundDocsFilter implements Filter {
                                                 e -> URI.create(e.getValue())
                                         ))),
                         executorService,
-                        compoundDocsProperties.getMaxHops(),
-                        compoundDocsProperties.getErrorStrategy()
+                        maxHops,
+                        errorStrategy
                 )
         );
     }
