@@ -125,14 +125,14 @@ public class UserOperations implements ResourceOperations<UserDbEntity> { // 2.
 
     private final UserDb userDb; // 3.
     
-    public ReadAllUsersOperation(UserDb userDb) {
+    public UserOperations(UserDb userDb) {
         this.userDb = userDb;
     }
 
     @Override
     public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) { // 4.
         UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
-        return new CursorPageableResponse.fromItemsAndCursor(
+        return CursorPageableResponse.fromItemsAndCursor(
                 pagedResult.getEntities(),
                 pagedResult.getCursor()
         );

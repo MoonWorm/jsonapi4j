@@ -519,7 +519,7 @@ public class OperationsRegistry {
             return this;
         }
 
-        public OperationsRegistryBuilder operations(Collection<ResourceOperation> operations) {
+        public OperationsRegistryBuilder operations(Collection<? extends ResourceOperation> operations) {
             Validate.notNull(operations);
             operations.forEach(this::operation);
             return this;

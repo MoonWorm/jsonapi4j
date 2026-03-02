@@ -94,7 +94,7 @@ public class UserResource implements Resource<UserDbEntity> {
     @Override
     public UserAttributes resolveAttributes(UserDbEntity userDbEntity) {
         return new UserAttributes(
-                userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
+                userDbEntity.getFullName(),
                 userDbEntity.getEmail(),
                 userDbEntity.getCreditCardNumber()
         );
@@ -104,7 +104,7 @@ public class UserResource implements Resource<UserDbEntity> {
 
 What's happening here:
 * `@JsonApiResource(resourceType = "users")` defines a unique resource type name (`users` in this case). Each resource in your API must have a distinct type.
-* `String resourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
+* `String resolveResourceId(UserDbEntity userDbEntity)` returns the unique identifier for this resource, must be unique across all resources of this type.
 * `UserAttributes resolveAttributes(UserDbEntity userDbEntity)` - (optional) maps internal domain data (`UserDbEntity`) to the public API-facing representation (`UserAttributes`)
 
 Each resource is parametrized with a type: 
@@ -160,7 +160,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
         UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
-        return new CursorPageableResponse.fromItemsAndCursor(
+        return CursorPageableResponse.fromItemsAndCursor(
                 pagedResult.getEntities(),
                 pagedResult.getCursor()
         );
@@ -1241,4 +1241,3 @@ While **JsonApi4j** adheres closely to the JSON:API specification, it introduces
 5.	No support for JSON:API Profiles or Extensions (may be added later).
 6.	Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
 7.	Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.
-
