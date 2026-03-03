@@ -525,6 +525,12 @@ public class OperationsRegistry {
             return this;
         }
 
+        public OperationsRegistryBuilder operations(Set<? extends ResourceOperation> operations) {
+            Validate.notNull(operations);
+            operations.forEach(this::operation);
+            return this;
+        }
+
         public OperationsRegistry build() {
             return new OperationsRegistry(
                     this.readResourceByIdOperations,

@@ -11,10 +11,10 @@ import pro.api4.jsonapi4j.principal.tier.AccessTier;
 import java.io.IOException;
 import java.util.Set;
 
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
+
 @Slf4j
 public class PrincipalResolvingFilter implements Filter {
-
-    public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
 
     private PrincipalResolver resolver;
 

@@ -1,19 +1,15 @@
 package pro.api4.jsonapi4j.rest.quarkus.deployment;
 
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.undertow.deployment.IgnoredServletContainerInitializerBuildItem;
+import io.quarkus.undertow.deployment.ListenerBuildItem;
 import io.quarkus.undertow.deployment.ServletBuildItem;
-import io.quarkus.undertow.deployment.ServletContextAttributeBuildItem;
-import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.JsonApi4jRecorder;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.JsonApi4jContextListener;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.JsonApi4jDefaultBeans;
 
-import java.util.Collections;
-
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
 
 class Jsonapi4jRestQuarkusProcessor {
 
@@ -34,24 +30,25 @@ class Jsonapi4jRestQuarkusProcessor {
                 .build();
     }
 
-    /*@Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    ServletContextAttributeBuildItem servletContextAttributeObjectMapper(JsonApi4jRecorder recorder) {
-        return new ServletContextAttributeBuildItem(
-                OBJECT_MAPPER_ATT_NAME,
-                recorder.createObjectMapper()
-        );
+    AdditionalBeanBuildItem jsonapi4jCdiBeans() {
+        return AdditionalBeanBuildItem.builder()
+                .addBeanClass(JsonApi4jContextListener.class)
+                .addBeanClass(JsonApi4jDefaultBeans.class)
+                .setUnremovable()
+                .build();
     }
 
     @BuildStep
-    ServletContextAttributeBuildItem servletContextAttributeJsonApi4j() {
-        JsonApi4j jsonApi4j = JsonApi4j.builder()
-                .domainRegistry(DomainRegistry.empty())
-                .operationsRegistry(OperationsRegistry.empty())
-                //.executor(Executors.newCachedThreadPool())
-                .plugins(Collections.emptyList())
-                .build();
-        return new ServletContextAttributeBuildItem(JSONAPI4J_ATT_NAME, jsonApi4j);
-    }*/
+    ListenerBuildItem servletContextListener() {
+        return new ListenerBuildItem("pro.api4.jsonapi4j.rest.quarkus.runtime.JsonApi4jContextListener");
+    }
+
+    @BuildStep
+    IgnoredServletContainerInitializerBuildItem ignoreJsonApi4jSci() {
+        return new IgnoredServletContainerInitializerBuildItem(
+                "pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer"
+        );
+    }
 
 }

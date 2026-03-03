@@ -9,8 +9,7 @@ import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
@@ -31,6 +30,7 @@ import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUN
 import static pro.api4.jsonapi4j.config.JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH;
 import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenient;
 
+@Slf4j
 public class JsonApi4jServletContainerInitializer implements ServletContainerInitializer {
 
     public static final String JSONAPI4J_DISPATCHER_SERVLET_NAME = "jsonApi4jDispatcherServlet";
@@ -48,17 +48,17 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
 
-    private static final Logger LOG = LoggerFactory.getLogger(JsonApi4jServletContainerInitializer.class);
-
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
+        log.info("CTX in INITIALIZER=" + System.identityHashCode(servletContext));
+
         JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
 
         initObjectMapper(servletContext);
 
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j == null) {
-            LOG.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
+            log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
             DomainRegistry domainRegistry = initDomainRegistry(servletContext);
             OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
             List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
@@ -105,7 +105,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                                            String servletMapping) {
         ServletRegistration existing = servletContext.getServletRegistration(JSONAPI4J_DISPATCHER_SERVLET_NAME);
         if (existing != null) {
-            LOG.info("Dispatcher servlet already registered, skipping registration.");
+            log.warn("Dispatcher servlet already registered, skipping registration.");
             return;
         }
         ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet(
@@ -165,7 +165,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static ExecutorService initExecutorService(ServletContext servletContext) {
         ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
         if (es == null) {
-            LOG.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
+            log.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
             es = Executors.newCachedThreadPool();
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
         }
@@ -175,7 +175,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static DomainRegistry initDomainRegistry(ServletContext servletContext) {
         DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
         if (dr == null) {
-            LOG.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
+            log.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
             dr = DomainRegistry.empty();
             servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, dr);
         }
@@ -185,7 +185,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static OperationsRegistry initOperationRegistry(ServletContext servletContext) {
         OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
         if (or == null) {
-            LOG.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
+            log.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
             or = OperationsRegistry.empty();
             servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, or);
         }
@@ -195,7 +195,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static ObjectMapper initObjectMapper(ServletContext servletContext) {
         ObjectMapper om = (ObjectMapper) servletContext.getAttribute(OBJECT_MAPPER_ATT_NAME);
         if (om == null) {
-            LOG.info("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
+            log.warn("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
             om = new ObjectMapper();
             om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             om.registerModule(new JavaTimeModule());
@@ -210,7 +210,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         //noinspection unchecked
         List<JsonApi4jPlugin> plugins = (List<JsonApi4jPlugin>) servletContext.getAttribute(PLUGINS_ATT_NAME);
         if (plugins == null) {
-            LOG.warn("List<JsonApiPlugin> not found in servlet context. Setting an empty list.");
+            log.warn("List<JsonApiPlugin> not found in servlet context. Setting an empty list.");
             plugins = Collections.emptyList();
             servletContext.setAttribute(PLUGINS_ATT_NAME, plugins);
         }
