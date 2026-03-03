@@ -10,23 +10,23 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.operation.Operation;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperation;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -38,6 +38,14 @@ public class JsonApi4jDefaultBeans {
     @DefaultBean
     JsonApi4jProperties jsonApi4jProperties() {
         return new JsonApi4jProperties();
+    }
+
+    @Produces
+    @Named("jsonApi4jExecutorService")
+    @Singleton
+    @DefaultBean
+    ExecutorService jsonApi4jExecutorService() {
+        return Executors.newCachedThreadPool();
     }
 
     @Produces
@@ -64,13 +72,14 @@ public class JsonApi4jDefaultBeans {
     @Singleton
     @DefaultBean
     JsonApi4j jsonApi4j(DomainRegistry domainRegistry,
-                        OperationsRegistry operationsRegistry) {
+                        OperationsRegistry operationsRegistry,
+                        @Named("jsonApi4jExecutorService") ExecutorService executorService) {
         List<JsonApi4jPlugin> plugins = Collections.emptyList();
         return JsonApi4j.builder()
                 .plugins(plugins)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .executor(Executors.newCachedThreadPool())
+                .executor(executorService)
                 .build();
     }
 
