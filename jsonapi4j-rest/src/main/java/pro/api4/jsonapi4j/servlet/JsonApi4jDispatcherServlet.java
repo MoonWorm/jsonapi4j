@@ -49,12 +49,12 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         Validate.notNull(jsonApi4j);
         log.info("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
 
-        errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORY_ATT_NAME);
+        errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         if (errorHandlerFactory == null) {
             log.info("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
             errorHandlerFactory = initDefaultErrorHandlerFactory();
         } else {
-            log.info("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORY_ATT_NAME);
+            log.info("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         }
 
         objectMapper = initObjectMapper(config.getServletContext());

@@ -44,7 +44,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
     public static final String PLUGINS_ATT_NAME = "jsonapi4jPlugins";
-    public static final String ERROR_HANDLER_FACTORY_ATT_NAME = "jsonapi4jErrorHandlerFactory";
+    public static final String ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME = "jsonapi4jErrorHandlerFactoriesRegistry";
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
 

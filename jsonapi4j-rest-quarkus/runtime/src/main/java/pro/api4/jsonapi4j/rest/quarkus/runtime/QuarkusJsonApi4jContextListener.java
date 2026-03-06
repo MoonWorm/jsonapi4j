@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 
 import java.util.concurrent.ExecutorService;
 
@@ -26,6 +27,8 @@ public class QuarkusJsonApi4jContextListener implements ServletContextListener {
     Provider<JsonApi4j> jsonApi4j;
     @Inject
     Provider<ObjectMapper> objectMapper;
+    @Inject
+    Provider<ErrorHandlerFactoriesRegistry> errorHandlerFactoriesRegistry;
     @Inject
     Provider<PrincipalResolver> principalResolver;
     @Inject
@@ -47,6 +50,9 @@ public class QuarkusJsonApi4jContextListener implements ServletContextListener {
 
         servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapper.get());
         log.info("Common ObjectMapper instance has been set as '{}' Servlet Context Attribute.", OBJECT_MAPPER_ATT_NAME);
+
+        servletContext.setAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME, errorHandlerFactoriesRegistry.get());
+        log.info("ErrorHandlerFactoriesRegistry instance has been set as '{}' Servlet Context Attribute.", ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
 
         servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorService.get());
         log.info("Common ExecutorService instance has been set as '{}' Servlet Context Attribute.", EXECUTOR_SERVICE_ATT_NAME);

@@ -12,6 +12,8 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
@@ -22,6 +24,11 @@ import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +38,30 @@ import java.util.stream.Collectors;
 
 @Singleton
 public class QuarkusJsonApi4jDefaultBeans {
+
+    private static final Logger log = LoggerFactory.getLogger(QuarkusJsonApi4jDefaultBeans.class);
+
+    @Produces
+    @Singleton
+    @DefaultBean
+    ErrorHandlerFactoriesRegistry jsonApi4jErrorHandlerFactoriesRegistry(Instance<ErrorHandlerFactory> customErrorHandlerFactories) {
+        log.info("Composing {}...", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
+        JsonApi4jErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry
+                = new JsonApi4jErrorHandlerFactoriesRegistry();
+        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
+        log.info("Default {} error handler factory has been registered", DefaultErrorHandlerFactory.class.getSimpleName());
+
+        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
+        log.info("Default {} error handler factory has been registered", Jsr380ErrorHandlers.class.getSimpleName());
+
+        customErrorHandlerFactories.stream().forEach(f -> {
+            jsonapi4jErrorHandlerFactoriesRegistry.registerAll(f);
+            log.info("Custom {} error handler factory has been registered", f.getClass().getSimpleName());
+        });
+
+        log.info("{} has been successfully composed", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
+        return jsonapi4jErrorHandlerFactoriesRegistry;
+    }
 
     @Produces
     @Named("jsonApi4jExecutorService")
