@@ -23,6 +23,7 @@ import pro.api4.jsonapi4j.operation.ResourceOperation;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
+import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
@@ -30,8 +31,9 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFa
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -39,28 +41,28 @@ import java.util.stream.Collectors;
 @Singleton
 public class QuarkusJsonApi4jDefaultBeans {
 
-    private static final Logger log = LoggerFactory.getLogger(QuarkusJsonApi4jDefaultBeans.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jDefaultBeans.class);
 
     @Produces
     @Singleton
     @DefaultBean
     ErrorHandlerFactoriesRegistry jsonApi4jErrorHandlerFactoriesRegistry(Instance<ErrorHandlerFactory> customErrorHandlerFactories) {
-        log.info("Composing {}...", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
-        JsonApi4jErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry
-                = new JsonApi4jErrorHandlerFactoriesRegistry();
-        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
-        log.info("Default {} error handler factory has been registered", DefaultErrorHandlerFactory.class.getSimpleName());
+        LOG.info("Composing {}...", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
+        JsonApi4jErrorHandlerFactoriesRegistry registry = new JsonApi4jErrorHandlerFactoriesRegistry();
 
-        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
-        log.info("Default {} error handler factory has been registered", Jsr380ErrorHandlers.class.getSimpleName());
+        registry.registerAll(new DefaultErrorHandlerFactory());
+        LOG.info("Default {} has been registered", DefaultErrorHandlerFactory.class.getSimpleName());
+
+        registry.registerAll(new Jsr380ErrorHandlers());
+        LOG.info("Default {} has been registered", Jsr380ErrorHandlers.class.getSimpleName());
 
         customErrorHandlerFactories.stream().forEach(f -> {
-            jsonapi4jErrorHandlerFactoriesRegistry.registerAll(f);
-            log.info("Custom {} error handler factory has been registered", f.getClass().getSimpleName());
+            registry.registerAll(f);
+            LOG.info("Custom {} has been registered", f.getClass().getSimpleName());
         });
 
-        log.info("{} has been successfully composed", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
-        return jsonapi4jErrorHandlerFactoriesRegistry;
+        LOG.info("{} has been successfully composed", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
+        return registry;
     }
 
     @Produces
@@ -68,26 +70,77 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Singleton
     @DefaultBean
     ExecutorService jsonApi4jExecutorService() {
+        LOG.info("Composing common {}...", ExecutorService.class.getSimpleName());
         return Executors.newCachedThreadPool();
     }
 
     @Produces
     @Singleton
     @DefaultBean
+    AccessTierRegistry accessTierRegistry() {
+        LOG.info("Composing {}...", AccessTierRegistry.class.getSimpleName());
+        return new DefaultAccessTierRegistry();
+    }
+
+    @Produces
+    @Singleton
+    @DefaultBean
+    PrincipalResolver principalResolver(AccessTierRegistry accessTierRegistry) {
+        LOG.info("Composing {}...", PrincipalResolver.class.getSimpleName());
+        return new DefaultPrincipalResolver(accessTierRegistry);
+    }
+
+    @Produces
+    @Singleton
+    @DefaultBean
+    List<JsonApi4jPlugin> jsonApi4jPlugins(Instance<JsonApi4jPlugin> plugins) {
+        LOG.info("Discovering JsonApi4j plugins...");
+        List<JsonApi4jPlugin> result = plugins.stream()
+                .sorted(Comparator
+                        .comparingInt(JsonApi4jPlugin::precedence)
+                        .thenComparing(p -> p.getClass().getName()))
+                .toList();
+        LOG.info(
+                "Discovered {} JsonApi4j plugins: {}",
+                result.size(),
+                result.stream().map(p -> p.getClass().getSimpleName()).collect(Collectors.joining(", "))
+        );
+        return result;
+    }
+
+    @Produces
+    @Singleton
+    @DefaultBean
     DomainRegistry domainRegistry(Instance<Resource<?>> resources,
-                                  Instance<Relationship<?>> relationships) {
-        return DomainRegistry.builder(Collections.emptyList())
-                .resources(resources.stream().collect(Collectors.toSet()))
-                .relationships(relationships.stream().collect(Collectors.toSet()))
+                                  Instance<Relationship<?>> relationships,
+                                  List<JsonApi4jPlugin> plugins) {
+        Set<Resource<?>> availableResources = resources.stream().collect(Collectors.toSet());
+        Set<Relationship<?>> availableRelationships = relationships.stream().collect(Collectors.toSet());
+        LOG.info(
+                "Composing {}: found {} resources, {} relationships",
+                DomainRegistry.class.getSimpleName(),
+                availableResources.size(),
+                availableRelationships.size()
+        );
+        return DomainRegistry.builder(plugins)
+                .resources(availableResources)
+                .relationships(availableRelationships)
                 .build();
     }
 
     @Produces
     @Singleton
     @DefaultBean
-    OperationsRegistry operationsRegistry(Instance<ResourceOperation> operations) {
-        return OperationsRegistry.builder(Collections.emptyList())
-                .operations(operations.stream().collect(Collectors.toSet()))
+    OperationsRegistry operationsRegistry(Instance<ResourceOperation> operations,
+                                          List<JsonApi4jPlugin> plugins) {
+        Set<ResourceOperation> availableOperations = operations.stream().collect(Collectors.toSet());
+        LOG.info(
+                "Composing {}: found {} operations",
+                OperationsRegistry.class.getSimpleName(),
+                availableOperations.size()
+        );
+        return OperationsRegistry.builder(plugins)
+                .operations(availableOperations)
                 .build();
     }
 
@@ -96,8 +149,9 @@ public class QuarkusJsonApi4jDefaultBeans {
     @DefaultBean
     JsonApi4j jsonApi4j(DomainRegistry domainRegistry,
                         OperationsRegistry operationsRegistry,
+                        List<JsonApi4jPlugin> plugins,
                         @Named("jsonApi4jExecutorService") ExecutorService executorService) {
-        List<JsonApi4jPlugin> plugins = Collections.emptyList();
+        LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
                 .plugins(plugins)
                 .domainRegistry(domainRegistry)
@@ -109,14 +163,8 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Produces
     @Singleton
     @DefaultBean
-    PrincipalResolver principalResolver() {
-        return new DefaultPrincipalResolver(new DefaultAccessTierRegistry());
-    }
-
-    @Produces
-    @Singleton
-    @DefaultBean
     ObjectMapper objectMapper() {
+        LOG.info("Composing common {}...", ObjectMapper.class.getSimpleName());
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerModule(new JavaTimeModule());
