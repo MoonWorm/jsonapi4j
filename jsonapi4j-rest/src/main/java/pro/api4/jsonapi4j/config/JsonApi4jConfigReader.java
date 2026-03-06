@@ -47,7 +47,7 @@ public class JsonApi4jConfigReader {
             if (is == null) {
                 throw new IOException("Resource not found: " + path);
             }
-            return getObjectMapper(path).readValue(is, JsonApi4jProperties.class);
+            return getObjectMapper(path).readValue(is, DefaultJsonApi4jProperties.class);
         }
     }
 
@@ -68,14 +68,14 @@ public class JsonApi4jConfigReader {
     public static JsonApi4jProperties readConfigFromClasspath(String configNameYaml, String configNameJson) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
             if (is != null) {
-                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, JsonApi4jProperties.class);
+                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, DefaultJsonApi4jProperties.class);
             }
         }
         try (InputStream in = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameJson)) {
             if (in == null) {
                 throw new IllegalStateException("No configuration file found");
             }
-            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(in, JsonApi4jProperties.class);
+            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(in, DefaultJsonApi4jProperties.class);
         }
     }
 

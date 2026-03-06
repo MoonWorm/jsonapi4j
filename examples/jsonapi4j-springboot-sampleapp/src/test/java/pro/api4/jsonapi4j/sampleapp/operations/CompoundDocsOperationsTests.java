@@ -16,7 +16,7 @@ import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 @ActiveProfiles("compound-docs-test")
 public class CompoundDocsOperationsTests {
 
-    @Value("${jsonapi4j.root-path}")
+    @Value("${jsonapi4j.rootPath}")
     private String jsonApiRootPath;
 
     @Value("${server.port}")

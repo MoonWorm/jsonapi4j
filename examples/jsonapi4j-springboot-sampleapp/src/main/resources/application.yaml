@@ -10,8 +10,8 @@ integrations:
     url: https://restcountries.com/v3.1
 
 jsonapi4j:
-  root-path: '/jsonapi'
-  compound-docs:
+  rootPath: '/jsonapi'
+  compoundDocs:
     enabled: true
     maxHops: 3
     mapping:

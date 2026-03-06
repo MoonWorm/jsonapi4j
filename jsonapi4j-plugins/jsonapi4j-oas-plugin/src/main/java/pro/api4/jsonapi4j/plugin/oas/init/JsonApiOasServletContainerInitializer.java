@@ -4,6 +4,7 @@ import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import lombok.extern.slf4j.Slf4j;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
@@ -62,14 +63,14 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
             log.warn("Oas Root Path attribute is not set in servlet context. Reading from a JsonApi4j config file...");
             servletContext.setAttribute(
                     OAS_PLUGIN_ROOT_PATH_ATT_NAME,
-                    readJsonApi4jProperties(servletContext).getRootPath()
+                    readJsonApi4jProperties(servletContext).rootPath()
             );
         }
     }
 
     private JsonApi4jProperties readJsonApi4jProperties(ServletContext servletContext) {
         Map<String, Object> rawJsonApi4jProperties = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
-        return JsonApi4jConfigReader.convertToConfig(rawJsonApi4jProperties, JsonApi4jProperties.class);
+        return JsonApi4jConfigReader.convertToConfig(rawJsonApi4jProperties, DefaultJsonApi4jProperties.class);
     }
 
     private void registerOasServlet(ServletContext servletContext) {

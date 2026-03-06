@@ -13,7 +13,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
@@ -31,14 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Singleton
-public class JsonApi4jDefaultBeans {
-
-    @Produces
-    @Singleton
-    @DefaultBean
-    JsonApi4jProperties jsonApi4jProperties() {
-        return new JsonApi4jProperties();
-    }
+public class QuarkusJsonApi4jDefaultBeans {
 
     @Produces
     @Named("jsonApi4jExecutorService")

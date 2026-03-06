@@ -25,7 +25,7 @@ import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerIniti
         havingValue = "true",
         matchIfMissing = true
 )
-@ConditionalOnClass(value = {JsonApiOasPlugin.class})
+@ConditionalOnClass(value = { JsonApiOasPlugin.class })
 @Configuration
 public class SpringJsonApi4jOasPluginConfig {
 
@@ -50,7 +50,7 @@ public class SpringJsonApi4jOasPluginConfig {
             OperationsRegistry operationsRegistry
     ) {
         return new JsonApiOperationsCustomizer(
-                jsonApi4JProperties.getRootPath(),
+                jsonApi4JProperties.rootPath(),
                 domainRegistry,
                 operationsRegistry,
                 oasProperties.getCustomResponseHeaders()
@@ -80,7 +80,7 @@ public class SpringJsonApi4jOasPluginConfig {
             OasProperties oasProperties
     ) {
         return servletContext -> {
-            servletContext.setAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.getRootPath());
+            servletContext.setAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.rootPath());
             servletContext.setAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME, oasProperties);
         };
     }
@@ -89,7 +89,7 @@ public class SpringJsonApi4jOasPluginConfig {
     public ServletRegistrationBean<?> jsonApi4jOasServlet(
             JsonApi4jProperties jsonApi4jProperties
     ) {
-        String jsonapi4jRootPath = jsonApi4jProperties.getRootPath();
+        String jsonapi4jRootPath = jsonApi4jProperties.rootPath();
 
         String effectiveServletUrlMapping;
         if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {

@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
+import static pro.api4.jsonapi4j.config.DefaultCompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
 import static pro.api4.jsonapi4j.config.JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH;
 import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenient;
 
@@ -50,8 +50,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
-        log.info("CTX in INITIALIZER=" + System.identityHashCode(servletContext));
-
         JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
 
         initObjectMapper(servletContext);
@@ -75,7 +73,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         // ------------------
         // dispatcher servlet
         // ------------------
-        String rootPath = properties == null ? JSONAPI4J_DEFAULT_ROOT_PATH : properties.getRootPath();
+        String rootPath = properties == null ? JSONAPI4J_DEFAULT_ROOT_PATH : properties.rootPath();
         String dispatcherServletMapping = rootPath + "/*";
         registerDispatcherServlet(
                 servletContext,
@@ -90,9 +88,9 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
         registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
 
-        boolean compoundDocsEnabled = properties == null || properties.getCompoundDocs() == null
-                ? JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE
-                : properties.getCompoundDocs().isEnabled();
+        boolean compoundDocsEnabled = properties == null || properties.compoundDocs() == null
+                ? Boolean.parseBoolean(JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE)
+                : properties.compoundDocs().enabled();
         if (compoundDocsEnabled) {
             registerCompoundDocsFilter(
                     servletContext,
@@ -113,6 +111,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 new JsonApi4jDispatcherServlet()
         );
         dispatcherServlet.addMapping(servletMapping);
+        log.info("{} has been successfully registered under {} root path", JsonApi4jDispatcherServlet.class.getSimpleName(), servletMapping);
     }
 
     private void registerPrincipalResolvingFilter(ServletContext servletContext, String rootPath) {

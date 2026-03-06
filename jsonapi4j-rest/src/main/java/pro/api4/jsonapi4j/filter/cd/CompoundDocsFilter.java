@@ -2,9 +2,11 @@ package pro.api4.jsonapi4j.filter.cd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
@@ -28,9 +30,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.util.stream.Collectors.toMap;
-import static pro.api4.jsonapi4j.config.CompoundDocsProperties.*;
+import static pro.api4.jsonapi4j.config.DefaultCompoundDocsProperties.*;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
+@Slf4j
 public class CompoundDocsFilter implements Filter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompoundDocsFilter.class);
@@ -48,22 +51,27 @@ public class CompoundDocsFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
         ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
         Validate.notNull(objectMapper);
+        log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
 
         JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+        log.info("Applied {} from Servlet Context under {} attribute", JsonApi4jProperties.class.getSimpleName(), JSONAPI4J_PROPERTIES_ATT_NAME);
 
         Map<String, String> mapping = JSONAPI4J_COMPOUND_DOCS_MAPPING_DEFAULT_VALUE;
-        int maxHops = JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE;
-        CompoundDocsResolverConfig.ErrorStrategy errorStrategy = JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE;
-        if (properties != null && properties.getCompoundDocs() != null) {
-            mapping = properties.getCompoundDocs().getMapping();
-            maxHops = properties.getCompoundDocs().getMaxHops();
-            errorStrategy = properties.getCompoundDocs().getErrorStrategy();
+        int maxHops = Integer.parseInt(JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE);
+        ErrorStrategy errorStrategy = ErrorStrategy.valueOf(JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE);
+        if (properties != null && properties.compoundDocs() != null) {
+            mapping = MapUtils.emptyIfNull(properties.compoundDocs().mapping());
+            maxHops = properties.compoundDocs().maxHops();
+            errorStrategy = properties.compoundDocs().errorStrategy();
         }
+        log.info("Effective compound docs settings: maxHops: {}, errorStrategy: {}, mapping: {}", maxHops, errorStrategy, mapping);
 
         ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
         Validate.notNull(executorService);
+        log.info("Applied {}", ExecutorService.class.getSimpleName());
 
         resolver = new CompoundDocsResolver(
                 new CompoundDocsResolverConfig(
@@ -81,6 +89,7 @@ public class CompoundDocsFilter implements Filter {
                         errorStrategy
                 )
         );
+        log.info("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
     }
 
     @Override

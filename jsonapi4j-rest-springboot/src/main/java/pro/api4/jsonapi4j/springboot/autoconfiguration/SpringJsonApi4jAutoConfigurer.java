@@ -152,7 +152,7 @@ public class SpringJsonApi4jAutoConfigurer {
 
     @Bean(name = "jsonApi4jDispatcherServlet")
     public ServletRegistrationBean<?> jsonApi4jDispatcherServlet(JsonApi4jProperties properties) {
-        String jsonapi4jRootPath = properties.getRootPath();
+        String jsonapi4jRootPath = properties.rootPath();
 
         String effectiveServletUrlMapping;
         if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {
