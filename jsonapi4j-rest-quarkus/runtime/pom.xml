@@ -18,6 +18,12 @@
             <version>${revision}</version>
         </dependency>
         <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <version>${revision}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
@@ -45,6 +51,9 @@
                         </goals>
                         <configuration>
                             <deployment>${project.groupId}:${project.artifactId}-deployment:${project.version}</deployment>
+                            <conditionalDependencies>
+                                <artifact>pro.api4:jsonapi4j-ac-plugin:${revision}</artifact>
+                            </conditionalDependencies>
                         </configuration>
                     </execution>
                 </executions>

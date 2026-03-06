@@ -3,7 +3,11 @@ package pro.api4.jsonapi4j.rest.quarkus.runtime;
 import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 /**
@@ -11,36 +15,26 @@ import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
  */
 public class QuarkusJsonApi4jAcPluginBeans {
 
-    private static final String ACCESS_CONTROL_EVALUATOR_CLASS = "pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator";
-    private static final String DEFAULT_ACCESS_CONTROL_EVALUATOR_CLASS = "pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator";
-    private static final String ACCESS_CONTROL_PLUGIN_CLASS = "pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin";
+    private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jAcPluginBeans.class);
 
     @Produces
     @Singleton
     @DefaultBean
-    JsonApi4jPlugin jsonApiAccessControlPlugin(AccessTierRegistry accessTierRegistry) {
-        return instantiateAccessControlPlugin(accessTierRegistry);
+    JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
+        LOG.info("AC Plugin Enabled. Composing {}...", JsonApiAccessControlPlugin.class.getSimpleName());
+        return new JsonApiAccessControlPlugin(accessControlEvaluator);
     }
 
-    private JsonApi4jPlugin instantiateAccessControlPlugin(AccessTierRegistry accessTierRegistry) {
-        try {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            Class<?> evaluatorBaseClass = Class.forName(ACCESS_CONTROL_EVALUATOR_CLASS, false, classLoader);
-            Class<?> defaultEvaluatorClass = Class.forName(DEFAULT_ACCESS_CONTROL_EVALUATOR_CLASS, false, classLoader);
-            Class<?> pluginClass = Class.forName(ACCESS_CONTROL_PLUGIN_CLASS, false, classLoader);
-
-            Object evaluator = defaultEvaluatorClass
-                    .getConstructor(AccessTierRegistry.class)
-                    .newInstance(accessTierRegistry);
-
-            Object plugin = pluginClass
-                    .getConstructor(evaluatorBaseClass)
-                    .newInstance(evaluator);
-
-            return (JsonApi4jPlugin) plugin;
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to instantiate JsonApiAccessControlPlugin from classpath", e);
-        }
+    @Produces
+    @Singleton
+    @DefaultBean
+    AccessControlEvaluator accessControlEvaluator(AccessTierRegistry accessTierRegistry) {
+        LOG.info(
+                "AC Plugin Enabled. Composing {} as {}",
+                AccessControlEvaluator.class.getSimpleName(),
+                DefaultAccessControlEvaluator.class.getSimpleName()
+        );
+        return new DefaultAccessControlEvaluator(accessTierRegistry);
     }
 
 }
