@@ -110,13 +110,18 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             if (errorHandlerFactory != null) {
                 int errorStatusCode = errorHandlerFactory.resolveStatusCode(e);
                 ErrorsDoc errorsDoc = errorHandlerFactory.resolveErrorsDoc(e);
-                log.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
-                log.warn("Stacktrace: ", e);
-
+                if (errorStatusCode / 100 == 4) {
+                    // client-side errors
+                    log.warn("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
+                } else {
+                    // server-side errors
+                    log.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage(), e);
+                }
                 resp.setStatus(errorStatusCode);
                 writeResponseBody(resp, errorsDoc);
+            } else {
+                throw e;
             }
-            throw e;
         }
     }
 
