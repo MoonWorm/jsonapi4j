@@ -20,7 +20,9 @@ public class PrincipalResolvingFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        log.info("Initializing {} ...", PrincipalResolvingFilter.class.getSimpleName());
         resolver = initJsonApi4jPrincipalResolver(filterConfig.getServletContext());
+        log.info("{} has been initialized", PrincipalResolvingFilter.class.getSimpleName());
     }
 
     @Override
@@ -45,9 +47,19 @@ public class PrincipalResolvingFilter implements Filter {
     private PrincipalResolver initJsonApi4jPrincipalResolver(ServletContext servletContext) {
         PrincipalResolver pr = (PrincipalResolver) servletContext.getAttribute(PRINCIPAL_RESOLVER_ATT_NAME);
         if (pr == null) {
-            log.info("JsonApi4jPrincipalResolver not found in servlet context. Setting the default DefaultJsonApi4jPrincipalResolver.");
+            log.info(
+                    "{} not found in servlet context. Setting the default implementation {}.",
+                    PrincipalResolver.class.getSimpleName(),
+                    DefaultPrincipalResolver.class.getSimpleName()
+            );
             pr = new DefaultPrincipalResolver();
             servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, pr);
+        } else {
+            log.info(
+                    "{} has been found in the Servlet Context under {} attribute. Applying it.",
+                    PrincipalResolver.class.getSimpleName(),
+                    PRINCIPAL_RESOLVER_ATT_NAME
+            );
         }
         return pr;
     }

@@ -18,8 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_COMPOUND_DOCS_FILTER_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 class Jsonapi4jRestQuarkusProcessor {
 
@@ -61,6 +60,28 @@ class Jsonapi4jRestQuarkusProcessor {
         }
         log.info("Compound Docs feature disabled - not registering CompoundDocsFilter...");
         return Collections.emptyList();
+    }
+
+    @BuildStep
+    FilterBuildItem registerPrincipalResolvingFilter(QuarkusJsonApi4jProperties props) {
+        log.info("Registering PrincipalResolvingFilter...");
+        return FilterBuildItem.builder(
+                        JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME,
+                        "pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter"
+                ).addFilterUrlMapping(props.rootPath() + "/*", DispatcherType.REQUEST)
+                .setLoadOnStartup(1)
+                .build();
+    }
+
+    @BuildStep
+    FilterBuildItem registerRequestBodyCachingFilter(QuarkusJsonApi4jProperties props) {
+        log.info("Registering RequestBodyCachingFilter...");
+        return FilterBuildItem.builder(
+                        JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME,
+                        "pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter"
+                ).addFilterUrlMapping(props.rootPath() + "/*", DispatcherType.REQUEST)
+                .setLoadOnStartup(1)
+                .build();
     }
 
     @BuildStep

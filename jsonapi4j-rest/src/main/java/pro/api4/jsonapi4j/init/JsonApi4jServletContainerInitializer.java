@@ -34,7 +34,7 @@ import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenien
 public class JsonApi4jServletContainerInitializer implements ServletContainerInitializer {
 
     public static final String JSONAPI4J_DISPATCHER_SERVLET_NAME = "jsonApi4jDispatcherServlet";
-    public static final String JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME = "jsonapi4jAccessControlFilter";
+    public static final String JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME = "jsonapi4jPrincipalResolvingFilter";
     public static final String JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME = "jsonapi4jRequestBodyCachingFilter";
     public static final String JSONAPI4J_COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
 
@@ -167,6 +167,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             log.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
             es = Executors.newCachedThreadPool();
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
+        } else {
+            log.info("Applied {} from Servlet Context under {} attribute", ExecutorService.class.getSimpleName(), EXECUTOR_SERVICE_ATT_NAME);
         }
         return es;
     }
@@ -201,6 +203,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, om);
+        } else {
+            log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
         }
         return om;
     }

@@ -54,7 +54,6 @@ public class CompoundDocsFilter implements Filter {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
         ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
         Validate.notNull(objectMapper);
-        log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
 
         JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
         log.info("Applied {} from Servlet Context under {} attribute", JsonApi4jProperties.class.getSimpleName(), JSONAPI4J_PROPERTIES_ATT_NAME);
@@ -71,7 +70,6 @@ public class CompoundDocsFilter implements Filter {
 
         ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
         Validate.notNull(executorService);
-        log.info("Applied {}", ExecutorService.class.getSimpleName());
 
         resolver = new CompoundDocsResolver(
                 new CompoundDocsResolverConfig(
@@ -90,6 +88,7 @@ public class CompoundDocsFilter implements Filter {
                 )
         );
         log.info("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
+        log.info("{} has been initialized", CompoundDocsFilter.class.getSimpleName());
     }
 
     @Override

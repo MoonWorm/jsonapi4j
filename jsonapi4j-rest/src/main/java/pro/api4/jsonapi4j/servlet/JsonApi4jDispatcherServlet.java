@@ -57,9 +57,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             log.info("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORY_ATT_NAME);
         }
 
-        objectMapper = (ObjectMapper) config.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
+        objectMapper = initObjectMapper(config.getServletContext());
         Validate.notNull(objectMapper);
-        log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
 
         OperationDetailsResolver operationDetailsResolver = new OperationDetailsResolver(
                 jsonApi4j.getDomainRegistry()
@@ -69,6 +68,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 operationDetailsResolver
         );
         log.info("{} has been successfully composed", OperationDetailsResolver.class.getSimpleName());
+        log.info("{} has been initialized", JsonApi4jDispatcherServlet.class.getSimpleName());
     }
 
     private ErrorHandlerFactoriesRegistry initDefaultErrorHandlerFactory() {

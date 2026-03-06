@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.rest.quarkus.runtime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
+
+import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
@@ -25,6 +28,9 @@ public class QuarkusJsonApi4jContextListener implements ServletContextListener {
     Provider<ObjectMapper> objectMapper;
     @Inject
     Provider<PrincipalResolver> principalResolver;
+    @Inject
+    @Named("jsonApi4jExecutorService")
+    Provider<ExecutorService> executorService;
     @Inject
     Provider<QuarkusJsonApi4jProperties> properties;
 
@@ -41,6 +47,9 @@ public class QuarkusJsonApi4jContextListener implements ServletContextListener {
 
         servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapper.get());
         log.info("Common ObjectMapper instance has been set as '{}' Servlet Context Attribute.", OBJECT_MAPPER_ATT_NAME);
+
+        servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorService.get());
+        log.info("Common ExecutorService instance has been set as '{}' Servlet Context Attribute.", EXECUTOR_SERVICE_ATT_NAME);
 
         servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, principalResolver.get());
         log.info("PrincipalResolver instance has been set as '{}' Servlet Context Attribute.", PRINCIPAL_RESOLVER_ATT_NAME);
