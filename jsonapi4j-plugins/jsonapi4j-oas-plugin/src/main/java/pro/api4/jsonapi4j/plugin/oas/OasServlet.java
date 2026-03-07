@@ -85,7 +85,7 @@ public class OasServlet extends HttpServlet {
                 rootPath,
                 domainRegistry,
                 operationsRegistry,
-                oasProperties != null ? oasProperties.getCustomResponseHeaders() : Collections.emptyMap()
+                oasProperties != null ? oasProperties.customResponseHeaders() : Collections.emptyMap()
         ).customise(openAPI);
         writeOasToResponse(resp, format, openAPI);
     }

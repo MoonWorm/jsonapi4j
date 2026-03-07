@@ -1,95 +1,128 @@
 package pro.api4.jsonapi4j.plugin.oas.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.TierPublic;
-import lombok.Data;
 
 import java.util.Map;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-@Data
-public class OasProperties {
+public interface OasProperties {
 
-    public static final String OAS_PROPERTY_NAME = "oas";
+    String OAS_PROPERTY_NAME = "oas";
+    String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
 
-    public static final String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
-
-    private String oasRootPath = DEFAULT_OAS_ROOT_PATH;
-    private Info info;
-    private ExternalDocumentation externalDocumentation;
-    private OAuth2 oauth2;
-    private Map<String, Server> servers;
-    private Map<String, Map<String, ResponseHeader>> customResponseHeaders;
-
-    @Data
-    public static class Info {
-        private String title;
-        private String description;
-        private Contact contact;
-        private String version;
-        private String termsOfService;
-        private License license;
-        private Map<String, Object> extensions;
+    default String oasRootPath() {
+        return DEFAULT_OAS_ROOT_PATH;
     }
 
-    @Data
-    public static class Contact {
-        private String name;
-        private String url;
-        private String email;
+    Info info();
+
+    ExternalDocumentation externalDocumentation();
+
+    OAuth2 oauth2();
+
+    Map<String, ? extends Server> servers();
+
+    <T extends ResponseHeader> Map<String, Map<String, T>> customResponseHeaders();
+
+    interface Info {
+
+        String title();
+
+        String description();
+
+        Contact contact();
+
+        String version();
+
+        String termsOfService();
+
+        License license();
+
+        Map<String, Object> extensions();
+
     }
 
-    @Data
-    public static class License {
-        private String name;
-        private String url;
-        private String identifier ;
+    interface Contact {
+
+        String name();
+
+        String url();
+
+        String email();
+
     }
 
-    @Data
-    public static class ExternalDocumentation {
-        private String url;
-        private String description;
+    interface License {
+
+        String name();
+
+        String url();
+
+        String identifier();
+
     }
 
-    @Data
-    public static class OAuth2 {
-        private OAuth2GrantFlow clientCredentials;
-        private OAuth2GrantFlow authorizationCodeWithPkce;
+    interface ExternalDocumentation {
+
+        String url();
+
+        String description();
+
     }
 
-    @Data
-    public static class OAuth2GrantFlow {
-        private String name;
-        private String description;
-        private String tokenUrl;
+    interface OAuth2 {
+
+        OAuth2GrantFlow clientCredentials();
+
+        OAuth2GrantFlow authorizationCodeWithPkce();
+
+    }
+
+    interface OAuth2GrantFlow {
+
+        String name();
+
+        String description();
+
+        String tokenUrl();
+
         // only required for Authorization Code grant
-        private String authorizationUrl;
-        private Map<String, OAuth2Scope> scopes;
+        String authorizationUrl();
+
+        Map<String, ? extends OAuth2Scope> scopes();
+
     }
 
-    @Data
-    public static class OAuth2Scope {
-        private String name;
-        private String description;
-        private AccessTier requiredAccessTier = new TierPublic();
+    interface OAuth2Scope {
+
+        String name();
+
+        String description();
+
+        AccessTier requiredAccessTier();
+
     }
 
-    @Data
-    public static class Server {
-        private String name;
-        private String url;
-        private boolean enabled;
+    interface Server {
+
+        String name();
+
+        String url();
+
+        boolean enabled();
+
     }
 
-    @Data
-    public static class ResponseHeader {
-        private String description;
-        private boolean required;
-        private String schema;
-        private String example;
+    interface ResponseHeader {
+
+        String description();
+
+        boolean required();
+
+        String schema();
+
+        String example();
+
     }
 
 }

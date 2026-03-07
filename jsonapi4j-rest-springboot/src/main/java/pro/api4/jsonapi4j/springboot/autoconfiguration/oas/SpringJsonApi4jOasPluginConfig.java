@@ -53,7 +53,7 @@ public class SpringJsonApi4jOasPluginConfig {
                 jsonApi4JProperties.rootPath(),
                 domainRegistry,
                 operationsRegistry,
-                oasProperties.getCustomResponseHeaders()
+                oasProperties.customResponseHeaders()
         );
     }
 

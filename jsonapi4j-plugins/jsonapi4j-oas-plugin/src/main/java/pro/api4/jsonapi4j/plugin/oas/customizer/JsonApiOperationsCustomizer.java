@@ -368,10 +368,10 @@ public class JsonApiOperationsCustomizer {
             for (Map.Entry<String, OasProperties.ResponseHeader> responseHeader : customResponseHeaders.entrySet()) {
                 OasProperties.ResponseHeader config = responseHeader.getValue();
                 headers.put(responseHeader.getKey(), new Header()
-                        .required(config.isRequired())
-                        .description(config.getDescription())
-                        .schema(resolveResponseHeaderSchema(config.getSchema()))
-                        .example(config.getExample()));
+                        .required(config.required())
+                        .description(config.description())
+                        .schema(resolveResponseHeaderSchema(config.schema()))
+                        .example(config.example()));
             }
         }
 

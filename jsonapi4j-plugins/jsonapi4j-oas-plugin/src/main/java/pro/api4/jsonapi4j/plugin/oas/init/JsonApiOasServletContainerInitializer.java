@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
+import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import java.util.Collections;
@@ -48,11 +49,11 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
             oasPropertiesRaw = oasPropertiesMap;
         }
 
-        OasProperties oasProperties = new OasProperties();
+        OasProperties oasProperties = new DefaultOasProperties();
         if (!oasPropertiesRaw.isEmpty()) {
             oasProperties = JsonApi4jConfigReader.convertToConfig(
                     oasPropertiesRaw,
-                    OasProperties.class
+                    DefaultOasProperties.class
             );
         }
         return oasProperties;
@@ -80,7 +81,7 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
         );
 
         OasProperties oasProperties = (OasProperties) servletContext.getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
-        String servletMapping = oasProperties.getOasRootPath() + "/*";
+        String servletMapping = oasProperties.oasRootPath() + "/*";
         log.info("Registering OAS Servlet on {} mapping", servletMapping);
         oasServlet.addMapping(servletMapping);
     }

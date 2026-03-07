@@ -1,7 +1,9 @@
 package pro.api4.jsonapi4j.config;
 
+import lombok.Getter;
 import lombok.Setter;
 
+@Getter
 @Setter
 public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 

@@ -1,6 +1,5 @@
 package pro.api4.jsonapi4j.config;
 
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
 
 import java.util.Collections;

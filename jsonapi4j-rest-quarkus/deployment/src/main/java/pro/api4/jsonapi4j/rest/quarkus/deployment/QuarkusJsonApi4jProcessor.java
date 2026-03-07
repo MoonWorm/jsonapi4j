@@ -25,9 +25,9 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONA
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME;
 
-class Jsonapi4jRestQuarkusProcessor {
+class QuarkusJsonApi4jProcessor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Jsonapi4jRestQuarkusProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jProcessor.class);
 
     private static final String FEATURE = "jsonapi4j-rest-quarkus";
     private static final String AC_PLUGIN_BEANS_CLASSNAME = "pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jAcPluginBeans";

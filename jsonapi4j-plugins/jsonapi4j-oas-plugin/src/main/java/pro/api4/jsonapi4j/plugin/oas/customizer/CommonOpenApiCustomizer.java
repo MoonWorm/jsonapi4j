@@ -47,53 +47,53 @@ public class CommonOpenApiCustomizer {
 
     private void enrichOpenApiInfo(OpenAPI openApi) {
         if (oasProperties != null) {
-            if (oasProperties.getInfo() != null) {
+            if (oasProperties.info() != null) {
                 if (openApi.getInfo() == null) {
                     openApi.setInfo(new Info());
                 }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getTitle())) {
-                    openApi.getInfo().setTitle(oasProperties.getInfo().getTitle());
+                if (StringUtils.isNotBlank(oasProperties.info().title())) {
+                    openApi.getInfo().setTitle(oasProperties.info().title());
                 }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getVersion())) {
-                    openApi.getInfo().setVersion(oasProperties.getInfo().getVersion());
+                if (StringUtils.isNotBlank(oasProperties.info().version())) {
+                    openApi.getInfo().setVersion(oasProperties.info().version());
                 }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getDescription())) {
-                    openApi.getInfo().setDescription(oasProperties.getInfo().getDescription());
+                if (StringUtils.isNotBlank(oasProperties.info().description())) {
+                    openApi.getInfo().setDescription(oasProperties.info().description());
                 }
-                if (StringUtils.isNotBlank(oasProperties.getInfo().getTermsOfService())) {
-                    openApi.getInfo().setTermsOfService(oasProperties.getInfo().getTermsOfService());
+                if (StringUtils.isNotBlank(oasProperties.info().termsOfService())) {
+                    openApi.getInfo().setTermsOfService(oasProperties.info().termsOfService());
                 }
-                if (MapUtils.isEmpty(oasProperties.getInfo().getExtensions())) {
-                    openApi.getInfo().setExtensions(oasProperties.getInfo().getExtensions());
+                if (MapUtils.isEmpty(oasProperties.info().extensions())) {
+                    openApi.getInfo().setExtensions(oasProperties.info().extensions());
                 }
 
-                if (oasProperties.getInfo().getContact() != null) {
+                if (oasProperties.info().contact() != null) {
                     if (openApi.getInfo().getContact() == null) {
                         openApi.getInfo().setContact(new Contact());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getName())) {
-                        openApi.getInfo().getContact().setName(oasProperties.getInfo().getContact().getName());
+                    if (StringUtils.isNotBlank(oasProperties.info().contact().name())) {
+                        openApi.getInfo().getContact().setName(oasProperties.info().contact().name());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getUrl())) {
-                        openApi.getInfo().getContact().setUrl(oasProperties.getInfo().getContact().getUrl());
+                    if (StringUtils.isNotBlank(oasProperties.info().contact().url())) {
+                        openApi.getInfo().getContact().setUrl(oasProperties.info().contact().url());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getContact().getEmail())) {
-                        openApi.getInfo().getContact().setEmail(oasProperties.getInfo().getContact().getEmail());
+                    if (StringUtils.isNotBlank(oasProperties.info().contact().email())) {
+                        openApi.getInfo().getContact().setEmail(oasProperties.info().contact().email());
                     }
                 }
 
-                if (oasProperties.getInfo().getLicense() != null) {
+                if (oasProperties.info().license() != null) {
                     if (openApi.getInfo().getLicense() == null) {
                         openApi.getInfo().setLicense(new License());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getName())) {
-                        openApi.getInfo().getLicense().setName(oasProperties.getInfo().getLicense().getName());
+                    if (StringUtils.isNotBlank(oasProperties.info().license().name())) {
+                        openApi.getInfo().getLicense().setName(oasProperties.info().license().name());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getUrl())) {
-                        openApi.getInfo().getLicense().setUrl(oasProperties.getInfo().getLicense().getUrl());
+                    if (StringUtils.isNotBlank(oasProperties.info().license().url())) {
+                        openApi.getInfo().getLicense().setUrl(oasProperties.info().license().url());
                     }
-                    if (StringUtils.isNotBlank(oasProperties.getInfo().getLicense().getIdentifier())) {
-                        openApi.getInfo().getLicense().setIdentifier(oasProperties.getInfo().getLicense().getIdentifier());
+                    if (StringUtils.isNotBlank(oasProperties.info().license().identifier())) {
+                        openApi.getInfo().getLicense().setIdentifier(oasProperties.info().license().identifier());
                     }
                 }
             }
@@ -101,30 +101,30 @@ public class CommonOpenApiCustomizer {
     }
 
     private void enrichExternalDocs(OpenAPI openApi) {
-        if (oasProperties.getExternalDocumentation() != null) {
+        if (oasProperties.externalDocumentation() != null) {
             if (openApi.getExternalDocs() == null) {
                 openApi.setExternalDocs(new ExternalDocumentation());
             }
-            if (StringUtils.isNotBlank(oasProperties.getExternalDocumentation().getUrl())) {
-                openApi.getExternalDocs().setUrl(oasProperties.getExternalDocumentation().getUrl());
+            if (StringUtils.isNotBlank(oasProperties.externalDocumentation().url())) {
+                openApi.getExternalDocs().setUrl(oasProperties.externalDocumentation().url());
             }
-            if (StringUtils.isNotBlank(oasProperties.getExternalDocumentation().getDescription())) {
-                openApi.getExternalDocs().setDescription(oasProperties.getExternalDocumentation().getDescription());
+            if (StringUtils.isNotBlank(oasProperties.externalDocumentation().description())) {
+                openApi.getExternalDocs().setDescription(oasProperties.externalDocumentation().description());
             }
         }
     }
 
     private void enrichServers(OpenAPI openApi) {
-        if (MapUtils.isNotEmpty(oasProperties.getServers())) {
+        if (MapUtils.isNotEmpty(oasProperties.servers())) {
             if (openApi.getServers() == null) {
                 openApi.setServers(new ArrayList<>());
             }
-            List<Server> servers = oasProperties.getServers().values()
+            List<Server> servers = oasProperties.servers().values()
                     .stream()
-                    .filter(OasProperties.Server::isEnabled)
+                    .filter(OasProperties.Server::enabled)
                     .map(config -> new Server()
-                            .description(config.getName())
-                            .url(config.getUrl())
+                            .description(config.name())
+                            .url(config.url())
                     ).toList();
             openApi.getServers().addAll(servers);
         }
@@ -146,11 +146,11 @@ public class CommonOpenApiCustomizer {
     }
 
     private void enrichSecuritySchemas(OpenAPI openApi) {
-        OAuth2GrantFlow clientCredentialsFlow = oasProperties.getOauth2() != null
-                ? oasProperties.getOauth2().getClientCredentials()
+        OAuth2GrantFlow clientCredentialsFlow = oasProperties.oauth2() != null
+                ? oasProperties.oauth2().clientCredentials()
                 : null;
-        OAuth2GrantFlow authorizationCodeWithPkce = oasProperties.getOauth2() != null
-                ? oasProperties.getOauth2().getAuthorizationCodeWithPkce()
+        OAuth2GrantFlow authorizationCodeWithPkce = oasProperties.oauth2() != null
+                ? oasProperties.oauth2().authorizationCodeWithPkce()
                 : null;
         if (clientCredentialsFlow != null || authorizationCodeWithPkce != null) {
             if (openApi.getComponents() == null) {
@@ -172,29 +172,29 @@ public class CommonOpenApiCustomizer {
                                                                  OAuth2GrantFlow authorizationCodeWithPkceFlow) {
         Map<String, SecurityScheme> schemes = new HashMap<>();
         if (clientCredentialsFlow != null) {
-            schemes.put(clientCredentialsFlow.getName(),
+            schemes.put(clientCredentialsFlow.name(),
                     new SecurityScheme()
                             .type(SecurityScheme.Type.OAUTH2)
-                            .description(clientCredentialsFlow.getDescription())
+                            .description(clientCredentialsFlow.description())
                             .flows(
                                     new OAuthFlows().clientCredentials(
                                             new OAuthFlow()
-                                                    .tokenUrl(clientCredentialsFlow.getTokenUrl())
+                                                    .tokenUrl(clientCredentialsFlow.tokenUrl())
                                                     .scopes(getScopes(clientCredentialsFlow))
                                     )
                             )
             );
         }
         if (authorizationCodeWithPkceFlow != null) {
-            schemes.put(authorizationCodeWithPkceFlow.getName(),
+            schemes.put(authorizationCodeWithPkceFlow.name(),
                     new SecurityScheme()
                             .type(SecurityScheme.Type.OAUTH2)
-                            .description(authorizationCodeWithPkceFlow.getDescription())
+                            .description(authorizationCodeWithPkceFlow.description())
                             .flows(
                                     new OAuthFlows().authorizationCode(
                                             new OAuthFlow()
-                                                    .tokenUrl(authorizationCodeWithPkceFlow.getTokenUrl())
-                                                    .authorizationUrl(authorizationCodeWithPkceFlow.getAuthorizationUrl())
+                                                    .tokenUrl(authorizationCodeWithPkceFlow.tokenUrl())
+                                                    .authorizationUrl(authorizationCodeWithPkceFlow.authorizationUrl())
                                                     .scopes(getScopes(authorizationCodeWithPkceFlow))
                                     )
                             ).extensions(getScopesExtensions(authorizationCodeWithPkceFlow))
@@ -206,25 +206,25 @@ public class CommonOpenApiCustomizer {
 
     private Scopes getScopes(OAuth2GrantFlow oauth2GrantFlow) {
         Scopes scopes = new Scopes();
-        if (oauth2GrantFlow.getScopes() != null && !oauth2GrantFlow.getScopes().isEmpty()) {
-            oauth2GrantFlow.getScopes().values().forEach(scope -> scopes.addString(
-                    scope.getName(),
-                    scope.getDescription()
+        if (oauth2GrantFlow.scopes() != null && !oauth2GrantFlow.scopes().isEmpty()) {
+            oauth2GrantFlow.scopes().values().forEach(scope -> scopes.addString(
+                    scope.name(),
+                    scope.description()
             ));
         }
         return scopes;
     }
 
     private Map<String, Object> getScopesExtensions(OAuth2GrantFlow oauth2GrantFlow) {
-        if (oauth2GrantFlow.getScopes() != null && !oauth2GrantFlow.getScopes().isEmpty()) {
+        if (oauth2GrantFlow.scopes() != null && !oauth2GrantFlow.scopes().isEmpty()) {
             Map<String, Object> extensions = new LinkedHashMap<>();
             extensions.put(
                     X_SCOPES_REQUIRED_ACCESS_TIER_EXTENSION,
-                    oauth2GrantFlow.getScopes().values().stream()
+                    oauth2GrantFlow.scopes().values().stream()
                             .collect(
                                     toMap(
-                                            OasProperties.OAuth2Scope::getName,
-                                            OasProperties.OAuth2Scope::getRequiredAccessTier
+                                            OasProperties.OAuth2Scope::name,
+                                            OasProperties.OAuth2Scope::requiredAccessTier
                                     )
                             )
             );

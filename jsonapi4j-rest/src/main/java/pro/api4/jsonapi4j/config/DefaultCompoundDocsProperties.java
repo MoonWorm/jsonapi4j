@@ -1,10 +1,12 @@
 package pro.api4.jsonapi4j.config;
 
+import lombok.Getter;
 import lombok.Setter;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 
 import java.util.Map;
 
+@Getter
 @Setter
 public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
 
