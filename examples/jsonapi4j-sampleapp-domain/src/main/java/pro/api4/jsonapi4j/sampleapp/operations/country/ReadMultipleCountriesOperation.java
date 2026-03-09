@@ -20,28 +20,6 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonApiResourceOperation(resource = CountryResource.class)
-@OasOperationInfo(
-        securityConfig = @SecurityConfig(
-                clientCredentialsSupported = true,
-                pkceSupported = true
-        ),
-        parameters = {
-                @Parameter(
-                        name = "filter[id]",
-                        description = "Allows to filter countries based on id attribute value",
-                        example = "US",
-                        array = true,
-                        required = false
-                ),
-                @Parameter(
-                        name = "filter[region]",
-                        description = "Allows to filter countries based on region attribute value",
-                        example = "Asia",
-                        array = true,
-                        required = false
-                )
-        }
-)
 @RequiredArgsConstructor
 public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOperation<DownstreamCountry> {
 
@@ -87,6 +65,28 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
         return downstreamCountries;
     }
 
+    @OasOperationInfo(
+            securityConfig = @SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            ),
+            parameters = {
+                    @Parameter(
+                            name = "filter[id]",
+                            description = "Allows to filter countries based on id attribute value",
+                            example = "US",
+                            array = true,
+                            required = false
+                    ),
+                    @Parameter(
+                            name = "filter[region]",
+                            description = "Allows to filter countries based on region attribute value",
+                            example = "Asia",
+                            array = true,
+                            required = false
+                    )
+            }
+    )
     @Override
     public CursorPageableResponse<DownstreamCountry> readPage(JsonApiRequest request) {
         if (request.getFilters().containsKey(ID_FILTER_NAME)) {

@@ -115,11 +115,11 @@ public class CommonOpenApiCustomizer {
     }
 
     private void enrichServers(OpenAPI openApi) {
-        if (MapUtils.isNotEmpty(oasProperties.servers())) {
+        if (CollectionUtils.isNotEmpty(oasProperties.servers())) {
             if (openApi.getServers() == null) {
                 openApi.setServers(new ArrayList<>());
             }
-            List<Server> servers = oasProperties.servers().values()
+            List<Server> servers = oasProperties.servers()
                     .stream()
                     .filter(OasProperties.Server::enabled)
                     .map(config -> new Server()
@@ -207,7 +207,7 @@ public class CommonOpenApiCustomizer {
     private Scopes getScopes(OAuth2GrantFlow oauth2GrantFlow) {
         Scopes scopes = new Scopes();
         if (oauth2GrantFlow.scopes() != null && !oauth2GrantFlow.scopes().isEmpty()) {
-            oauth2GrantFlow.scopes().values().forEach(scope -> scopes.addString(
+            oauth2GrantFlow.scopes().forEach(scope -> scopes.addString(
                     scope.name(),
                     scope.description()
             ));
@@ -220,7 +220,7 @@ public class CommonOpenApiCustomizer {
             Map<String, Object> extensions = new LinkedHashMap<>();
             extensions.put(
                     X_SCOPES_REQUIRED_ACCESS_TIER_EXTENSION,
-                    oauth2GrantFlow.scopes().values().stream()
+                    oauth2GrantFlow.scopes().stream()
                             .collect(
                                     toMap(
                                             OasProperties.OAuth2Scope::name,

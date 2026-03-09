@@ -31,20 +31,6 @@ import java.util.stream.Collectors;
 @JsonApiRelationshipOperation(
         relationship = UserCitizenshipsRelationship.class
 )
-@OasOperationInfo(
-        securityConfig = @OasOperationInfo.SecurityConfig(
-                clientCredentialsSupported = true,
-                pkceSupported = true
-        ),
-        parameters = {
-                @OasOperationInfo.Parameter(
-                        name = "id",
-                        in = In.PATH,
-                        description = "User unique identifier",
-                        example = "3"
-                )
-        }
-)
 @AccessControl(
         authenticated = Authenticated.AUTHENTICATED,
         scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
@@ -59,6 +45,20 @@ public class UserCitizenshipsOperations implements
     private final UserDb userDb;
     private final CountryInputParamsValidator countryValidator;
 
+    @OasOperationInfo(
+            securityConfig = @OasOperationInfo.SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            ),
+            parameters = {
+                    @OasOperationInfo.Parameter(
+                            name = "id",
+                            in = In.PATH,
+                            description = "User unique identifier",
+                            example = "3"
+                    )
+            }
+    )
     @Override
     public CursorPageableResponse<DownstreamCountry> readMany(JsonApiRequest request) {
         return CursorPageableResponse.fromItemsPageable(

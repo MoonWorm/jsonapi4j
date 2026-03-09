@@ -3,12 +3,19 @@ package pro.api4.jsonapi4j.plugin.oas.config;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
+import java.util.List;
 import java.util.Map;
 
 public interface OasProperties {
 
+    String DEFAULT_OAS_ENABLED = "true";
+
     String OAS_PROPERTY_NAME = "oas";
     String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
+
+    default boolean enabled() {
+        return Boolean.parseBoolean(DEFAULT_OAS_ENABLED);
+    }
 
     default String oasRootPath() {
         return DEFAULT_OAS_ROOT_PATH;
@@ -20,19 +27,26 @@ public interface OasProperties {
 
     OAuth2 oauth2();
 
-    Map<String, ? extends Server> servers();
+    List<? extends Server> servers();
 
-    <T extends ResponseHeader> Map<String, Map<String, T>> customResponseHeaders();
+    List<? extends CustomResponseHeaderGroup> customResponseHeaders();
 
     interface Info {
 
-        String title();
+        String OAS_INFO_TITLE_DEFAULT_VALUE = "JsonApi4j API Sample Title";
+        String OAS_INFO_VERSION_DEFAULT_VALUE = "1.0.0";
+
+        default String title() {
+            return OAS_INFO_TITLE_DEFAULT_VALUE;
+        }
 
         String description();
 
         Contact contact();
 
-        String version();
+        default String version() {
+            return OAS_INFO_VERSION_DEFAULT_VALUE;
+        }
 
         String termsOfService();
 
@@ -89,7 +103,7 @@ public interface OasProperties {
         // only required for Authorization Code grant
         String authorizationUrl();
 
-        Map<String, ? extends OAuth2Scope> scopes();
+        List<? extends OAuth2Scope> scopes();
 
     }
 
@@ -105,21 +119,42 @@ public interface OasProperties {
 
     interface Server {
 
+        String DEFAULT_OAS_SERVER_ENABLED = "false";
+
         String name();
 
         String url();
 
-        boolean enabled();
+        default boolean enabled() {
+            return Boolean.parseBoolean(DEFAULT_OAS_SERVER_ENABLED);
+        }
+
+    }
+
+    interface CustomResponseHeaderGroup {
+
+        String httpStatusCode();
+
+        List<? extends ResponseHeader> headers();
 
     }
 
     interface ResponseHeader {
 
+        String DEFAULT_OAS_RESPONSE_HEADER_REQUIRED = "false";
+        String DEFAULT_OAS_RESPONSE_HEADER_SCHEMA = "string";
+
+        String name();
+
         String description();
 
-        boolean required();
+        default boolean required() {
+            return Boolean.parseBoolean(DEFAULT_OAS_RESPONSE_HEADER_REQUIRED);
+        }
 
-        String schema();
+        default String schema() {
+            return DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
+        }
 
         String example();
 

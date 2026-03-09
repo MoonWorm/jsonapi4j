@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "880e8407-e29b-41d4-a716-446655440321",
+      "status": "429",
+      "code": "TOO_MANY_REQUESTS",
+      "detail": "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe."
+    }
+  ]
+}

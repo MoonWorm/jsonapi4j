@@ -8,6 +8,7 @@ public enum HttpStatusCodes {
     SC_406_NOT_ACCEPTABLE(406, "Not acceptable. The server doesn't support any of the requested by client acceptable content types."),
     SC_409_CONFLICT(409, "Conflict. The requested resource already exists or conflicting with the other existing resources."),
     SC_415_UNSUPPORTED_MEDIA_TYPE(415, "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."),
+    SC_429_TOO_MANY_REQUESTS(429, "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe."),
     SC_500_INTERNAL_SERVER_ERROR(500, "Internal Server Error. Something went wrong on the server party."),
     SC_502_BAD_GATEWAY_ERROR(502, "Bad Gateway. Error with a downstream service.");
 

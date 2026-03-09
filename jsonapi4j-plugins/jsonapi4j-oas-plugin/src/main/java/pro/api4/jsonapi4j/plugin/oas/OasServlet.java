@@ -13,10 +13,7 @@ import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
-import pro.api4.jsonapi4j.plugin.oas.customizer.CommonOpenApiCustomizer;
-import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiOperationsCustomizer;
-import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiRequestBodySchemaCustomizer;
-import pro.api4.jsonapi4j.plugin.oas.customizer.JsonApiResponseSchemaCustomizer;
+import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -85,8 +82,9 @@ public class OasServlet extends HttpServlet {
                 rootPath,
                 domainRegistry,
                 operationsRegistry,
-                oasProperties != null ? oasProperties.customResponseHeaders() : Collections.emptyMap()
+                oasProperties != null ? oasProperties.customResponseHeaders() : Collections.emptyList()
         ).customise(openAPI);
+        new ErrorExamplesCustomizer().customise(openAPI);
         writeOasToResponse(resp, format, openAPI);
     }
 

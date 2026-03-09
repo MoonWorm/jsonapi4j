@@ -21,20 +21,6 @@ import java.util.Collections;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.readCountriesByIds;
 
 @JsonApiResourceOperation(resource = CountryResource.class)
-@OasOperationInfo(
-        securityConfig = @SecurityConfig(
-                clientCredentialsSupported = true,
-                pkceSupported = true
-        ),
-        parameters = {
-                @Parameter(
-                        name = "id",
-                        in = In.PATH,
-                        description = "Country unique identifier (ISO 3166)",
-                        example = "US"
-                )
-        }
-)
 @RequiredArgsConstructor
 public class ReadCountryByIdOperation implements ReadResourceByIdOperation<DownstreamCountry> {
 
@@ -49,6 +35,20 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
         return result.getFirst();
     }
 
+    @OasOperationInfo(
+            securityConfig = @SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            ),
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            in = In.PATH,
+                            description = "Country unique identifier (ISO 3166)",
+                            example = "US"
+                    )
+            }
+    )
     @Override
     public DownstreamCountry readById(JsonApiRequest request) {
         return readCountryById(request.getResourceId(), client);

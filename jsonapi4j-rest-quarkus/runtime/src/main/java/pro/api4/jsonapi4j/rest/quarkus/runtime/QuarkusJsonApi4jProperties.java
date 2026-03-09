@@ -32,7 +32,6 @@ public interface QuarkusJsonApi4jProperties extends JsonApi4jProperties {
     @Override
     QuarkusCompoundDocsProperties compoundDocs();
 
-    @ConfigMapping(prefix = "jsonapi4j.compoundDocs", namingStrategy = VERBATIM)
     interface QuarkusCompoundDocsProperties extends CompoundDocsProperties {
 
         /**

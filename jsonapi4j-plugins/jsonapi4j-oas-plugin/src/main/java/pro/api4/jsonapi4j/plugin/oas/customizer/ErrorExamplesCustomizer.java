@@ -17,6 +17,7 @@ public class ErrorExamplesCustomizer {
     public static final String METHOD_NOT_SUPPORTED_ERRORS_DOC = "Method_Not_Supported_Errors_Doc";
     public static final String NOT_ACCEPTABLE_ERRORS_DOC = "Not_Acceptable_Errors_Doc";
     public static final String UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC = "Unsupported_Media_Type_Errors_Doc";
+    public static final String TOO_MANY_REQUESTS_ERRORS_DOC = "Too_Many_Requests_Errors_Doc";
     public static final String INTERNAL_SERVER_ERRORS_DOC = "Internal_Server_Errors_Doc";
 
     public static final Map<HttpStatusCodes, String> CODES_TO_EXAMPLE_NAME = Map.of(
@@ -25,6 +26,7 @@ public class ErrorExamplesCustomizer {
             HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, METHOD_NOT_SUPPORTED_ERRORS_DOC,
             HttpStatusCodes.SC_406_NOT_ACCEPTABLE, NOT_ACCEPTABLE_ERRORS_DOC,
             HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC,
+            HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, TOO_MANY_REQUESTS_ERRORS_DOC,
             HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERRORS_DOC
     );
 
@@ -38,6 +40,7 @@ public class ErrorExamplesCustomizer {
                 .addExamples(INTERNAL_SERVER_ERRORS_DOC, new Example().value(readExampleFromResource("internalServerErrorsDoc.json")))
                 .addExamples(NOT_ACCEPTABLE_ERRORS_DOC, new Example().value(readExampleFromResource("notAcceptableErrorsDoc.json")))
                 .addExamples(METHOD_NOT_SUPPORTED_ERRORS_DOC, new Example().value(readExampleFromResource("methodNotSupportedErrorsDoc.json")))
+                .addExamples(TOO_MANY_REQUESTS_ERRORS_DOC, new Example().value(readExampleFromResource("tooManyRequestsErrorsDoc.json")))
                 .addExamples(RESOURCE_NOT_FOUND_ERRORS_DOC, new Example().value(readExampleFromResource("resourceNotFoundErrorsDoc.json")));
     }
 

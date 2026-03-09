@@ -10,12 +10,7 @@ import pro.api4.jsonapi4j.operation.RegisteredOperation;
 
 import java.util.Set;
 
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_400_BAD_REQUEST;
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND;
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED;
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_406_NOT_ACCEPTABLE;
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE;
-import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR;
+import static pro.api4.jsonapi4j.http.HttpStatusCodes.*;
 import static pro.api4.jsonapi4j.operation.OperationType.Method.GET;
 import static pro.api4.jsonapi4j.operation.OperationType.READ_MULTIPLE_RESOURCES;
 import static pro.api4.jsonapi4j.operation.OperationType.READ_TO_MANY_RELATIONSHIP;
@@ -265,6 +260,7 @@ public final class OasOperationInfoUtil {
                         SC_404_RESOURCE_NOT_FOUND,
                         SC_405_METHOD_NOT_SUPPORTED,
                         SC_406_NOT_ACCEPTABLE,
+                        SC_429_TOO_MANY_REQUESTS,
                         SC_500_INTERNAL_SERVER_ERROR
                 );
             case CREATE_RESOURCE,
@@ -277,6 +273,7 @@ public final class OasOperationInfoUtil {
                         SC_405_METHOD_NOT_SUPPORTED,
                         SC_406_NOT_ACCEPTABLE,
                         SC_415_UNSUPPORTED_MEDIA_TYPE,
+                        SC_429_TOO_MANY_REQUESTS,
                         SC_500_INTERNAL_SERVER_ERROR
                 );
             default:

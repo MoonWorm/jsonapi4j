@@ -27,17 +27,13 @@ jsonapi4j:
       client-credentials:
         name: 'Client_Credentials'
         description: 'Use this grant flow to access non-personalized data.'
-        scopes: { }
     servers:
-      server-local:
-        name: Localhost
+      - name: Localhost
         enabled: true
         url: http://localhost:${server.port}
-      server-staging:
-        name: Staging
+      - name: Staging
         url: 'https://api.stage.com'
-      server-prod:
-        name: Production
+      - name: Production
         url: 'https://api.com'
 
 logging:

@@ -75,15 +75,18 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
     }
 
     private void registerOasServlet(ServletContext servletContext) {
-        ServletRegistration.Dynamic oasServlet = servletContext.addServlet(
-                JSONAPI4J_OAS_SERVLET_NAME,
-                new OasServlet()
-        );
-
         OasProperties oasProperties = (OasProperties) servletContext.getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
-        String servletMapping = oasProperties.oasRootPath() + "/*";
-        log.info("Registering OAS Servlet on {} mapping", servletMapping);
-        oasServlet.addMapping(servletMapping);
+        if (oasProperties.enabled()) {
+            ServletRegistration.Dynamic oasServlet = servletContext.addServlet(
+                    JSONAPI4J_OAS_SERVLET_NAME,
+                    new OasServlet()
+            );
+            String servletMapping = oasProperties.oasRootPath() + "/*";
+            log.info("OAS Plugin is enabled. Registering OAS Servlet on {} mapping", servletMapping);
+            oasServlet.addMapping(servletMapping);
+        } else {
+            log.info("OAS Plugin is disabled. Not registering OAS Servlet");
+        }
     }
 
 }

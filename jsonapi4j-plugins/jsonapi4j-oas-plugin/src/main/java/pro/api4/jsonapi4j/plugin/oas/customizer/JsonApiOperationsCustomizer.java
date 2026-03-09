@@ -1,10 +1,11 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
@@ -44,13 +45,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 
+import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.URL_COMPATIBLE_UNIQUE_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensions.X_OPERATION_PROPERTIES;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveRelationshipOperationPath;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveResourceOperationPath;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.getSchemaName;
-import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 
 
 @Slf4j
@@ -63,7 +64,7 @@ public class JsonApiOperationsCustomizer {
     private final String rootPath;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private final Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders;
+    private final List<? extends CustomResponseHeaderGroup> customResponseHeaders;
 
     public void customise(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
@@ -180,10 +181,10 @@ public class JsonApiOperationsCustomizer {
     }
 
     private Operation createOperation(RegisteredOperation.OperationMeta operationMeta) {
-        Object oasOperationInfoObject = emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        Object oasOperationInfoObject = MapUtils.emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         if (!(oasOperationInfoObject instanceof OasOperationInfoModel oasOperationInfo)) {
             log.warn(
-                    "Can't generate OAS info for {} operation for {} resource. To enable generation put {} annotation on method or operation class",
+                    "Can't generate OAS info for {} operation for '{}' resource. To enable generation put '@{}' annotation on method or operation class",
                     operationMeta.getOperationType().name(),
                     operationMeta.getResourceType().getType(),
                     OasOperationInfo.class.getSimpleName()
@@ -195,7 +196,7 @@ public class JsonApiOperationsCustomizer {
         OperationType operationType = operationMeta.getOperationType();
 
         RegisteredResource<?> registeredResource = domainRegistry.getResource(resourceType);
-        Object oasResourceInfoObject = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
+        Object oasResourceInfoObject = MapUtils.emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         OasOperationInfoUtil.Info extraOasOperationInfo = OasOperationInfoUtil.resolveOperationOasInfo(
                 operationMeta,
                 getResourceCustomNameSingle(oasResourceInfoObject),
@@ -295,11 +296,12 @@ public class JsonApiOperationsCustomizer {
                                            Set<HttpStatusCodes> supportedHttpErrorCodes) {
         ApiResponses responses = new ApiResponses();
         if (StringUtils.isNotBlank(happyPathResponseDocSchemaName)) {
+            List<? extends ResponseHeader> responseHeaders = getCustomResponseHeadersFor(status);
             responses.addApiResponse(
                     status,
                     generateHappyPathResponse(
                             happyPathResponseDocSchemaName,
-                            emptyIfNull(customResponseHeaders).get(status)
+                            responseHeaders
                     )
             );
         }
@@ -307,9 +309,17 @@ public class JsonApiOperationsCustomizer {
         return responses;
     }
 
+    private List<? extends ResponseHeader> getCustomResponseHeadersFor(String httpCode) {
+        return emptyIfNull(customResponseHeaders).stream()
+                .filter(hg -> httpCode.equalsIgnoreCase(hg.httpStatusCode()))
+                .findFirst()
+                .map(CustomResponseHeaderGroup::headers)
+                .orElse(null);
+    }
+
     private ApiResponse generateHappyPathResponse(String responseDocSchemaName,
-                                                  Map<String, OasProperties.ResponseHeader> customResponseHeaders) {
-        return generateResponse("Happy path scenario", responseDocSchemaName, null, customResponseHeaders);
+                                                  List<? extends ResponseHeader> responseHeaders) {
+        return generateResponse("Happy path scenario", responseDocSchemaName, null, responseHeaders);
     }
 
     private Map<String, ApiResponse> generateErrorResponses(Set<HttpStatusCodes> supportedHttpErrorCodes) {
@@ -321,7 +331,7 @@ public class JsonApiOperationsCustomizer {
                         generateErrorResponse(
                                 code.getDescription(),
                                 name,
-                                emptyIfNull(customResponseHeaders).get(String.valueOf(code.getCode()))
+                                getCustomResponseHeadersFor(String.valueOf(code.getCode()))
                         )
                 );
             }
@@ -331,7 +341,7 @@ public class JsonApiOperationsCustomizer {
 
     private ApiResponse generateErrorResponse(String description,
                                               String exampleName,
-                                              Map<String, OasProperties.ResponseHeader> customResponseHeaders) {
+                                              List<? extends ResponseHeader> customResponseHeaders) {
         return generateResponse(
                 description,
                 OasSchemaNamesUtil.errorsDocSchemaName(),
@@ -343,7 +353,7 @@ public class JsonApiOperationsCustomizer {
     private ApiResponse generateResponse(String description,
                                          String responseDocSchemaName,
                                          String exampleName,
-                                         Map<String, OasProperties.ResponseHeader> customResponseHeaders) {
+                                         List<? extends ResponseHeader> customResponseHeaders) {
         ApiResponse response = new ApiResponse();
         if (StringUtils.isNotBlank(description)) {
             response.setDescription(description);
@@ -359,19 +369,18 @@ public class JsonApiOperationsCustomizer {
             );
         }
 
-        if (MapUtils.isNotEmpty(customResponseHeaders)) {
+        if (CollectionUtils.isNotEmpty(customResponseHeaders)) {
             Map<String, Header> headers = response.getHeaders();
             if (response.getHeaders() == null) {
                 headers = new LinkedHashMap<>();
                 response.setHeaders(headers);
             }
-            for (Map.Entry<String, OasProperties.ResponseHeader> responseHeader : customResponseHeaders.entrySet()) {
-                OasProperties.ResponseHeader config = responseHeader.getValue();
-                headers.put(responseHeader.getKey(), new Header()
-                        .required(config.required())
-                        .description(config.description())
-                        .schema(resolveResponseHeaderSchema(config.schema()))
-                        .example(config.example()));
+            for (ResponseHeader responseHeader : customResponseHeaders) {
+                headers.put(responseHeader.name(), new Header()
+                        .required(responseHeader.required())
+                        .description(responseHeader.description())
+                        .schema(resolveResponseHeaderSchema(responseHeader.schema()))
+                        .example(responseHeader.example()));
             }
         }
 

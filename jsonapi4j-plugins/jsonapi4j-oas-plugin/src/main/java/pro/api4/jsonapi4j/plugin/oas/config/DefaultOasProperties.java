@@ -2,22 +2,32 @@ package pro.api4.jsonapi4j.plugin.oas.config;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 import pro.api4.jsonapi4j.principal.tier.TierPublic;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+@ToString
 @Getter
 @Setter
 public class DefaultOasProperties implements OasProperties {
 
+    private boolean enabled = Boolean.parseBoolean(DEFAULT_OAS_ENABLED);
     private String oasRootPath = DEFAULT_OAS_ROOT_PATH;
     private DefaultInfo info;
     private DefaultExternalDocumentation externalDocumentation;
     private DefaultOAuth2 oauth2;
-    private Map<String, DefaultServer> servers;
-    private Map<String, Map<String, DefaultResponseHeader>> customResponseHeaders;
+    private List<DefaultServer> servers = new ArrayList<>();
+    private List<DefaultCustomResponseHeaderGroup> customResponseHeaders = new ArrayList<>();
+
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
 
     @Override
     public String oasRootPath() {
@@ -40,22 +50,22 @@ public class DefaultOasProperties implements OasProperties {
     }
 
     @Override
-    public Map<String, ? extends Server> servers() {
+    public List<? extends Server> servers() {
         return servers;
     }
 
     @Override
-    public Map<String, Map<String, DefaultResponseHeader>> customResponseHeaders() {
+    public List<? extends CustomResponseHeaderGroup> customResponseHeaders() {
         return customResponseHeaders;
     }
 
     @Getter
     @Setter
     public static class DefaultInfo implements Info {
-        private String title;
+        private String title = OAS_INFO_TITLE_DEFAULT_VALUE;
         private String description;
         private DefaultContact contact;
-        private String version;
+        private String version = OAS_INFO_VERSION_DEFAULT_VALUE;
         private String termsOfService;
         private DefaultLicense license;
         private Map<String, Object> extensions;
@@ -190,7 +200,7 @@ public class DefaultOasProperties implements OasProperties {
         private String tokenUrl;
         // only required for Authorization Code grant
         private String authorizationUrl;
-        private Map<String, DefaultOAuth2Scope> scopes;
+        private List<? extends OAuth2Scope> scopes = new ArrayList<DefaultOAuth2Scope>();
 
         @Override
         public String name() {
@@ -213,7 +223,7 @@ public class DefaultOasProperties implements OasProperties {
         }
 
         @Override
-        public Map<String, ? extends OAuth2Scope> scopes() {
+        public List< ? extends OAuth2Scope> scopes() {
             return scopes;
         }
 
@@ -248,7 +258,7 @@ public class DefaultOasProperties implements OasProperties {
     public static class DefaultServer implements Server {
         private String name;
         private String url;
-        private boolean enabled;
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_OAS_SERVER_ENABLED);
 
         @Override
         public String name() {
@@ -267,13 +277,40 @@ public class DefaultOasProperties implements OasProperties {
 
     }
 
+    @ToString
+    @Getter
+    @Setter
+    public static class DefaultCustomResponseHeaderGroup implements CustomResponseHeaderGroup {
+
+        private String httpStatusCode;
+
+        private List<? extends ResponseHeader> headers = new ArrayList<DefaultResponseHeader>();
+
+        @Override
+        public String httpStatusCode() {
+            return httpStatusCode;
+        }
+
+        @Override
+        public List<? extends ResponseHeader> headers() {
+            return headers;
+        }
+    }
+
+    @ToString
     @Getter
     @Setter
     public static class DefaultResponseHeader implements ResponseHeader {
+        private String name;
         private String description;
-        private boolean required;
-        private String schema;
+        private boolean required = Boolean.parseBoolean(DEFAULT_OAS_RESPONSE_HEADER_REQUIRED);
+        private String schema = DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
         private String example;
+
+        @Override
+        public String name() {
+            return name;
+        }
 
         @Override
         public String description() {

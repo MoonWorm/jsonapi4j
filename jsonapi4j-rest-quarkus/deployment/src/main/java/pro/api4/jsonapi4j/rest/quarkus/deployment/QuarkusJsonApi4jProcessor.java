@@ -14,9 +14,7 @@ import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jContextListener;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jDefaultBeans;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jProperties;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.*;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 
 import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
@@ -30,8 +28,8 @@ class QuarkusJsonApi4jProcessor {
     private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jProcessor.class);
 
     private static final String FEATURE = "jsonapi4j-rest-quarkus";
-    private static final String AC_PLUGIN_BEANS_CLASSNAME = "pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jAcPluginBeans";
     private static final String AC_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin";
+    private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -39,13 +37,31 @@ class QuarkusJsonApi4jProcessor {
     }
 
     @BuildStep
-    ServletBuildItem registerServlet(QuarkusJsonApi4jProperties props) {
+    ServletBuildItem registersJsonApi4jDispatcherServlet(QuarkusJsonApi4jProperties props) {
         String mapping = toServletMapping(props.rootPath());
         LOG.info("Registering JsonApi4jDispatcherServlet on '{}'", mapping);
         return ServletBuildItem.builder(JSONAPI4J_DISPATCHER_SERVLET_NAME, JsonApi4jDispatcherServlet.class.getName())
                 .addMapping(mapping)
                 .setLoadOnStartup(1)
                 .build();
+    }
+
+    @BuildStep
+    void registerOasServlet(QuarkusJsonApi4jOasProperties oasProperties,
+                            BuildProducer<ServletBuildItem> servlets) {
+
+        if (isOasPluginEnabled(oasProperties)) {
+            String mapping = toServletMapping(oasProperties.oasRootPath());
+            LOG.info("{} plugin is enabled in properties ('jsonapi4j.oas.enabled') and related classes are present in classpath, registering OAS Servlet", OAS_PLUGIN_CLASSNAME);
+            servlets.produce(
+                    ServletBuildItem.builder("jsonApi4jOasServlet", "pro.api4.jsonapi4j.plugin.oas.OasServlet")
+                            .addMapping(mapping)
+                            .setLoadOnStartup(2)
+                            .build()
+            );
+        } else {
+            LOG.info("{} plugin is either disabled in properties ('jsonapi4j.oas.enabled') or related classes are not available in classpath, skipping OAS Servlet registration", OAS_PLUGIN_CLASSNAME);
+        }
     }
 
     @BuildStep
@@ -93,32 +109,62 @@ class QuarkusJsonApi4jProcessor {
     }
 
     @BuildStep
-    AdditionalBeanBuildItem jsonapi4jCdiBeans() {
+    AdditionalBeanBuildItem jsonapi4jCdiBeans(QuarkusJsonApi4jOasProperties oasProperties) {
         AdditionalBeanBuildItem.Builder builder = AdditionalBeanBuildItem.builder()
                 .setUnremovable()
-                .addBeanClass(QuarkusJsonApi4jContextListener.class)
+                .addBeanClass(QuarkusJsonApi4jDispatcherServletContextListener.class)
                 .addBeanClass(QuarkusJsonApi4jDefaultBeans.class)
                 .addBeanClass(QuarkusJsonApi4jProperties.class);
 
-        boolean isAutoconfigureAcPlugin = isClassPresent(AC_PLUGIN_CLASSNAME);
-        if (isAutoconfigureAcPlugin) {
-            LOG.info("{} plugin class is present in classpath, registering AC plugin CDI producers", AC_PLUGIN_CLASSNAME);
-            builder.addBeanClass(AC_PLUGIN_BEANS_CLASSNAME);
+        if (isAcPluginEnabled()) {
+            LOG.info("{} plugin is enabled, registering AC-related CDI beans", AC_PLUGIN_CLASSNAME);
+            builder.addBeanClass(QuarkusJsonApi4jAcPluginBeans.class.getName());
         } else {
-            LOG.info("{} plugin class is not available in classpath, skipping AC plugin registration", AC_PLUGIN_CLASSNAME);
+            LOG.info("{} plugin is disabled, skipping AC-related CDI beans registration", AC_PLUGIN_CLASSNAME);
+        }
+
+        if (isOasPluginEnabled(oasProperties)) {
+            LOG.info("{} plugin is enabled, registering OAS-related CDI beans", OAS_PLUGIN_CLASSNAME);
+            builder.addBeanClass(QuarkusJsonApi4jOasServletContextListener.class.getName());
+            builder.addBeanClass(QuarkusJsonApi4jOasProperties.class.getName());
+            builder.addBeanClass(QuarkusJsonApi4jOasPluginBeans.class.getName());
+        } else {
+            LOG.info("{} plugin is disabled, skipping OAS-related CDI beans registration", OAS_PLUGIN_CLASSNAME);
         }
 
         return builder.build();
     }
 
     @BuildStep
-    ListenerBuildItem servletContextListener() {
-        return new ListenerBuildItem(QuarkusJsonApi4jContextListener.class.getName());
+    ListenerBuildItem jsonApi4jDispatcherServletContextListener() {
+        return new ListenerBuildItem(QuarkusJsonApi4jDispatcherServletContextListener.class.getName());
     }
 
     @BuildStep
-    IgnoredServletContainerInitializerBuildItem ignoreJsonApi4jSci() {
-        return new IgnoredServletContainerInitializerBuildItem(JsonApi4jServletContainerInitializer.class.getName());
+    void oasServletContextListener(BuildProducer<ListenerBuildItem> listeners,
+                                   QuarkusJsonApi4jOasProperties oasProperties) {
+        if (isOasPluginEnabled(oasProperties)) {
+            listeners.produce(new ListenerBuildItem(QuarkusJsonApi4jOasServletContextListener.class.getName()));
+        }
+    }
+
+    @BuildStep
+    IgnoredServletContainerInitializerBuildItem ignoreJsonApi4jDispatcherServletContextInitializer() {
+        return new IgnoredServletContainerInitializerBuildItem(
+                JsonApi4jServletContainerInitializer.class.getName()
+        );
+    }
+
+    @BuildStep
+    void ignoreJsonApi4OasServletContextInitializer(
+            BuildProducer<IgnoredServletContainerInitializerBuildItem> producer,
+            QuarkusJsonApi4jOasProperties oasProperties
+    ) {
+        if (isClassPresent(OAS_PLUGIN_CLASSNAME)) {
+            producer.produce(
+                    new IgnoredServletContainerInitializerBuildItem("pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer")
+            );
+        }
     }
 
     private static String toServletMapping(String rootPath) {
@@ -143,6 +189,16 @@ class QuarkusJsonApi4jProcessor {
         } catch (ClassNotFoundException e) {
             return false;
         }
+    }
+
+    private static boolean isAcPluginEnabled() {
+        return isClassPresent(AC_PLUGIN_CLASSNAME);
+    }
+
+    private static boolean isOasPluginEnabled(QuarkusJsonApi4jOasProperties oasProperties) {
+        boolean oasPluginClassesPresentInClasspath = isClassPresent(OAS_PLUGIN_CLASSNAME);
+        boolean enabled = oasProperties.enabled();
+        return enabled && oasPluginClassesPresentInClasspath;
     }
 
 }

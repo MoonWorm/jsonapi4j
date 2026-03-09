@@ -1,24 +1,24 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration.oas.springdoc.customizers;
 
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 
-import java.util.Map;
+import java.util.List;
 
 public class JsonApiOperationsCustomizer implements OpenApiCustomizer {
 
     private final String jsonApiRootPath;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private final Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders;
+    private final List<? extends CustomResponseHeaderGroup> customResponseHeaders;
 
     public JsonApiOperationsCustomizer(String jsonApiRootPath,
                                        DomainRegistry domainRegistry,
                                        OperationsRegistry operationsRegistry,
-                                       Map<String, Map<String, OasProperties.ResponseHeader>> customResponseHeaders) {
+                                       List<? extends CustomResponseHeaderGroup> customResponseHeaders) {
         this.jsonApiRootPath = jsonApiRootPath;
         this.domainRegistry = domainRegistry;
         this.operationsRegistry = operationsRegistry;

@@ -3,16 +3,16 @@ package pro.api4.jsonapi4j.sampleapp.operations.country;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.ArrayList;
@@ -22,26 +22,26 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOpe
 @JsonApiRelationshipOperation(
         relationship = CountryCurrenciesRelationship.class
 )
-@OasOperationInfo(
-        securityConfig = @SecurityConfig(
-                clientCredentialsSupported = true,
-                pkceSupported = true
-        ),
-        parameters = {
-                @Parameter(
-                        name = "id",
-                        in = In.PATH,
-                        description = "Country unique identifier (ISO 3166)",
-                        example = "US"
-                )
-        }
-)
 @RequiredArgsConstructor
 public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry, DownstreamCurrencyWithCode> {
 
     private final CountriesClient client;
     private final CountryInputParamsValidator validator;
 
+    @OasOperationInfo(
+            securityConfig = @SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            ),
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            in = In.PATH,
+                            description = "Country unique identifier (ISO 3166)",
+                            example = "US"
+                    )
+            }
+    )
     @Override
     public CursorPageableResponse<DownstreamCurrencyWithCode> readMany(JsonApiRequest request) {
         return CursorPageableResponse.fromItemsPageable(

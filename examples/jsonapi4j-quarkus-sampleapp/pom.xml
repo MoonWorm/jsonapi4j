@@ -48,6 +48,10 @@
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-sampleapp-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
