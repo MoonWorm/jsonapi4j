@@ -11,6 +11,35 @@
     <version>${revision}</version>
     <packaging>pom</packaging>
     <name>JsonApi4j - Quarkus Extension - Parent</name>
+    <description>Native Quarkus extension for JsonApi4j framework - parent module</description>
+
+    <url>https://api4.pro</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>MoonWorm</id>
+            <name>Aliaksei Taliuk</name>
+            <email>aliaksei.taliuk@gmail.com</email>
+            <url>https://github.com/MoonWorm</url>
+            <roles>
+                <role>Author</role>
+                <role>Project Maintainer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/MoonWorm/jsonapi4j.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MoonWorm/jsonapi4j.git</developerConnection>
+        <url>https://github.com/MoonWorm/jsonapi4j</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <modules>
         <module>deployment</module>
