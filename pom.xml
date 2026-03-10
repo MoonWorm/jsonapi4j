@@ -45,7 +45,7 @@
         <module>jsonapi4j-compound-docs-resolver</module>
         <module>jsonapi4j-rest</module>
         <module>jsonapi4j-rest-springboot</module>
-        <module>jsonapi4j-rest-quarkus</module>
+        <module>jsonapi4j-rest-quarkus-parent</module>
         <module>jsonapi4j-report</module>
         <module>examples</module>
     </modules>
