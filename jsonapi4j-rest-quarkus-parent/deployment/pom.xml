@@ -52,7 +52,6 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-quarkus</artifactId>
-            <version>${revision}</version>
         </dependency>
     </dependencies>
 
