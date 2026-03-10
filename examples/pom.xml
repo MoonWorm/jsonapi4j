@@ -18,7 +18,7 @@
     </modules>
 
     <properties>
-        <jsonapi4j.version>1.0.1-SNAPSHOT</jsonapi4j.version>
+        <jsonapi4j.version>1.1.1-SNAPSHOT</jsonapi4j.version>
     </properties>
 
     <dependencyManagement>

@@ -27,7 +27,7 @@ Modern systems often consist of multiple services that need to expose and consum
 
 Whether you're standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
 
-- ⚙️ **Framework Agnostic.** Works with all modern Java web frameworks - including [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and [JAX-RS](https://www.oracle.com/technical-resources/articles/java/jax-rs.html).  
+- ⚙️ **Framework Agnostic.** Works with modern Java web frameworks such [Spring Boot](https://spring.io/projects/spring-boot) and [Quarkus](https://quarkus.io/).  
   The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
 
 - 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
