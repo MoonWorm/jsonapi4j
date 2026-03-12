@@ -5,12 +5,9 @@ spring:
 server:
   port: 8080
 
-integrations:
-  rest-countries:
-    url: https://restcountries.com/v3.1
-
 jsonapi4j:
-  rootPath: '/jsonapi'
+  # JsonApi4j core settings
+  rootPath: /jsonapi
   compoundDocs:
     enabled: true
     maxHops: 3
@@ -18,23 +15,71 @@ jsonapi4j:
       users: http://localhost:${server.port}${jsonapi4j.root-path}
       countries: http://localhost:${server.port}${jsonapi4j.root-path}
       currencies: http://localhost:${server.port}${jsonapi4j.root-path}
+  # OAS Plugin
   oas:
     enabled: true
+    oasRootPath: /jsonapi/oas
     info:
-      title: 'JSON:API Users & Countries'
+      title: JSON:API Users & Countries
       version: 1.0.0
+      description: JSON:API Users & Countries Spring Boot Sample App
+      contact:
+        name: John Doe
+        url: http://users.foo.bar/john
+        email: john.doe@foo.bar
+      license:
+        name: Apache 2.0
+        url: https://www.apache.org/licenses/LICENSE-2.0
+    externalDocumentation:
+      url: http://foo.bar.docs/article-1
+      description: Extra documentation description
+
     oauth2:
       client-credentials:
-        name: 'Client_Credentials'
-        description: 'Use this grant flow to access non-personalized data.'
+        name: Client_Credentials
+        description: Use this grant flow to access non-personalized data.
+        tokenUrl: http://foo.bar/tokenUrl
+      authorizationCodeWithPkce:
+        name: Authorization_Code_With_PKCE
+        description: Use this grant flow to access personalized user data.
+        tokenUrl: http://foo.bar/tokenUrl
+        authorizationUrl: http://foo.bar/authorizationUrl
+        scopes:
+          - name: users.read
+            description: Read-only access to a user data
     servers:
       - name: Localhost
         enabled: true
         url: http://localhost:${server.port}
       - name: Staging
-        url: 'https://api.stage.com'
+        enabled: false
+        url: https://api.stage.com
       - name: Production
-        url: 'https://api.com'
+        enabled: false
+        url: https://api.com
+    customResponseHeaders:
+      - httpStatusCode: 429
+        headers:
+          - name: X-RateLimit-Remaining
+            description: Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.
+            required: true
+            schema: integer
+            example: 5
+          - name: X-RateLimit-Burst-Capacity
+            description: Initial number of tokens, and max number of tokens that can be replenished.
+            required: true
+            schema: integer
+            example: 20
+          - name: X-RateLimit-Replenish-Rate
+            description: Number of tokens replenished per second.
+            required: true
+            schema: integer
+            example: 5
+          - name: X-RateLimit-Requested-Tokens
+            description: Request cost in tokens.
+            required: true
+            schema: integer
+            example: 5
 
 logging:
   level:

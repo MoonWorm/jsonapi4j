@@ -7,7 +7,6 @@ import pro.api4.jsonapi4j.sampleapp.operations.CountriesInMemoryClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.UserInMemoryDb;
 
-//@EnableFeignClients(clients = RestCountriesFeignClient.class)
 @Configuration
 public class IntegrationsConfig {
 

@@ -1154,7 +1154,8 @@ By default, you can access both the JSON and YAML versions of the generated spec
 It supports an optional `format` query parameter (`json` or `yaml`) - defaulting to `json` if not provided.
 
 Out of the box, **JsonApi4j** generates all schemas and operations automatically.
-However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml` configuration. 
+
+However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml`/`application.properties` configuration files. Please refer [application.properties](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties#L12) or [application.yaml](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml#L21) from Spring Boot / Quarkus Sample apps as a reference for available OAS settings. 
 
 There are more tunings available by placing the next annotations:
 * `@OasResourceInfo` annotation on top of JSON:API resource declaration

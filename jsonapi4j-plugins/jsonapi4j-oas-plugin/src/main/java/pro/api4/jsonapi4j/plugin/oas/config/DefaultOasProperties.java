@@ -200,7 +200,7 @@ public class DefaultOasProperties implements OasProperties {
         private String tokenUrl;
         // only required for Authorization Code grant
         private String authorizationUrl;
-        private List<? extends OAuth2Scope> scopes = new ArrayList<DefaultOAuth2Scope>();
+        private List<DefaultOAuth2Scope> scopes = new ArrayList<>();
 
         @Override
         public String name() {
@@ -284,7 +284,7 @@ public class DefaultOasProperties implements OasProperties {
 
         private String httpStatusCode;
 
-        private List<? extends ResponseHeader> headers = new ArrayList<DefaultResponseHeader>();
+        private List<DefaultResponseHeader> headers = new ArrayList<>();
 
         @Override
         public String httpStatusCode() {
@@ -295,6 +295,7 @@ public class DefaultOasProperties implements OasProperties {
         public List<? extends ResponseHeader> headers() {
             return headers;
         }
+
     }
 
     @ToString
