@@ -1,35 +1,41 @@
-package pro.api4.jsonapi4j.sampleapp.operations.user;
+package pro.api4.jsonapi4j.sampleapp.testsuite.user;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
-import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.sampleapp.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("integration-test")
-public class ReadUserByIdOperationTests {
+public abstract class ReadUserByIdOperationTests {
 
-    @Value("${jsonapi4j.root-path}")
-    private String jsonApiRootPath;
+    private final String jsonApiRootPath;
+    private final int appPort;
 
-    @LocalServerPort
-    private int appPort;
+    private final String defaultAccessTierHeaderName;
+    private final String defaultScopesHeaderName;
+    private final String defaultUserIdHeaderName;
+
+    public ReadUserByIdOperationTests(String jsonApiRootPath,
+                                      int appPort,
+                                      String defaultAccessTierHeaderName,
+                                      String defaultScopesHeaderName,
+                                      String defaultUserIdHeaderName) {
+        this.jsonApiRootPath = jsonApiRootPath;
+        this.appPort = appPort;
+        this.defaultAccessTierHeaderName = defaultAccessTierHeaderName;
+        this.defaultScopesHeaderName = defaultScopesHeaderName;
+        this.defaultUserIdHeaderName = defaultUserIdHeaderName;
+    }
 
     @Test
     public void test_readById() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
+                .header(defaultUserIdHeaderName, "2")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -42,8 +48,8 @@ public class ReadUserByIdOperationTests {
     public void test_readByIdWithAccessToSensitiveData() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_SCOPES_HEADER_NAME, "users.sensitive.read")
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "1")
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -56,7 +62,7 @@ public class ReadUserByIdOperationTests {
     public void test_readByIdWithAllRelationships() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
+                .header(defaultUserIdHeaderName, "2")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")

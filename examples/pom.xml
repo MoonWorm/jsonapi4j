@@ -19,6 +19,11 @@
 
     <properties>
         <jsonapi4j.version>1.1.1-SNAPSHOT</jsonapi4j.version>
+
+        <junit-jupiter.version>5.11.3</junit-jupiter.version>
+        <assertj-core.version>3.26.3</assertj-core.version>
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <json-unit.version>2.40.0</json-unit.version>
     </properties>
 
     <dependencyManagement>
@@ -52,6 +57,28 @@
                 <groupId>pro.api4</groupId>
                 <artifactId>jsonapi4j-oas-plugin</artifactId>
                 <version>${jsonapi4j.version}</version>
+            </dependency>
+
+            <!--Test Dependencies-->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit-jupiter.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${rest-assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.javacrumbs.json-unit</groupId>
+                <artifactId>json-unit</artifactId>
+                <version>${json-unit.version}</version> <!-- Use latest -->
             </dependency>
         </dependencies>
     </dependencyManagement>

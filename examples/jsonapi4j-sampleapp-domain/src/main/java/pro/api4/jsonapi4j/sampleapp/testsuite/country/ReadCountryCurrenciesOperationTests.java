@@ -1,26 +1,22 @@
-package pro.api4.jsonapi4j.sampleapp.operations.country;
+package pro.api4.jsonapi4j.sampleapp.testsuite.country;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
+import pro.api4.jsonapi4j.sampleapp.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("integration-test")
-public class ReadCountryCurrenciesOperationTests {
+public abstract class ReadCountryCurrenciesOperationTests {
 
-    @Value("${jsonapi4j.root-path}")
-    private String jsonApiRootPath;
+    private final String jsonApiRootPath;
+    private final int appPort;
 
-    @LocalServerPort
-    private int appPort;
+    public ReadCountryCurrenciesOperationTests(String jsonApiRootPath, int appPort) {
+        this.jsonApiRootPath = jsonApiRootPath;
+        this.appPort = appPort;
+    }
 
     @Test
     public void test_readCurrenciesRelationship() {

@@ -1,28 +1,25 @@
-package pro.api4.jsonapi4j.sampleapp.operations.country;
+package pro.api4.jsonapi4j.sampleapp.testsuite.country;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
+import pro.api4.jsonapi4j.sampleapp.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("integration-test")
-public class ReadCountryByIdOperationTests {
+public abstract class ReadCountryByIdOperationTests {
 
-    @Value("${jsonapi4j.root-path}")
-    private String jsonApiRootPath;
+    private final String jsonApiRootPath;
+    private final int appPort;
 
-    @LocalServerPort
-    private int appPort;
+    public ReadCountryByIdOperationTests(String jsonApiRootPath,
+                                         int appPort) {
+        this.jsonApiRootPath = jsonApiRootPath;
+        this.appPort = appPort;
+    }
 
     @Test
     public void test_readById() {
@@ -61,7 +58,7 @@ public class ReadCountryByIdOperationTests {
                 .body("errors[0].code", equalTo("NOT_FOUND"))
                 .body("errors[0].status", equalTo("404"))
                 .body("errors[0].detail", equalTo("JSON:API operation can not be resolved for the path: /foobars/TG, and method: GET. Unknown resource type: foobars"))
-                .body("errors[0].id", notNullValue());
+                .body("errors[0].id", Matchers.notNullValue());
     }
 
 }

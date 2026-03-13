@@ -1,32 +1,39 @@
-package pro.api4.jsonapi4j.sampleapp.operations;
+package pro.api4.jsonapi4j.sampleapp.testsuite;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.utils.ResourceUtil;
-import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.sampleapp.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@ActiveProfiles("compound-docs-test")
-public class CompoundDocsOperationsTests {
+public abstract class CompoundDocsOperationsTests {
 
-    @Value("${jsonapi4j.rootPath}")
-    private String jsonApiRootPath;
+    private final String jsonApiRootPath;
+    private final int serverPort;
 
-    @Value("${server.port}")
-    private int serverPort;
+    private final String defaultAccessTierHeaderName;
+    private final String defaultScopesHeaderName;
+    private final String defaultUserIdHeaderName;
+
+    public CompoundDocsOperationsTests(String jsonApiRootPath,
+                                       int serverPort,
+                                       String defaultAccessTierHeaderName,
+                                       String defaultScopesHeaderName,
+                                       String defaultUserIdHeaderName) {
+        this.jsonApiRootPath = jsonApiRootPath;
+        this.serverPort = serverPort;
+        this.defaultAccessTierHeaderName = defaultAccessTierHeaderName;
+        this.defaultScopesHeaderName = defaultScopesHeaderName;
+        this.defaultUserIdHeaderName = defaultUserIdHeaderName;
+    }
 
     @Test
     public void test_readByIdWithIncludes() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
+                .header(defaultUserIdHeaderName, "2")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth.currencies")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
@@ -40,7 +47,7 @@ public class CompoundDocsOperationsTests {
     public void test_readMultipleWithIncludes() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "2")
+                .header(defaultUserIdHeaderName, "2")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives", "citizenships", "placeOfBirth.currencies")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
                 .then()
@@ -66,8 +73,8 @@ public class CompoundDocsOperationsTests {
     public void test_readToManyRelationshipWithIncludes() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .header(DefaultPrincipalResolver.DEFAULT_SCOPES_HEADER_NAME, "users.citizenships.read")
-                .header(DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME, "5")
+                .header(defaultScopesHeaderName, "users.citizenships.read")
+                .header(defaultUserIdHeaderName, "5")
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "citizenships.currencies")
                 .pathParam("userId", "5")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
