@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.util;
+package pro.api4.jsonapi4j.sampleapp.testsuite.util;
 
 import java.io.IOException;
 import java.io.InputStream;

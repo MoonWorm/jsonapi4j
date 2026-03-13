@@ -38,6 +38,7 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- JsonApi4j -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-quarkus</artifactId>
@@ -50,11 +51,14 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-oas-plugin</artifactId>
         </dependency>
+
+        <!-- Shared Sample Domain -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-sampleapp-domain</artifactId>
-            <version>${project.version}</version>
         </dependency>
+
+        <!--Quarkus Dependencies-->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy</artifactId>
@@ -67,15 +71,29 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>
         </dependency>
+
+        <!--Test Dependencies-->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sampleapp-testsuite</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>${quarkus.platform.group-id}</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
