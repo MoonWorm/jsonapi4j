@@ -19,7 +19,7 @@
     </modules>
 
     <properties>
-        <jsonapi4j.version>1.1.1-SNAPSHOT</jsonapi4j.version>
+        <jsonapi4j.version>1.2.1-SNAPSHOT</jsonapi4j.version>
 
         <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
         <swagger.model.version>2.2.31</swagger.model.version>
