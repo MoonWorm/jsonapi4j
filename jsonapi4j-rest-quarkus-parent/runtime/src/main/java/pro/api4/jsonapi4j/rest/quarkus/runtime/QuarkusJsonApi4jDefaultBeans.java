@@ -8,10 +8,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.quarkus.arc.DefaultBean;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
@@ -38,13 +38,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-@Singleton
+@ApplicationScoped
 public class QuarkusJsonApi4jDefaultBeans {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jDefaultBeans.class);
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     ErrorHandlerFactoriesRegistry jsonApi4jErrorHandlerFactoriesRegistry(Instance<ErrorHandlerFactory> customErrorHandlerFactories) {
         LOG.info("Composing {}...", JsonApi4jErrorHandlerFactoriesRegistry.class.getSimpleName());
@@ -67,7 +67,7 @@ public class QuarkusJsonApi4jDefaultBeans {
 
     @Produces
     @Named("jsonApi4jExecutorService")
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     ExecutorService jsonApi4jExecutorService() {
         LOG.info("Composing common {}...", ExecutorService.class.getSimpleName());
@@ -75,7 +75,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     AccessTierRegistry accessTierRegistry() {
         LOG.info("Composing {}...", AccessTierRegistry.class.getSimpleName());
@@ -83,7 +83,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     PrincipalResolver principalResolver(AccessTierRegistry accessTierRegistry) {
         LOG.info("Composing {}...", PrincipalResolver.class.getSimpleName());
@@ -91,7 +91,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     List<JsonApi4jPlugin> jsonApi4jPlugins(Instance<JsonApi4jPlugin> plugins) {
         LOG.info("Discovering JsonApi4j plugins...");
@@ -109,7 +109,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     DomainRegistry domainRegistry(Instance<Resource<?>> resources,
                                   Instance<Relationship<?>> relationships,
@@ -129,7 +129,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     OperationsRegistry operationsRegistry(Instance<ResourceOperation> operations,
                                           List<JsonApi4jPlugin> plugins) {
@@ -145,7 +145,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     JsonApi4j jsonApi4j(DomainRegistry domainRegistry,
                         OperationsRegistry operationsRegistry,
@@ -161,7 +161,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     }
 
     @Produces
-    @Singleton
+    @ApplicationScoped
     @DefaultBean
     ObjectMapper objectMapper() {
         LOG.info("Composing common {}...", ObjectMapper.class.getSimpleName());
