@@ -17,12 +17,17 @@ Detailed **documentation** is available [here](https://moonworm.github.io/jsonap
 
 # Quick start
 
-Let's take a quick look at what a typical **JsonApi4j**-based application looks like in code.  
-As an example, we'll integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application.
+Let's take a quick look at what a typical **JsonApi4j**-based application looks like in code.
 
 ## 1. Add Dependency
 
-### Maven
+The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
+
+### Spring Boot
+
+If you want to integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application, add:
+
+**Maven**
 ```xml
 <dependency>
   <groupId>pro.api4</groupId>
@@ -31,12 +36,30 @@ As an example, we'll integrate **JsonApi4j** into a clean or existing [Spring Bo
 </dependency>
 ```
 
-### Gradle
-```groovy
-implementation "pro.api4:jsonapi4j-rest-springboot:${jsonapi4jVersion}"
+### Quarkus
+
+For [Quarkus](https://quarkus.io/) app - use:
+
+**Maven**
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest-quarkus</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
 ```
 
-The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
+### Servlet API
+
+For custom Web integrations or apps that run on Servlet API:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
 
 ## 2. Declare the Domain
 
