@@ -62,6 +62,7 @@ import java.util.function.Consumer;
  */
 public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOperation {
 
+    String READ_PAGE_METHOD_NAME = "readPage";
     String ID_FILTER_NAME = "id";
 
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {

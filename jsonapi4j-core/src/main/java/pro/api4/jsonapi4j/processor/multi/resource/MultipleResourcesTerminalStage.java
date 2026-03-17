@@ -14,7 +14,7 @@ import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.DataPreRetrievalPhase
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.RelationshipsPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.RelationshipsPreRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.util.CustomCollectors;

@@ -11,6 +11,8 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
  */
 public interface Relationship<RELATIONSHIP_DTO> {
 
+    String RESOLVE_RESOURCE_IDENTIFIER_META_METHOD_NAME = "resolveResourceIdentifierMeta";
+
     LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
 
     /**

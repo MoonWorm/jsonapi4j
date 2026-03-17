@@ -22,6 +22,8 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  */
 public interface UpdateToOneRelationshipOperation extends RelationshipOperation {
 
+    String UPDATE_ONE_METHOD_NAME = "update";
+
     /**
      * Updates or deletes the relationship for the given resource.
      * <p>

@@ -22,6 +22,10 @@ import java.util.List;
  */
 public interface Resource<RESOURCE_DTO> {
 
+    String RESOLVE_ATTRIBUTES_METHOD_NAME = "resolveAttributes";
+    String RESOLVE_RESOURCE_LINKS_METHOD_NAME = "resolveResourceLinks";
+    String RESOLVE_RESOURCE_META_METHOD_NAME = "resolveResourceMeta";
+
     LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
 
     /**

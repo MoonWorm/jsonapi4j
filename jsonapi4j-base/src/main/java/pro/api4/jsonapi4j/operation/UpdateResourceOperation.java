@@ -27,6 +27,8 @@ import java.util.function.Consumer;
  */
 public interface UpdateResourceOperation extends ResourceOperation {
 
+    String UPDATE_METHOD_NAME = "update";
+
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
         new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
     };

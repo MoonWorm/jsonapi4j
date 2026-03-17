@@ -1,7 +1,8 @@
-package pro.api4.jsonapi4j.plugin.utils;
+package pro.api4.jsonapi4j.util;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,15 +47,22 @@ public final class ReflectionUtils {
     }
 
     public static <A extends Annotation> A fetchAnnotationForMethod(
-            Class<?> objectType,
+            Class<?> type,
             String methodName,
-            Class<A> annotationType
-    ) {
-        return Arrays.stream(objectType.getMethods())
-                .filter(m -> m.getName().equalsIgnoreCase(methodName))
-                .findFirst()
-                .map(m -> m.getAnnotation(annotationType))
-                .orElse(null);
+            Class<?>[] parameterTypes,
+            Class<A> annotationType) {
+        Class<?> current = type;
+        while (current != null && current != Object.class) {
+            try {
+                Method method = current.getDeclaredMethod(methodName, parameterTypes);
+                A annotation = method.getAnnotation(annotationType);
+                if (annotation != null) {
+                    return annotation;
+                }
+            } catch (NoSuchMethodException ignored) {}
+            current = current.getSuperclass();
+        }
+        return null;
     }
 
     public static Map<String, Class<?>> fetchFields(Class<?> objectType) {
@@ -71,9 +79,9 @@ public final class ReflectionUtils {
         Map<String, A> result = new HashMap<>();
         Map<String, Field> allFields = ReflectionUtils.getAllFields(objectType);
         for (Map.Entry<String, Field> e : allFields.entrySet()) {
-            A fieldAc = e.getValue().getAnnotation(annotationType);
-            if (fieldAc != null) {
-                result.put(e.getKey(), fieldAc);
+            A annotation = e.getValue().getAnnotation(annotationType);
+            if (annotation != null) {
+                result.put(e.getKey(), annotation);
             }
         }
         return Collections.unmodifiableMap(result);
@@ -104,4 +112,19 @@ public final class ReflectionUtils {
         return fields;
     }
 
+    /**
+     * CDI proxy fault-tolerant way to get an annotation
+     */
+    public static <A extends Annotation> A findAnnotationForClass(Class<?> type,
+                                                                  Class<A> annotationType) {
+        Class<?> currentType = type;
+        while (currentType != null && currentType != Object.class) {
+            A annotation = currentType.getAnnotation(annotationType);
+            if (annotation != null) {
+                return annotation;
+            }
+            currentType = currentType.getSuperclass();
+        }
+        return null;
+    }
 }

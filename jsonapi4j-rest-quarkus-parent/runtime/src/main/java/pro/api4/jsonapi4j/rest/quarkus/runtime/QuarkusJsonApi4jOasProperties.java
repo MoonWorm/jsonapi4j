@@ -4,7 +4,7 @@ import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.*;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
@@ -19,7 +19,7 @@ import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.
 import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
 import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Server.DEFAULT_OAS_SERVER_ENABLED;
 
-@ApplicationScoped
+@Singleton
 @ConfigMapping(prefix = "jsonapi4j.oas", namingStrategy = VERBATIM)
 @ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
 public interface QuarkusJsonApi4jOasProperties {

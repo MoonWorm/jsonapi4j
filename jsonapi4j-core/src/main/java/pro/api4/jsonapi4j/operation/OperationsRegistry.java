@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -562,11 +563,11 @@ public class OperationsRegistry {
             RelationshipName relationshipName = null;
             if (operationType.getSubType() == SubType.RESOURCE) {
                 JsonApiResourceOperation jsonApiResourceOperation
-                        = operation.getClass().getAnnotation(JsonApiResourceOperation.class);
+                        = ReflectionUtils.findAnnotationForClass(operation.getClass(), JsonApiResourceOperation.class);
                 resourceType = resolveResourceType(jsonApiResourceOperation.resource());
             } else {
                 JsonApiRelationshipOperation jsonApiRelationshipOperation
-                        = operation.getClass().getAnnotation(JsonApiRelationshipOperation.class);
+                        = ReflectionUtils.findAnnotationForClass(operation.getClass(), JsonApiRelationshipOperation.class);
                 resourceType = resolveParentResourceType(jsonApiRelationshipOperation.relationship());
                 relationshipName = resolveRelationshipName(jsonApiRelationshipOperation.relationship());
             }

@@ -26,6 +26,8 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
  */
 public interface ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> extends RelationshipOperation {
 
+    String READ_ONE_METHOD_NAME = "readOne";
+
     /**
      * Triggered when the standalone request is sent for this relationship.
      * (e.g. /{resourceType}/relationships/{relationshipName}).

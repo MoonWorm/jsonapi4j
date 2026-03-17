@@ -25,6 +25,7 @@ import java.util.function.Consumer;
  */
 public interface CreateResourceOperation<RESOURCE_DTO> extends ResourceOperation {
 
+    String CREATE_METHOD_NAME = "create";
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {};
 
     /**

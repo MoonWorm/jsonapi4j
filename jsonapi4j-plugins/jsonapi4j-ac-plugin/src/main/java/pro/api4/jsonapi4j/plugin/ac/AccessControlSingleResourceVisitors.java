@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;

@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipJsonApiContext;
 
 import java.util.Optional;

@@ -4,7 +4,7 @@ import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 
-@ApplicationScoped
+@Singleton
 @ConfigMapping(prefix = "jsonapi4j", namingStrategy = VERBATIM)
 @ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
 public interface QuarkusJsonApi4jProperties extends JsonApi4jProperties {

@@ -2,22 +2,59 @@ package pro.api4.jsonapi4j.plugin.oas;
 
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.operation.CreateResourceOperation;
+import pro.api4.jsonapi4j.operation.DeleteResourceOperation;
+import pro.api4.jsonapi4j.operation.Operation;
+import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
+import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
+import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
+import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
-import java.util.function.Supplier;
-
-import static pro.api4.jsonapi4j.plugin.utils.ReflectionUtils.fetchAnnotationForMethod;
+import static pro.api4.jsonapi4j.operation.CreateResourceOperation.CREATE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.DeleteResourceOperation.DELETE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.READ_PAGE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation.READ_MANY_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation.READ_ONE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.UpdateResourceOperation.UPDATE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation.UPDATE_MANY_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation.UPDATE_ONE_METHOD_NAME;
+import static pro.api4.jsonapi4j.util.ReflectionUtils.fetchAnnotationForMethod;
 
 public class JsonApiOasPlugin implements JsonApi4jPlugin {
 
     public static final String NAME = JsonApiOasPlugin.class.getSimpleName();
+
+    private static OasOperationInfoModel findOnTheMethod(Class<?> operationType, String methodName) {
+        return OasOperationInfoModel.fromAnnotation(
+                fetchAnnotationForMethod(
+                        operationType,
+                        methodName,
+                        new Class<?>[]{JsonApiRequest.class},
+                        OasOperationInfo.class
+                )
+        );
+    }
+
+    private static Object getOrDefault(OasOperationInfoModel primary,
+                                       OasOperationInfoModel secondary) {
+        if (primary == null) {
+            return secondary;
+        }
+        return primary;
+    }
 
     @Override
     public String pluginName() {
@@ -27,77 +64,59 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
     @Override
     public Object extractPluginInfoFromOperation(Operation operation, Class<?> operationClass) {
         OasOperationInfoModel classLevelModel = OasOperationInfoModel.fromAnnotation(
-                operation.getClass().getAnnotation(OasOperationInfo.class)
+                ReflectionUtils.findAnnotationForClass(operation.getClass(), OasOperationInfo.class)
         );
         if (ReadResourceByIdOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "readById", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), READ_BY_ID_METHOD_NAME),
                     classLevelModel
             );
         }
         if (ReadMultipleResourcesOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "readPage", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), READ_PAGE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (CreateResourceOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "create", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), CREATE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (UpdateResourceOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "update", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), UPDATE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (DeleteResourceOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "delete", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), DELETE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (ReadToOneRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "readOne", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), READ_ONE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (ReadToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "readMany", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), READ_MANY_METHOD_NAME),
                     classLevelModel
             );
         }
         if (UpdateToOneRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "update", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), UPDATE_ONE_METHOD_NAME),
                     classLevelModel
             );
         }
         if (UpdateToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
-                    () -> OasOperationInfoModel.fromAnnotation(
-                            fetchAnnotationForMethod(operation.getClass(), "update", OasOperationInfo.class)
-                    ),
+                    findOnTheMethod(operation.getClass(), UPDATE_MANY_METHOD_NAME),
                     classLevelModel
             );
         }
@@ -107,24 +126,15 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
     @Override
     public Object extractPluginInfoFromResource(Resource<?> resource) {
         return OasResourceInfoModel.fromAnnotation(
-                resource.getClass().getAnnotation(OasResourceInfo.class)
+                ReflectionUtils.findAnnotationForClass(resource.getClass(), OasResourceInfo.class)
         );
     }
 
     @Override
     public Object extractPluginInfoFromRelationship(Relationship<?> relationship) {
         return OasRelationshipInfoModel.fromAnnotation(
-                relationship.getClass().getAnnotation(OasRelationshipInfo.class)
+                ReflectionUtils.findAnnotationForClass(relationship.getClass(), OasRelationshipInfo.class)
         );
-    }
-
-    private Object getOrDefault(Supplier<OasOperationInfoModel> primarySupplier,
-                                OasOperationInfoModel secondary) {
-        OasOperationInfoModel primary = primarySupplier.get();
-        if (primary == null) {
-            return secondary;
-        }
-        return primary;
     }
 
 }

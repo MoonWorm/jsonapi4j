@@ -9,7 +9,7 @@ import lombok.ToString;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 
 import java.util.HashMap;
@@ -72,7 +72,7 @@ public class AccessControlModel {
 
     public static AccessControlModel fromClassAnnotation(Class<?> clazz) {
         Validate.notNull(clazz, "type must not be null");
-        AccessControl annotation = clazz.getAnnotation(AccessControl.class);
+        AccessControl annotation = ReflectionUtils.findAnnotationForClass(clazz, AccessControl.class);
         return fromAnnotation(annotation);
     }
 

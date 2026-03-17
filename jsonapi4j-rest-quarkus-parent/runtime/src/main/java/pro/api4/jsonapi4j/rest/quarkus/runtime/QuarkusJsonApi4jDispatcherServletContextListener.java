@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.rest.quarkus.runtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
-@ApplicationScoped
+@Singleton
 public class QuarkusJsonApi4jDispatcherServletContextListener implements ServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(QuarkusJsonApi4jDispatcherServletContextListener.class);

@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.util.CustomCollectors;

@@ -10,7 +10,7 @@ import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
 import pro.api4.jsonapi4j.response.CursorPageableResponse;

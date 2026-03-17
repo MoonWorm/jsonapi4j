@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.rest.quarkus.runtime;
 
 import io.quarkus.arc.DefaultBean;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
@@ -18,7 +18,7 @@ public class QuarkusJsonApi4jAcPluginBeans {
     private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jAcPluginBeans.class);
 
     @Produces
-    @ApplicationScoped
+    @Singleton
     @DefaultBean
     JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
         LOG.info("AC Plugin Enabled. Composing {}...", JsonApiAccessControlPlugin.class.getSimpleName());
@@ -26,7 +26,7 @@ public class QuarkusJsonApi4jAcPluginBeans {
     }
 
     @Produces
-    @ApplicationScoped
+    @Singleton
     @DefaultBean
     AccessControlEvaluator accessControlEvaluator(AccessTierRegistry accessTierRegistry) {
         LOG.info(

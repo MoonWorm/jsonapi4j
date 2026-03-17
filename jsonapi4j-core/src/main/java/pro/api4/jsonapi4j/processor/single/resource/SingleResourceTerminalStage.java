@@ -12,7 +12,7 @@ import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPreRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPreRetrievalPhase;
-import pro.api4.jsonapi4j.plugin.utils.ReflectionUtils;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.util.CustomCollectors;

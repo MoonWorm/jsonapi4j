@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.utils;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,6 +16,7 @@ public class ReflectionUtilsTests {
         Deprecated actual = ReflectionUtils.fetchAnnotationForMethod(
                 bar.getClass(),
                 "foo",
+                new Class<?>[]{ String.class },
                 Deprecated.class
         );
 
@@ -32,6 +34,7 @@ public class ReflectionUtilsTests {
         Deprecated actual = ReflectionUtils.fetchAnnotationForMethod(
                 bar.getClass(),
                 "not-exist",
+                new Class<?>[]{},
                 Deprecated.class
         );
 

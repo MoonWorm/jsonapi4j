@@ -29,6 +29,8 @@ import java.util.function.Consumer;
  */
 public interface ReadResourceByIdOperation<RESOURCE_DTO> extends ResourceOperation {
 
+    String READ_BY_ID_METHOD_NAME = "readById";
+
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
         new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
     };

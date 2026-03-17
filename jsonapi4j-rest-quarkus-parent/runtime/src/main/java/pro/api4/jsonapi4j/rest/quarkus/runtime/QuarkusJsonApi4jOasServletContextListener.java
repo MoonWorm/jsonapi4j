@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.rest.quarkus.runtime;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;
 
-@ApplicationScoped
+@Singleton
 public class QuarkusJsonApi4jOasServletContextListener implements ServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(QuarkusJsonApi4jOasServletContextListener.class);

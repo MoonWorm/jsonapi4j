@@ -6,6 +6,7 @@ import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.RelationshipType;
 
 import java.util.*;
@@ -58,6 +59,10 @@ public class DomainRegistry {
 
     public RegisteredResource<Resource<?>> getResource(Class<?> registeredAs) {
         return this.resourcesByClass.get(registeredAs);
+    }
+
+    public RegisteredRelationship<Relationship<?>> getRelationship(Class<?> registeredAs) {
+        return this.relationshipsByClass.get(registeredAs);
     }
 
     public Collection<RegisteredResource<Resource<?>>> getResources() {
@@ -272,7 +277,7 @@ public class DomainRegistry {
         }
 
         private <T extends Relationship<?>> RegisteredRelationship<T> enrichWithMetaInfo(T relationship) {
-            JsonApiRelationship jsonApiRelationship = relationship.getClass().getAnnotation(JsonApiRelationship.class);
+            JsonApiRelationship jsonApiRelationship = ReflectionUtils.findAnnotationForClass(relationship.getClass(), JsonApiRelationship.class);
             if (jsonApiRelationship == null) {
                 throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
             }

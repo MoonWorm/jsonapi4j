@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 public final class JsonApiDomainAnnotationsUtil {
 
@@ -13,7 +14,7 @@ public final class JsonApiDomainAnnotationsUtil {
     }
 
     public static ResourceType resolveResourceType(Class<?> resourceClass) {
-        JsonApiResource jsonApiResource = resourceClass.getAnnotation(JsonApiResource.class);
+        JsonApiResource jsonApiResource = ReflectionUtils.findAnnotationForClass(resourceClass, JsonApiResource.class);
         if (jsonApiResource == null) {
             throw new DomainMisconfigurationException("Each resource implementation must has " + JsonApiResource.class.getSimpleName() + " annotation placed on the type level.");
         }
@@ -24,7 +25,7 @@ public final class JsonApiDomainAnnotationsUtil {
     }
 
     public static RelationshipName resolveRelationshipName(Class<?> relationshipClass) {
-        JsonApiRelationship jsonApiRelationship = relationshipClass.getAnnotation(JsonApiRelationship.class);
+        JsonApiRelationship jsonApiRelationship = ReflectionUtils.findAnnotationForClass(relationshipClass, JsonApiRelationship.class);
         if (jsonApiRelationship == null) {
             throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
         }
@@ -35,7 +36,7 @@ public final class JsonApiDomainAnnotationsUtil {
     }
 
     public static ResourceType resolveParentResourceType(Class<? extends Relationship<?>> relationshipClass) {
-        JsonApiRelationship jsonApiRelationship = relationshipClass.getAnnotation(JsonApiRelationship.class);
+        JsonApiRelationship jsonApiRelationship = ReflectionUtils.findAnnotationForClass(relationshipClass, JsonApiRelationship.class);
         if (jsonApiRelationship == null) {
             throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
         }

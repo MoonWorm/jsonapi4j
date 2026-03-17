@@ -22,6 +22,8 @@ import java.util.function.Consumer;
  */
 public interface DeleteResourceOperation extends ResourceOperation {
 
+    String DELETE_METHOD_NAME = "delete";
+
     Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
         new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
     };
