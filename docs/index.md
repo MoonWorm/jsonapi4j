@@ -945,14 +945,26 @@ Please refer:
 * `JsonApiAccessControlPlugin`
 * `JsonApiOasPlugin`
 
-These are the plugins that are available for usage by default. They will be described in more details down below. 
+These are the plugins that are available for usage by default. If you're using JsonApi4j in terms of Spring Boot or Quarkus frameworks - you can just add the corresponding plugin dependency - and the plugin will be automatically integrated into the system.
 
 ### Access Control Plugin
 
 #### Overview
 
-The Access Control Plugin is a plugin available out from the box in the framework that enforces security rules during JSON:API request processing without altering the core execution flow.
+The Access Control Plugin is a plugin that enforces security rules during JSON:API request processing without altering the core execution flow.
 It evaluates access requirements at well-defined stages of the request lifecycle and conditionally allows, anonymizes, or short-circuits parts of the request or response based on the resolved principal context.
+
+In order to enable JsonApi4j Access Control Plugin (AC) - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-ac-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+If you're using JsonApi4j in the scope of Spring Boot or Quarkus App - everything will be autoconfigured using default values.
 
 Access control is applied in two phases:
 * Inbound evaluation – before any data is fetched. Rules are evaluated against the incoming `JsonApiRequest`. If access is denied, downstream execution is skipped and the response is safely anonymized.
@@ -1144,9 +1156,21 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<Downstre
 
 ### OpenAPI Specification Plugin
 
-The OpenAPI Specification Plugin builds on top of the JsonApi4j plugin system to provide automatic, always-in-sync API documentation.
+The OpenAPI Specification Plugin (OAS) builds on top of the JsonApi4j plugin system to provide automatic, always-in-sync API documentation.
 It observes registered resources, relationships, and operations and translates them into an OpenAPI-compliant model.
 Because the specification is derived directly from the same metadata used at runtime, it accurately reflects the actual behavior of your JSON:API endpoints without requiring manual maintenance.
+
+In order to enable JsonApi4j OpenAPI Specification (OAS) plugin - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-oas-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+If you're using JsonApi4j in the scope of Spring Boot or Quarkus App - everything will be autoconfigured using default values.
 
 **JsonApi4j** can generate an instance of the `io.swagger.v3.oas.models.OpenAPI` model and expose it through a dedicated endpoint.
 

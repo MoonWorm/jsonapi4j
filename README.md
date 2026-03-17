@@ -995,7 +995,17 @@ Let's proceed with the domain from the above and showcase few more features.
 
 ## Access Control Plugin
 
-Let's extend our domain model by restricting access to `users` resources for non-authenticated users. In addition to that we're going to restrict access to `creditCardNumber` field in `UserAttributes` for non-resource owners.  
+In order to enable JsonApi4j Access Control (AC) plugin - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-ac-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+Now let's extend our domain model by restricting access to `users` resources for non-authenticated users. In addition to that we're going to restrict access to `creditCardNumber` field in `UserAttributes` for non-resource owners.  
 
 In order to achieve that we just need to place `@AccessControl` annotation on top of `UserAttributes` class and above `creditCardNumber` field like that: 
 
@@ -1130,7 +1140,17 @@ For more configuration options like setting a custom principal resolver or other
 
 ## OpenApi Plugin
 
-JsonApi4j has OpenAPI Specification support by default. 
+In order to enable JsonApi4j OpenAPI Specification plugin (OAS) - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-oas-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+If you're using Spring Boot or Quarkus everything will be autoconfigured using default values.
 
 You can get OpenAPI Specification in desired format (json or yaml) by accessing [/oas](http://localhost:8080/jsonapi/oas) URL. 
 
