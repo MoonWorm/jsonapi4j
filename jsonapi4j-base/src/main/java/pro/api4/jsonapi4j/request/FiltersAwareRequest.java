@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public interface FiltersAwareRequest {
 
-    Pattern PATTERN = Pattern.compile("^filter\\[(.*)]$");
+    Pattern PATTERN = Pattern.compile("^filter\\[(.+)]$");
 
     static String getFilterParam(String filterName) {
         return String.format("filter[%s]", filterName);
@@ -26,7 +26,7 @@ public interface FiltersAwareRequest {
         if (paramName == null) {
             return false;
         }
-        String regex = "^filter\\[.*]$";
+        String regex = "^filter\\[.+]$";
         return paramName.matches(regex);
     }
 

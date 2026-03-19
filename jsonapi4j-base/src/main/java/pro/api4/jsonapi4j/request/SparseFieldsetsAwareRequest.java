@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public interface SparseFieldsetsAwareRequest {
 
-    Pattern PATTERN = Pattern.compile("^fields\\[(.*)]$");
+    Pattern PATTERN = Pattern.compile("^fields\\[(.+)]$");
 
     static String getFieldsParam(String resourceType) {
         return String.format("fields[%s]", resourceType);
@@ -27,7 +27,7 @@ public interface SparseFieldsetsAwareRequest {
         if (paramName == null) {
             return false;
         }
-        String regex = "^fields\\[.*]$";
+        String regex = "^fields\\[.+]$";
         return paramName.matches(regex);
     }
 

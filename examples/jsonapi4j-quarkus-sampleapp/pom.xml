@@ -42,14 +42,17 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-quarkus</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-oas-plugin</artifactId>
+            <version>1.1.0</version>
         </dependency>
 
         <!-- Shared Sample Domain -->

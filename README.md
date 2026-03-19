@@ -1138,6 +1138,25 @@ It's worth noting that we can now see `attributes` sections for both requested u
 
 For more configuration options like setting a custom principal resolver or other examples for setting access control rules for both inbound and outbound access please refer the official [documentation](https://api4.pro/).  
 
+## Sparse Fieldsets Plugin
+
+In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-sf-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+Please refer [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) for more details. 
+
+Then, you can use `fields[TYPE]=field1,field2` query parameter to fetch only requested fields from the attributes object. 
+
+For example in order to request `users` with `email` and `lastName` fields only - simply add `fields[users]=email,lastName` query parameter. 
+
+If a response consists of resources of different type - for example, if you requested users and some related resources of other types via relationships - you can control which fields to request for each resource type by adding multiple query parameters like that.   
+
 ## OpenApi Plugin
 
 In order to enable JsonApi4j OpenAPI Specification plugin (OAS) - add the next dependency:
