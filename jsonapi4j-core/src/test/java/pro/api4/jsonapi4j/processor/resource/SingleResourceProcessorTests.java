@@ -44,7 +44,7 @@ public class SingleResourceProcessorTests {
     private static final String ID = "1";
     private static final String NAME = "foo bar";
     private static final Request REQUEST_NO_INCLUDES = new Request(ID);
-    private static final Request REQUEST_ALL_INCLUDES = new Request(ID, Set.of("foo", "bars"));
+    private static final Request REQUEST_ALL_INCLUDES = new Request(ID, List.of("foo", "bars"));
     private static final Dto DTO = new Dto(ID, NAME);
     private static final Attributes ATTRIBUTES = new Attributes(ID, NAME);
 
@@ -472,7 +472,7 @@ public class SingleResourceProcessorTests {
     @RequiredArgsConstructor
     private static class Request implements IncludeAwareRequest {
         private final String id;
-        private Set<String> effectiveIncludes;
+        private List<String> effectiveIncludes;
     }
 
     @Data

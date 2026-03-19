@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -128,7 +127,7 @@ public final class LinksGenerator {
 
     private void populateIncludes(Map<String, String> linkParams) {
         if (request instanceof IncludeAwareRequest r) {
-            Set<String> includesSet = r.getEffectiveIncludes();
+            List<String> includesSet = r.getEffectiveIncludes();
             if (CollectionUtils.isNotEmpty(includesSet)) {
                 String includesStr = String.join(",", includesSet);
                 linkParams.put(IncludeAwareRequest.INCLUDE_PARAM, includesStr);

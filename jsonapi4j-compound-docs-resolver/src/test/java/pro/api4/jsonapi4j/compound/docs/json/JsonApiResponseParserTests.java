@@ -55,12 +55,15 @@ public class JsonApiResponseParserTests {
     }
 
     @Test
-    public void parsePrimaryResourceDoc_missingData_checkExceptionIsThrown() {
+    public void parsePrimaryResourceDoc_missingData_returnEmptyIntermediateResult() {
         // given
         String originalResponse = ResourceUtil.readResourceFile("pro/api4/jsonapi4j/compound/docs/missing-data-response.json");
 
-        // when - then
-        assertThatThrownBy(() -> sut.parsePrimaryResourceDoc(originalResponse)).isInstanceOf(InvalidJsonApiResponse.class);
+        // when
+        Map<String, Set<String>> actualResult = sut.parsePrimaryResourceDoc(originalResponse).typeToIdsMap();
+
+        // then
+        assertThat(actualResult).isNotNull().isEmpty();
     }
 
     @Test

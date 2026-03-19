@@ -76,14 +76,14 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
         if (anonymizationResult.isFullyAnonymized()) {
             // top-level links
             LinksObject docLinks = context.getTopLevelLinksResolver().resolve(request, null);
-            ReflectionUtils.setFieldValue(doc, ToOneRelationshipDoc.LINKS_FIELD, docLinks);
+            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.LINKS_FIELD, docLinks);
 
             // top-level meta
             Object docMeta = context.getTopLevelMetaResolver().resolve(request, null);
-            ReflectionUtils.setFieldValue(doc, ToOneRelationshipDoc.META_FIELD, docMeta);
+            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD, docMeta);
         }
 
-        ReflectionUtils.setFieldValue(doc, ToOneRelationshipDoc.DATA_FIELD, anonymizationResult.targetObject());
+        ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.DATA_FIELD, anonymizationResult.targetObject());
 
         return DataPostRetrievalPhase.mutatedDoc(doc);
     }

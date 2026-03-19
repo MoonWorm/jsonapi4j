@@ -50,7 +50,7 @@ public class SingleResourceProcessorAccessControlTests {
     private static final String LAST_NAME = "Doe";
     private static final String ALTERNATE_OWNER_ID = "2";
     private static final Request REQUEST_NO_INCLUDES = new Request(ID);
-    private static final Request REQUEST_ALL_INCLUDES = new Request(ID, Set.of("foo", "bars"));
+    private static final Request REQUEST_ALL_INCLUDES = new Request(ID, List.of("foo", "bars"));
     private static final Dto DTO = new Dto(ID, FIRST_NAME, LAST_NAME);
     private static final Attributes ATTRIBUTES = new Attributes(ID, FIRST_NAME, LAST_NAME, ALTERNATE_OWNER_ID);
     @Mock
@@ -197,7 +197,7 @@ public class SingleResourceProcessorAccessControlTests {
     @RequiredArgsConstructor
     public static class Request implements IncludeAwareRequest {
         private final String id;
-        private Set<String> effectiveIncludes;
+        private List<String> effectiveIncludes;
     }
 
     @Data

@@ -1,0 +1,42 @@
+{
+  "links": {
+    "self": "/users/5/relationships/citizenships?include=citizenships",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=US",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": [
+            "US"
+          ]
+        }
+      }
+    }
+  },
+  "data": [
+    {
+      "id": "US",
+      "type": "countries"
+    }
+  ],
+  "included": [
+    {
+      "id": "US",
+      "type": "countries",
+      "attributes": {
+        "name": "United States",
+        "region": "Americas"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/US/relationships/currencies"
+          }
+        }
+      },
+      "links": {
+        "self": "/countries/US"
+      }
+    }
+  ]
+}

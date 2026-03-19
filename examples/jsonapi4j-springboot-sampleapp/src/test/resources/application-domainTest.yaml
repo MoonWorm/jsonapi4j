@@ -1,0 +1,14 @@
+server:
+  port: 9393
+
+jsonapi4j:
+  rootPath: /jsonapi
+  compound-docs:
+    enabled: false
+  ac:
+    enabled: false
+  oas:
+    enabled: false
+  sf:
+    enabled: false
+

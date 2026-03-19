@@ -1,0 +1,18 @@
+server:
+  port: 9393
+
+jsonapi4j:
+  rootPath: /jsonapi
+  compoundDocs:
+    enabled: true
+    maxHops: 3
+    mapping:
+      users: http://localhost:${server.port}${jsonapi4j.rootPath}
+      countries: http://localhost:${server.port}${jsonapi4j.rootPath}
+      currencies: http://localhost:${server.port}${jsonapi4j.rootPath}
+  ac:
+    enabled: false
+  oas:
+    enabled: false
+  sf:
+    enabled: false

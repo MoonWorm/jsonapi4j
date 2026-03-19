@@ -55,6 +55,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sf-plugin</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
         </dependency>
@@ -85,6 +90,7 @@
                             <conditionalDependencies>
                                 <artifact>pro.api4:jsonapi4j-ac-plugin:${revision}</artifact>
                                 <artifact>pro.api4:jsonapi4j-oas-plugin:${revision}</artifact>
+                                <artifact>pro.api4:jsonapi4j-sf-plugin:${revision}</artifact>
                             </conditionalDependencies>
                         </configuration>
                     </execution>

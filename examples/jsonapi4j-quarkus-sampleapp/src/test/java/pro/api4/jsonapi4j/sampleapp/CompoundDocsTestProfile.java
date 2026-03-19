@@ -8,7 +8,7 @@ public class CompoundDocsTestProfile implements QuarkusTestProfile {
 
     @Override
     public Map<String, String> getConfigOverrides() {
-        return Map.of("quarkus.config.locations", "application-compound-docs-test.properties");
+        return Map.of("quarkus.config.locations", "application-compoundDocsTest.properties");
     }
 
 }

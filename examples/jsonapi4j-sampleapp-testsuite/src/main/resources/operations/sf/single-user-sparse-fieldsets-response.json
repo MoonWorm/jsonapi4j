@@ -1,0 +1,166 @@
+{
+  "links": {
+    "self": "/users/1?include=placeOfBirth%2Crelatives&fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+  },
+  "data": {
+    "id": "1",
+    "type": "users",
+    "attributes": {
+      "email": "john@doe.com"
+    },
+    "relationships": {
+      "citizenships": {
+        "links": {
+          "self": "/users/1/relationships/citizenships?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+        }
+      },
+      "placeOfBirth": {
+        "links": {
+          "self": "/users/1/relationships/placeOfBirth",
+          "related": "/countries/US"
+        },
+        "data": {
+          "id": "US",
+          "type": "countries"
+        }
+      },
+      "relatives": {
+        "links": {
+          "self": "/users/1/relationships/relatives",
+          "related": {
+            "users": {
+              "href": "/users?filter[id]=2,3",
+              "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+              "meta": {
+                "ids": [
+                  "2",
+                  "3"
+                ]
+              }
+            }
+          }
+        },
+        "data": [
+          {
+            "id": "2",
+            "type": "users",
+            "meta": {
+              "relationshipType": "HUSBAND"
+            }
+          },
+          {
+            "id": "3",
+            "type": "users",
+            "meta": {
+              "relationshipType": "BROTHER"
+            }
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "/users/1?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+    }
+  },
+  "included": [
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "email": "jane@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/2/relationships/citizenships?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/2/relationships/placeOfBirth?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/2?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+      }
+    },
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "email": "jack@doe.com"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/3/relationships/citizenships?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/3/relationships/placeOfBirth?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/3?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+      }
+    },
+    {
+      "id": "US",
+      "type": "countries",
+      "attributes": {
+        "name": "United States"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/US/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=USD",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "USD"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "USD",
+              "type": "currencies"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/countries/US?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+      }
+    },
+    {
+      "id": "USD",
+      "type": "currencies",
+      "attributes": {
+        "name": "United States dollar",
+        "symbol": "$"
+      },
+      "links": {
+        "self": "/currencies/USD?fields%5Bcountries%5D=name&fields%5Busers%5D=email"
+      }
+    }
+  ]
+}

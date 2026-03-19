@@ -1,5 +1,0 @@
-jsonapi4j:
-  root-path: '/jsonapi'
-  compound-docs:
-    enabled: false
-

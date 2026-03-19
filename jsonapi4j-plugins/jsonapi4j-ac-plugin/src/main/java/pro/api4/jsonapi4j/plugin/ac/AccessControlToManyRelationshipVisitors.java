@@ -102,7 +102,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         }
 
         // data
-        ReflectionUtils.setFieldValue(doc, ToManyRelationshipsDoc.DATA_FIELD, anonymizedData);
+        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.DATA_FIELD, anonymizedData);
 
         // top-level links
         LinksObject docLinks = context.getTopLevelLinksResolver().resolve(
@@ -110,11 +110,11 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 nonAnonymizedDtos,
                 cursorPageableResponse.getNextCursor()
         );
-        ReflectionUtils.setFieldValue(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
+        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 
         // top-level meta
         Object docMeta = context.getTopLevelMetaResolver().resolve(request, nonAnonymizedDtos);
-        ReflectionUtils.setFieldValue(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
+        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
 
         return DataPostRetrievalPhase.mutatedDoc(doc);
     }

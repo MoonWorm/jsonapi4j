@@ -1,0 +1,69 @@
+{
+  "links": {
+    "self": "/users/5/relationships/citizenships?include=citizenships&fields%5Bcountries%5D=name",
+    "related": {
+      "countries": {
+        "href": "/countries?filter[id]=US",
+        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+        "meta": {
+          "ids": [
+            "US"
+          ]
+        }
+      }
+    }
+  },
+  "data": [
+    {
+      "id": "US",
+      "type": "countries"
+    }
+  ],
+  "included": [
+    {
+      "id": "US",
+      "type": "countries",
+      "attributes": {
+        "name": "United States"
+      },
+      "relationships": {
+        "currencies": {
+          "links": {
+            "self": "/countries/US/relationships/currencies",
+            "related": {
+              "currencies": {
+                "href": "/currencies?filter[id]=USD",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "USD"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "USD",
+              "type": "currencies"
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/countries/US?fields%5Bcountries%5D=name"
+      }
+    },
+    {
+      "id": "USD",
+      "type": "currencies",
+      "attributes": {
+        "name": "United States dollar",
+        "symbol": "$"
+      },
+      "links": {
+        "self": "/currencies/USD?fields%5Bcountries%5D=name"
+      }
+    }
+  ]
+}

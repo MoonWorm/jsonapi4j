@@ -20,6 +20,7 @@
     <modules>
         <module>jsonapi4j-ac-plugin</module>
         <module>jsonapi4j-oas-plugin</module>
+        <module>jsonapi4j-sf-plugin</module>
     </modules>
 
     <url>https://api4.pro</url>

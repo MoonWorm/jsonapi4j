@@ -35,6 +35,7 @@ import static pro.api4.jsonapi4j.operation.OperationType.Method.isSupportedMetho
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCursor;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCustomQueryParams;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEffectiveIncludes;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFieldSets;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFilter;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOriginalIncludes;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseResourceIdFromThePath;
@@ -83,9 +84,10 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         String resourceId = parseResourceIdFromThePath(path);
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
-        Set<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
-        Set<String> originalIncludes = parseOriginalIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
+        List<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
+        List<String> originalIncludes = parseOriginalIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
         Map<String, SortAwareRequest.SortOrder> sortBy = parseSortBy(params.get(SortAwareRequest.SORT_PARAM));
+        Map<String, List<String>> fieldSets = parseFieldSets(params);
         Map<String, List<String>> customQueryParams = parseCustomQueryParams(params);
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
 
@@ -132,6 +134,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setOriginalIncludes(originalIncludes);
         jsonApiRequest.setCursor(cursor);
         jsonApiRequest.setSortBy(sortBy);
+        jsonApiRequest.setFieldSets(fieldSets);
         jsonApiRequest.setCustomQueryParams(customQueryParams);
         jsonApiRequest.setPayload(payload);
         log.info("Composed JsonApiRequest: {}", jsonApiRequest);
