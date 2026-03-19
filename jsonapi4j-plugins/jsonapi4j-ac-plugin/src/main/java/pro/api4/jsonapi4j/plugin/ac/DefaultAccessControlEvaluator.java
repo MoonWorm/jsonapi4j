@@ -71,7 +71,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
     private String extractOwnerIdFromResourceObject(Object resourceObject,
                                                     String ownerIdFieldName) {
         try {
-            Object ownerId = ReflectionUtils.getFieldValue(resourceObject, ownerIdFieldName);
+            Object ownerId = ReflectionUtils.getFieldValueThrowing(resourceObject, ownerIdFieldName);
             if (ownerId instanceof String ownerIdStr) {
                 return ownerIdStr;
             } else {

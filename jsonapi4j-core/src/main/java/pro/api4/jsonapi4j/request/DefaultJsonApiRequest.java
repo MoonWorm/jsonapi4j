@@ -27,17 +27,19 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private RelationshipName targetRelationshipName;
     private OperationType operationType;
 
-    private Map<String, List<String>> filters = new HashMap<>();
+    private Map<String, List<String>> filters = new LinkedHashMap<>();
 
-    private Set<String> effectiveIncludes = new HashSet<>();
-    private Set<String> originalIncludes = new HashSet<>();
+    private List<String> effectiveIncludes = new ArrayList<>();
+    private List<String> originalIncludes = new ArrayList<>();
 
     private String cursor = null;
-    private Map<String, List<String>> customQueryParams = new HashMap<>();
+    private Map<String, List<String>> customQueryParams = new LinkedHashMap<>();
 
     private byte[] payload = new byte[0];
 
-    private Map<String, SortOrder> sortBy = null;
+    private Map<String, SortOrder> sortBy = new LinkedHashMap<>();
+
+    private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
 
     @Override
     public Map<String, List<String>> getFilters() {

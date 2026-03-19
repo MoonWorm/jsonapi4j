@@ -30,6 +30,7 @@ class QuarkusJsonApi4jProcessor {
     private static final String FEATURE = "jsonapi4j-rest-quarkus";
     private static final String AC_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin";
     private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin";
+    private static final String SF_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -109,15 +110,18 @@ class QuarkusJsonApi4jProcessor {
     }
 
     @BuildStep
-    AdditionalBeanBuildItem jsonapi4jCdiBeans(QuarkusJsonApi4jOasProperties oasProperties) {
+    AdditionalBeanBuildItem jsonapi4jCdiBeans(QuarkusJsonApi4jOasProperties oasProperties,
+                                              QuarkusJsonApi4jAcProperties acProperties,
+                                              QuarkusJsonApi4jSfProperties sfProperties) {
         AdditionalBeanBuildItem.Builder builder = AdditionalBeanBuildItem.builder()
                 .setUnremovable()
                 .addBeanClass(QuarkusJsonApi4jDispatcherServletContextListener.class)
                 .addBeanClass(QuarkusJsonApi4jDefaultBeans.class)
                 .addBeanClass(QuarkusJsonApi4jProperties.class);
 
-        if (isAcPluginEnabled()) {
+        if (isAcPluginEnabled(acProperties)) {
             LOG.info("{} plugin is enabled, registering AC-related CDI beans", AC_PLUGIN_CLASSNAME);
+            builder.addBeanClass(QuarkusJsonApi4jAcProperties.class.getName());
             builder.addBeanClass(QuarkusJsonApi4jAcPluginBeans.class.getName());
         } else {
             LOG.info("{} plugin is disabled, skipping AC-related CDI beans registration", AC_PLUGIN_CLASSNAME);
@@ -130,6 +134,14 @@ class QuarkusJsonApi4jProcessor {
             builder.addBeanClass(QuarkusJsonApi4jOasPluginBeans.class.getName());
         } else {
             LOG.info("{} plugin is disabled, skipping OAS-related CDI beans registration", OAS_PLUGIN_CLASSNAME);
+        }
+
+        if (isSfPluginEnabled(sfProperties)) {
+            LOG.info("{} plugin is enabled, registering SF-related CDI beans", SF_PLUGIN_CLASSNAME);
+            builder.addBeanClass(QuarkusJsonApi4jSfProperties.class.getName());
+            builder.addBeanClass(QuarkusJsonApi4jSfPluginBeans.class.getName());
+        } else {
+            LOG.info("{} plugin is disabled, skipping SF-related CDI beans registration", SF_PLUGIN_CLASSNAME);
         }
 
         return builder.build();
@@ -191,14 +203,22 @@ class QuarkusJsonApi4jProcessor {
         }
     }
 
-    private static boolean isAcPluginEnabled() {
-        return isClassPresent(AC_PLUGIN_CLASSNAME);
+    private static boolean isAcPluginEnabled(QuarkusJsonApi4jAcProperties acProperties) {
+        boolean acPluginClassesPresentInClasspath = isClassPresent(AC_PLUGIN_CLASSNAME);
+        boolean enabled = acProperties.enabled();
+        return enabled && acPluginClassesPresentInClasspath;
     }
 
     private static boolean isOasPluginEnabled(QuarkusJsonApi4jOasProperties oasProperties) {
         boolean oasPluginClassesPresentInClasspath = isClassPresent(OAS_PLUGIN_CLASSNAME);
         boolean enabled = oasProperties.enabled();
         return enabled && oasPluginClassesPresentInClasspath;
+    }
+
+    private static boolean isSfPluginEnabled(QuarkusJsonApi4jSfProperties sfProperties) {
+        boolean sfPluginClassesPresentInClasspath = isClassPresent(SF_PLUGIN_CLASSNAME);
+        boolean enabled = sfProperties.enabled();
+        return enabled && sfPluginClassesPresentInClasspath;
     }
 
 }

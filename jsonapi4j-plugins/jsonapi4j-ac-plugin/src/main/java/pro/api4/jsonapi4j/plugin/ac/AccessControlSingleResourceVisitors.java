@@ -67,11 +67,11 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
         }
 
         if (anonymizationResult.isFullyAnonymized()) {
-            ReflectionUtils.setFieldValue(doc, SingleResourceDoc.DATA_FIELD, null);
+            ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, null);
             return RelationshipsPreRetrievalPhase.returnDoc(doc);
         }
 
-        ReflectionUtils.setFieldValue(doc, SingleResourceDoc.DATA_FIELD, anonymizationResult.targetObject());
+        ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, anonymizationResult.targetObject());
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
     }
 

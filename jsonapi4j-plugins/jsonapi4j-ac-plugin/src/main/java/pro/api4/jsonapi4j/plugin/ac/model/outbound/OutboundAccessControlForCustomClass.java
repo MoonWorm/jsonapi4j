@@ -8,10 +8,10 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import pro.api4.jsonapi4j.util.ReflectionUtils;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.util.CustomCollectors;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,12 +52,16 @@ public class OutboundAccessControlForCustomClass {
             Map<String, OutboundAccessControlForCustomClass> attNested
                     = extractNestedRecursively(attClazz);
             if (attClassLevelAccessControl != null
-                || MapUtils.isNotEmpty(attFieldLevelAccessControl)
-                || MapUtils.isNotEmpty(attNested)) {
-                nested.put(ResourceObject.ATTRIBUTES_FIELD, OutboundAccessControlForCustomClass.builder()
-                        .classLevel(attClassLevelAccessControl)
-                        .fieldLevel(attFieldLevelAccessControl)
-                        .nested(attNested).build());
+                    || MapUtils.isNotEmpty(attFieldLevelAccessControl)
+                    || MapUtils.isNotEmpty(attNested)) {
+                nested.put(
+                        ResourceObject.ATTRIBUTES_FIELD,
+                        OutboundAccessControlForCustomClass.builder()
+                                .classLevel(attClassLevelAccessControl)
+                                .fieldLevel(attFieldLevelAccessControl)
+                                .nested(attNested)
+                                .build()
+                );
             }
         }
 
@@ -71,7 +75,7 @@ public class OutboundAccessControlForCustomClass {
     private static Map<String, OutboundAccessControlForCustomClass> extractNestedRecursively(Class<?> clazz) {
         Map<String, OutboundAccessControlForCustomClass> result = new HashMap<>();
 
-        Map<String, Class<?>> fields = ReflectionUtils.fetchFields(clazz);
+        Map<String, Class<?>> fields = ReflectionUtils.fetchFieldTypes(clazz);
 
         fields.forEach((fieldName, fieldClass) -> {
             if (!fieldClass.getPackageName().startsWith("java.")) {

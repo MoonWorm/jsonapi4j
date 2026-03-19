@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.request;
 
-import java.util.Set;
+import java.util.List;
 
 public interface IncludeAwareRequest {
 
@@ -27,9 +27,9 @@ public interface IncludeAwareRequest {
      * @return sot of requested relationships that are supposed to be added into 'included' member of the JSON:API
      * response.
      */
-    Set<String> getEffectiveIncludes();
+    List<String> getEffectiveIncludes();
 
-    default Set<String> getOriginalIncludes() {
+    default List<String> getOriginalIncludes() {
         return getEffectiveIncludes();
     }
 

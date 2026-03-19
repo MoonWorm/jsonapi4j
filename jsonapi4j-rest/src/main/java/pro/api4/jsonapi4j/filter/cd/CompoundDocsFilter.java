@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -97,7 +98,7 @@ public class CompoundDocsFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         if (isGetRequest(httpRequest.getMethod()) && isCompoundDocsProcessingIsNotDisabled(httpRequest)) {
-            Set<String> includes = getIncludesQueryParam(httpRequest);
+            List<String> includes = getIncludesQueryParam(httpRequest);
             if (includes != null && !includes.isEmpty()) {
                 try (BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpResponse)) {
                     chain.doFilter(request, responseWrapper);
@@ -110,6 +111,7 @@ public class CompoundDocsFilter implements Filter {
                             responseBodyWithCompoundDocs = resolver.resolveCompoundDocsForRelationshipResponse(
                                     responseBody,
                                     getIncludesQueryParam(httpRequest),
+                                    getSparseFieldsetsParams(httpRequest),
                                     getOriginalRequestHeaders(httpRequest),
                                     relationshipNameOpt.get()
                             );
@@ -117,6 +119,7 @@ public class CompoundDocsFilter implements Filter {
                             responseBodyWithCompoundDocs = resolver.resolveCompoundDocsForPrimaryResourceResponse(
                                     responseBody,
                                     getIncludesQueryParam(httpRequest),
+                                    getSparseFieldsetsParams(httpRequest),
                                     getOriginalRequestHeaders(httpRequest)
                             );
                         }
@@ -161,7 +164,7 @@ public class CompoundDocsFilter implements Filter {
         return !Boolean.parseBoolean(httpRequest.getHeader(JsonApiHttpClient.X_DISABLE_COMPOUND_DOCS));
     }
 
-    private Set<String> getIncludesQueryParam(HttpServletRequest httpRequest) {
+    private List<String> getIncludesQueryParam(HttpServletRequest httpRequest) {
         String[] value = httpRequest.getParameterValues(IncludeAwareRequest.INCLUDE_PARAM);
         if (value == null) {
             return null;
@@ -178,6 +181,17 @@ public class CompoundDocsFilter implements Filter {
             }
         }
         return MapUtils.unmodifiableMap(originalRequestHeaders);
+    }
+
+    private Map<String, List<String>> getSparseFieldsetsParams(HttpServletRequest httpRequest) {
+        return JsonApiRequestParsingUtil.parseFieldSets(getParams(httpRequest));
+    }
+
+    private Map<String, List<String>> getParams(HttpServletRequest request) {
+        return request.getParameterMap()
+                .entrySet()
+                .stream()
+                .collect(toMap(Map.Entry::getKey, e -> Arrays.asList(e.getValue())));
     }
 
 }

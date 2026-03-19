@@ -56,7 +56,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
     private static void anonymizeField(Object targetObject,
                                        String fieldName) {
         try {
-            ReflectionUtils.setFieldValue(targetObject, fieldName, null);
+            ReflectionUtils.setFieldValueThrowing(targetObject, fieldName, null);
         } catch (Exception ex) {
             throw new AccessControlMisconfigurationException("Anonymization failed. Can't set a value for a field ." + fieldName, ex);
         }
@@ -122,7 +122,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         List<String> nestedAnonymizedPaths = new ArrayList<>();
         MapUtils.emptyIfNull(outboundAccessControlSettings.getNested())
                 .forEach((fieldName, nestedOutboundAccessControlSettings) -> {
-                    Object nestedTargetObject = ReflectionUtils.getFieldValue(targetObject, fieldName);
+                    Object nestedTargetObject = ReflectionUtils.getFieldValueThrowing(targetObject, fieldName);
                     if (nestedTargetObject != null && !targetObjectAnonymizedFields.contains(fieldName)) {
                         AnonymizationResult<Object> anonymizationResult = anonymizeObjectIfNeeded(
                                 fieldName,
@@ -160,7 +160,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         if (fieldLevelAcSettings != null) {
             for (Map.Entry<String, AccessControlModel> e : fieldLevelAcSettings.entrySet()) {
                 String fieldName = e.getKey();
-                Object fieldValue = ReflectionUtils.getFieldValue(targetObject, fieldName);
+                Object fieldValue = ReflectionUtils.getFieldValueThrowing(targetObject, fieldName);
                 if (fieldValue != null) {
                     AccessControlModel fieldAcInfo = e.getValue();
                     if (!evaluateOutboundRequirements(resourceObject, fieldAcInfo)) {

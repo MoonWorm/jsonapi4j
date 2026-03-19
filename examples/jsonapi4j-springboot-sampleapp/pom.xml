@@ -59,6 +59,10 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-oas-plugin</artifactId>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sf-plugin</artifactId>
+        </dependency>
 
         <!-- Shared Sample Domain -->
         <dependency>

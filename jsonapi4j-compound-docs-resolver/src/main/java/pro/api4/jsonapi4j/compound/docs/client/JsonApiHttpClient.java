@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class JsonApiHttpClient {
 
@@ -33,6 +34,7 @@ public class JsonApiHttpClient {
                                      String resourceType,
                                      Set<String> ids,
                                      Set<String> includes,
+                                     Map<String, List<String>> fields,
                                      Map<String, String> originalRequestHeaders) {
         try (HttpClient client = HttpClient.newHttpClient()) {
 
@@ -42,9 +44,15 @@ public class JsonApiHttpClient {
             } else {
                 uri += "/" + resourceType;
             }
-            uri += "?filter[id]=" + String.join(",", ids);
+            uri += "?filter[id]=" + String.join(",", ids.stream().sorted().toList());
             if (includes != null && !includes.isEmpty()) {
                 uri += "&include=" + String.join(",", includes);
+            }
+            if (fields != null && !fields.isEmpty()) {
+                uri += "&" + fields.entrySet()
+                        .stream()
+                        .map(e -> String.format("fields[%s]", e.getKey()) + "=" + String.join(",", e.getValue()))
+                        .collect(Collectors.joining("&"));
             }
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();

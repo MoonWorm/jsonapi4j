@@ -245,7 +245,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
         relationshipsMap.forEach((idAndType, relationships) -> {
             ResourceObject<?, ?> relatedResource = idAndTypeToResourceMap.get(idAndType);
             if (relatedResource != null) {
-                ReflectionUtils.setFieldValue(
+                ReflectionUtils.setFieldValueThrowing(
                         relatedResource,
                         ResourceObject.RELATIONSHIPS_FIELD,
                         relationships

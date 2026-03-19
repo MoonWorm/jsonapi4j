@@ -32,39 +32,46 @@ public class CompoundDocsResolver {
         this.jsonApiResponseWriter = new JsonApiResponseWriter(config.getObjectMapper());
     }
 
-    public String resolveCompoundDocsForPrimaryResourceResponse(String originalJsonApiResponse,
-                                                             Set<String> originalRequestIncludes,
-                                                             Map<String, String> originalRequestHeaders) throws ErrorJsonApiResponse {
+    public String resolveCompoundDocsForPrimaryResourceResponse(
+            String originalJsonApiResponse,
+            List<String> originalRequestIncludes,
+            Map<String, List<String>> originalRequestSparseFieldsets,
+            Map<String, String> originalRequestHeaders
+    ) throws ErrorJsonApiResponse {
         return resolveCompoundDocs(
                 originalJsonApiResponse,
                 originalRequestIncludes,
+                originalRequestSparseFieldsets,
                 originalRequestHeaders,
                 () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
         );
     }
 
     public String resolveCompoundDocsForRelationshipResponse(String originalJsonApiResponse,
-                                                             Set<String> originalRequestIncludes,
+                                                             List<String> originalRequestIncludes,
+                                                             Map<String, List<String>> originalRequestSparseFieldsets,
                                                              Map<String, String> originalRequestHeaders,
                                                              String relationshipName) throws ErrorJsonApiResponse {
 
-        Set<String> effectiveOriginalRequestIncludes =
+        List<String> effectiveOriginalRequestIncludes =
                 originalRequestIncludes == null ?
-                        Collections.emptySet() :
+                        Collections.emptyList() :
                         originalRequestIncludes
                                 .stream()
                                 .filter(i -> i.startsWith(relationshipName))
-                                .collect(Collectors.toSet());
+                                .toList();
         return resolveCompoundDocs(
                 originalJsonApiResponse,
                 effectiveOriginalRequestIncludes,
+                originalRequestSparseFieldsets,
                 originalRequestHeaders,
                 () -> jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName)
         );
     }
 
     private String resolveCompoundDocs(String originalJsonApiResponse,
-                                       Set<String> originalRequestIncludes,
+                                       List<String> originalRequestIncludes,
+                                       Map<String, List<String>> originalRequestSparseFieldsets,
                                        Map<String, String> originalRequestHeaders,
                                        Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponse {
         if (isCompoundDocsRequested(originalRequestIncludes)) {
@@ -100,6 +107,7 @@ public class CompoundDocsResolver {
                                             resourceType,
                                             ids,
                                             requestIncludes,
+                                            originalRequestSparseFieldsets,
                                             originalRequestHeaders
                                     ),
                                     config.getExecutorService()
@@ -128,7 +136,7 @@ public class CompoundDocsResolver {
         return originalJsonApiResponse;
     }
 
-    private boolean isCompoundDocsRequested(Set<String> originalRequestIncludes) {
+    private boolean isCompoundDocsRequested(List<String> originalRequestIncludes) {
         return originalRequestIncludes != null && !originalRequestIncludes.isEmpty();
     }
 
@@ -141,7 +149,7 @@ public class CompoundDocsResolver {
                 .collect(Collectors.toSet());
     }
 
-    private Map<String, Set<String>> getNextLevelIncludes(Set<String> includes, int currentLevel) {
+    private Map<String, Set<String>> getNextLevelIncludes(List<String> includes, int currentLevel) {
         Map<String, Set<String>> nextLevelIncludes = new HashMap<>();
         for (String include : includes) {
             String[] parts = include.split("\\.");

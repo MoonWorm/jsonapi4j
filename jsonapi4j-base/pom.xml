@@ -51,6 +51,12 @@
     </properties>
 
     <dependencies>
+        <!-- Logging facade -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
         <!-- Base62 lib - needed for faking limit-offset pagination -->
         <dependency>
             <groupId>io.seruco.encoding</groupId>

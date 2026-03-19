@@ -59,7 +59,7 @@ public class ConcurrentExecutorTests {
         long start = System.currentTimeMillis();
 
         Request request = new Request(50,
-                Set.of(
+                List.of(
                         REL1_MULTI.getName(),
                         REL2_MULTI.getName(),
                         REL3_MULTI.getName(),
@@ -221,7 +221,7 @@ public class ConcurrentExecutorTests {
     public void testParallelExecution_singleResource() {
         long start = System.currentTimeMillis();
 
-        Request request = new Request(50, Set.of(
+        Request request = new Request(50, List.of(
                 REL1_MULTI.getName(),
                 REL2_MULTI.getName(),
                 REL3_MULTI.getName(),
@@ -362,10 +362,10 @@ public class ConcurrentExecutorTests {
     public class Request implements IncludeAwareRequest {
 
         private final int sourceId;
-        private Set<String> includes;
+        private List<String> includes;
 
         @Override
-        public Set<String> getEffectiveIncludes() {
+        public List<String> getEffectiveIncludes() {
             return includes;
         }
     }

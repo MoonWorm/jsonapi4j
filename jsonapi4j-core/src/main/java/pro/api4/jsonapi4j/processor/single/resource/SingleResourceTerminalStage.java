@@ -237,7 +237,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         );
 
         // set relationships
-        ReflectionUtils.setFieldValue(doc.getData(), ResourceObject.RELATIONSHIPS_FIELD, relationships);
+        ReflectionUtils.setFieldValueThrowing(doc.getData(), ResourceObject.RELATIONSHIPS_FIELD, relationships);
 
         // PHASE: onRelationshipsPostRetrieval
         for (PluginSettings plugin : plugins) {

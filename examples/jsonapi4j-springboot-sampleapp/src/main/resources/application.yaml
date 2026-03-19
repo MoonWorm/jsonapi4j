@@ -15,6 +15,15 @@ jsonapi4j:
       users: http://localhost:${server.port}${jsonapi4j.root-path}
       countries: http://localhost:${server.port}${jsonapi4j.root-path}
       currencies: http://localhost:${server.port}${jsonapi4j.root-path}
+
+  # AC Plugin
+  ac:
+    enabled: true
+
+  # Sparse Fieldsets Plugin
+  sf:
+    enabled: true
+
   # OAS Plugin
   oas:
     enabled: true

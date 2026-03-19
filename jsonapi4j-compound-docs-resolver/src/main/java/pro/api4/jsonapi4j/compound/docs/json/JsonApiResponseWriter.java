@@ -23,7 +23,7 @@ public class JsonApiResponseWriter {
 
     public String composeWithIncludedMember(ObjectNode rootNode, Set<String> resources) {
         ArrayNode includedNode = objectMapper.createArrayNode();
-        resources.forEach(r -> {
+        resources.stream().sorted().forEach(r -> {
             try {
                 JsonNode resourceAsNode = objectMapper.readTree(r);
                 includedNode.add(resourceAsNode);

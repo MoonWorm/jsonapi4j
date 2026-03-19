@@ -10,8 +10,8 @@ import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,12 +22,13 @@ public class JsonApiRequestBuilder {
     private ResourceType targetResourceType;
     private RelationshipName targetRelationshipName;
     private OperationType operationType;
-    private Map<String, List<String>> filterBy = new HashMap<>();
-    private Set<String> effectiveIncludes = new HashSet<>();
-    private Set<String> originalIncludes = new HashSet<>();
+    private Map<String, List<String>> filterBy = new LinkedHashMap<>();
+    private List<String> effectiveIncludes = new ArrayList<>();
+    private List<String> originalIncludes = new ArrayList<>();
+    private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
     private String cursor = null;
-    private Map<String, SortAwareRequest.SortOrder> sortBy = new HashMap<>();
-    private Map<String, List<String>> queryParams = new HashMap<>();
+    private Map<String, SortAwareRequest.SortOrder> sortBy = new LinkedHashMap<>();
+    private Map<String, List<String>> queryParams = new LinkedHashMap<>();
     private Object payload;
 
     public JsonApiRequestBuilder resourceId(String resourceId) {
@@ -52,6 +53,11 @@ public class JsonApiRequestBuilder {
 
     public JsonApiRequestBuilder queryParams(Map<String, List<String>> queryParams) {
         this.queryParams = queryParams;
+        return this;
+    }
+
+    public JsonApiRequestBuilder fieldSets(Map<String, List<String>> fieldSets) {
+        this.fieldSets = fieldSets;
         return this;
     }
 
@@ -112,6 +118,7 @@ public class JsonApiRequestBuilder {
         request.setOperationType(operationType);
         request.setFilters(filterBy);
         request.setEffectiveIncludes(effectiveIncludes);
+        request.setFieldSets(fieldSets);
         request.setCursor(cursor);
         request.setSortBy(sortBy);
         request.setCustomQueryParams(queryParams);

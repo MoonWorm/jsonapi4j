@@ -122,8 +122,11 @@ public class JsonApiResponseParser {
 
     private IntermediateParseResult parseData(JsonNode rootNode,
                                               Function<JsonNode, IntermediateParseResult> dataProcessor) {
-        if (rootNode == null || !rootNode.isObject() || rootNode.get("data") == null) {
+        if (rootNode == null || !rootNode.isObject()) {
             throw new InvalidJsonApiResponse("Json:Api response must contain top-level 'data' member");
+        }
+        if (rootNode.get("data") == null) {
+            return new IntermediateParseResult(Collections.emptyMap(), Collections.emptyMap());
         }
         JsonNode dataNode = rootNode.get("data");
         return dataProcessor.apply(dataNode);

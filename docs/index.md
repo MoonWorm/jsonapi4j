@@ -943,6 +943,7 @@ In other words:
 
 Please refer:
 * `JsonApiAccessControlPlugin`
+* `JsonApiSparseFieldsetsPlugin`
 * `JsonApiOasPlugin`
 
 These are the plugins that are available for usage by default. If you're using JsonApi4j in terms of Spring Boot or Quarkus frameworks - you can just add the corresponding plugin dependency - and the plugin will be automatically integrated into the system.
@@ -1154,6 +1155,29 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<Downstre
 1. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value.
 2. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
 
+### Sparse Fieldsets Plugin
+
+In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-sf-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+Please refer [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) for more details.
+
+Then, you can use `fields[TYPE]=field1,field2` query parameter to fetch only requested fields from the attributes object.
+
+Notes: 
+* If a response consists of resources of different type - for example, if you requested users and some related resources of other types via Compound Docs - you can control which fields to request for each resource type by adding multiple query parameters like that.
+* If none fields requested - all fields are returned by default. 
+* If empty/non-existing type or field is requested - it's just ignored. 
+
+For example in order to request `users` with `email` and `lastName` fields and related `countries` resources with a `name` field only (via `citizenships` relationship):
+[/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name](http://localhost:8080/jsonapi/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name)
+
 ### OpenAPI Specification Plugin
 
 The OpenAPI Specification Plugin (OAS) builds on top of the JsonApi4j plugin system to provide automatic, always-in-sync API documentation.
@@ -1268,10 +1292,9 @@ Fine-tuning these areas can help you balance performance, resource usage, and re
 ## JSON:API Specification Deviations
 
 While **JsonApi4j** adheres closely to the JSON:API specification, it introduces a few deliberate deviations and simplifications aimed at improving performance, maintainability, and developer experience:
-1.	Flat resource structure - encourages top-level resources like `/users` and `/articles` instead of nested structures such as `/users/{userId}/articles`. This design enables automatic link generation and simplifies Compound Document resolution.
-2.	No support for [Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) (planned for a future release).
-3.	No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) (lid). Use the standard id field for client-generated identifiers instead.
-4.	Pagination strategy - while the JSON:API spec is agnostic about pagination style (e.g. `page[number]` / `page[size]`), **JsonApi4j** standardizes on cursor-based pagination (`page[cursor]`).
-5.	No support for JSON:API Profiles or Extensions (may be added later).
-6.	Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
-7.	Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.
+1. Flat resource structure - encourages top-level resources like `/users` and `/articles` instead of nested structures such as `/users/{userId}/articles`. This design enables automatic link generation and simplifies Compound Document resolution.
+2. No support for [client generated ids](https://jsonapi.org/format/#document-resource-object-identification) (lid). Use the standard id field for client-generated identifiers instead.
+3. Pagination strategy - while the JSON:API spec is agnostic about pagination style (e.g. `page[number]` / `page[size]`), **JsonApi4j** standardizes on cursor-based pagination (`page[cursor]`).
+4. No support for JSON:API Profiles or Extensions (may be added later).
+5. Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
+6. Mandatory "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations. These are essential for the Compound Documents Resolver to assemble the "included" section efficiently.

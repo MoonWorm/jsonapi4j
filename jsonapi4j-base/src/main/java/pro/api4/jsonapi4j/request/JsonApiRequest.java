@@ -9,6 +9,7 @@ public interface JsonApiRequest extends
         IncludeAwareRequest,
         FiltersAwareRequest,
         SortAwareRequest,
+        SparseFieldsetsAwareRequest, 
         CustomQueryParamsAwareRequest,
         PayloadAwareRequest {
 
