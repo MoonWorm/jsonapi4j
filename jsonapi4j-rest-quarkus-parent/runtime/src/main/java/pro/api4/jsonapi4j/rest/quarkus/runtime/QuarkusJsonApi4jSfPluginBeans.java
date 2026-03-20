@@ -7,6 +7,8 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
+import pro.api4.jsonapi4j.plugin.sf.config.DefaultSfProperties;
+import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
 
 /**
  * Optional beans that are only registered when jsonapi4j-sf-plugin is available in the app classpath.
@@ -19,9 +21,16 @@ public class QuarkusJsonApi4jSfPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    JsonApiSparseFieldsetsPlugin jsonApiSfPlugin() {
+    JsonApiSparseFieldsetsPlugin jsonApiSfPlugin(QuarkusJsonApi4jSfProperties quarkusSfProperties) {
         LOG.info("SF Plugin Enabled. Composing {}...", JsonApiSparseFieldsetsPlugin.class.getSimpleName());
-        return new JsonApiSparseFieldsetsPlugin();
+        return new JsonApiSparseFieldsetsPlugin(convertToJsonapi4jSfProperties(quarkusSfProperties));
+    }
+
+    private SfProperties convertToJsonapi4jSfProperties(QuarkusJsonApi4jSfProperties quarkusSfProperties) {
+        DefaultSfProperties sfProperties = new DefaultSfProperties();
+        sfProperties.setEnabled(quarkusSfProperties.enabled());
+        sfProperties.setRequestedFieldsDontExistMode(quarkusSfProperties.requestedFieldsDontExistMode());
+        return sfProperties;
     }
 
 }

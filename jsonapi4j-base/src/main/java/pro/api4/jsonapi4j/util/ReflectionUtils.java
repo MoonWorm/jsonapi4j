@@ -36,7 +36,9 @@ public final class ReflectionUtils {
         String[] fieldPathParts = fieldPath.split("\\.");
         if (fieldPathParts.length > 1) {
             Object nestedFieldValue = getFieldValueThrowing(object, fieldPathParts[0]);
-            String nestedFieldPath = Arrays.stream(fieldPathParts).skip(1L).collect(Collectors.joining("."));
+            String nestedFieldPath = Arrays.stream(fieldPathParts)
+                    .skip(1L)
+                    .collect(Collectors.joining("."));
             return getFieldValueThrowing(nestedFieldValue, nestedFieldPath);
         }
         try {
@@ -45,6 +47,22 @@ public final class ReflectionUtils {
             return field.get(object);
         } catch (IllegalAccessException e) {
             throw new IllegalStateException("Could not access field '" + fieldPath + "'", e);
+        }
+    }
+
+    /**
+     * Checks if field path exist for a given object. Using {@link #getFieldValueThrowing(Object, String)} as a backbone.
+     *
+     * @param object target object
+     * @param fieldPath field path
+     * @return true if exists, false - otherwise
+     */
+    public static boolean fieldPathExists(Object object, String fieldPath) {
+        try {
+            getFieldValueThrowing(object, fieldPath);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -95,7 +113,7 @@ public final class ReflectionUtils {
                 setFieldValueThrowing(currentObject, fieldName, value);
                 break;
             } else {
-                currentObject = getFieldValueThrowing(object, fieldName);
+                currentObject = getFieldValueThrowing(currentObject, fieldName);
             }
         }
     }

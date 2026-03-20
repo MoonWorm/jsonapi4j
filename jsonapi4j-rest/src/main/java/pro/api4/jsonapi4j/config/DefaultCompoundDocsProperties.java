@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.config;
 
 import lombok.Getter;
 import lombok.Setter;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
 
 import java.util.Map;
 
@@ -10,10 +10,10 @@ import java.util.Map;
 @Setter
 public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
 
-    private boolean enabled;
-    private int maxHops;
-    private CompoundDocsResolverConfig.ErrorStrategy errorStrategy;
-    private Map<String, String> mapping;
+    private boolean enabled = Boolean.parseBoolean(JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE);
+    private int maxHops = Integer.parseInt(JSONAPI4J_COMPOUND_DOCS_MAX_HOPS_DEFAULT_VALUE);
+    private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(JSONAPI4J_COMPOUND_DOCS_ERROR_STRATEGY_DEFAULT_VALUE);
+    private Map<String, String> mapping = JSONAPI4J_COMPOUND_DOCS_MAPPING_DEFAULT_VALUE;
 
     @Override
     public boolean enabled() {
@@ -26,7 +26,7 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     }
 
     @Override
-    public CompoundDocsResolverConfig.ErrorStrategy errorStrategy() {
+    public ErrorStrategy errorStrategy() {
         return errorStrategy;
     }
 

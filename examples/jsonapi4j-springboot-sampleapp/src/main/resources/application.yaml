@@ -23,6 +23,7 @@ jsonapi4j:
   # Sparse Fieldsets Plugin
   sf:
     enabled: true
+    requestedFieldsDontExistMode: SPARSE_ALL_FIELDS
 
   # OAS Plugin
   oas:

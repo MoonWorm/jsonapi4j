@@ -6,6 +6,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
+import pro.api4.jsonapi4j.plugin.sf.config.SfProperties.RequestedFieldsDontExistMode;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 
@@ -21,5 +22,13 @@ public interface QuarkusJsonApi4jSfProperties {
      */
     @WithDefault(SfProperties.DEFAULT_SF_ENABLED)
     boolean enabled();
+
+    /**
+     * Defines strategies of how to behave in situations when some fields were requested but none exists
+     * Uses 'SPARSE_ALL_FIELDS' mode by default.
+     * Two options available: 'RETURN_ALL_FIELDS' / 'SPARSE_ALL_FIELDS'
+     */
+    @WithDefault(SfProperties.DEFAULT_REQUESTED_FIELDS_DONT_EXIST_MODE)
+    RequestedFieldsDontExistMode requestedFieldsDontExistMode();
 
 }
