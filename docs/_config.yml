@@ -1,5 +1,6 @@
 remote_theme: pages-themes/cayman@v0.2.0
 plugins:
   - jekyll-remote-theme
-description: Lightweight API framework for Java for building JSON:API-compliant APIs with minimal configuration
+title: "JsonApi4j — JSON:API Specification Framework for Java"
+description: "Lightweight Java framework for building REST APIs compliant with the JSON:API specification. Works with Spring Boot, Quarkus, and Jakarta Servlet API."
 show_downloads: false

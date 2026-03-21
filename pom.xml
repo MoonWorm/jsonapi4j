@@ -8,8 +8,8 @@
     <version>${revision}</version>
     <packaging>pom</packaging>
 
-    <name>JsonApi4j - Parent Module</name>
-    <description>Parent POM module</description>
+    <name>JsonApi4j - JSON:API Specification Framework for Java</name>
+    <description>Lightweight Java framework for building REST APIs compliant with the JSON:API specification (jsonapi.org). Supports Spring Boot, Quarkus, and Jakarta Servlet API.</description>
     <url>https://api4.pro</url>
     <licenses>
         <license>
