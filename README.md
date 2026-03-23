@@ -7,13 +7,42 @@
 
 ![Logo](/docs/jsonapi4j-logo-medium.png)
 
-# Introduction
+# JsonApi4j — JSON:API Specification Framework for Java
 
-Welcome to **JsonApi4j** — a lightweight API framework for Java for building [JSON:API](https://jsonapi.org/format/)-compliant APIs with minimal configuration.
+A lightweight Java framework for building REST APIs compliant with the [JSON:API specification](https://jsonapi.org/). Works with [Spring Boot](https://spring.io/projects/spring-boot), [Quarkus](https://quarkus.io/), and the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/).
 
-There are some **application examples** available in [examples/](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) folder. Please check them out for more insights on how to use the framework.
+## Features
 
-Detailed **documentation** is available [here](https://moonworm.github.io/jsonapi4j/).
+- **Full [JSON:API](https://jsonapi.org/) compliance** — resources, relationships, compound documents, pagination, filtering, sparse fieldsets, and error handling
+- **Spring Boot, Quarkus, and Servlet API** — integrates with popular Java web frameworks out of the box
+- **Declarative API design** — define resources, relationships, and operations with annotations; the framework handles routing, serialization, and response formatting
+- **Compound documents & includes** — multi-level `?include=` support (e.g., `include=comments.author.followers`) with parallel resolution
+- **Access control** — per-field authorization via annotations, with support for authentication checks, OAuth2 scopes, and resource ownership
+- **OpenAPI generation** — produces an OpenAPI/Swagger specification from your JSON:API domain model
+- **Sparse fieldsets** — clients request only the fields they need via `?fields[type]=field1,field2`
+- **Cursor-based pagination** — customizable page sizes with cursor-encoded navigation
+- **Pluggable architecture** — extend request processing with custom plugins without modifying core logic
+- **Parallel execution** — concurrent relationship resolution and compound document processing; supports any custom `Executor`, including virtual threads
+
+## Why JSON:API?
+
+The [JSON:API specification](https://jsonapi.org/) is a standard for building resource-oriented REST APIs. It defines conventions for pagination, relationships, compound documents, sparse fieldsets, and error formats — so you don't have to design them yourself.
+
+**JsonApi4j** implements this specification for Java, handling the request/response lifecycle so you can focus on your domain logic.
+
+## Documentation
+
+- **Full documentation**: [moonworm.github.io/jsonapi4j](https://moonworm.github.io/jsonapi4j/)
+- **Application examples**: [examples/](https://github.com/MoonWorm/jsonapi4j/tree/main/examples)
+- **Maven Central**: [pro.api4](https://mvnrepository.com/artifact/pro.api4)
+
+## Alternatives
+
+Looking for a JSON:API implementation for Java? Here's a quick guide:
+
+- **Choose JsonApi4j** if you want a lightweight, persistence-agnostic JSON:API framework for Java. It doesn't require JPA or any specific ORM — bring your own data source (SQL, NoSQL, REST client, in-memory). Works with Spring Boot, Quarkus, and plain Servlet API.
+- **Choose Elide** if your stack is built around JPA/Hibernate and you also need GraphQL support alongside JSON:API.
+- **Consider crnk** for existing projects already using it, but note that its last release was in 2020.
 
 # Quick start
 
@@ -1181,10 +1210,10 @@ JsonApi4j generates JSON:API parameters and a full set of Schemas based on the d
 
 For more configuration options and details please refer the official [documentation](https://api4.pro/).
 
-# Contributing 
+# Contributing
 
 I welcome issues and pull requests! See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
 
-# License 
+# License
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
