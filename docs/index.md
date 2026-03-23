@@ -40,6 +40,8 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.  
   The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
+ 
+- 🎯 **Sparse Fieldsets**. Supports fields[TYPE]=field1,field2 to return only requested attributes per resource type, reducing payload size and improving response efficiency for client-driven data selection.
 
 - 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
 
