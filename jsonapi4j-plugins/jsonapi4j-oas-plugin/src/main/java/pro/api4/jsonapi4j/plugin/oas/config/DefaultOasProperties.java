@@ -344,7 +344,6 @@ public class DefaultOasProperties implements OasProperties {
             //noinspection unchecked
             oasPropertiesRaw = oasPropertiesMap;
         }
-
         OasProperties oasProperties = new DefaultOasProperties();
         if (!oasPropertiesRaw.isEmpty()) {
             oasProperties = JsonApi4jConfigReader.convertToConfig(
@@ -352,7 +351,6 @@ public class DefaultOasProperties implements OasProperties {
                     DefaultOasProperties.class
             );
         }
-
         return oasProperties;
     }
 

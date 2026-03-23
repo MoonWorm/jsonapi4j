@@ -29,8 +29,8 @@ public class DefaultAcProperties implements AcProperties {
 
         DefaultAcProperties acProperties = new DefaultAcProperties();
         Object enabledObject = acPropertiesRaw.get("enabled");
-        if (enabledObject instanceof String enabledString) {
-            acProperties.setEnabled(Boolean.parseBoolean(enabledString));
+        if (enabledObject instanceof Boolean enabledBoolean) {
+            acProperties.setEnabled(enabledBoolean);
         }
         return acProperties;
     }

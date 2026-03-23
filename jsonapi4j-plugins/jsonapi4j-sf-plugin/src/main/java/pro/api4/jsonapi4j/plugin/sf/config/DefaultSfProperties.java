@@ -33,11 +33,10 @@ public class DefaultSfProperties implements SfProperties {
             //noinspection unchecked
             sfPropertiesRaw = sfPropertiesMap;
         }
-
         DefaultSfProperties sfProperties = new DefaultSfProperties();
         Object enabledObject = sfPropertiesRaw.get("enabled");
-        if (enabledObject instanceof String enabledString) {
-            sfProperties.setEnabled(Boolean.parseBoolean(enabledString));
+        if (enabledObject instanceof Boolean enabledBoolean) {
+            sfProperties.setEnabled(enabledBoolean);
         }
         Object requestedFieldsDontExistModeObject = sfPropertiesRaw.get("requestedFieldsDontExistMode");
         if (requestedFieldsDontExistModeObject instanceof String requestedFieldsDontExistModeString) {
