@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
 import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 @ConditionalOnProperty(
@@ -20,8 +21,9 @@ import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 public class SpringJsonApi4jAcPluginConfig {
 
     @Bean
-    public JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
-        return new JsonApiAccessControlPlugin(accessControlEvaluator);
+    public JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator,
+                                                                 AcProperties acProperties) {
+        return new JsonApiAccessControlPlugin(accessControlEvaluator, acProperties);
     }
 
     @Bean

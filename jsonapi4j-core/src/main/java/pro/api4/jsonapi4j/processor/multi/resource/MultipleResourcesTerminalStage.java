@@ -108,19 +108,21 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // PHASE: onDataPreRetrieval
         for (PluginSettings plugin : plugins) {
-            MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
-            if (visitors != null) {
-                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                        effectiveRequest,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                    //noinspection unchecked
-                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
-                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
+                if (visitors != null) {
+                    DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                            effectiveRequest,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                        //noinspection unchecked
+                        effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                    } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+                    }
                 }
             }
         }
@@ -129,20 +131,22 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // PHASE: onDataPostRetrieval
         for (PluginSettings plugin : plugins) {
-            MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
-            if (visitors != null) {
-                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                        effectiveRequest,
-                        cursorPageableResponse,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                    //noinspection unchecked
-                    effectiveRequest = ((DataPostRetrievalPhase<REQUEST>) dataPostRetrievalPhase).getResult();
-                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
+                if (visitors != null) {
+                    DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                            effectiveRequest,
+                            cursorPageableResponse,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                        //noinspection unchecked
+                        effectiveRequest = ((DataPostRetrievalPhase<REQUEST>) dataPostRetrievalPhase).getResult();
+                    } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                    }
                 }
             }
         }
@@ -195,21 +199,23 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // PHASE: onRelationshipsPreRetrieval
         for (PluginSettings plugin : plugins) {
-            MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
-            if (visitors != null) {
-                RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
-                        effectiveRequest,
-                        cursorPageableResponse,
-                        doc,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
-                    //noinspection unchecked
-                    doc = ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
-                } else if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
+                if (visitors != null) {
+                    RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
+                            effectiveRequest,
+                            cursorPageableResponse,
+                            doc,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
+                        //noinspection unchecked
+                        doc = ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+                    } else if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+                    }
                 }
             }
         }
@@ -255,21 +261,23 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // PHASE: onRelationshipsPostRetrieval
         for (PluginSettings plugin : plugins) {
-            MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
-            if (visitors != null) {
-                RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
-                        effectiveRequest,
-                        cursorPageableResponse,
-                        doc,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
-                    //noinspection unchecked
-                    doc = ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
-                } else if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
+                if (visitors != null) {
+                    RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
+                            effectiveRequest,
+                            cursorPageableResponse,
+                            doc,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                        //noinspection unchecked
+                        doc = ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+                    } else if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+                    }
                 }
             }
         }

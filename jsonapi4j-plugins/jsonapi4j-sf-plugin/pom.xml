@@ -46,6 +46,7 @@
     </properties>
 
     <dependencies>
+        <!-- jsonapi4j-base -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-base</artifactId>

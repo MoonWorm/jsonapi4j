@@ -19,9 +19,9 @@ public class QuarkusJsonApi4jOasPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    JsonApiOasPlugin jsonApiOasPlugin() {
+    JsonApiOasPlugin jsonApiOasPlugin(QuarkusJsonApi4jOasProperties oasProperties) {
         LOG.info("OAS Plugin Enabled. Composing {}...", JsonApiOasPlugin.class.getSimpleName());
-        return new JsonApiOasPlugin();
+        return new JsonApiOasPlugin(oasProperties.toOasProperties());
     }
 
 }

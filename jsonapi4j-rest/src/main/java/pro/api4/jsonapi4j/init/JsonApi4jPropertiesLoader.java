@@ -17,7 +17,10 @@ public final class JsonApi4jPropertiesLoader {
     }
 
     /**
-     * Priority:
+     * First, checks if {@link JsonApi4jProperties} is already available as a servlet context attribute
+     * {@link JsonApi4jServletContainerInitializer#JSONAPI4J_PROPERTIES_ATT_NAME}.
+     * <p>
+     * If not found tries to read the config using a path according the next priority:
      * 1. System property (jsonapi4j.config)
      * 2. Environment variable (JSONAPI4J_CONFIG)
      * 3. Servlet Context Init Parameter (jsonapi4j.config)
@@ -68,12 +71,21 @@ public final class JsonApi4jPropertiesLoader {
         }
     }
 
+    /**
+     * Never checks {@link JsonApi4jServletContainerInitializer#JSONAPI4J_PROPERTIES_ATT_NAME} to avoid missing extra
+     * property that can not be deserialized into {@link JsonApi4jProperties}.
+     * <p>
+     * Reads the config using a path according to the next priority:
+     * 1. System property (jsonapi4j.config)
+     * 2. Environment variable (JSONAPI4J_CONFIG)
+     * 3. Servlet Context Init Parameter (jsonapi4j.config)
+     * 4. Classpath ("jsonapi4j.yaml" or "jsonapi4j.json")
+     *
+     * @param servletContext
+     * @return
+     */
     public static Map<String, Object> loadConfigAsMap(ServletContext servletContext) {
         try {
-            JsonApi4jProperties fromContext = (JsonApi4jProperties) servletContext.getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-            if (fromContext != null) {
-                return JsonApi4jConfigReader.readConfigFromClasspathAsMap(fromContext);
-            }
             String path = System.getProperty("jsonapi4j.config");
             if (path == null) {
                 path = System.getenv("JSONAPI4J_CONFIG");

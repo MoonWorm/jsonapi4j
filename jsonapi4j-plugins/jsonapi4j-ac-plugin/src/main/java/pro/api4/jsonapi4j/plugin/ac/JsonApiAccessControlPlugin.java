@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
@@ -47,9 +48,12 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
     public static final String NAME = JsonApiAccessControlPlugin.class.getSimpleName();
 
     private final AccessControlEvaluator accessControlEvaluator;
+    private final AcProperties acProperties;
 
-    public JsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
+    public JsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator,
+                                      AcProperties acProperties) {
         this.accessControlEvaluator = accessControlEvaluator;
+        this.acProperties = acProperties;
     }
 
     private static AccessControlModel findOnTheOperationMethod(Class<?> operationType, String methodName) {
@@ -66,6 +70,11 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
     @Override
     public String pluginName() {
         return NAME;
+    }
+
+    @Override
+    public boolean enabled() {
+        return acProperties.enabled();
     }
 
     @Override

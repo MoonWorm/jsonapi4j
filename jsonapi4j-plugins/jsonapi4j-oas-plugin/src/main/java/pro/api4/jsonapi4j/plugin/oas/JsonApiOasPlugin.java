@@ -2,17 +2,9 @@ package pro.api4.jsonapi4j.plugin.oas;
 
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
-import pro.api4.jsonapi4j.operation.CreateResourceOperation;
-import pro.api4.jsonapi4j.operation.DeleteResourceOperation;
-import pro.api4.jsonapi4j.operation.Operation;
-import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
-import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
-import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
-import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
-import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
@@ -37,6 +29,12 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
 
     public static final String NAME = JsonApiOasPlugin.class.getSimpleName();
 
+    private OasProperties oasProperties;
+
+    public JsonApiOasPlugin(OasProperties oasProperties) {
+        this.oasProperties = oasProperties;
+    }
+
     private static OasOperationInfoModel findOnTheMethod(Class<?> operationType, String methodName) {
         return OasOperationInfoModel.fromAnnotation(
                 fetchAnnotationForMethod(
@@ -59,6 +57,11 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
     @Override
     public String pluginName() {
         return NAME;
+    }
+
+    @Override
+    public boolean enabled() {
+        return oasProperties.enabled();
     }
 
     @Override

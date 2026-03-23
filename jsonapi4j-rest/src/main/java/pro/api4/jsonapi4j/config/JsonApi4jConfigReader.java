@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.config;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -31,6 +32,7 @@ public class JsonApi4jConfigReader {
     private static void configureObjectMapper(ObjectMapper mapper) {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerModule(new JavaTimeModule());
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
@@ -43,7 +45,7 @@ public class JsonApi4jConfigReader {
     }
 
     public static JsonApi4jProperties readConfig(String path) throws IOException {
-        try (InputStream is = JsonApi4jProperties.class.getResourceAsStream(path)) {
+        try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream(path)) {
             if (is == null) {
                 throw new IOException("Resource not found: " + path);
             }
@@ -52,11 +54,12 @@ public class JsonApi4jConfigReader {
     }
 
     public static Map<String, Object> readConfigAsMap(String path) throws IOException {
-        try (InputStream is = JsonApi4jProperties.class.getResourceAsStream(path)) {
+        try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream(path)) {
             if (is == null) {
                 throw new IOException("Resource not found: " + path);
             }
-            return getObjectMapper(path).readValue(is, new TypeReference<>() {});
+            return getObjectMapper(path).readValue(is, new TypeReference<>() {
+            });
         }
     }
 
@@ -65,7 +68,8 @@ public class JsonApi4jConfigReader {
         return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(rawConfig, targetConfigType);
     }
 
-    public static JsonApi4jProperties readConfigFromClasspath(String configNameYaml, String configNameJson) throws IOException {
+    public static JsonApi4jProperties readConfigFromClasspath(String configNameYaml,
+                                                              String configNameJson) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
             if (is != null) {
                 return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, DefaultJsonApi4jProperties.class);
@@ -80,22 +84,24 @@ public class JsonApi4jConfigReader {
     }
 
     public static Map<String, Object> readConfigFromClasspathAsMap(JsonApi4jProperties properties) {
-        return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(properties, new TypeReference<>() {});
+        return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(properties, new TypeReference<>() {
+        });
     }
 
     public static Map<String, Object> readConfigFromClasspathAsMap(String configNameYaml,
                                                                    String configNameJson) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
             if (is != null) {
-
-                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, new TypeReference<>() {});
+                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, new TypeReference<>() {
+                });
             }
         }
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameJson)) {
             if (is == null) {
                 throw new IllegalStateException("No configuration file found");
             }
-            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(is, new TypeReference<>() {});
+            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(is, new TypeReference<>() {
+            });
         }
     }
 

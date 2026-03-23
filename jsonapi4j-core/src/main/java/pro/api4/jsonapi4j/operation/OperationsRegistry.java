@@ -554,9 +554,11 @@ public class OperationsRegistry {
                                                                                         Class<?> operationClass) {
             Map<String, Object> pluginsInfo = new HashMap<>();
             for (JsonApi4jPlugin plugin : this.plugins) {
-                Object pluginInfo = plugin.extractPluginInfoFromOperation(operation, operationClass);
-                if (pluginInfo != null) {
-                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                if (plugin.enabled()) {
+                    Object pluginInfo = plugin.extractPluginInfoFromOperation(operation, operationClass);
+                    if (pluginInfo != null) {
+                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                    }
                 }
             }
             ResourceType resourceType;

@@ -263,9 +263,11 @@ public class DomainRegistry {
         private RegisteredResource<Resource<?>> enrichWithMetaInfo(Resource<?> resource) {
             Map<String, Object> pluginsInfo = new HashMap<>();
             for (JsonApi4jPlugin plugin : this.plugins) {
-                Object pluginInfo = plugin.extractPluginInfoFromResource(resource);
-                if (pluginInfo != null) {
-                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                if (plugin.enabled()) {
+                    Object pluginInfo = plugin.extractPluginInfoFromResource(resource);
+                    if (pluginInfo != null) {
+                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                    }
                 }
             }
             return RegisteredResource.builder()
@@ -288,9 +290,11 @@ public class DomainRegistry {
 
             Map<String, Object> pluginsInfo = new HashMap<>();
             for (JsonApi4jPlugin plugin : this.plugins) {
-                Object pluginInfo = plugin.extractPluginInfoFromRelationship(relationship);
-                if (pluginInfo != null) {
-                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                if (plugin.enabled()) {
+                    Object pluginInfo = plugin.extractPluginInfoFromRelationship(relationship);
+                    if (pluginInfo != null) {
+                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
+                    }
                 }
             }
             return RegisteredRelationship.<T>builder()

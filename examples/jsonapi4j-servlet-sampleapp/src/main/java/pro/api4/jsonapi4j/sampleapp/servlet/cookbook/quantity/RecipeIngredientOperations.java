@@ -1,11 +1,11 @@
-package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.quantity;
+package pro.api4.jsonapi4j.sampleapp.servlet.cookbook.quantity;
 
 import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.response.CursorPageableResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.ingredient.Ingredient;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipe;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.ingredient.Ingredient;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.recipe.DishRecipe;
 
 import java.util.List;
 import java.util.Map;

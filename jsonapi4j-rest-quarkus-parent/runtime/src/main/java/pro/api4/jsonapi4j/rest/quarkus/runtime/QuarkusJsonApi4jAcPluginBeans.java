@@ -22,9 +22,10 @@ public class QuarkusJsonApi4jAcPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator) {
+    JsonApiAccessControlPlugin jsonApiAccessControlPlugin(AccessControlEvaluator accessControlEvaluator,
+                                                          QuarkusJsonApi4jAcProperties acProperties) {
         LOG.info("AC Plugin Enabled. Composing {}...", JsonApiAccessControlPlugin.class.getSimpleName());
-        return new JsonApiAccessControlPlugin(accessControlEvaluator);
+        return new JsonApiAccessControlPlugin(accessControlEvaluator, acProperties.toJsonapi4jAcProperties());
     }
 
     @Produces

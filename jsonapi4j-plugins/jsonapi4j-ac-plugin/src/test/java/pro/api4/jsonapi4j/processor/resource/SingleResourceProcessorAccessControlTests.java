@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 import pro.api4.jsonapi4j.principal.tier.*;
@@ -40,6 +41,11 @@ import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelati
 public class SingleResourceProcessorAccessControlTests {
 
     private static final AccessControlEvaluator AC_EVALUATOR = new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry());
+    private static final DefaultAcProperties AC_PROPERTIES = new DefaultAcProperties();
+    static {
+        AC_PROPERTIES.setEnabled(true);
+    }
+
 
     private static final ResourceType SILVER = new ResourceType("silver");
     private static final RelationshipName FOO = new RelationshipName("foo");
@@ -82,7 +88,7 @@ public class SingleResourceProcessorAccessControlTests {
         // when
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
-                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR)).build()))
+                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR, AC_PROPERTIES)).build()))
                 .dataSupplier(ds)
                 .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
@@ -132,7 +138,7 @@ public class SingleResourceProcessorAccessControlTests {
         );
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
-                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR)).build()))
+                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR, AC_PROPERTIES)).build()))
                 .dataSupplier(ds)
                 .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> foo)
@@ -168,7 +174,7 @@ public class SingleResourceProcessorAccessControlTests {
         // when
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
                 .forRequest(REQUEST_ALL_INCLUDES)
-                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR)).build()))
+                .plugins(List.of(PluginSettings.builder().plugin(new JsonApiAccessControlPlugin(AC_EVALUATOR, AC_PROPERTIES)).build()))
                 .dataSupplier(ds)
                 .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(

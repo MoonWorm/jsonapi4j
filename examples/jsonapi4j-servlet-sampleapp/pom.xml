@@ -19,18 +19,29 @@
         <maven.compiler.target>21</maven.compiler.target>
 
         <jetty.version>11.0.26</jetty.version>
-        <lombok.version>1.18.36</lombok.version>
+        <slf4j-api.version>1.7.32</slf4j-api.version>
     </properties>
 
     <dependencies>
+        <!-- jsonapi4j -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest</artifactId>
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-oas-plugin</artifactId>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sf-plugin</artifactId>
+        </dependency>
+
+        <!-- jetty -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
@@ -41,25 +52,23 @@
             <artifactId>jetty-servlet</artifactId>
             <version>${jetty.version}</version>
         </dependency>
+
+        <!-- servlet api -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>5.0.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.3</version>
+            <version>${slf4j-api.version}</version>
         </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.21.0</version>
-        </dependency>
+
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -70,6 +79,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -83,6 +93,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
+                <version>3.1.4</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
@@ -92,7 +103,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>pro.api4.jsonapi4j.servlet.sampleapp.CookbookApp</mainClass>
+                    <mainClass>pro.api4.jsonapi4j.sampleapp.servlet.CookbookApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -23,6 +23,11 @@ public class JsonApiSparseFieldsetsPlugin implements JsonApi4jPlugin {
     }
 
     @Override
+    public boolean enabled() {
+        return sfProperties.enabled();
+    }
+
+    @Override
     public int precedence() {
         return JsonApi4jPlugin.HIGH_PRECEDENCE;
     }

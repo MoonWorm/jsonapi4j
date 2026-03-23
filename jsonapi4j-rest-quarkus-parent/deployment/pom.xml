@@ -41,6 +41,7 @@
     </scm>
 
     <dependencies>
+        <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc-deployment</artifactId>
@@ -49,6 +50,8 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-undertow-deployment</artifactId>
         </dependency>
+
+        <!-- jsonapi4j -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest-quarkus</artifactId>
@@ -58,6 +61,7 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
                     <execution>

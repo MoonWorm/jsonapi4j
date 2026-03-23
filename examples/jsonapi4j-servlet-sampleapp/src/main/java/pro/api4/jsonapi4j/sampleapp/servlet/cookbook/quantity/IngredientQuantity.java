@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.quantity;
+package pro.api4.jsonapi4j.sampleapp.servlet.cookbook.quantity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

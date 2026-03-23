@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.sampleapp.cookbook.ingredient;
+package pro.api4.jsonapi4j.sampleapp.servlet.cookbook.ingredient;
 
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;

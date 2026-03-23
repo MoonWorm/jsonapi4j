@@ -1,20 +1,30 @@
-package pro.api4.jsonapi4j.servlet.sampleapp;
+package pro.api4.jsonapi4j.sampleapp.servlet;
 
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
+import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
+import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.ingredient.IngredientResource;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipe;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.DishRecipeResource;
-import pro.api4.jsonapi4j.servlet.sampleapp.cookbook.recipe.RecipeOperations;
+import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
+import pro.api4.jsonapi4j.plugin.sf.config.DefaultSfProperties;
+import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.ingredient.IngredientResource;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.recipe.DishRecipe;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.recipe.DishRecipeResource;
+import pro.api4.jsonapi4j.sampleapp.servlet.cookbook.recipe.RecipeOperations;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 public class CookbookApp {
@@ -42,9 +52,15 @@ public class CookbookApp {
         ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
         context.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
-
+        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(context.getServletContext());
+        OasProperties oasProperties = DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw);
         List<JsonApi4jPlugin> plugins = List.of(
-                new JsonApiOasPlugin()
+                new JsonApiAccessControlPlugin(
+                        new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry()),
+                        DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
+                ),
+                new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)),
+                new JsonApiOasPlugin(oasProperties)
         );
 
         var domainRegistry = DomainRegistry.builder(plugins)

@@ -59,6 +59,7 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Quarkus -->
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-bom</artifactId>
@@ -66,37 +67,33 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-arc-deployment</artifactId>
                 <version>${quarkus.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-undertow-deployment</artifactId>
                 <version>${quarkus.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-arc</artifactId>
                 <version>${quarkus.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-undertow</artifactId>
                 <version>${quarkus.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-parameter-names</artifactId>
                 <version>${jackson-module-parameter-names.version}</version>
             </dependency>
 
+            <!-- jsonapi4j -->
             <dependency>
                 <groupId>pro.api4</groupId>
                 <artifactId>jsonapi4j-rest</artifactId>

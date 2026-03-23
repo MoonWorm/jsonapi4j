@@ -53,19 +53,21 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // PHASE: onDataPreRetrieval
         for (PluginSettings plugin : plugins) {
-            ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
-            if (visitors != null) {
-                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                        effectiveRequest,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                    //noinspection unchecked
-                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
-                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
+                if (visitors != null) {
+                    DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                            effectiveRequest,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                        //noinspection unchecked
+                        effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                    } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
+                    }
                 }
             }
         }
@@ -114,21 +116,23 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // PHASE: onDataPostRetrieval
         for (PluginSettings plugin : plugins) {
-            ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
-            if (visitors != null) {
-                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                        effectiveRequest,
-                        cursorPageableResponse,
-                        doc,
-                        jsonApiContext,
-                        plugin.getInfo()
-                );
-                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
-                    //noinspection unchecked
-                    doc = ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
-                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
-                    //noinspection unchecked
-                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+            if (plugin.getPlugin().enabled()) {
+                ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
+                if (visitors != null) {
+                    DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                            effectiveRequest,
+                            cursorPageableResponse,
+                            doc,
+                            jsonApiContext,
+                            plugin.getInfo()
+                    );
+                    if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                        //noinspection unchecked
+                        doc = ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                    } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                        //noinspection unchecked
+                        return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                    }
                 }
             }
         }

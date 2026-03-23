@@ -13,6 +13,10 @@ public interface JsonApi4jPlugin {
 
     String pluginName();
 
+    default boolean enabled() {
+        return true;
+    }
+
     default int precedence() {
         return LOW_PRECEDENCE;
     }

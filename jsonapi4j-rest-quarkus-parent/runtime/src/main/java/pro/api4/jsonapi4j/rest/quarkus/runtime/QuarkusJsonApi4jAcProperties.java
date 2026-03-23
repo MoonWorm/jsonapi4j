@@ -6,6 +6,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
+import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 
@@ -21,5 +22,11 @@ public interface QuarkusJsonApi4jAcProperties {
      */
     @WithDefault(AcProperties.DEFAULT_AC_ENABLED)
     boolean enabled();
+
+    default AcProperties toJsonapi4jAcProperties() {
+        DefaultAcProperties acProperties = new DefaultAcProperties();
+        acProperties.setEnabled(enabled());
+        return acProperties;
+    }
 
 }

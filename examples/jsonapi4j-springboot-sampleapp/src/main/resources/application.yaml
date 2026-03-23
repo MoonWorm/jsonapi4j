@@ -45,7 +45,7 @@ jsonapi4j:
       description: Extra documentation description
 
     oauth2:
-      client-credentials:
+      clientCredentials:
         name: Client_Credentials
         description: Use this grant flow to access non-personalized data.
         tokenUrl: http://foo.bar/tokenUrl

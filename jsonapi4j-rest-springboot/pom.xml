@@ -48,6 +48,7 @@
     </properties>
 
     <dependencies>
+        <!-- jsonapi4j -->
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest</artifactId>
@@ -72,6 +73,7 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot</artifactId>
@@ -88,6 +90,7 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- OAS -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>

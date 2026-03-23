@@ -30,8 +30,8 @@ import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerIniti
 public class SpringJsonApi4jOasPluginConfig {
 
     @Bean
-    public JsonApiOasPlugin jsonApiOasPlugin() {
-        return new JsonApiOasPlugin();
+    public JsonApiOasPlugin jsonApiOasPlugin(SpringOasProperties oasProperties) {
+        return new JsonApiOasPlugin(oasProperties);
     }
 
     @Bean

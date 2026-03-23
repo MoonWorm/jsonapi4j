@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.plugin.sf.config;
 
 public interface SfProperties {
 
+    String SF_PROPERTY_NAME = "sf";
+
     String DEFAULT_SF_ENABLED = "true";
     String DEFAULT_REQUESTED_FIELDS_DONT_EXIST_MODE = "SPARSE_ALL_FIELDS";
 
