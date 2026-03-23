@@ -41,7 +41,7 @@ Whether you're standardizing your organization's API layer or building a new ser
 - 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.  
   The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
  
-- 🎯 **Sparse Fieldsets**. Supports fields[TYPE]=field1,field2 to return only requested attributes per resource type, reducing payload size and improving response efficiency for client-driven data selection.
+- 🎯 **Sparse Fieldsets**. Supports `fields[TYPE]=field1,field2` to return only requested attributes per resource type, reducing payload size and improving response efficiency for client-driven data selection.
 
 - 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
 
@@ -49,14 +49,27 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory — check them out for practical guidance on using the framework.
 
+## JsonApi4j properties
+
+Here is the list of the framework core properties:
+
+| Property name          | Default value | Description                                     |
+|------------------------|---------------|-------------------------------------------------|
+| `jsonapi4j.rootPath` | `/jsonapi`          | Sets the root path for all JsonApi4j operations |
+
+Please refer various plugins for more plugin-specific properties
+
 ## Getting Started
 
-Let's take a quick look at what a typical **JsonApi4j**-based service looks like in code.  
-As an example, we'll integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application. 
+Let's take a quick look at what a typical **JsonApi4j**-based service looks like in code.   
 
 ### 1. Add Dependency
 
-#### Maven
+#### Spring Boot
+
+If you want to integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application, add:
+
+**Maven**
 ```xml
 <dependency>
   <groupId>pro.api4</groupId>
@@ -65,9 +78,29 @@ As an example, we'll integrate **JsonApi4j** into a clean or existing [Spring Bo
 </dependency>
 ```
 
-#### Gradle
-```groovy
-implementation "pro.api4:jsonapi4j-rest-springboot:${jsonapi4jVersion}"
+#### Quarkus
+
+For [Quarkus](https://quarkus.io/) app - use:
+
+**Maven**
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest-quarkus</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+#### Servlet API
+
+For custom Web integrations or apps that run on Servlet API:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-rest</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
 ```
 
 The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
@@ -78,7 +111,7 @@ Let's implement a simple application that exposes two resources - `users` and `c
 
 ![Simple Domain Graph](simple-domain-graph.png "Simple Domain Graph")
 
-Then, let's implement a few operations for these resources - reading multiple users and countries by their IDs, and retrieving which citizenships each user has. 
+Then, let's implement a few operations for these resources - reading multiple users and countries by their IDs, and retrieving which citizenships each user has.
 
 ### 3. Define the JSON:API Resource for Users
 
@@ -1157,6 +1190,12 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<Downstre
 1. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value.
 2. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
 
+**Available properties**
+
+| Property name          | Default value | Description                            |
+|------------------------|---------------|----------------------------------------|
+| `jsonapi4j.ac.enabled` | `true`          | Enables/Disables Access Control plugin |
+
 ### Sparse Fieldsets Plugin
 
 In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next dependency:
@@ -1225,6 +1264,43 @@ There are more tunings available by placing the next annotations:
 * `@OasRelationshipInfo` annotation on top of JSON:API To-One or To-Many Relationship declaration
 * `@OasOperationInfo` annotation on top of operation class or any of its methods that represents some particular operation
 
+**Available properties**
+
+| Property name                               | Default value | Description                                                                                                             |
+|---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
+| `jsonapi4j.oas.enabled` | `true` | Enables/disables OAS plugin and OAS endpoint exposure. |
+| `jsonapi4j.oas.oasRootPath` | `/jsonapi/oas` | Root path for generated OpenAPI spec endpoint. |
+| `jsonapi4j.oas.info.title` | `JsonApi4j API Sample Title` | OpenAPI info.title. |
+| `jsonapi4j.oas.info.description` | not set | OpenAPI info.description. |
+| `jsonapi4j.oas.info.version` | `1.0.0` | OpenAPI info.version. |
+| `jsonapi4j.oas.info.termsOfService` | not set | OpenAPI info.termsOfService URL. |
+| `jsonapi4j.oas.info.contact.name` | not set | OpenAPI info.contact.name. |
+| `jsonapi4j.oas.info.contact.url` | not set | OpenAPI info.contact.url. |
+| `jsonapi4j.oas.info.contact.email` | not set | OpenAPI info.contact.email. |
+| `jsonapi4j.oas.info.license.name` | not set | OpenAPI info.license.name. |
+| `jsonapi4j.oas.info.license.url` | not set | OpenAPI info.license.url. |
+| `jsonapi4j.oas.info.license.identifier` | not set | OpenAPI info.license.identifier (SPDX). |
+| `jsonapi4j.oas.externalDocumentation.url` | not set | OpenAPI external docs URL. |
+| `jsonapi4j.oas.externalDocumentation.description` | not set | OpenAPI external docs description. |
+| `jsonapi4j.oas.oauth2.clientCredentials.name` | not set | OAuth2 client credentials scheme name. |
+| `jsonapi4j.oas.oauth2.clientCredentials.description` | not set | OAuth2 client credentials description. |
+| `jsonapi4j.oas.oauth2.clientCredentials.tokenUrl` | not set | OAuth2 client credentials token URL. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.name` | not set | OAuth2 authorization code + PKCE scheme name. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.description` | not set | OAuth2 authorization code + PKCE description. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.tokenUrl` | not set | OAuth2 authorization code + PKCE token URL. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.authorizationUrl` | not set | OAuth2 authorization URL (PKCE flow). |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[*].name` | not set | OAuth2 scope name. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[*].description` | not set | OAuth2 scope description. |
+| `jsonapi4j.oas.servers[*].name` | not set | OpenAPI server display name. |
+| `jsonapi4j.oas.servers[*].url` | not set | OpenAPI server URL. |
+| `jsonapi4j.oas.servers[*].enabled` | false | Include server in generated spec or not. |
+| `jsonapi4j.oas.customResponseHeaders[*].httpStatusCode` | not set | HTTP status code this custom-header group applies to. |
+| `jsonapi4j.oas.customResponseHeaders[*].headers[*].name` | not set | Header name. |
+| `jsonapi4j.oas.customResponseHeaders[*].headers[*].description` | not set | Header description. |
+| `jsonapi4j.oas.customResponseHeaders[*].headers[*].required` | false | Whether header is required. |
+| `jsonapi4j.oas.customResponseHeaders[*].headers[*].schema` | string | Header schema type. |
+| `jsonapi4j.oas.customResponseHeaders[*].headers[*].example` | not set | Header example value. |
+
 ### Compound documents
 
 #### Overview
@@ -1273,6 +1349,16 @@ To enable it, set: `jsonapi4j.compound-docs.enabled=true`.
 Because it's a standalone module, you can host this logic either:
 * within your application server, or
 * at an **API Gateway** level (for example, for centralized response composition).
+
+**Available properties**
+
+| Property name                               | Default value | Description                                                                          |
+|---------------------------------------------|---------------|--------------------------------------------------------------------------------------|
+| `jsonapi4j.compoundDocs.enabled` | `false` | Enables/disables Compound Documents post-processing.                                 |
+| `jsonapi4j.compoundDocs.maxHops` | `2` | Max include traversal depth for compound document resolution.                        |
+| `jsonapi4j.compoundDocs.errorStrategy` | `IGNORE` | Error handling strategy in compound docs resolver. Available options: `IGNORE`, `FAIL` |
+| `jsonapi4j.compoundDocs.mapping.<resourceType>` | empty map | Per-resource-type base URL mapping used by compound docs resolver.                   |
+
 
 #### Performance and Caching
 
