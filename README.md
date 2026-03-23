@@ -32,7 +32,7 @@ The [JSON:API specification](https://jsonapi.org/) is a standard for building re
 
 ## Documentation
 
-- **Full documentation**: [moonworm.github.io/jsonapi4j](https://moonworm.github.io/jsonapi4j/)
+- **Full documentation**: [api4.pro](https://api4.pro/)
 - **Application examples**: [examples/](https://github.com/MoonWorm/jsonapi4j/tree/main/examples)
 - **Maven Central**: [pro.api4](https://mvnrepository.com/artifact/pro.api4)
 
