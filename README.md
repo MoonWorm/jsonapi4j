@@ -1018,6 +1018,64 @@ Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost
 
 User '3' has no relatives. While user '4' has one relative with id '1' and '2'. User '1' has relatives '2' and '3' and user '2' has relatives '1' and '4'. All the mentioned user resources can be found in the "included" section.
 
+### Fetch Users with Sparse Fieldsets
+
+Now let's read the same users, but ask the server to return 'email' field only:
+
+Request: [/users?page[cursor]=DoJu&fields[users]=email](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&fields[users]=email)
+
+<details>
+<summary>Response</summary>
+
+```json
+{
+  "links": {
+    "self": "/users?page%5Bcursor%5D=DoJu&fields%5Busers%5D=email",
+    "next": "/users?page%5Bcursor%5D=DoJw&fields%5Busers%5D=email"
+  },
+  "data": [
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "email": "jack@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives?fields%5Busers%5D=email"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/3?fields%5Busers%5D=email"
+      }
+    },
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "email": "jessy@doe.com"
+      },
+      "relationships": {
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives?fields%5Busers%5D=email"
+          }
+        }
+      },
+      "links": {
+        "self": "/users/4?fields%5Busers%5D=email"
+      }
+    }
+  ]
+}
+```
+
+</details>
+
+All users have 'email' field in the corresponding 'attributes' section. Other fields were excluded on the server.
+
 # Advanced features
 
 Let's proceed with the domain from the above and showcase few more features.

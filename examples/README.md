@@ -10,9 +10,13 @@ Applications implements an imaginable and very simple domain:
 
 ## How to run
 
-### Spring Boot example
+### Spring Boot App example
 
 `mvn -f jsonapi4j-springboot-sampleapp spring-boot:run`
+
+### Quarkus App example
+
+`mvn -f jsonapi4j-quarkus-sampleapp quarkus:dev`
 
 ## API Requests
 
@@ -104,4 +108,10 @@ All related 'currencies' and 'countries' can be found in "included" section.
 GET http://localhost:8080/jsonapi/users/1?include=placeOfBirth.currencies HTTP/1.1
 X-Authenticated-User-Granted-Scopes: users.sensitive.read
 X-Authenticated-User-Id: 1
+```
+
+12. Reads a country with its currencies via 'currencies' relationship. Showcase 'Sparse Fieldsets' capabilities: request only 'name' field for 'countries' and 'symbol' field for 'currencies':
+
+```http
+GET http://localhost:8080/jsonapi/countries/FI?include=currencies&fields[countries]=name&fields[currencies]=symbol HTTP/1.1
 ```
