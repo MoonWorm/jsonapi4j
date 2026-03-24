@@ -34,7 +34,7 @@ public class SingleResourceAttributesAwareJsonApiConfigurationStage<REQUEST, DAT
         getToOneRelationshipResolvers().putAll(from.getToOneRelationshipResolvers());
         getBatchToManyRelationshipResolvers().putAll(from.getBatchToManyRelationshipResolvers());
         getBatchToOneRelationshipResolvers().putAll(from.getBatchToOneRelationshipResolvers());
-        getRelationshipTypes().putAll(from.getRelationshipTypes());
+        getRelationshipResolversConfiguredFor().addAll(from.getRelationshipResolversConfiguredFor());
         this.attributesResolver = attributesResolver;
     }
 
@@ -145,7 +145,7 @@ public class SingleResourceAttributesAwareJsonApiConfigurationStage<REQUEST, DAT
                         .batchToManyRelationshipResolvers(getBatchToManyRelationshipResolvers())
                         .toOneRelationshipResolvers(getToOneRelationshipResolvers())
                         .batchToOneRelationshipResolvers(getBatchToOneRelationshipResolvers())
-                        .dataResolutionIsConfiguredFor(getRelationshipTypes())
+                        .relationshipResolversConfiguredFor(getRelationshipResolversConfiguredFor())
                         .topLevelLinksResolver(getTopLevelLinksResolver())
                         .resourceLinksResolver(getResourceLinksResolver())
                         .topLevelMetaResolver(getTopLevelMetaResolver())

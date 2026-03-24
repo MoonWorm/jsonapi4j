@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.processor;
 
+import pro.api4.jsonapi4j.domain.RelationshipDetails;
+import pro.api4.jsonapi4j.domain.RelationshipType;
 import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
@@ -16,7 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Getter
@@ -31,7 +35,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
     private final Map<RelationshipName, ToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> toOneRelationshipResolvers;
     private final Map<RelationshipName, BatchToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> batchToOneRelationshipResolvers;
     private final Map<RelationshipName, BatchToManyRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> batchToManyRelationshipResolvers;
-    private final Map<RelationshipName, RelationshipType> relationshipTypes;
+    private final Set<RelationshipDetails> relationshipResolversConfiguredFor;
 
     // resource links
     private ResourceLinksResolver<REQUEST, DATA_SOURCE_DTO> resourceLinksResolver;
@@ -50,7 +54,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
         this.toOneRelationshipResolvers = new HashMap<>();
         this.batchToOneRelationshipResolvers = new HashMap<>();
         this.batchToManyRelationshipResolvers = new HashMap<>();
-        this.relationshipTypes = new HashMap<>();
+        this.relationshipResolversConfiguredFor = new HashSet<>();
     }
 
     protected void toManyRelationshipResolverInternal(RelationshipName relationshipName,
@@ -62,7 +66,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
         if (batchToManyRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("There is a batch resolver already registered for this relationship. Batch resolvers have higher priority.");
         }
-        relationshipTypes.put(relationshipName, RelationshipType.TO_MANY);
+        relationshipResolversConfiguredFor.add(new RelationshipDetails(relationshipName, RelationshipType.TO_MANY));
         if (relationshipsRequested(relationshipName.getName())) {
             toManyRelationshipResolvers.put(relationshipName, resolver);
         }
@@ -77,7 +81,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
         if (batchToOneRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("There is a batch resolver already registered for this relationship. Batch resolvers have higher priority.");
         }
-        relationshipTypes.put(relationshipName, RelationshipType.TO_ONE);
+        relationshipResolversConfiguredFor.add(new RelationshipDetails(relationshipName, RelationshipType.TO_ONE));
         if (relationshipsRequested(relationshipName.getName())) {
             toOneRelationshipResolvers.put(relationshipName, resolver);
         }
@@ -94,7 +98,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
             log.warn("Removing basic toManyRelationshipResolver for relationship [{}] since batch one has higher priority.", relationshipName);
         }
 
-        relationshipTypes.put(relationshipName, RelationshipType.TO_MANY);
+        relationshipResolversConfiguredFor.add(new RelationshipDetails(relationshipName, RelationshipType.TO_MANY));
         if (relationshipsRequested(relationshipName.getName())) {
             this.batchToManyRelationshipResolvers.put(relationshipName, batchToManyRelationshipResolver);
         }
@@ -112,7 +116,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
             log.warn("Removing basic toOneRelationshipResolver for relationship [{}] since batch one has higher priority.", relationshipName);
         }
 
-        relationshipTypes.put(relationshipName, RelationshipType.TO_ONE);
+        relationshipResolversConfiguredFor.add(new RelationshipDetails(relationshipName, RelationshipType.TO_ONE));
         if (relationshipsRequested(relationshipName.getName())) {
             this.batchToOneRelationshipResolvers.put(relationshipName, batchToOneRelationshipResolver);
         }

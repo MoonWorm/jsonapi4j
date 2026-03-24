@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
-import static pro.api4.jsonapi4j.processor.RelationshipType.TO_MANY;
-import static pro.api4.jsonapi4j.processor.RelationshipType.TO_ONE;
+import static pro.api4.jsonapi4j.domain.RelationshipType.TO_MANY;
+import static pro.api4.jsonapi4j.domain.RelationshipType.TO_ONE;
 import static java.util.Collections.emptyList;
 
 public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
@@ -52,7 +52,7 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
         jsonApiContext.getDefaultRelationshipResolvers()
                 .keySet()
                 .stream()
-                .filter(rel -> !jsonApiContext.getDataResolutionIsConfiguredFor().containsKey(rel))
+                .filter(rel -> !jsonApiContext.relationshipResolversConfiguredFor(rel))
                 .findAny()
                 .ifPresent(rel -> {
                     throw new IllegalStateException("Every declared 'default' relationship must also has either " +
@@ -89,13 +89,11 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
     }
 
     protected boolean isToOneRelationship(RelationshipName relationshipName) {
-        return jsonApiContext.getDataResolutionIsConfiguredFor().containsKey(relationshipName)
-                && jsonApiContext.getDataResolutionIsConfiguredFor().get(relationshipName) == TO_ONE;
+        return jsonApiContext.relationshipResolversConfiguredFor(relationshipName, TO_ONE);
     }
 
     protected boolean isToManyRelationship(RelationshipName relationshipName) {
-        return jsonApiContext.getDataResolutionIsConfiguredFor().containsKey(relationshipName)
-                && jsonApiContext.getDataResolutionIsConfiguredFor().get(relationshipName) == TO_MANY;
+        return jsonApiContext.relationshipResolversConfiguredFor(relationshipName, TO_MANY);
     }
 
     protected Map<RelationshipName, DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> getDefaultRelationshipResolvers() {

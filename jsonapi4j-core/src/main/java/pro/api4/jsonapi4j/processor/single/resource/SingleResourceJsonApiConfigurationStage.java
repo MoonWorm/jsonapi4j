@@ -343,7 +343,7 @@ public class SingleResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO> e
                         .batchToManyRelationshipResolvers(getBatchToManyRelationshipResolvers())
                         .toOneRelationshipResolvers(getToOneRelationshipResolvers())
                         .batchToOneRelationshipResolvers(getBatchToOneRelationshipResolvers())
-                        .dataResolutionIsConfiguredFor(getRelationshipTypes())
+                        .relationshipResolversConfiguredFor(getRelationshipResolversConfiguredFor())
                         .topLevelLinksResolver(topLevelLinksResolver)
                         .resourceLinksResolver(getResourceLinksResolver())
                         .topLevelMetaResolver(topLevelMetaResolver)

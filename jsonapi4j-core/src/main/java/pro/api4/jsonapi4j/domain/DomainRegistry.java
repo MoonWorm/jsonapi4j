@@ -7,7 +7,6 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
-import pro.api4.jsonapi4j.processor.RelationshipType;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -73,6 +72,13 @@ public class DomainRegistry {
         return Collections.unmodifiableSet(this.resources.keySet());
     }
 
+    public ResourceType getResourceType(String resourceTypeStr) {
+        return getResourceTypes().stream()
+                .filter(rt -> rt.getType().equals(resourceTypeStr))
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<RegisteredRelationship<ToManyRelationship<?>>> getToManyRelationships(ResourceType resourceType) {
         return MapUtils.emptyIfNull(this.toManyRelationships.get(resourceType))
                 .values()
@@ -101,6 +107,25 @@ public class DomainRegistry {
                 .stream()
                 .map(RegisteredRelationship::getRelationshipName)
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    public RelationshipDetails resolveRelationshipDetails(String relationshipStr,
+                                                          ResourceType resourceType) {
+        RelationshipDetails relationshipDetails = getToManyRelationshipNames(resourceType)
+                .stream()
+                .filter(relationshipName -> relationshipName.getName().equals(relationshipStr))
+                .findFirst()
+                .map(relationshipName -> new RelationshipDetails(relationshipName, RelationshipType.TO_MANY))
+                .orElse(null);
+        if (relationshipDetails == null) {
+            relationshipDetails = getToOneRelationshipNames(resourceType)
+                    .stream()
+                    .filter(relationshipName -> relationshipName.getName().equals(relationshipStr))
+                    .findFirst()
+                    .map(relationshipName -> new RelationshipDetails(relationshipName, RelationshipType.TO_ONE))
+                    .orElse(null);
+        }
+        return relationshipDetails;
     }
 
     public RegisteredRelationship<ToManyRelationship<?>> getToManyRelationshipStrict(

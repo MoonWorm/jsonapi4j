@@ -1,7 +1,9 @@
 package pro.api4.jsonapi4j.servlet.request;
 
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.domain.RelationshipDetails;
 import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.RelationshipType;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.exception.MethodNotSupportedException;
 import pro.api4.jsonapi4j.operation.OperationType;
@@ -39,13 +41,11 @@ public class OperationDetailsResolver {
             throw new OperationNotFoundException(appRelativePath, methodString, "Invalid JSON:API path");
         }
         Method methodEnum = fromString(methodString);
-
         String resourceTypeStr = pathFragments.getFirst();
-        ResourceType resourceType = resolveResourceType(resourceTypeStr);
+        ResourceType resourceType = domainRegistry.getResourceType(resourceTypeStr);
         if (resourceType == null) {
             throw new OperationNotFoundException(appRelativePath, methodString, "Unknown resource type: " + resourceTypeStr);
         }
-
         if (pathFragments.size() == 1) {
             if (methodEnum == GET) {
                 return new OperationDetails(OperationType.READ_MULTIPLE_RESOURCES, resourceType, null);
@@ -74,25 +74,23 @@ public class OperationDetailsResolver {
                 }
             }
         } else if (pathFragments.size() == 4 && pathFragments.get(2).equals("relationships")) {
-
             String relationshipStr = pathFragments.get(3);
-            RelationshipDetails relationshipDetails = resolveRelationshipDetails(relationshipStr, resourceType);
-            if (relationshipDetails == null || relationshipDetails.getRelationshipName() == null || relationshipDetails.getSubType() == null) {
+            RelationshipDetails relationshipDetails = domainRegistry.resolveRelationshipDetails(relationshipStr, resourceType);
+            if (relationshipDetails == null) {
                 throw new OperationNotFoundException(appRelativePath, methodString, "Unknown relationship: " + relationshipStr);
             }
             RelationshipName relationshipName = relationshipDetails.getRelationshipName();
-            OperationType.SubType relationshipSubType = relationshipDetails.getSubType();
-
+            RelationshipType relationshipType = relationshipDetails.getRelationshipType();
             if (methodEnum == GET) {
-                if (relationshipSubType == OperationType.SubType.TO_ONE_RELATIONSHIP) {
+                if (relationshipType == RelationshipType.TO_ONE) {
                     return new OperationDetails(OperationType.READ_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
-                } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP) {
+                } else if (relationshipType == RelationshipType.TO_MANY) {
                     return new OperationDetails(OperationType.READ_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 }
             } else if (methodEnum == PATCH) {
-                if (relationshipSubType == OperationType.SubType.TO_ONE_RELATIONSHIP) {
+                if (relationshipType == RelationshipType.TO_ONE) {
                     return new OperationDetails(OperationType.UPDATE_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
-                } else if (relationshipSubType == OperationType.SubType.TO_MANY_RELATIONSHIP) {
+                } else if (relationshipType == RelationshipType.TO_MANY) {
                     return new OperationDetails(OperationType.UPDATE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 }
             } else {
@@ -103,39 +101,6 @@ public class OperationDetailsResolver {
             }
         }
         throw new OperationNotFoundException(appRelativePath, methodString);
-    }
-
-    private ResourceType resolveResourceType(String resourceTypeStr) {
-        return resourceTypeFromStr(resourceTypeStr);
-    }
-
-    private ResourceType resourceTypeFromStr(String resourceTypeStr) {
-        for (ResourceType resourceType : domainRegistry.getResourceTypes()) {
-            if (resourceType.getType().equals(resourceTypeStr)) {
-                return resourceType;
-            }
-        }
-        return null;
-    }
-
-    private RelationshipDetails resolveRelationshipDetails(String relationshipStr, ResourceType resourceType) {
-        for (RelationshipName relationship : domainRegistry.getToManyRelationshipNames(resourceType)) {
-            if (relationship.getName().equals(relationshipStr)) {
-                return new RelationshipDetails(relationship, OperationType.SubType.TO_MANY_RELATIONSHIP);
-            }
-        }
-        for (RelationshipName relationship : domainRegistry.getToOneRelationshipNames(resourceType)) {
-            if (relationship.getName().equals(relationshipStr)) {
-                return new RelationshipDetails(relationship, OperationType.SubType.TO_ONE_RELATIONSHIP);
-            }
-        }
-        return null;
-    }
-
-    @Data
-    private static final class RelationshipDetails {
-        private final RelationshipName relationshipName;
-        private final OperationType.SubType subType;
     }
 
     @Data

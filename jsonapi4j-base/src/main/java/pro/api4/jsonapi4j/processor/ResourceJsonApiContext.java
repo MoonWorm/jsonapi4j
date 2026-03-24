@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.processor;
 
+import pro.api4.jsonapi4j.domain.RelationshipDetails;
+import pro.api4.jsonapi4j.domain.RelationshipType;
 import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
 import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
@@ -14,6 +16,7 @@ import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
 import java.util.Map;
+import java.util.Set;
 
 @SuperBuilder
 @Getter
@@ -31,12 +34,26 @@ public abstract class ResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTE
     private final Map<RelationshipName, BatchToManyRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> batchToManyRelationshipResolvers;
     private final Map<RelationshipName, ToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> toOneRelationshipResolvers;
     private final Map<RelationshipName, BatchToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> batchToOneRelationshipResolvers;
-    private final Map<RelationshipName, RelationshipType> dataResolutionIsConfiguredFor;
+    private final Set<RelationshipDetails> relationshipResolversConfiguredFor;
 
     // links
     private final ResourceLinksResolver<REQUEST, DATA_SOURCE_DTO> resourceLinksResolver;
 
     // meta
     private final ResourceMetaResolver<REQUEST, DATA_SOURCE_DTO> resourceMetaResolver;
+
+    public boolean relationshipResolversConfiguredFor(RelationshipName relationshipName) {
+        return relationshipResolversConfiguredFor(relationshipName, RelationshipType.TO_ONE)
+                || relationshipResolversConfiguredFor(relationshipName, RelationshipType.TO_MANY);
+    }
+
+    public boolean relationshipResolversConfiguredFor(RelationshipName relationshipName, RelationshipType relationshipType) {
+        return relationshipResolversConfiguredFor.contains(
+                new RelationshipDetails(
+                        relationshipName,
+                        relationshipType
+                )
+        );
+    }
 
 }
