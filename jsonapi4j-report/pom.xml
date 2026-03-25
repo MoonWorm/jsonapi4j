@@ -17,6 +17,11 @@
     <dependencies>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-base</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
             <version>${revision}</version>
         </dependency>
@@ -32,7 +37,22 @@
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-rest-quarkus</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sf-plugin</artifactId>
             <version>${revision}</version>
         </dependency>
     </dependencies>
