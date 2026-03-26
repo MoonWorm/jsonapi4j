@@ -8,15 +8,20 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
 
-public final class SparseFieldsetsUtils {
+class SparseFieldsetsHelper {
 
-    private SparseFieldsetsUtils() {
+    private final SfProperties sfProperties;
 
+    SparseFieldsetsHelper(SfProperties sfProperties) {
+        this.sfProperties = sfProperties;
     }
 
-    public static void sparseFieldsets(JsonApiRequest jsonApiRequest,
-                                       ResourceObject<?, ?> resourceObject,
-                                       SfProperties sfProperties) {
+    public boolean enabled() {
+        return sfProperties.enabled();
+    }
+
+    public void sparseFieldsets(JsonApiRequest jsonApiRequest,
+                         ResourceObject<?, ?> resourceObject) {
         String resourceType = resourceObject.getType();
         List<String> requestedPaths = jsonApiRequest.getFieldSets().get(resourceType);
         if (requestedPaths == null) {
@@ -33,11 +38,11 @@ public final class SparseFieldsetsUtils {
         }
     }
 
-    private static void sparseAllFields(ResourceObject<?, ?> resourceObject) {
+    private void sparseAllFields(ResourceObject<?, ?> resourceObject) {
         ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, null);
     }
 
-    private static void nonEmptyFieldsParamRequested(ResourceObject<?, ?> resourceObject,
+    private void nonEmptyFieldsParamRequested(ResourceObject<?, ?> resourceObject,
                                               List<String> requestedPaths,
                                               RequestedFieldsDontExistMode requestedFieldsDontExistMode) {
         List<String> existingPathsToInclude = requestedPaths.stream()
@@ -55,8 +60,8 @@ public final class SparseFieldsetsUtils {
         }
     }
 
-    private static void sparseNonRequestedFields(ResourceObject<?, ?> resourceObject,
-                                                 List<String> existingPathsToInclude) {
+    private void sparseNonRequestedFields(ResourceObject<?, ?> resourceObject,
+                                          List<String> existingPathsToInclude) {
         Object attributes = resourceObject.getAttributes();
         List<String> denormalizedPathsToInclude = existingPathsToInclude.stream()
                 .flatMap(p -> denormalizePath(p).stream())
@@ -76,7 +81,7 @@ public final class SparseFieldsetsUtils {
      * @param path original path e.g. "a.b.c"
      * @return denormalized list of paths
      */
-    private static List<String> denormalizePath(String path) {
+    List<String> denormalizePath(String path) {
         String[] pathFragments = path.split("\\.");
         if (pathFragments.length == 1) {
             return Collections.singletonList(path);

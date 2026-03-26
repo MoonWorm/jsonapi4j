@@ -11,10 +11,10 @@ public class JsonApiSparseFieldsetsPlugin implements JsonApi4jPlugin {
 
     public static final String NAME = JsonApiSparseFieldsetsPlugin.class.getSimpleName();
 
-    private final SfProperties sfProperties;
+    private final SparseFieldsetsHelper helper;
 
     public JsonApiSparseFieldsetsPlugin(SfProperties sfProperties) {
-        this.sfProperties = sfProperties;
+        this.helper = new SparseFieldsetsHelper(sfProperties);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class JsonApiSparseFieldsetsPlugin implements JsonApi4jPlugin {
 
     @Override
     public boolean enabled() {
-        return sfProperties.enabled();
+        return helper.enabled();
     }
 
     @Override
@@ -34,12 +34,12 @@ public class JsonApiSparseFieldsetsPlugin implements JsonApi4jPlugin {
 
     @Override
     public SingleResourceVisitors singleResourceVisitors() {
-        return new SparseFieldsetsSingleResourceVisitors(sfProperties);
+        return new SparseFieldsetsSingleResourceVisitors(helper);
     }
 
     @Override
     public MultipleResourcesVisitors multipleResourcesVisitors() {
-        return new SparseFieldsetsMultipleResourcesVisitors(sfProperties);
+        return new SparseFieldsetsMultipleResourcesVisitors(helper);
     }
 
 }
