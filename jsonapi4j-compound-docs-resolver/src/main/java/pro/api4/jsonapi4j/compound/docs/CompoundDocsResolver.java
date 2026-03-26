@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.compound.docs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
@@ -39,15 +40,11 @@ public class CompoundDocsResolver {
                                 DomainUrlResolver domainUrlResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService) {
-        if (objectMapper == null) {
-            throw new IllegalArgumentException("ObjectMapper is not configured");
-        }
-        if (executorService == null) {
-            throw new IllegalArgumentException("ExecutorService is not configured");
-        }
-        if (domainUrlResolver == null) {
-            throw new IllegalArgumentException("DomainUrlResolver is not configured");
-        }
+        Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
+        Validate.notNull(domainUrlResolver, "DomainUrlResolver is not configured");
+        Validate.notNull(objectMapper, "ObjectMapper is not configured");
+        Validate.notNull(executorService, "ExecutorService is not configured");
+
         this.config = config;
         this.domainUrlResolver = domainUrlResolver;
 
