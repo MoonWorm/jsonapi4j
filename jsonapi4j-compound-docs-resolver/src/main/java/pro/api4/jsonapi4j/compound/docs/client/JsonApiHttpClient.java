@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.compound.docs.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pro.api4.jsonapi4j.compound.docs.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 
 import java.io.IOException;

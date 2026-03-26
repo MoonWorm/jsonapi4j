@@ -5,7 +5,7 @@ import io.quarkus.runtime.annotations.ConfigRoot;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
-import pro.api4.jsonapi4j.compound.docs.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 

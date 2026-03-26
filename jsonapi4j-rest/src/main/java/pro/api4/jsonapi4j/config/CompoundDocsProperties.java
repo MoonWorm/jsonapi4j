@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.config;
 
-import pro.api4.jsonapi4j.compound.docs.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 
 import java.util.HashMap;
 import java.util.Map;

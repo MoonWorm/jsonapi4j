@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.DefaultCompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
