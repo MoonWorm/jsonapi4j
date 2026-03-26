@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponse;
+import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +37,7 @@ public class JsonApiResponseWriter {
         try {
             return objectMapper.writeValueAsString(rootNode);
         } catch (JsonProcessingException e) {
-            throw new InvalidJsonApiResponse("Can't compose the final Json:Api response", e);
+            throw new InvalidJsonApiResponseException("Can't compose the final Json:Api response", e);
         }
     }
 

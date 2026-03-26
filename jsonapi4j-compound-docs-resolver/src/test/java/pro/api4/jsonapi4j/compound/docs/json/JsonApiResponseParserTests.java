@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import pro.api4.jsonapi4j.compound.docs.ResourceUtil;
-import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponse;
+import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -72,7 +72,7 @@ public class JsonApiResponseParserTests {
         String originalResponse = "";
 
         // when - then
-        assertThatThrownBy(() -> sut.parsePrimaryResourceDoc(originalResponse)).isInstanceOf(InvalidJsonApiResponse.class);
+        assertThatThrownBy(() -> sut.parsePrimaryResourceDoc(originalResponse)).isInstanceOf(InvalidJsonApiResponseException.class);
     }
 
     @Test
@@ -81,7 +81,7 @@ public class JsonApiResponseParserTests {
         String originalResponse = null;
 
         // when - then
-        assertThatThrownBy(() -> sut.parsePrimaryResourceDoc(originalResponse)).isInstanceOf(InvalidJsonApiResponse.class);
+        assertThatThrownBy(() -> sut.parsePrimaryResourceDoc(originalResponse)).isInstanceOf(InvalidJsonApiResponseException.class);
     }
 
 }

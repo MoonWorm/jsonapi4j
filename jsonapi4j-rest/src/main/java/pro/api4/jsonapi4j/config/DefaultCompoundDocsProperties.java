@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.config;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.ErrorStrategy;
 
 import java.util.Map;
 

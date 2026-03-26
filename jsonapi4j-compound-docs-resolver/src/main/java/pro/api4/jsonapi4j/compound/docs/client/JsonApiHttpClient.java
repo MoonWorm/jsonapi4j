@@ -2,8 +2,8 @@ package pro.api4.jsonapi4j.compound.docs.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolverConfig.ErrorStrategy;
-import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponse;
+import pro.api4.jsonapi4j.compound.docs.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,7 +20,13 @@ import java.util.stream.Collectors;
 public class JsonApiHttpClient {
 
     public static final String X_DISABLE_COMPOUND_DOCS = "X-Disable-Compound-Docs";
-
+    private static final Set<String> DISALLOWED_HEADERS = Set.of(
+            "connection",
+            "content-length",
+            "expect",
+            "host",
+            "upgrade"
+    );
     private final ObjectMapper objectMapper;
     private final ErrorStrategy errorStrategy;
 
@@ -57,7 +63,11 @@ public class JsonApiHttpClient {
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             if (originalRequestHeaders != null) {
-                originalRequestHeaders.forEach(requestBuilder::header);
+                originalRequestHeaders.forEach((header, value) -> {
+                    if (!DISALLOWED_HEADERS.contains(header.toLowerCase())) {
+                        requestBuilder.header(header, value);
+                    }
+                });
             }
             requestBuilder.header(X_DISABLE_COMPOUND_DOCS, String.valueOf(true));
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
@@ -66,12 +76,12 @@ public class JsonApiHttpClient {
                 if (errorStrategy == ErrorStrategy.IGNORE) {
                     return Collections.emptyList();
                 } else {
-                    throw new ErrorJsonApiResponse("Got error response from a downstream service on GET " + uri + " url");
+                    throw new ErrorJsonApiResponseException("Got error response from a downstream service on GET " + uri + " url");
                 }
             }
             return parseResponse(response);
         } catch (IOException | InterruptedException e) {
-            throw new ErrorJsonApiResponse("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
+            throw new ErrorJsonApiResponseException("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
         }
     }
 

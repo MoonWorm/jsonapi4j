@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.compound.docs.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponse;
+import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class JsonApiResponseParser {
 
     private ParseResult parseDoc(String jsonApiResponse, Function<JsonNode, IntermediateParseResult> dataProcessor) {
         if (jsonApiResponse == null) {
-            throw new InvalidJsonApiResponse("jsonApiResponse is null");
+            throw new InvalidJsonApiResponseException("jsonApiResponse is null");
         }
         try {
             JsonNode rootNode = objectMapper.readTree(jsonApiResponse);
@@ -46,20 +46,20 @@ public class JsonApiResponseParser {
             return new ParseResult(parseResult.typeToIdsMap, parseResult.typeToRelationshipNamesMap, rootNode);
         } catch (JsonProcessingException e) {
             LOG.error("Failed to parse Json:Api response: " + jsonApiResponse, e);
-            throw new InvalidJsonApiResponse("Failed to parse Json:Api response: " + jsonApiResponse);
+            throw new InvalidJsonApiResponseException("Failed to parse Json:Api response: " + jsonApiResponse);
         }
     }
 
     public IntermediateParseResult parseResourceDocData(String jsonApiResource) {
         if (jsonApiResource == null) {
-            throw new InvalidJsonApiResponse("jsonApiResource is null");
+            throw new InvalidJsonApiResponseException("jsonApiResource is null");
         }
         try {
             JsonNode rootNode = objectMapper.readTree(jsonApiResource);
             return parseResourceDocData(rootNode);
         } catch (JsonProcessingException e) {
             LOG.error("Failed to parse Json:Api resource: " + jsonApiResource, e);
-            throw new InvalidJsonApiResponse("Failed to parse Json:Api resource: " + jsonApiResource);
+            throw new InvalidJsonApiResponseException("Failed to parse Json:Api resource: " + jsonApiResource);
         }
     }
 
@@ -123,7 +123,7 @@ public class JsonApiResponseParser {
     private IntermediateParseResult parseData(JsonNode rootNode,
                                               Function<JsonNode, IntermediateParseResult> dataProcessor) {
         if (rootNode == null || !rootNode.isObject()) {
-            throw new InvalidJsonApiResponse("Json:Api response must contain top-level 'data' member");
+            throw new InvalidJsonApiResponseException("Json:Api response must contain top-level 'data' member");
         }
         if (rootNode.get("data") == null) {
             return new IntermediateParseResult(Collections.emptyMap(), Collections.emptyMap());
