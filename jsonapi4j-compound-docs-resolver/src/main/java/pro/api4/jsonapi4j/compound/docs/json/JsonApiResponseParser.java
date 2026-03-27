@@ -3,16 +3,11 @@ package pro.api4.jsonapi4j.compound.docs.json;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -36,7 +31,8 @@ public class JsonApiResponseParser {
         return parseDoc(jsonApiResponse, dataNode -> parseRelationshipDocData(dataNode, relationshipName));
     }
 
-    private ParseResult parseDoc(String jsonApiResponse, Function<JsonNode, IntermediateParseResult> dataProcessor) {
+    private ParseResult parseDoc(String jsonApiResponse,
+                                 Function<JsonNode, IntermediateParseResult> dataProcessor) {
         if (jsonApiResponse == null) {
             throw new InvalidJsonApiResponseException("jsonApiResponse is null");
         }
@@ -45,7 +41,7 @@ public class JsonApiResponseParser {
             IntermediateParseResult parseResult = parseData(rootNode, dataProcessor);
             return new ParseResult(parseResult.typeToIdsMap, parseResult.typeToRelationshipNamesMap, rootNode);
         } catch (JsonProcessingException e) {
-            LOG.error("Failed to parse Json:Api response: " + jsonApiResponse, e);
+            LOG.error("Failed to parse Json:Api response: {}", jsonApiResponse, e);
             throw new InvalidJsonApiResponseException("Failed to parse Json:Api response: " + jsonApiResponse);
         }
     }
@@ -58,7 +54,7 @@ public class JsonApiResponseParser {
             JsonNode rootNode = objectMapper.readTree(jsonApiResource);
             return parseResourceDocData(rootNode);
         } catch (JsonProcessingException e) {
-            LOG.error("Failed to parse Json:Api resource: " + jsonApiResource, e);
+            LOG.error("Failed to parse Json:Api resource: {}", jsonApiResource, e);
             throw new InvalidJsonApiResponseException("Failed to parse Json:Api resource: " + jsonApiResource);
         }
     }
@@ -142,7 +138,7 @@ public class JsonApiResponseParser {
         Map<String, Set<String>> typeToRelationshipNamesMap = new HashMap<>();
         for (Iterator<String> it = relationshipsNode.fieldNames(); it.hasNext(); ) {
             String relationshipName = it.next();
-            LOG.debug("Processing relationship: " + relationshipName);
+            LOG.debug("Processing relationship: {}", relationshipName);
             JsonNode relationshipNode = relationshipsNode.get(relationshipName);
             if (relationshipNode != null && relationshipNode.isObject()) {
                 JsonNode relationshipDataNode = relationshipNode.get("data");
@@ -212,7 +208,7 @@ public class JsonApiResponseParser {
     }
 
     public record IntermediateParseResult(Map<String, Set<String>> typeToIdsMap,
-                                           Map<String, Set<String>> typeToRelationshipNamesMap) {
+                                          Map<String, Set<String>> typeToRelationshipNamesMap) {
     }
 
 }

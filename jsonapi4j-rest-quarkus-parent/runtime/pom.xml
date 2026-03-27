@@ -60,6 +60,11 @@
             <artifactId>jsonapi4j-sf-plugin</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-cd-plugin</artifactId>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Quarkus -->
         <dependency>
@@ -96,6 +101,7 @@
                                 <artifact>pro.api4:jsonapi4j-ac-plugin:${revision}</artifact>
                                 <artifact>pro.api4:jsonapi4j-oas-plugin:${revision}</artifact>
                                 <artifact>pro.api4:jsonapi4j-sf-plugin:${revision}</artifact>
+                                <artifact>pro.api4:jsonapi4j-cd-plugin:${revision}</artifact>
                             </conditionalDependencies>
                         </configuration>
                     </execution>

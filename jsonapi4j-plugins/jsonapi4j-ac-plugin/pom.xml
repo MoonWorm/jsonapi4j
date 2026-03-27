@@ -52,7 +52,7 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-base</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- SPeL is used for Scopes expressions -->

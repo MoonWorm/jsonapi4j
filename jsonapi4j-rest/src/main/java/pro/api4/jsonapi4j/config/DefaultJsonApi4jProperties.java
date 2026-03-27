@@ -10,16 +10,10 @@ import lombok.Setter;
 public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 
     private String rootPath;
-    private DefaultCompoundDocsProperties compoundDocs = new DefaultCompoundDocsProperties();
 
     @Override
     public String rootPath() {
         return rootPath;
-    }
-
-    @Override
-    public CompoundDocsProperties compoundDocs() {
-        return compoundDocs;
     }
 
 }

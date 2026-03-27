@@ -1,6 +1,8 @@
 # JsonApi4j core settings
 rootPath: /jsonapi
-compoundDocs:
+
+# CD Plugin
+cd:
   enabled: true
   maxHops: 3
   mapping:

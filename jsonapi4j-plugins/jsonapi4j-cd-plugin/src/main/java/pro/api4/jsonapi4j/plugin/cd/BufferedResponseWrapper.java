@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.filter.cd;
+package pro.api4.jsonapi4j.plugin.cd;
 
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;

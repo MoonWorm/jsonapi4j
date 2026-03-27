@@ -72,6 +72,12 @@
             <version>${project.version}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-cd-plugin</artifactId>
+            <version>${project.version}</version>
+            <optional>true</optional>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>

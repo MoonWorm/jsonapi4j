@@ -3,7 +3,7 @@ server:
 
 jsonapi4j:
   rootPath: /jsonapi
-  compoundDocs:
+  cd:
     enabled: true
     maxHops: 3
     mapping:

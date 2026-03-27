@@ -50,7 +50,7 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-rest</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
             <scope>provided</scope>
         </dependency>
 

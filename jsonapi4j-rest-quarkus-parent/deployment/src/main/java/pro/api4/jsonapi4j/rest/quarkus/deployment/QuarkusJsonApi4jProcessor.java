@@ -11,26 +11,23 @@ import io.quarkus.undertow.deployment.ServletBuildItem;
 import jakarta.servlet.DispatcherType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.*;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 
-import static pro.api4.jsonapi4j.config.CompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_COMPOUND_DOCS_FILTER_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 class QuarkusJsonApi4jProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jProcessor.class);
 
     private static final String FEATURE = "jsonapi4j-rest-quarkus";
+
     private static final String AC_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin";
-    private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin";
+    private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer";
     private static final String SF_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin";
+    private static final String CD_SERVLET_INITIALIZER_CLASSNAME = "pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer";
 
     @BuildStep
     FeatureBuildItem feature() {
@@ -66,23 +63,20 @@ class QuarkusJsonApi4jProcessor {
     }
 
     @BuildStep
-    void registerCompoundDocsFilter(QuarkusJsonApi4jProperties props,
+    void registerCompoundDocsFilter(QuarkusJsonApi4jProperties jsonApi4jProperties,
+                                    QuarkusJsonApi4jCompoundDocsProperties cdProperties,
                                     BuildProducer<FilterBuildItem> filters) {
-        boolean compoundDocsEnabled = props == null || props.compoundDocs() == null
-                ? Boolean.parseBoolean(JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE)
-                : props.compoundDocs().enabled();
-
-        if (!compoundDocsEnabled) {
+        if (!cdProperties.enabled()) {
             LOG.info("Compound docs disabled, skipping CompoundDocsFilter registration");
             return;
         }
 
-        String mapping = toServletMapping(props.rootPath());
+        String mapping = toServletMapping(jsonApi4jProperties.rootPath());
         LOG.info("Registering CompoundDocsFilter on '{}'", mapping);
         filters.produce(
-                FilterBuildItem.builder(JSONAPI4J_COMPOUND_DOCS_FILTER_NAME, CompoundDocsFilter.class.getName())
+                FilterBuildItem.builder("jsonapi4jCompoundDocsFilter", "pro.api4.jsonapi4j.plugin.cd.CompoundDocsFilter")
                         .addFilterUrlMapping(mapping, DispatcherType.REQUEST)
-                        .setLoadOnStartup(1)
+                        .setLoadOnStartup(2)
                         .build()
         );
     }
@@ -112,7 +106,8 @@ class QuarkusJsonApi4jProcessor {
     @BuildStep
     AdditionalBeanBuildItem jsonapi4jCdiBeans(QuarkusJsonApi4jOasProperties oasProperties,
                                               QuarkusJsonApi4jAcProperties acProperties,
-                                              QuarkusJsonApi4jSfProperties sfProperties) {
+                                              QuarkusJsonApi4jSfProperties sfProperties,
+                                              QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
         AdditionalBeanBuildItem.Builder builder = AdditionalBeanBuildItem.builder()
                 .setUnremovable()
                 .addBeanClass(QuarkusJsonApi4jDispatcherServletContextListener.class)
@@ -144,6 +139,15 @@ class QuarkusJsonApi4jProcessor {
             LOG.info("{} plugin is disabled, skipping SF-related CDI beans registration", SF_PLUGIN_CLASSNAME);
         }
 
+        if (isCdPluginEnabled(cdProperties)) {
+            LOG.info("Compound Docs plugin is enabled, registering CD-related CDI beans");
+            builder.addBeanClass(QuarkusJsonApi4jCompoundDocsProperties.class.getName());
+            builder.addBeanClass(QuarkusJsonApi4jCompoundDocsServletContextListener.class.getName());
+            builder.addBeanClass(QuarkusJsonApi4jCompoundDocsPluginBeans.class.getName());
+        } else {
+            LOG.info("Compound Docs plugin is disabled, skipping CD-related CDI beans registration");
+        }
+
         return builder.build();
     }
 
@@ -161,6 +165,14 @@ class QuarkusJsonApi4jProcessor {
     }
 
     @BuildStep
+    void cdServletContextListener(BuildProducer<ListenerBuildItem> listeners,
+                                   QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
+        if (isCdPluginEnabled(cdProperties)) {
+            listeners.produce(new ListenerBuildItem(QuarkusJsonApi4jCompoundDocsServletContextListener.class.getName()));
+        }
+    }
+
+    @BuildStep
     IgnoredServletContainerInitializerBuildItem ignoreJsonApi4jDispatcherServletContextInitializer() {
         return new IgnoredServletContainerInitializerBuildItem(
                 JsonApi4jServletContainerInitializer.class.getName()
@@ -169,12 +181,22 @@ class QuarkusJsonApi4jProcessor {
 
     @BuildStep
     void ignoreJsonApi4OasServletContextInitializer(
-            BuildProducer<IgnoredServletContainerInitializerBuildItem> producer,
-            QuarkusJsonApi4jOasProperties oasProperties
+            BuildProducer<IgnoredServletContainerInitializerBuildItem> producer
     ) {
         if (isClassPresent(OAS_PLUGIN_CLASSNAME)) {
             producer.produce(
                     new IgnoredServletContainerInitializerBuildItem("pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer")
+            );
+        }
+    }
+
+    @BuildStep
+    void ignoreJsonApi4CdServletContextInitializer(
+            BuildProducer<IgnoredServletContainerInitializerBuildItem> producer
+    ) {
+        if (isClassPresent(CD_SERVLET_INITIALIZER_CLASSNAME)) {
+            producer.produce(
+                    new IgnoredServletContainerInitializerBuildItem(CD_SERVLET_INITIALIZER_CLASSNAME)
             );
         }
     }
@@ -219,6 +241,12 @@ class QuarkusJsonApi4jProcessor {
         boolean sfPluginClassesPresentInClasspath = isClassPresent(SF_PLUGIN_CLASSNAME);
         boolean enabled = sfProperties.enabled();
         return enabled && sfPluginClassesPresentInClasspath;
+    }
+
+    private static boolean isCdPluginEnabled(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
+        boolean cdPluginClassesPresentInClasspath = isClassPresent(CD_SERVLET_INITIALIZER_CLASSNAME);
+        boolean enabled = cdProperties.enabled();
+        return enabled && cdPluginClassesPresentInClasspath;
     }
 
 }

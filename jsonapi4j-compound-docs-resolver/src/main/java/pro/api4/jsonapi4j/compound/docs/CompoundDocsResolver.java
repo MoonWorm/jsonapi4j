@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser.IntermediateParseResult;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
 
@@ -76,33 +77,113 @@ public class CompoundDocsResolver {
             String originalJsonApiResponse,
             CompoundDocsRequest compoundDocsRequest
     ) throws ErrorJsonApiResponseException {
-        return resolveCompoundDocsInternal(
-                originalJsonApiResponse,
-                compoundDocsRequest.includes(),
-                compoundDocsRequest.fieldSets(),
-                compoundDocsRequest.headers(),
-                () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
-        );
+        if (compoundDocsRequest.isProcessable()) {
+            return resolveCompoundDocsInternal(
+                    originalJsonApiResponse,
+                    compoundDocsRequest.includes(),
+                    compoundDocsRequest,
+                    () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
+            );
+        }
+        return originalJsonApiResponse;
     }
 
     public String resolveCompoundDocsForRelationshipResponse(String originalJsonApiResponse,
                                                              CompoundDocsRequest compoundDocsRequest,
                                                              String relationshipName) throws ErrorJsonApiResponseException {
+        if (compoundDocsRequest.isProcessable()) {
+            List<String> effectiveOriginalRequestIncludes =
+                    compoundDocsRequest.includes() == null ?
+                            Collections.emptyList() :
+                            compoundDocsRequest.includes()
+                                    .stream()
+                                    .filter(i -> i.startsWith(relationshipName))
+                                    .toList();
+            return resolveCompoundDocsInternal(
+                    originalJsonApiResponse,
+                    effectiveOriginalRequestIncludes,
+                    compoundDocsRequest,
+                    () -> jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName)
+            );
+        }
+        return originalJsonApiResponse;
+    }
 
-        List<String> effectiveOriginalRequestIncludes =
-                compoundDocsRequest.includes() == null ?
-                        Collections.emptyList() :
-                        compoundDocsRequest.includes()
-                                .stream()
-                                .filter(i -> i.startsWith(relationshipName))
-                                .toList();
-        return resolveCompoundDocsInternal(
-                originalJsonApiResponse,
-                effectiveOriginalRequestIncludes,
-                compoundDocsRequest.fieldSets(),
-                compoundDocsRequest.headers(),
-                () -> jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName)
+    private CompletableFuture<List<String>> sendJsonApiRequestAsync(Set<String> ids,
+                                                                    String resourceType,
+                                                                    Set<String> requestIncludes,
+                                                                    CompoundDocsRequest originalRequest) {
+        URI domainUri = resolveDomainUrl(resourceType);
+        return CompletableFuture.supplyAsync(
+                () -> httpClient.doBatchFetch(
+                        domainUri,
+                        resourceType,
+                        ids,
+                        requestIncludes,
+                        originalRequest.fieldSets(),
+                        originalRequest.headers()
+                ),
+                executorService
         );
+    }
+
+    private String resolveCompoundDocsInternal(String originalJsonApiResponse,
+                                               List<String> effectiveRequestIncludes,
+                                               CompoundDocsRequest request,
+                                               Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
+
+        ParseResult originalParseResult = parseResultSupplier.get();
+        Set<String> allResources = new HashSet<>();
+        int currentLevel = 1;
+        Map<String, Set<String>> nextLevelIncludes = getNextLevelIncludes(effectiveRequestIncludes, currentLevel);
+        boolean hasNextHops = !nextLevelIncludes.isEmpty();
+
+        Set<IntermediateParseResult> currentLevelParseResults = Collections.singleton(
+                new IntermediateParseResult(
+                        originalParseResult.typeToIdsMap(),
+                        originalParseResult.typeToRelationshipNameMap()
+                )
+        );
+        while (hasNextHops && currentLevel <= config.getMaxHops()) {
+            Map<String, Set<String>> resourceIdsByType = getResourceIdsByType(currentLevelParseResults);
+            Map<String, Set<String>> typeToRelationshipsName = getTypeToRelationships(currentLevelParseResults);
+
+            Set<CompletableFuture<List<String>>> futures = new HashSet<>();
+            for (Map.Entry<String, Set<String>> e : resourceIdsByType.entrySet()) {
+                String resourceType = e.getKey();
+                Set<String> ids = e.getValue();
+                Set<String> requestIncludes = resolveIncludesToRequest(
+                        typeToRelationshipsName,
+                        nextLevelIncludes,
+                        resourceType
+                );
+                futures.add(sendJsonApiRequestAsync(ids, resourceType, requestIncludes, request));
+            }
+
+            Set<String> currentLevelResources = futures.stream()
+                    .map(CompletableFuture::join)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+
+            allResources.addAll(currentLevelResources);
+
+            currentLevelParseResults = currentLevelResources.stream()
+                    .map(jsonApiResponseParser::parseResourceDocData)
+                    .collect(Collectors.toSet());
+
+            currentLevel++;
+            nextLevelIncludes = getNextLevelIncludes(effectiveRequestIncludes, currentLevel);
+            hasNextHops = !nextLevelIncludes.isEmpty();
+        }
+
+        if (!allResources.isEmpty()) {
+            return jsonApiResponseWriter.composeWithIncludedMember(
+                    (ObjectNode) originalParseResult.rootNode(),
+                    allResources
+            );
+        }
+
+        return originalJsonApiResponse;
     }
 
     private URI resolveDomainUrl(String resourceType) {
@@ -115,80 +196,6 @@ public class CompoundDocsResolver {
         } catch (Exception e) {
             throw new DomainResolutionException("Error resolving domain url", e);
         }
-    }
-
-    private String resolveCompoundDocsInternal(String originalJsonApiResponse,
-                                               List<String> originalRequestIncludes,
-                                               Map<String, List<String>> originalRequestSparseFieldsets,
-                                               Map<String, String> originalRequestHeaders,
-                                               Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
-        if (isCompoundDocsRequested(originalRequestIncludes)) {
-            ParseResult originalParseResult = parseResultSupplier.get();
-            Set<String> allResources = new HashSet<>();
-            int currentLevel = 1;
-            Map<String, Set<String>> nextLevelIncludes = getNextLevelIncludes(originalRequestIncludes, currentLevel);
-            boolean hasNextHops = !nextLevelIncludes.isEmpty();
-
-            Set<JsonApiResponseParser.IntermediateParseResult> currentLevelParseResults = Collections.singleton(
-                    new JsonApiResponseParser.IntermediateParseResult(
-                            originalParseResult.typeToIdsMap(),
-                            originalParseResult.typeToRelationshipNameMap()
-                    )
-            );
-            while (hasNextHops && currentLevel <= config.getMaxHops()) {
-                Map<String, Set<String>> resourceIdsByType = getResourceIdsByType(currentLevelParseResults);
-                Map<String, Set<String>> typeToRelationshipsName = getTypeToRelationships(currentLevelParseResults);
-
-                Set<CompletableFuture<List<String>>> futures = new HashSet<>();
-                for (Map.Entry<String, Set<String>> e : resourceIdsByType.entrySet()) {
-                    String resourceType = e.getKey();
-                    Set<String> ids = e.getValue();
-                    Set<String> requestIncludes = resolveIncludesToRequest(
-                            typeToRelationshipsName,
-                            nextLevelIncludes,
-                            resourceType
-                    );
-
-                    URI domainUri = resolveDomainUrl(resourceType);
-
-                    futures.add(
-                            CompletableFuture.supplyAsync(
-                                    () -> httpClient.doBatchFetch(
-                                            domainUri,
-                                            resourceType,
-                                            ids,
-                                            requestIncludes,
-                                            originalRequestSparseFieldsets,
-                                            originalRequestHeaders
-                                    ),
-                                    executorService
-                            ));
-                }
-                Set<String> currentLevelResources = futures.stream()
-                        .map(CompletableFuture::join)
-                        .flatMap(Collection::stream)
-                        .collect(Collectors.toSet());
-
-                allResources.addAll(currentLevelResources);
-
-                currentLevelParseResults = currentLevelResources.stream()
-                        .map(jsonApiResponseParser::parseResourceDocData)
-                        .collect(Collectors.toSet());
-
-                currentLevel++;
-                nextLevelIncludes = getNextLevelIncludes(originalRequestIncludes, currentLevel);
-                hasNextHops = !nextLevelIncludes.isEmpty();
-            }
-
-            if (!allResources.isEmpty()) {
-                return jsonApiResponseWriter.composeWithIncludedMember((ObjectNode) originalParseResult.rootNode(), allResources);
-            }
-        }
-        return originalJsonApiResponse;
-    }
-
-    private boolean isCompoundDocsRequested(List<String> originalRequestIncludes) {
-        return originalRequestIncludes != null && !originalRequestIncludes.isEmpty();
     }
 
     private Set<String> resolveIncludesToRequest(Map<String, Set<String>> typeToRelationshipsName,
@@ -216,9 +223,9 @@ public class CompoundDocsResolver {
         return nextLevelIncludes;
     }
 
-    private Map<String, Set<String>> getResourceIdsByType(Set<JsonApiResponseParser.IntermediateParseResult> parseResults) {
+    private Map<String, Set<String>> getResourceIdsByType(Set<IntermediateParseResult> parseResults) {
         Map<String, Set<String>> resourceIdsByType = new HashMap<>();
-        for (JsonApiResponseParser.IntermediateParseResult parseResult : parseResults) {
+        for (IntermediateParseResult parseResult : parseResults) {
             parseResult.typeToIdsMap().forEach((key, value) -> {
                 if (resourceIdsByType.containsKey(key)) {
                     resourceIdsByType.get(key).addAll(value);
@@ -231,9 +238,9 @@ public class CompoundDocsResolver {
         return resourceIdsByType;
     }
 
-    private Map<String, Set<String>> getTypeToRelationships(Set<JsonApiResponseParser.IntermediateParseResult> parseResults) {
+    private Map<String, Set<String>> getTypeToRelationships(Set<IntermediateParseResult> parseResults) {
         Map<String, Set<String>> typeToRelationshipName = new HashMap<>();
-        for (JsonApiResponseParser.IntermediateParseResult parseResult : parseResults) {
+        for (IntermediateParseResult parseResult : parseResults) {
             parseResult.typeToRelationshipNamesMap().forEach((key, value) -> {
                 if (typeToRelationshipName.containsKey(key)) {
                     typeToRelationshipName.get(key).addAll(value);

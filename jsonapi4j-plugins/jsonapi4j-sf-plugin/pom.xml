@@ -50,7 +50,7 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-base</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- Apache commons -->
@@ -79,7 +79,7 @@
         <dependency>
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-core</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

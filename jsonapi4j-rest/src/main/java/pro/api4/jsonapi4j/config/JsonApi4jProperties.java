@@ -8,8 +8,4 @@ public interface JsonApi4jProperties {
         return JSONAPI4J_DEFAULT_ROOT_PATH;
     }
 
-    default CompoundDocsProperties compoundDocs() {
-        return new DefaultCompoundDocsProperties();
-    }
-
 }

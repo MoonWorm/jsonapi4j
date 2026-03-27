@@ -1,27 +1,26 @@
-package pro.api4.jsonapi4j.filter.cd;
+package pro.api4.jsonapi4j.plugin.cd;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
-import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import static java.util.stream.Collectors.toMap;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initExecutorService;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initObjectMapper;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
 
 @Slf4j
 public class CompoundDocsFilter implements Filter {
@@ -35,28 +34,23 @@ public class CompoundDocsFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
 
-        // TODO: extract CompoundDocsProperties same as OasProperties
-        JsonApi4jProperties properties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-        log.info("Applied {} from Servlet Context under {} attribute", JsonApi4jProperties.class.getSimpleName(), JSONAPI4J_PROPERTIES_ATT_NAME);
+        CompoundDocsProperties cdProperties = (CompoundDocsProperties) filterConfig.getServletContext()
+                .getAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
+        Validate.notNull(cdProperties, "Compound Docs Properties are not found in ServletContext");
+
+        DomainUrlResolver domainUrlResolver = (DomainUrlResolver) filterConfig.getServletContext()
+                .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME);
+        Validate.notNull(domainUrlResolver, "Domain Url Resolver is not found in ServletContext");
 
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
-                properties.compoundDocs().enabled(),
-                properties.compoundDocs().maxHops(),
-                properties.compoundDocs().errorStrategy()
+                cdProperties.enabled(),
+                cdProperties.maxHops(),
+                cdProperties.errorStrategy()
         );
 
         log.info("Effective compound docs settings: {}", config);
 
         if (config.isEnabled()) {
-            DomainUrlResolver domainUrlResolver = new DefaultDomainUrlResolver(
-                    MapUtils.emptyIfNull(properties.compoundDocs().mapping())
-                            .entrySet()
-                            .stream()
-                            .collect(toMap(
-                                    Map.Entry::getKey,
-                                    e -> URI.create(e.getValue())
-                            ))
-            );
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
             resolver = new CompoundDocsResolver(

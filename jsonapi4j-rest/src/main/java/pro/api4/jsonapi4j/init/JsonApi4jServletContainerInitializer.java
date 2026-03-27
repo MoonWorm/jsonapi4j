@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.filter.cd.CompoundDocsFilter;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
@@ -26,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static pro.api4.jsonapi4j.config.DefaultCompoundDocsProperties.JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE;
 import static pro.api4.jsonapi4j.config.JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH;
 import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenient;
 
@@ -36,7 +34,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_DISPATCHER_SERVLET_NAME = "jsonApi4jDispatcherServlet";
     public static final String JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME = "jsonapi4jPrincipalResolvingFilter";
     public static final String JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME = "jsonapi4jRequestBodyCachingFilter";
-    public static final String JSONAPI4J_COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
 
     public static final String JSONAPI4J_PROPERTIES_ATT_NAME = "jsonApi4jProperties";
     public static final String JSONAPI4J_ATT_NAME = "jsonApi4j";
@@ -83,20 +80,9 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         // -------
         // filters
         // -------
-
         registerPrincipalResolvingFilter(servletContext, dispatcherServletMapping);
 
         registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
-
-        boolean compoundDocsEnabled = properties == null || properties.compoundDocs() == null
-                ? Boolean.parseBoolean(JSONAPI4J_COMPOUND_DOCS_ENABLED_DEFAULT_VALUE)
-                : properties.compoundDocs().enabled();
-        if (compoundDocsEnabled) {
-            registerCompoundDocsFilter(
-                    servletContext,
-                    dispatcherServletMapping
-            );
-        }
     }
 
     private void registerDispatcherServlet(ServletContext servletContext,
@@ -130,20 +116,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         FilterRegistration.Dynamic filter = servletContext.addFilter(
                 JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME,
                 new RequestBodyCachingFilter()
-        );
-        filter.addMappingForUrlPatterns(
-                null, // DispatcherType.REQUEST is used by default
-                false, // supposed to be matched before any declared filter mappings of the ServletContext
-                rootPath
-        );
-    }
-
-    private void registerCompoundDocsFilter(ServletContext servletContext,
-                                            String rootPath) {
-
-        FilterRegistration.Dynamic filter = servletContext.addFilter(
-                JSONAPI4J_COMPOUND_DOCS_FILTER_NAME,
-                new CompoundDocsFilter()
         );
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default

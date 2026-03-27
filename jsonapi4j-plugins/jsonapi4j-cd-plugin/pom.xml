@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>jsonapi4j-plugins</artifactId>
+        <groupId>pro.api4</groupId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>jsonapi4j-cd-plugin</artifactId>
+    <name>JsonApi4j - Plugins - Compound Docs Plugin</name>
+    <description>Compound Documents Plugin. Can be used for fetching related resources according to JSON:API spec.</description>
+    <url>https://api4.pro</url>
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>MoonWorm</id>
+            <name>Aliaksei Taliuk</name>
+            <email>aliaksei.taliuk@gmail.com</email>
+            <url>https://github.com/MoonWorm</url>
+            <roles>
+                <role>Author</role>
+                <role>Project Maintainer</role>
+            </roles>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:https://github.com/MoonWorm/jsonapi4j.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/MoonWorm/jsonapi4j.git</developerConnection>
+        <url>https://github.com/MoonWorm/jsonapi4j</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- jsonapi4j -->
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-rest</artifactId>
+            <version>${revision}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Servlet API -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

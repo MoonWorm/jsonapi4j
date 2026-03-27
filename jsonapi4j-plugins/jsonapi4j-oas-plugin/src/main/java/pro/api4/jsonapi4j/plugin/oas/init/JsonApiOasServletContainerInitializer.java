@@ -38,6 +38,10 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
         }
     }
 
+    private JsonApi4jProperties readJsonApi4jProperties(ServletContext servletContext) {
+        return JsonApi4jPropertiesLoader.loadConfig(servletContext);
+    }
+
     private void initOasProperties(ServletContext servletContext) {
         OasProperties oasProperties = (OasProperties) servletContext.getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
         if (oasProperties == null) {
@@ -50,10 +54,6 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
     private static OasProperties readOasProperties(ServletContext servletContext) {
         Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
         return DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw);
-    }
-
-    private JsonApi4jProperties readJsonApi4jProperties(ServletContext servletContext) {
-        return JsonApi4jPropertiesLoader.loadConfig(servletContext);
     }
 
     private void registerOasServlet(ServletContext servletContext) {

@@ -3,7 +3,7 @@ server:
 
 jsonapi4j:
   rootPath: /jsonapi
-  compound-docs:
+  cd:
     enabled: false
   ac:
     enabled: false
