@@ -1352,12 +1352,13 @@ Because it's a standalone module, you can host this logic either:
 
 **Available properties**
 
-| Property name                        | Default value | Description                                                                          |
-|--------------------------------------|---------------|--------------------------------------------------------------------------------------|
-| `jsonapi4j.cd.enabled`               | `false` | Enables/disables Compound Documents post-processing.                                 |
-| `jsonapi4j.cd.maxHops`               | `2` | Max include traversal depth for compound document resolution.                        |
-| `jsonapi4j.cd.errorStrategy`         | `IGNORE` | Error handling strategy in compound docs resolver. Available options: `IGNORE`, `FAIL` |
-| `jsonapi4j.cd.mapping.<resourceType>` | empty map | Per-resource-type base URL mapping used by compound docs resolver.                   |
+| Property name                         | Default value | Description                                                                                                                                       |
+|---------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `jsonapi4j.cd.enabled`                | `false` | Enables/disables Compound Documents post-processing.                                                                                              |
+| `jsonapi4j.cd.maxHops`                | `2` | Max include traversal depth for compound document resolution.                                                                                     |
+| `jsonapi4j.cd.errorStrategy`          | `IGNORE` | Error handling strategy in compound docs resolver. Available options: `IGNORE`, `FAIL`                                                            |
+| `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS` |
+| `jsonapi4j.cd.mapping.<resourceType>` | empty map | Per-resource-type base URL mapping used by compound docs resolver.                                                                                |
 
 
 #### Performance and Caching
