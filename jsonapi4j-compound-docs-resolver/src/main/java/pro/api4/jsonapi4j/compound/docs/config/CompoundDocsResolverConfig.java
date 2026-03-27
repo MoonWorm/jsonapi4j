@@ -6,15 +6,18 @@ public class CompoundDocsResolverConfig {
 
     private final boolean enabled;
     private final int maxHops;
+    private final int maxIncludedResources;
     private final ErrorStrategy errorStrategy;
     private final List<Propagation> propagation;
 
     public CompoundDocsResolverConfig(boolean enabled,
                                       int maxHops,
+                                      int maxIncludedResources,
                                       ErrorStrategy errorStrategy,
                                       List<Propagation> propagation) {
         this.enabled = enabled;
         this.maxHops = maxHops;
+        this.maxIncludedResources = maxIncludedResources;
         this.errorStrategy = errorStrategy;
         this.propagation = propagation;
     }
@@ -25,6 +28,10 @@ public class CompoundDocsResolverConfig {
 
     public int getMaxHops() {
         return maxHops;
+    }
+
+    public int getMaxIncludedResources() {
+        return maxIncludedResources;
     }
 
     public ErrorStrategy getErrorStrategy() {
@@ -40,6 +47,7 @@ public class CompoundDocsResolverConfig {
         return "CompoundDocsResolverConfig{" +
                 "enabled=" + enabled +
                 ", maxHops=" + maxHops +
+                ", maxIncludedResources=" + maxIncludedResources +
                 ", errorStrategy=" + errorStrategy +
                 ", propagation=" + propagation +
                 '}';

@@ -13,6 +13,7 @@ jsonapi4j:
   cd:
     enabled: true
     maxHops: 3
+    maxIncludedResources: 100
     errorStrategy: IGNORE
     propagation:
       - FIELDS

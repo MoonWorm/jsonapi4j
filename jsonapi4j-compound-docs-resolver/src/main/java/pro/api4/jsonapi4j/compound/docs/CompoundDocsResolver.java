@@ -144,7 +144,9 @@ public class CompoundDocsResolver {
                         originalParseResult.typeToRelationshipNameMap()
                 )
         );
-        while (hasNextHops && currentLevel <= config.getMaxHops()) {
+        while (hasNextHops
+                && currentLevel <= config.getMaxHops()
+                && allResources.size() <= config.getMaxIncludedResources()) {
             Map<String, Set<String>> resourceIdsByType = getResourceIdsByType(currentLevelParseResults);
             Map<String, Set<String>> typeToRelationshipsName = getTypeToRelationships(currentLevelParseResults);
 

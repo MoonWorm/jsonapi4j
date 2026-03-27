@@ -31,7 +31,7 @@ public class CompoundDocsFilter implements Filter {
     private CompoundDocsResolver resolver;
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
 
         CompoundDocsProperties cdProperties = (CompoundDocsProperties) filterConfig.getServletContext()
@@ -45,6 +45,7 @@ public class CompoundDocsFilter implements Filter {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                 cdProperties.enabled(),
                 cdProperties.maxHops(),
+                cdProperties.maxIncludedResources(),
                 cdProperties.errorStrategy(),
                 cdProperties.propagation()
         );

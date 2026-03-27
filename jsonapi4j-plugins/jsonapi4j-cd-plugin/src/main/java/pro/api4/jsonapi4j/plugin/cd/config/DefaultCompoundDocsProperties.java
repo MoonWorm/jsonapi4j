@@ -18,6 +18,7 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
 
     private boolean enabled = Boolean.parseBoolean(CD_ENABLED_DEFAULT_VALUE);
     private int maxHops = Integer.parseInt(CD_MAX_HOPS_DEFAULT_VALUE);
+    private int maxIncludedResources = Integer.parseInt(CD_MAX_INCLUDED_RESOURCES);
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(CD_ERROR_STRATEGY_DEFAULT_VALUE);
     private Map<String, String> mapping = Collections.emptyMap();
     private List<Propagation> propagation = parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
@@ -47,6 +48,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public int maxHops() {
         return maxHops;
+    }
+
+    @Override
+    public int maxIncludedResources() {
+        return maxIncludedResources;
     }
 
     @Override

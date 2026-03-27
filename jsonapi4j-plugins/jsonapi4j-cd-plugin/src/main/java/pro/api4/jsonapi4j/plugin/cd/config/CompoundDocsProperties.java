@@ -11,6 +11,7 @@ public interface CompoundDocsProperties {
 
     String CD_ENABLED_DEFAULT_VALUE = "false";
     String CD_MAX_HOPS_DEFAULT_VALUE = "2";
+    String CD_MAX_INCLUDED_RESOURCES = "100";
     String CD_ERROR_STRATEGY_DEFAULT_VALUE = "IGNORE";
     String CD_PROPAGATION_DEFAULT_VALUE = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
 
@@ -20,6 +21,10 @@ public interface CompoundDocsProperties {
 
     default int maxHops() {
         return Integer.parseInt(CD_MAX_HOPS_DEFAULT_VALUE);
+    }
+
+    default int maxIncludedResources() {
+        return Integer.parseInt(CD_MAX_INCLUDED_RESOURCES);
     }
 
     default ErrorStrategy errorStrategy() {

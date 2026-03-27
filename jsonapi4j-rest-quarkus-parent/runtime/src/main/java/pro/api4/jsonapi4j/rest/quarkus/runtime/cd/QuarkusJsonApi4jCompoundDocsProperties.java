@@ -34,6 +34,12 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     int maxHops();
 
     /**
+     * Maximum amount of included resources.
+     */
+    @WithDefault(CD_MAX_INCLUDED_RESOURCES)
+    int maxIncludedResources();
+
+    /**
      * Error strategy.
      */
     @WithDefault(CD_ERROR_STRATEGY_DEFAULT_VALUE)
@@ -54,6 +60,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
         cdProperties.setEnabled(enabled());
         cdProperties.setMaxHops(maxHops());
+        cdProperties.setMaxIncludedResources(maxIncludedResources());
         cdProperties.setErrorStrategy(errorStrategy());
         cdProperties.setMapping(mapping());
         cdProperties.setPropagation(propagation());
