@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.rest.quarkus.runtime;
+package pro.api4.jsonapi4j.rest.quarkus.runtime.oas;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
@@ -8,6 +8,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jProperties;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;

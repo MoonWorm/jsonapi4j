@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.rest.quarkus.runtime;
+package pro.api4.jsonapi4j.rest.quarkus.runtime.oas;
 
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.arc.properties.IfBuildProperty;

@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.rest.quarkus.runtime;
+package pro.api4.jsonapi4j.rest.quarkus.runtime.ac;
 
 import io.quarkus.runtime.annotations.ConfigPhase;
 import io.quarkus.runtime.annotations.ConfigRoot;

@@ -14,6 +14,16 @@ import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.*;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.ac.QuarkusJsonApi4jAcPluginBeans;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.ac.QuarkusJsonApi4jAcProperties;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.cd.QuarkusJsonApi4jCompoundDocsPluginBeans;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.cd.QuarkusJsonApi4jCompoundDocsProperties;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.cd.QuarkusJsonApi4jCompoundDocsServletContextListener;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.oas.QuarkusJsonApi4jOasPluginBeans;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.oas.QuarkusJsonApi4jOasProperties;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.oas.QuarkusJsonApi4jOasServletContextListener;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfPluginBeans;
+import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfProperties;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
