@@ -23,7 +23,7 @@ public final class SingleResourceDocLinksDefaultResolvers {
                     () -> idSupplier.getId(dataSourceDto)
             );
             String selfLink = new LinksGenerator(request).generateSelfLink(
-                    basePath, true, true, true, true, true
+                    basePath, true, true, true, true, true, true
             );
             return LinksObject.builder().self(selfLink).build();
         };

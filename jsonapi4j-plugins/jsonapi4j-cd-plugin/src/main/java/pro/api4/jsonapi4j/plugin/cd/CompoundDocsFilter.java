@@ -45,7 +45,8 @@ public class CompoundDocsFilter implements Filter {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                 cdProperties.enabled(),
                 cdProperties.maxHops(),
-                cdProperties.errorStrategy()
+                cdProperties.errorStrategy(),
+                cdProperties.propagation()
         );
 
         log.info("Effective compound docs settings: {}", config);

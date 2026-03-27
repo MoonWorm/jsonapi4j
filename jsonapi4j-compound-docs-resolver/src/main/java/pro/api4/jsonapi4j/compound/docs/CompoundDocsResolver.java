@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
+import pro.api4.jsonapi4j.compound.docs.client.JsonCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
@@ -30,7 +30,7 @@ public class CompoundDocsResolver {
     private final CompoundDocsResolverConfig config;
     private final DomainUrlResolver domainUrlResolver;
 
-    private final JsonApiHttpClient httpClient;
+    private final JsonCompoundDocsApiHttpClient httpClient;
 
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
@@ -49,7 +49,7 @@ public class CompoundDocsResolver {
         this.config = config;
         this.domainUrlResolver = domainUrlResolver;
 
-        this.httpClient = new JsonApiHttpClient(objectMapper, config.getErrorStrategy());
+        this.httpClient = new JsonCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
@@ -120,8 +120,8 @@ public class CompoundDocsResolver {
                         resourceType,
                         ids,
                         requestIncludes,
-                        originalRequest.fieldSets(),
-                        originalRequest.headers()
+                        originalRequest,
+                        config
                 ),
                 executorService
         );

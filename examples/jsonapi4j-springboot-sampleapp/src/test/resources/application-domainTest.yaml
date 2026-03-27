@@ -3,6 +3,7 @@ server:
 
 jsonapi4j:
   rootPath: /jsonapi
+
   cd:
     enabled: false
   ac:

@@ -30,7 +30,7 @@ public final class DefaultRelationshipResolvers {
                     relationship
             );
             String selfLink = new LinksGenerator(request).generateSelfLink(
-                    relationshipBasePath, false, false, false, false, true
+                    relationshipBasePath, false, false, false, false, true, true
             );
             return new BaseDoc(LinksObject.builder().self(selfLink).build());
         };

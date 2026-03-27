@@ -6,9 +6,11 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
@@ -42,12 +44,19 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
      */
     Map<String, String> mapping();
 
+    /**
+     * Defines which JsonApiRequest parts to propagate during Compound Docs resolution loop.
+     */
+    @WithDefault(CD_PROPAGATION_DEFAULT_VALUE)
+    List<Propagation> propagation();
+
     default CompoundDocsProperties toCdProperties() {
         DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
         cdProperties.setEnabled(enabled());
         cdProperties.setMaxHops(maxHops());
         cdProperties.setErrorStrategy(errorStrategy());
         cdProperties.setMapping(mapping());
+        cdProperties.setPropagation(propagation());
         return cdProperties;
     }
 }

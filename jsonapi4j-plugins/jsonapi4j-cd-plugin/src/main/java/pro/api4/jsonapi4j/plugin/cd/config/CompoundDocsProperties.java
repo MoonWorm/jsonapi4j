@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.plugin.cd.config;
 
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public interface CompoundDocsProperties {
 
@@ -12,7 +12,7 @@ public interface CompoundDocsProperties {
     String CD_ENABLED_DEFAULT_VALUE = "false";
     String CD_MAX_HOPS_DEFAULT_VALUE = "2";
     String CD_ERROR_STRATEGY_DEFAULT_VALUE = "IGNORE";
-    Map<String, String> CD_MAPPING_DEFAULT_VALUE = new HashMap<>();
+    String CD_PROPAGATION_DEFAULT_VALUE = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
 
     default boolean enabled() {
         return Boolean.parseBoolean(CD_ENABLED_DEFAULT_VALUE);
@@ -27,7 +27,18 @@ public interface CompoundDocsProperties {
     }
 
     default Map<String, String> mapping() {
-        return CD_MAPPING_DEFAULT_VALUE;
+        return Collections.emptyMap();
+    }
+
+    default List<Propagation> propagation() {
+        return parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
+    }
+
+    default List<Propagation> parsePropagationString(String propagationString) {
+        return Arrays.stream(propagationString.split(","))
+                .map(String::trim)
+                .map(Propagation::valueOf)
+                .toList();
     }
 
 }

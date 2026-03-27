@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs;
 
-import pro.api4.jsonapi4j.compound.docs.client.JsonApiHttpClient;
+import pro.api4.jsonapi4j.compound.docs.client.JsonCompoundDocsApiHttpClient;
 
 import java.util.List;
 import java.util.Map;
@@ -63,9 +63,14 @@ public interface CompoundDocsRequest {
      */
     String relativePath();
 
+    /**
+     * @return all non JSON:API specific query params (user custom query params)
+     */
+    Map<String, List<String>> customQueryParams();
+
     default boolean isProcessable() {
         return "GET".equals(method())
-                && !Boolean.parseBoolean(headers().get(JsonApiHttpClient.X_DISABLE_COMPOUND_DOCS))
+                && !Boolean.parseBoolean(headers().get(JsonCompoundDocsApiHttpClient.X_DISABLE_COMPOUND_DOCS))
                 && includes() != null && !includes().isEmpty();
     }
 

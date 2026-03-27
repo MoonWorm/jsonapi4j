@@ -2,7 +2,10 @@ package pro.api4.jsonapi4j.compound.docs.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 
 import java.io.IOException;
@@ -17,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class JsonApiHttpClient {
+public class JsonCompoundDocsApiHttpClient {
 
     public static final String X_DISABLE_COMPOUND_DOCS = "X-Disable-Compound-Docs";
     private static final Set<String> DISALLOWED_HEADERS = Set.of(
@@ -30,8 +33,8 @@ public class JsonApiHttpClient {
     private final ObjectMapper objectMapper;
     private final ErrorStrategy errorStrategy;
 
-    public JsonApiHttpClient(ObjectMapper objectMapper,
-                             ErrorStrategy errorStrategy) {
+    public JsonCompoundDocsApiHttpClient(ObjectMapper objectMapper,
+                                         ErrorStrategy errorStrategy) {
         this.objectMapper = objectMapper;
         this.errorStrategy = errorStrategy;
     }
@@ -40,10 +43,9 @@ public class JsonApiHttpClient {
                                      String resourceType,
                                      Set<String> ids,
                                      Set<String> includes,
-                                     Map<String, List<String>> fields,
-                                     Map<String, String> originalRequestHeaders) {
+                                     CompoundDocsRequest originalRequest,
+                                     CompoundDocsResolverConfig config) {
         try (HttpClient client = HttpClient.newHttpClient()) {
-
             String uri = domainBaseUrl.toString();
             if (uri.endsWith("/")) {
                 uri += resourceType;
@@ -54,21 +56,41 @@ public class JsonApiHttpClient {
             if (includes != null && !includes.isEmpty()) {
                 uri += "&include=" + String.join(",", includes);
             }
-            if (fields != null && !fields.isEmpty()) {
-                uri += "&" + fields.entrySet()
-                        .stream()
-                        .map(e -> String.format("fields[%s]", e.getKey()) + "=" + String.join(",", e.getValue()))
-                        .collect(Collectors.joining("&"));
+
+            if (config.getPropagation().contains(Propagation.FIELDS)) {
+                Map<String, List<String>> fields = originalRequest.fieldSets();
+                if (fields != null && !fields.isEmpty()) {
+                    String fieldsStr = fields.entrySet()
+                            .stream()
+                            .map(e -> String.format("fields[%s]=%s", e.getKey(), String.join(",", e.getValue())))
+                            .collect(Collectors.joining("&"));
+                    uri += "&" + fieldsStr;
+                }
+            }
+
+            if (config.getPropagation().contains(Propagation.CUSTOM_QUERY_PARAMS)) {
+                Map<String, List<String>> params = originalRequest.customQueryParams();
+                if (params != null && !params.isEmpty()) {
+                    String customQueryParamsStr = params.entrySet()
+                            .stream()
+                            .map(e -> String.format("%s=%s", e.getKey(), String.join(",", e.getValue())))
+                            .collect(Collectors.joining("&"));
+                    uri += "&" + customQueryParamsStr;
+                }
             }
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
-            if (originalRequestHeaders != null) {
-                originalRequestHeaders.forEach((header, value) -> {
-                    if (!DISALLOWED_HEADERS.contains(header.toLowerCase())) {
-                        requestBuilder.header(header, value);
-                    }
-                });
+            if (config.getPropagation().contains(Propagation.HEADERS)) {
+                Map<String, String> headers = originalRequest.headers();
+                if (headers != null) {
+                    headers.forEach((header, value) -> {
+                        if (!DISALLOWED_HEADERS.contains(header.toLowerCase())) {
+                            requestBuilder.header(header, value);
+                        }
+                    });
+                }
             }
+
             requestBuilder.header(X_DISABLE_COMPOUND_DOCS, String.valueOf(true));
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

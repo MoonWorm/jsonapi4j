@@ -8,6 +8,7 @@ public record DefaultCompoundDocsRequest(
         List<String> includes,
         Map<String, List<String>> fieldSets,
         Map<String, String> headers,
-        String relativePath
+        String relativePath,
+        Map<String, List<String>> customQueryParams
 ) implements CompoundDocsRequest {
 }

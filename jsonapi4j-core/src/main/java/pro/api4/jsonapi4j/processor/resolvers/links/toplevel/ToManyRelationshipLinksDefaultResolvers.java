@@ -41,6 +41,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                     true,
                     true,
                     true,
+                    true,
                     true
             );
 
@@ -81,7 +82,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
             }
 
             String nextLink = linksGenerator.generateNextLink(
-                    relationshipBasePath, nextCursor, true, true, true, true, true
+                    relationshipBasePath, nextCursor, true, true, true, true, true, true
             );
 
             return LinksObject.builder().self(selfLink).next(nextLink).related(relatedLinks).build();

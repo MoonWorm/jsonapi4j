@@ -19,7 +19,7 @@ public final class ResourceLinksDefaultResolvers {
         return (request, dataSourceDto) -> {
             String basePath = LinksGenerator.resourceBasePath(resourceType, () -> idSupplier.getId(dataSourceDto));
             String selfLink = new LinksGenerator(request)
-                    .generateSelfLink(basePath, false, false, false,false, true);
+                    .generateSelfLink(basePath, false, false, false,false, true, true);
             return LinksObject.builder().self(selfLink).build();
         };
     }

@@ -29,7 +29,7 @@ public final class ToOneRelationshipLinksDefaultResolvers {
                     relationshipName
             );
             String selfLink = linkGenerator.generateSelfLink(
-                    selfLinkBasePath, true, true, true, true, true
+                    selfLinkBasePath, true, true, true, true, true, true
             );
 
             String relatedLinkBasePath = LinksGenerator.resourceBasePath(
@@ -37,7 +37,7 @@ public final class ToOneRelationshipLinksDefaultResolvers {
                     () -> relationshipIdSupplier.getId(dataSourceDto)
             );
             String relatedLink = linkGenerator.generateRelatedLink(
-                    relatedLinkBasePath, false, false, false, false, true
+                    relatedLinkBasePath, false, false, false, false, true, true
             );
 
             return LinksObject.builder().self(selfLink).related(relatedLink).build();

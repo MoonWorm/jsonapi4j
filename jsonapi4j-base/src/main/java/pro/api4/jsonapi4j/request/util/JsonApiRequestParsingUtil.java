@@ -4,6 +4,7 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +24,7 @@ import java.util.stream.Stream;
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.extractFilterName;
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.isJsonApiFilterParam;
 import static pro.api4.jsonapi4j.request.IncludeAwareRequest.NUMBER_OF_INCLUDES_GLOBAL_CAP;
+import static pro.api4.jsonapi4j.request.PaginationAwareRequest.isJsonApiPaginationParam;
 import static pro.api4.jsonapi4j.request.SortAwareRequest.NUMBER_OF_SORT_BY_GLOBAL_CAP;
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.extractResourceType;
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.isJsonApiFieldsParam;
@@ -150,8 +152,9 @@ public final class JsonApiRequestParsingUtil {
     }
 
     private static boolean isNotJsonApiParam(String paramName) {
-        return !paramName.equals(CursorAwareRequest.CURSOR_PARAM) &&
+        return !isJsonApiPaginationParam(paramName) &&
                 !paramName.equals(IncludeAwareRequest.INCLUDE_PARAM) &&
+                !isJsonApiFieldsParam(paramName) &&
                 !isJsonApiFilterParam(paramName) &&
                 !paramName.equals(SortAwareRequest.SORT_PARAM);
     }

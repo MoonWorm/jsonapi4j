@@ -2,11 +2,7 @@ package pro.api4.jsonapi4j.processor.resolvers.links;
 
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.request.CursorAwareRequest;
-import pro.api4.jsonapi4j.request.CustomQueryParamsAwareRequest;
-import pro.api4.jsonapi4j.request.FiltersAwareRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -51,6 +47,7 @@ public final class LinksGenerator {
                                    boolean propagateCursor,
                                    boolean propagateFilters,
                                    boolean propagateSortBy,
+                                   boolean propagateFields,
                                    boolean propagateQueryParams) {
         Map<String, String> selfLinkParams = new LinkedHashMap<>();
         if (propagateIncludes) {
@@ -65,6 +62,9 @@ public final class LinksGenerator {
         if (propagateSortBy) {
             populateSortBy(selfLinkParams);
         }
+        if (propagateFields) {
+            populateFields(selfLinkParams);
+        }
         if (propagateQueryParams) {
             populateQueryParams(selfLinkParams);
         }
@@ -76,24 +76,28 @@ public final class LinksGenerator {
                                       boolean propagateCursor,
                                       boolean propagateFilters,
                                       boolean propagateSortBy,
+                                      boolean propagateFields,
                                       boolean propagateQueryParams) {
-        Map<String, String> selfLinkParams = new LinkedHashMap<>();
+        Map<String, String> relatedLinkParams = new LinkedHashMap<>();
         if (propagateIncludes) {
-            populateIncludes(selfLinkParams);
+            populateIncludes(relatedLinkParams);
         }
         if (propagateCursor) {
-            populateCursor(selfLinkParams);
+            populateCursor(relatedLinkParams);
         }
         if (propagateFilters) {
-            populateFilters(selfLinkParams);
+            populateFilters(relatedLinkParams);
         }
         if (propagateSortBy) {
-            populateSortBy(selfLinkParams);
+            populateSortBy(relatedLinkParams);
+        }
+        if (propagateFields) {
+            populateFields(relatedLinkParams);
         }
         if (propagateQueryParams) {
-            populateQueryParams(selfLinkParams);
+            populateQueryParams(relatedLinkParams);
         }
-        return basePath + toParamsStr(selfLinkParams);
+        return basePath + toParamsStr(relatedLinkParams);
     }
 
     public String generateNextLink(String basePath,
@@ -102,6 +106,7 @@ public final class LinksGenerator {
                                    boolean propagateCursor,
                                    boolean propagateFilters,
                                    boolean propagateSortBy,
+                                   boolean propagateFields,
                                    boolean propagateQueryParams) {
         if (StringUtils.isBlank(nextCursor)) {
             return null;
@@ -118,6 +123,9 @@ public final class LinksGenerator {
         }
         if (propagateSortBy) {
             populateSortBy(nextLinkParams);
+        }
+        if (propagateFields) {
+            populateFields(nextLinkParams);
         }
         if (propagateQueryParams) {
             populateQueryParams(nextLinkParams);
@@ -173,6 +181,17 @@ public final class LinksGenerator {
                         .map(e -> e.getValue() == SortAwareRequest.SortOrder.DESC ? "-" + e.getKey() : e.getKey())
                         .toList();
                 linkParams.put(SortAwareRequest.SORT_PARAM, String.join(",", sortParamValues));
+            }
+        }
+    }
+
+    private void populateFields(Map<String, String> linkParams) {
+        if (request instanceof SparseFieldsetsAwareRequest r) {
+            if (MapUtils.isNotEmpty(r.getFieldSets())) {
+                r.getFieldSets().forEach((resourceType, fields) -> linkParams.put(
+                        SparseFieldsetsAwareRequest.getFieldsParam(resourceType),
+                        String.join(",", fields)
+                ));
             }
         }
     }

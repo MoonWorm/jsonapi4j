@@ -14,12 +14,15 @@ import static java.util.stream.Collectors.toMap;
 public class CompoundDocsRequestSupplier {
 
     public CompoundDocsRequest toCompoundDocsRequest(HttpServletRequest servletRequest) {
+        Map<String, List<String>> allParams = getParams(servletRequest);
+
         return new DefaultCompoundDocsRequest(
                 servletRequest.getMethod(),
                 getIncludesQueryParam(servletRequest),
-                getSparseFieldsetsParams(servletRequest),
+                JsonApiRequestParsingUtil.parseFieldSets(allParams),
                 getOriginalRequestHeaders(servletRequest),
-                servletRequest.getRequestURI()
+                servletRequest.getRequestURI(),
+                JsonApiRequestParsingUtil.parseCustomQueryParams(allParams)
         );
     }
 
@@ -38,10 +41,6 @@ public class CompoundDocsRequestSupplier {
             originalRequestHeaders.put(headerName, httpRequest.getHeader(headerName));
         }
         return MapUtils.unmodifiableMap(originalRequestHeaders);
-    }
-
-    private Map<String, List<String>> getSparseFieldsetsParams(HttpServletRequest httpRequest) {
-        return JsonApiRequestParsingUtil.parseFieldSets(getParams(httpRequest));
     }
 
     private Map<String, List<String>> getParams(HttpServletRequest request) {
