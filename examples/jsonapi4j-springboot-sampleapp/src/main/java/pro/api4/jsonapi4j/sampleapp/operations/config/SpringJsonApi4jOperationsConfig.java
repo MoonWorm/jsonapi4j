@@ -15,7 +15,7 @@ import pro.api4.jsonapi4j.sampleapp.operations.user.*;
 
 @Configuration
 @Import(IntegrationsConfig.class)
-public class OperationsConfig {
+public class SpringJsonApi4jOperationsConfig {
 
     @Bean
     public CurrencyOperations currencyOperations(CountriesClient countriesClient) {

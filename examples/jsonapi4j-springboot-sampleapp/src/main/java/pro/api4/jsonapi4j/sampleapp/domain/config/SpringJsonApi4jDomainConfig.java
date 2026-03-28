@@ -11,7 +11,7 @@ import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 
 @Configuration
-public class DomainSpringConfig {
+public class SpringJsonApi4jDomainConfig {
 
     @Bean
     public CountryResource countryResource() {
