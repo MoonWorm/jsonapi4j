@@ -45,19 +45,7 @@
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-ac-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-oas-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-sf-plugin</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-cd-plugin</artifactId>
+            <artifactId>jsonapi4j-all-plugins</artifactId>
         </dependency>
 
         <!-- Shared Sample Domain -->

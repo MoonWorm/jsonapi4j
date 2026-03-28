@@ -2,29 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
-        <artifactId>jsonapi4j</artifactId>
+        <artifactId>jsonapi4j-plugins</artifactId>
         <groupId>pro.api4</groupId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>jsonapi4j-plugins</artifactId>
-    <packaging>pom</packaging>
-
-    <name>JsonApi4j - Plugins - Parent Module</name>
-    <description>Parent module for jsonapi4j plugins</description>
-
-    <modules>
-        <module>jsonapi4j-ac-plugin</module>
-        <module>jsonapi4j-oas-plugin</module>
-        <module>jsonapi4j-sf-plugin</module>
-        <module>jsonapi4j-cd-plugin</module>
-        <module>jsonapi4j-all-plugins</module>
-    </modules>
-
+    <artifactId>jsonapi4j-all-plugins</artifactId>
+    <name>JsonApi4j - Plugins - All Plugins</name>
+    <description>This module offers all default JsonApi4j plugins as a single dependency</description>
     <url>https://api4.pro</url>
     <licenses>
         <license>
@@ -52,5 +39,28 @@
         <url>https://github.com/MoonWorm/jsonapi4j</url>
         <tag>HEAD</tag>
     </scm>
+
+    <dependencies>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-ac-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sf-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-cd-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+    </dependencies>
 
 </project>

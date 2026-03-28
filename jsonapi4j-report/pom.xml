@@ -52,6 +52,11 @@
         </dependency>
         <dependency>
             <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-oas-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-sf-plugin</artifactId>
             <version>${revision}</version>
         </dependency>

@@ -980,8 +980,19 @@ Please refer:
 * `JsonApiAccessControlPlugin`
 * `JsonApiSparseFieldsetsPlugin`
 * `JsonApiOasPlugin`
+* `JsonApiCompoundDocsPlugin`
 
 These are the plugins that are available for usage by default. If you're using JsonApi4j in terms of Spring Boot or Quarkus frameworks - you can just add the corresponding plugin dependency - and the plugin will be automatically integrated into the system.
+
+In case most or all of the plugins are needed - just add one dependency that aggregates them all:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-all-plugins</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
 
 ### Access Control Plugin
 

@@ -48,7 +48,6 @@
         <module>jsonapi4j-rest-quarkus-parent</module>
         <module>jsonapi4j-report</module>
         <module>examples</module>
-        <module>jsonapi4j-plugins/jsonapi4j-cd-plugin</module>
     </modules>
 
     <properties>

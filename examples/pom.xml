@@ -57,22 +57,17 @@
             </dependency>
             <dependency>
                 <groupId>pro.api4</groupId>
+                <artifactId>jsonapi4j-all-plugins</artifactId>
+                <version>${jsonapi4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pro.api4</groupId>
                 <artifactId>jsonapi4j-ac-plugin</artifactId>
                 <version>${jsonapi4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>pro.api4</groupId>
                 <artifactId>jsonapi4j-oas-plugin</artifactId>
-                <version>${jsonapi4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pro.api4</groupId>
-                <artifactId>jsonapi4j-sf-plugin</artifactId>
-                <version>${jsonapi4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pro.api4</groupId>
-                <artifactId>jsonapi4j-cd-plugin</artifactId>
                 <version>${jsonapi4j.version}</version>
             </dependency>
             <dependency>
