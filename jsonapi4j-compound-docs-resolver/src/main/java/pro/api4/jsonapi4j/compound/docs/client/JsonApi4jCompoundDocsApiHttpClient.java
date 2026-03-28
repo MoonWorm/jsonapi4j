@@ -21,9 +21,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class JsonCompoundDocsApiHttpClient {
+public class JsonApi4jCompoundDocsApiHttpClient {
 
-    public static final String X_DISABLE_COMPOUND_DOCS = "X-Disable-Compound-Docs";
     private static final Set<String> DISALLOWED_HEADERS = Set.of(
             "connection",
             "content-length",
@@ -34,8 +33,8 @@ public class JsonCompoundDocsApiHttpClient {
     private final ObjectMapper objectMapper;
     private final ErrorStrategy errorStrategy;
 
-    public JsonCompoundDocsApiHttpClient(ObjectMapper objectMapper,
-                                         ErrorStrategy errorStrategy) {
+    public JsonApi4jCompoundDocsApiHttpClient(ObjectMapper objectMapper,
+                                              ErrorStrategy errorStrategy) {
         this.objectMapper = objectMapper;
         this.errorStrategy = errorStrategy;
     }
@@ -45,7 +44,8 @@ public class JsonCompoundDocsApiHttpClient {
                                      Set<String> ids,
                                      Set<String> includes,
                                      CompoundDocsRequest originalRequest,
-                                     CompoundDocsResolverConfig config) {
+                                     CompoundDocsResolverConfig config,
+                                     Map<String, String> metaHeaders) {
         try (HttpClient client = buildHttpClient(config)) {
 
             String uri = domainBaseUrl.toString();
@@ -94,7 +94,11 @@ public class JsonCompoundDocsApiHttpClient {
                 }
             }
 
-            requestBuilder.header(X_DISABLE_COMPOUND_DOCS, String.valueOf(true));
+            // add meta headers
+            if (metaHeaders != null) {
+                metaHeaders.forEach(requestBuilder::header);
+            }
+
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {

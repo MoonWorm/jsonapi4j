@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.compound.docs.client.JsonCompoundDocsApiHttpClient;
+import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
@@ -13,24 +13,20 @@ import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsMetaHeaders.X_DISABLE_COMPOUND_DOCS;
 
 public class CompoundDocsResolver {
 
     private final CompoundDocsResolverConfig config;
     private final DomainUrlResolver domainUrlResolver;
 
-    private final JsonCompoundDocsApiHttpClient httpClient;
+    private final JsonApi4jCompoundDocsApiHttpClient httpClient;
 
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
@@ -49,7 +45,7 @@ public class CompoundDocsResolver {
         this.config = config;
         this.domainUrlResolver = domainUrlResolver;
 
-        this.httpClient = new JsonCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
+        this.httpClient = new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
@@ -112,7 +108,8 @@ public class CompoundDocsResolver {
     private CompletableFuture<List<String>> sendJsonApiRequestAsync(Set<String> ids,
                                                                     String resourceType,
                                                                     Set<String> requestIncludes,
-                                                                    CompoundDocsRequest originalRequest) {
+                                                                    CompoundDocsRequest originalRequest,
+                                                                    Map<String, String> metaHeaders) {
         URI domainUri = resolveDomainUrl(resourceType);
         return CompletableFuture.supplyAsync(
                 () -> httpClient.doBatchFetch(
@@ -121,7 +118,8 @@ public class CompoundDocsResolver {
                         ids,
                         requestIncludes,
                         originalRequest,
-                        config
+                        config,
+                        metaHeaders
                 ),
                 executorService
         );
@@ -138,6 +136,10 @@ public class CompoundDocsResolver {
         Map<String, Set<String>> nextLevelIncludes = getNextLevelIncludes(effectiveRequestIncludes, currentLevel);
         boolean hasNextHops = !nextLevelIncludes.isEmpty();
 
+        RequestedResourceIdsTracker requestedResourceIdsTracker = new RequestedResourceIdsTracker(
+                config.isDeduplicateResources()
+        );
+
         Set<IntermediateParseResult> currentLevelParseResults = Collections.singleton(
                 new IntermediateParseResult(
                         originalParseResult.typeToIdsMap(),
@@ -152,14 +154,29 @@ public class CompoundDocsResolver {
 
             Set<CompletableFuture<List<String>>> futures = new HashSet<>();
             for (Map.Entry<String, Set<String>> e : resourceIdsByType.entrySet()) {
+
                 String resourceType = e.getKey();
                 Set<String> ids = e.getValue();
-                Set<String> requestIncludes = resolveIncludesToRequest(
-                        typeToRelationshipsName,
-                        nextLevelIncludes,
-                        resourceType
-                );
-                futures.add(sendJsonApiRequestAsync(ids, resourceType, requestIncludes, request));
+
+                ids = requestedResourceIdsTracker.calculateNonRequested(resourceType, ids);
+
+                if (!ids.isEmpty()) {
+                    Set<String> requestIncludes = resolveIncludesToRequest(
+                            typeToRelationshipsName,
+                            nextLevelIncludes,
+                            resourceType
+                    );
+                    futures.add(
+                            sendJsonApiRequestAsync(
+                                    ids,
+                                    resourceType,
+                                    requestIncludes,
+                                    request,
+                                    Map.of(X_DISABLE_COMPOUND_DOCS, String.valueOf(true))
+                            )
+                    );
+                }
+
             }
 
             Set<String> currentLevelResources = futures.stream()

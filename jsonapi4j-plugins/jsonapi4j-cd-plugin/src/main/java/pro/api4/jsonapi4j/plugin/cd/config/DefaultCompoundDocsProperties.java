@@ -22,6 +22,7 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(CD_ERROR_STRATEGY_DEFAULT_VALUE);
     private Map<String, String> mapping = Collections.emptyMap();
     private List<Propagation> propagation = parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
+    private boolean deduplicateResources = Boolean.parseBoolean(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE);
     private long httpConnectTimeoutMs = Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
     private long httpTotalTimeoutMs = Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
 
@@ -70,6 +71,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public List<Propagation> propagation() {
         return propagation;
+    }
+
+    @Override
+    public boolean deduplicateResources() {
+        return deduplicateResources;
     }
 
     @Override

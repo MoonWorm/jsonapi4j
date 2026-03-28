@@ -16,4 +16,5 @@ public class SpringCompoundDocsOperationsTests extends CompoundDocsOperationsTes
                                              @LocalServerPort int appPort) {
         super(jsonApiRootPath, appPort);
     }
+
 }

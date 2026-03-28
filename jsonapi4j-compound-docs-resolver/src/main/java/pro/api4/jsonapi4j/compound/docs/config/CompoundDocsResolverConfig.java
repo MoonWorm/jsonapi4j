@@ -9,6 +9,7 @@ public class CompoundDocsResolverConfig {
     private final int maxIncludedResources;
     private final ErrorStrategy errorStrategy;
     private final List<Propagation> propagation;
+    private final boolean deduplicateResources;
     private final long httpConnectTimeoutMs;
     private final long httpTotalTimeoutMs;
 
@@ -17,6 +18,7 @@ public class CompoundDocsResolverConfig {
                                       int maxIncludedResources,
                                       ErrorStrategy errorStrategy,
                                       List<Propagation> propagation,
+                                      boolean deduplicateResources,
                                       long httpConnectTimeoutMs,
                                       long httpTotalTimeoutMs) {
         this.enabled = enabled;
@@ -24,6 +26,7 @@ public class CompoundDocsResolverConfig {
         this.maxIncludedResources = maxIncludedResources;
         this.errorStrategy = errorStrategy;
         this.propagation = propagation;
+        this.deduplicateResources = deduplicateResources;
         this.httpConnectTimeoutMs = httpConnectTimeoutMs;
         this.httpTotalTimeoutMs = httpTotalTimeoutMs;
     }
@@ -46,6 +49,10 @@ public class CompoundDocsResolverConfig {
 
     public List<Propagation> getPropagation() {
         return propagation;
+    }
+
+    public boolean isDeduplicateResources() {
+        return deduplicateResources;
     }
 
     public long getHttpConnectTimeoutMs() {

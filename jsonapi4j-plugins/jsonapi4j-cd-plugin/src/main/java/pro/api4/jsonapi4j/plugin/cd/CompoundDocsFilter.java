@@ -48,6 +48,7 @@ public class CompoundDocsFilter implements Filter {
                 cdProperties.maxIncludedResources(),
                 cdProperties.errorStrategy(),
                 cdProperties.propagation(),
+                cdProperties.deduplicateResources(),
                 cdProperties.httpConnectTimeoutMs(),
                 cdProperties.httpTotalTimeoutMs()
         );

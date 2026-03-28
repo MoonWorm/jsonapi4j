@@ -57,6 +57,12 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     List<Propagation> propagation();
 
     /**
+     * Defines if Compound Docs plugin should deduplicate resources in 'included' section (by 'type' / 'id')
+     */
+    @WithDefault(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE)
+    boolean deduplicateResources();
+
+    /**
      * Controls how long to wait when establishing TCP connection (in millisecond).
      * Covers:
      * <ul>
@@ -94,6 +100,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setErrorStrategy(errorStrategy());
         cdProperties.setMapping(mapping());
         cdProperties.setPropagation(propagation());
+        cdProperties.setDeduplicateResources(deduplicateResources());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
         cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
         return cdProperties;

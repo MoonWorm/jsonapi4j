@@ -70,4 +70,17 @@ public abstract class CompoundDocsOperationsTests {
                 .body(jsonEquals(ResourceUtil.readResourceFile("operations/cd/to-many-relationship-compound-docs-response.json")));
     }
 
+    @Test
+    public void test_readByIdWithIncludesCheckDeduplication() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives.relatives.relatives")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body(jsonEquals(ResourceUtil.readResourceFile("operations/cd/single-user-compound-docs-deduplicated-response.json")));
+    }
+
 }

@@ -1,0 +1,266 @@
+{
+  "links": {
+    "self": "/users/1?include=relatives"
+  },
+  "data": {
+    "id": "1",
+    "type": "users",
+    "attributes": {
+      "fullName": "John Doe",
+      "email": "john@doe.com",
+      "creditCardNumber": "123456789"
+    },
+    "relationships": {
+      "citizenships": {
+        "links": {
+          "self": "/users/1/relationships/citizenships"
+        }
+      },
+      "placeOfBirth": {
+        "links": {
+          "self": "/users/1/relationships/placeOfBirth"
+        }
+      },
+      "relatives": {
+        "links": {
+          "self": "/users/1/relationships/relatives",
+          "related": {
+            "users": {
+              "href": "/users?filter[id]=2,3",
+              "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+              "meta": {
+                "ids": [
+                  "2",
+                  "3"
+                ]
+              }
+            }
+          }
+        },
+        "data": [
+          {
+            "id": "2",
+            "type": "users",
+            "meta": {
+              "relationshipType": "HUSBAND"
+            }
+          },
+          {
+            "id": "3",
+            "type": "users",
+            "meta": {
+              "relationshipType": "BROTHER"
+            }
+          }
+        ]
+      }
+    },
+    "links": {
+      "self": "/users/1"
+    }
+  },
+  "included": [
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@doe.com",
+        "creditCardNumber": "123456789"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/1/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/1/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/1/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=2,3",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "2",
+                    "3"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "2",
+              "type": "users",
+              "meta": {
+                "relationshipType": "HUSBAND"
+              }
+            },
+            {
+              "id": "3",
+              "type": "users",
+              "meta": {
+                "relationshipType": "BROTHER"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    },
+    {
+      "id": "2",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jane Doe",
+        "email": "jane@doe.com",
+        "creditCardNumber": "222456789"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/2/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/2/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/2/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=1,4",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "1",
+                    "4"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users",
+              "meta": {
+                "relationshipType": "WIFE"
+              }
+            },
+            {
+              "id": "4",
+              "type": "users",
+              "meta": {
+                "relationshipType": "SON"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/2"
+      }
+    },
+    {
+      "id": "3",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jack Doe",
+        "email": "jack@doe.com",
+        "creditCardNumber": "333456789"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/3/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/3/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/3/relationships/relatives",
+            "related": {}
+          },
+          "data": []
+        }
+      },
+      "links": {
+        "self": "/users/3"
+      }
+    },
+    {
+      "id": "4",
+      "type": "users",
+      "attributes": {
+        "fullName": "Jessy Doe",
+        "email": "jessy@doe.com",
+        "creditCardNumber": "444456789"
+      },
+      "relationships": {
+        "citizenships": {
+          "links": {
+            "self": "/users/4/relationships/citizenships"
+          }
+        },
+        "placeOfBirth": {
+          "links": {
+            "self": "/users/4/relationships/placeOfBirth"
+          }
+        },
+        "relatives": {
+          "links": {
+            "self": "/users/4/relationships/relatives",
+            "related": {
+              "users": {
+                "href": "/users?filter[id]=1,2",
+                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
+                "meta": {
+                  "ids": [
+                    "1",
+                    "2"
+                  ]
+                }
+              }
+            }
+          },
+          "data": [
+            {
+              "id": "1",
+              "type": "users",
+              "meta": {
+                "relationshipType": "FATHER"
+              }
+            },
+            {
+              "id": "2",
+              "type": "users",
+              "meta": {
+                "relationshipType": "MOTHER"
+              }
+            }
+          ]
+        }
+      },
+      "links": {
+        "self": "/users/4"
+      }
+    }
+  ]
+}

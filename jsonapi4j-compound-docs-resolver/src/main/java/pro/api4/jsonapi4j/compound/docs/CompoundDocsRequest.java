@@ -1,11 +1,11 @@
 package pro.api4.jsonapi4j.compound.docs;
 
-import pro.api4.jsonapi4j.compound.docs.client.JsonCompoundDocsApiHttpClient;
-
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsMetaHeaders.X_DISABLE_COMPOUND_DOCS;
 
 /**
  * Narrowed version of the request that has information needed for compound docs resolution logic.
@@ -70,7 +70,7 @@ public interface CompoundDocsRequest {
 
     default boolean isProcessable() {
         return "GET".equals(method())
-                && !Boolean.parseBoolean(headers().get(JsonCompoundDocsApiHttpClient.X_DISABLE_COMPOUND_DOCS))
+                && !Boolean.parseBoolean(headers().get(X_DISABLE_COMPOUND_DOCS))
                 && includes() != null && !includes().isEmpty();
     }
 
