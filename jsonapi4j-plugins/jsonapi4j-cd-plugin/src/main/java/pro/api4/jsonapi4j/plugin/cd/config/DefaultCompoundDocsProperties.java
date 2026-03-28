@@ -22,6 +22,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(CD_ERROR_STRATEGY_DEFAULT_VALUE);
     private Map<String, String> mapping = Collections.emptyMap();
     private List<Propagation> propagation = parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
+    private long httpConnectTimeoutMs = Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
+    private long httpTotalTimeoutMs = Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
 
     public static CompoundDocsProperties toCdProperties(Map<String, Object> jsonApi4jPropertiesRaw) {
         Object cdPropertiesObject = jsonApi4jPropertiesRaw.get(CompoundDocsProperties.CD_PROPERTY_NAME);
@@ -68,6 +70,16 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public List<Propagation> propagation() {
         return propagation;
+    }
+
+    @Override
+    public long httpConnectTimeoutMs() {
+        return httpConnectTimeoutMs;
+    }
+
+    @Override
+    public long httpTotalTimeoutMs() {
+        return httpTotalTimeoutMs;
     }
 
 }

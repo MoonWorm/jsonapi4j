@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.plugin.cd.CompoundDocsFilter;
+import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.*;
@@ -22,6 +23,11 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 )
 @Configuration
 public class SpringJsonApi4jCompoundDocsConfig {
+
+    @Bean
+    public JsonApiCompoundDocsPlugin jsonApiCompoundDocsPlugin() {
+        return new JsonApiCompoundDocsPlugin();
+    }
 
     @Bean
     public DomainUrlResolver jsonApi4jCdDomainUrlResolver(CompoundDocsProperties cdProperties) {

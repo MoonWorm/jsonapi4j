@@ -9,17 +9,23 @@ public class CompoundDocsResolverConfig {
     private final int maxIncludedResources;
     private final ErrorStrategy errorStrategy;
     private final List<Propagation> propagation;
+    private final long httpConnectTimeoutMs;
+    private final long httpTotalTimeoutMs;
 
     public CompoundDocsResolverConfig(boolean enabled,
                                       int maxHops,
                                       int maxIncludedResources,
                                       ErrorStrategy errorStrategy,
-                                      List<Propagation> propagation) {
+                                      List<Propagation> propagation,
+                                      long httpConnectTimeoutMs,
+                                      long httpTotalTimeoutMs) {
         this.enabled = enabled;
         this.maxHops = maxHops;
         this.maxIncludedResources = maxIncludedResources;
         this.errorStrategy = errorStrategy;
         this.propagation = propagation;
+        this.httpConnectTimeoutMs = httpConnectTimeoutMs;
+        this.httpTotalTimeoutMs = httpTotalTimeoutMs;
     }
 
     public boolean isEnabled() {
@@ -42,6 +48,14 @@ public class CompoundDocsResolverConfig {
         return propagation;
     }
 
+    public long getHttpConnectTimeoutMs() {
+        return httpConnectTimeoutMs;
+    }
+
+    public long getHttpTotalTimeoutMs() {
+        return httpTotalTimeoutMs;
+    }
+
     @Override
     public String toString() {
         return "CompoundDocsResolverConfig{" +
@@ -50,6 +64,9 @@ public class CompoundDocsResolverConfig {
                 ", maxIncludedResources=" + maxIncludedResources +
                 ", errorStrategy=" + errorStrategy +
                 ", propagation=" + propagation +
+                ", httpConnectTimeoutMs=" + httpConnectTimeoutMs +
+                ", httpTotalTimeoutMs=" + httpTotalTimeoutMs +
                 '}';
     }
+
 }

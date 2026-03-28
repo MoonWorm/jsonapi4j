@@ -19,6 +19,8 @@ jsonapi4j:
       - FIELDS
       - CUSTOM_QUERY_PARAMS
       - HEADERS
+    httpConnectTimeoutMs: 5000
+    httpTotalTimeoutMs: 10000
     mapping:
       users: http://localhost:${server.port}${jsonapi4j.root-path}
       countries: http://localhost:${server.port}${jsonapi4j.root-path}

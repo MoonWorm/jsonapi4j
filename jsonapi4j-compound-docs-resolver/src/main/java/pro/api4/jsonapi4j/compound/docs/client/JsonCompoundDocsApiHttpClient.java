@@ -13,6 +13,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,7 +46,8 @@ public class JsonCompoundDocsApiHttpClient {
                                      Set<String> includes,
                                      CompoundDocsRequest originalRequest,
                                      CompoundDocsResolverConfig config) {
-        try (HttpClient client = HttpClient.newHttpClient()) {
+        try (HttpClient client = buildHttpClient(config)) {
+
             String uri = domainBaseUrl.toString();
             if (uri.endsWith("/")) {
                 uri += resourceType;
@@ -80,6 +82,7 @@ public class JsonCompoundDocsApiHttpClient {
             }
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
+            requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
             if (config.getPropagation().contains(Propagation.HEADERS)) {
                 Map<String, String> headers = originalRequest.headers();
                 if (headers != null) {
@@ -102,9 +105,15 @@ public class JsonCompoundDocsApiHttpClient {
                 }
             }
             return parseResponse(response);
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             throw new ErrorJsonApiResponseException("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
         }
+    }
+
+    private HttpClient buildHttpClient(CompoundDocsResolverConfig config) {
+        return HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
+                .build();
     }
 
     private List<String> parseResponse(HttpResponse<String> response) {

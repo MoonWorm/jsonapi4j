@@ -56,6 +56,36 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     @WithDefault(CD_PROPAGATION_DEFAULT_VALUE)
     List<Propagation> propagation();
 
+    /**
+     * Controls how long to wait when establishing TCP connection (in millisecond).
+     * Covers:
+     * <ul>
+     *     <li>DNS resolution</li>
+     *     <li>TCP handshake</li>
+     * </ul>
+     * <p>
+     * Does not cover:
+     * <ul>
+     *     <li>waiting for response</li>
+     *     <li>reading body</li>
+     * </ul>
+     */
+    @WithDefault(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE)
+    long httpConnectTimeoutMs();
+
+    /**
+     * Controls total request timeout (in millisecond).
+     * Covers:
+     * <ul>
+     *     <li>connection</li>
+     *     <li>sending request</li>
+     *     <li>waiting for response</li>
+     *     <li>reading response body</li>
+     * </ul>
+     */
+    @WithDefault(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE)
+    long httpTotalTimeoutMs();
+
     default CompoundDocsProperties toCdProperties() {
         DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
         cdProperties.setEnabled(enabled());
@@ -64,6 +94,8 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setErrorStrategy(errorStrategy());
         cdProperties.setMapping(mapping());
         cdProperties.setPropagation(propagation());
+        cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
+        cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
         return cdProperties;
     }
 }

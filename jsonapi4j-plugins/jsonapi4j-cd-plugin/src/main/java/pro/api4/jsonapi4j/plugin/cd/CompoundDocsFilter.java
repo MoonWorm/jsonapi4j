@@ -47,7 +47,9 @@ public class CompoundDocsFilter implements Filter {
                 cdProperties.maxHops(),
                 cdProperties.maxIncludedResources(),
                 cdProperties.errorStrategy(),
-                cdProperties.propagation()
+                cdProperties.propagation(),
+                cdProperties.httpConnectTimeoutMs(),
+                cdProperties.httpTotalTimeoutMs()
         );
 
         log.info("Effective compound docs settings: {}", config);

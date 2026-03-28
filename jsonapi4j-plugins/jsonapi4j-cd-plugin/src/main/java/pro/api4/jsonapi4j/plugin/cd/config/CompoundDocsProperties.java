@@ -14,6 +14,8 @@ public interface CompoundDocsProperties {
     String CD_MAX_INCLUDED_RESOURCES = "100";
     String CD_ERROR_STRATEGY_DEFAULT_VALUE = "IGNORE";
     String CD_PROPAGATION_DEFAULT_VALUE = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
+    String CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE = "5000";
+    String CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE = "10000";
 
     default boolean enabled() {
         return Boolean.parseBoolean(CD_ENABLED_DEFAULT_VALUE);
@@ -44,6 +46,14 @@ public interface CompoundDocsProperties {
                 .map(String::trim)
                 .map(Propagation::valueOf)
                 .toList();
+    }
+
+    default long httpConnectTimeoutMs() {
+        return Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
+    }
+
+    default long httpTotalTimeoutMs() {
+        return Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
     }
 
 }
