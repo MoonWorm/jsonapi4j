@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.List;
+
 /**
  * Carries common members ('links' and 'meta') that exist for all types of JSON:API data documents regardless of their
  * nature (all types of relationship & resource docs).
@@ -22,9 +24,19 @@ public class BaseDoc {
 
     public static final String LINKS_FIELD = "links";
     public static final String META_FIELD = "meta";
+    public static final String INCLUDED_FIELD = "included";
 
     private LinksObject links;
     private Object meta;
+    private List<? extends ResourceObject<?, ?>> included;
+
+    public BaseDoc(LinksObject links,
+                   Object meta,
+                   List<? extends ResourceObject<?, ?>> included) {
+        this.links = links;
+        this.meta = meta;
+        this.included = included;
+    }
 
     public BaseDoc(LinksObject links, Object meta) {
         this.links = links;
@@ -43,4 +55,7 @@ public class BaseDoc {
         return meta;
     }
 
+    public List<? extends ResourceObject<?, ?>> getIncluded() {
+        return included;
+    }
 }

@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.model.document.data;
 
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 
 import java.util.List;
 
@@ -13,6 +13,14 @@ public abstract class AbstractMultipleDataItemsDoc<DATA_ITEM extends ResourceIde
     public static final String DATA_FIELD = "data";
 
     private final List<DATA_ITEM> data;
+
+    public AbstractMultipleDataItemsDoc(List<DATA_ITEM> data,
+                                        LinksObject links,
+                                        Object meta,
+                                        List<? extends ResourceObject<?, ?>> included) {
+        super(links, meta, included);
+        this.data = data;
+    }
 
     public AbstractMultipleDataItemsDoc(List<DATA_ITEM> data,
                                         Object meta,

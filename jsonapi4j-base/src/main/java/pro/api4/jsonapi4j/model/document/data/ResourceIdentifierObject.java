@@ -14,10 +14,22 @@ public class ResourceIdentifierObject {
     public static final String ID_FIELD = "id";
     public static final String TYPE_FIELD = "type";
     public static final String META_FIELD = "meta";
+    public static final String LID_FIELD = "lid";
 
     private final String id;
     private final String type;
     private Object meta;
+    private String lid;
+
+    public ResourceIdentifierObject(String id,
+                                    String type,
+                                    Object meta,
+                                    String lid) {
+        this.id = id;
+        this.type = type;
+        this.meta = meta;
+        this.lid = lid;
+    }
 
     public ResourceIdentifierObject(String id,
                                     String type,
@@ -44,4 +56,7 @@ public class ResourceIdentifierObject {
         return meta;
     }
 
+    public String getLid() {
+        return lid;
+    }
 }

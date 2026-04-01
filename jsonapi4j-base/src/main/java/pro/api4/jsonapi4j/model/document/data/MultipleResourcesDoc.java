@@ -69,6 +69,13 @@ public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
                                 LinksObject links,
+                                Object meta,
+                                List<? extends ResourceObject<?, ?>> included) {
+        super(data, links, meta, included);
+    }
+
+    public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
+                                LinksObject links,
                                 Object meta) {
         super(data, meta, links);
     }

@@ -32,19 +32,23 @@ public class JsonApi4jDefaultValidator {
         }
     }
 
-    public void validateResourceId(String resourceId) {
+    public void validateResourceId(String resourceId, String parameterName) {
         if (StringUtils.isBlank(resourceId)) {
             throw new JsonApi4jConstraintViolationException(
-                    "value can't be blank",
-                    FiltersAwareRequest.getFilterParam(ID_FILTER_NAME) + " -> resourceId"
+                    "resource id can't be blank",
+                    parameterName
             );
         }
         if (resourceId.length() > RESOURCE_ID_MAX_LENGTH) {
             throw new JsonApi4jConstraintViolationException(
-                    "value length can't be more than " + RESOURCE_ID_MAX_LENGTH,
-                    FiltersAwareRequest.getFilterParam(ID_FILTER_NAME) + " -> resourceId"
+                    "resource id length can't be more than " + RESOURCE_ID_MAX_LENGTH,
+                    parameterName
             );
         }
+    }
+
+    public void validateResourceId(String resourceId) {
+        validateResourceId(resourceId, "resourceId");
     }
 
 }

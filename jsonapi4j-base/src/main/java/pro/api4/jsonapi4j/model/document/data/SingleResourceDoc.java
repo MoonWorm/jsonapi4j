@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.List;
+
 /**
  * Represents <a href="https://jsonapi.org/format/#document-top-level">Top-level Document</a> for 'data'
  * scenarios targeting a single primary resource.
@@ -38,6 +40,13 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class SingleResourceDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
         extends AbstractSingleDataItemDoc<PRIMARY_RESOURCE> {
+
+    public SingleResourceDoc(PRIMARY_RESOURCE data,
+                             LinksObject links,
+                             Object meta,
+                             List<? extends ResourceObject<?, ?>> included) {
+        super(data, links, meta, included);
+    }
 
     public SingleResourceDoc(PRIMARY_RESOURCE data,
                              LinksObject links,

@@ -4,6 +4,8 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.List;
+
 /**
  * Represents <a href="https://jsonapi.org/format/#document-top-level">Top-level Document</a> for 'data'
  * scenarios targeting to-one relationship.
@@ -29,6 +31,13 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class ToOneRelationshipDoc extends AbstractSingleDataItemDoc<ResourceIdentifierObject> {
+
+    public ToOneRelationshipDoc(ResourceIdentifierObject data,
+                                LinksObject links,
+                                Object meta,
+                                List<? extends ResourceObject<?, ?>> included) {
+        super(data, links, meta, included);
+    }
 
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
                                 LinksObject links, Object meta) {

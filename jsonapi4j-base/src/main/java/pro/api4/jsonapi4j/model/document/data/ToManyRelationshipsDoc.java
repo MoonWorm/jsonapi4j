@@ -41,6 +41,14 @@ public class ToManyRelationshipsDoc extends AbstractMultipleDataItemsDoc<Resourc
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links,
+                                  Object meta,
+                                  List<? extends ResourceObject<?, ?>> included
+    ) {
+        super(data, links, meta, included);
+    }
+
+    public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
+                                  LinksObject links,
                                   Object meta
     ) {
         super(data, meta, links);
