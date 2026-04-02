@@ -70,14 +70,22 @@ public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
                                 LinksObject links,
                                 Object meta,
+                                List<? extends ResourceObject<?, ?>> included,
+                                JsonApiObject jsonapi) {
+        super(data, links, meta, included, jsonapi);
+    }
+
+    public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
+                                LinksObject links,
+                                Object meta,
                                 List<? extends ResourceObject<?, ?>> included) {
-        super(data, links, meta, included);
+        this(data, links, meta, included, null);
     }
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
                                 LinksObject links,
                                 Object meta) {
-        super(data, meta, links);
+        this(data, links, meta, null);
     }
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
@@ -86,7 +94,7 @@ public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
     }
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data) {
-        this(data, null, null);
+        this(data, null);
     }
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,

@@ -44,14 +44,22 @@ public class SingleResourceDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
     public SingleResourceDoc(PRIMARY_RESOURCE data,
                              LinksObject links,
                              Object meta,
+                             List<? extends ResourceObject<?, ?>> included,
+                             JsonApiObject jsonapi) {
+        super(data, links, meta, included, jsonapi);
+    }
+
+    public SingleResourceDoc(PRIMARY_RESOURCE data,
+                             LinksObject links,
+                             Object meta,
                              List<? extends ResourceObject<?, ?>> included) {
-        super(data, links, meta, included);
+        this(data, links, meta, included, null);
     }
 
     public SingleResourceDoc(PRIMARY_RESOURCE data,
                              LinksObject links,
                              Object meta) {
-        super(data, links, meta);
+        this(data, links, meta, null);
     }
 
     public SingleResourceDoc(PRIMARY_RESOURCE data,

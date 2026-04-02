@@ -1,8 +1,10 @@
 package pro.api4.jsonapi4j.model.document.error;
 
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.JsonApiObject;
 
 import java.util.List;
 
@@ -28,18 +30,24 @@ import java.util.List;
  */
 @ToString(of = {"errors", "links"})
 @EqualsAndHashCode
-public class ErrorsDoc {
+public class ErrorsDoc extends BaseDoc {
+
+    public static final String ERRORS_FIELD = "errors";
 
     private List<ErrorObject> errors;
-    private LinksObject links;
-    private Object meta;
+
+    public ErrorsDoc(List<ErrorObject> errors,
+                     LinksObject links,
+                     Object meta,
+                     JsonApiObject jsonapi) {
+        super(links, meta, jsonapi);
+        this.errors = errors;
+    }
 
     public ErrorsDoc(List<ErrorObject> errors,
                      LinksObject links,
                      Object meta) {
-        this.errors = errors;
-        this.links = links;
-        this.meta = meta;
+        this(errors, links, meta, null);
     }
 
     public ErrorsDoc(List<ErrorObject> errors,
@@ -60,11 +68,4 @@ public class ErrorsDoc {
         return errors;
     }
 
-    public LinksObject getLinks() {
-        return links;
-    }
-
-    public Object getMeta() {
-        return meta;
-    }
 }

@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.model.document.data;
 
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -42,26 +43,35 @@ public class ToManyRelationshipsDoc extends AbstractMultipleDataItemsDoc<Resourc
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links,
                                   Object meta,
+                                  List<? extends ResourceObject<?, ?>> included,
+                                  JsonApiObject jsonapi
+    ) {
+        super(data, links, meta, included, jsonapi);
+    }
+
+    public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
+                                  LinksObject links,
+                                  Object meta,
                                   List<? extends ResourceObject<?, ?>> included
     ) {
-        super(data, links, meta, included);
+        this(data, links, meta, included, null);
     }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links,
                                   Object meta
     ) {
-        super(data, meta, links);
+        this(data, links, meta, null);
     }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links
     ) {
-        super(data, null, links);
+        this(data, links, null);
     }
 
     public ToManyRelationshipsDoc(LinksObject links) {
-        super(null, null, links);
+        this(null, links);
     }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data) {

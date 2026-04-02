@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.model.document.data;
 
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -35,13 +36,21 @@ public class ToOneRelationshipDoc extends AbstractSingleDataItemDoc<ResourceIden
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
                                 LinksObject links,
                                 Object meta,
+                                List<? extends ResourceObject<?, ?>> included,
+                                JsonApiObject jsonapi) {
+        super(data, links, meta, included, jsonapi);
+    }
+
+    public ToOneRelationshipDoc(ResourceIdentifierObject data,
+                                LinksObject links,
+                                Object meta,
                                 List<? extends ResourceObject<?, ?>> included) {
-        super(data, links, meta, included);
+        this(data, links, meta, included, null);
     }
 
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
                                 LinksObject links, Object meta) {
-        super(data, links, meta);
+        this(data, links, meta, null);
     }
 
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
@@ -65,7 +74,5 @@ public class ToOneRelationshipDoc extends AbstractSingleDataItemDoc<ResourceIden
                                                    BaseDoc base) {
         return new ToOneRelationshipDoc(data, base.getLinks(), base.getMeta());
     }
-
-
 
 }

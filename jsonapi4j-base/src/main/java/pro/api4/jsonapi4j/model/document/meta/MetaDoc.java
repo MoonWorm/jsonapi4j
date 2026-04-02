@@ -2,6 +2,9 @@ package pro.api4.jsonapi4j.model.document.meta;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.JsonApiObject;
 
 /**
  * Represents <a href="https://jsonapi.org/format/#document-top-level">Top-level Document</a> for 'meta'-only scenarios.
@@ -21,15 +24,16 @@ import lombok.ToString;
  */
 @ToString
 @EqualsAndHashCode
-public class MetaDoc {
+public class MetaDoc extends BaseDoc {
 
-    private final Object meta;
-
-    public MetaDoc(Object meta) {
-        this.meta = meta;
+    public MetaDoc(LinksObject links,
+                   Object meta,
+                   JsonApiObject jsonapi) {
+        super(links, meta, jsonapi);
     }
 
-    public Object getMeta() {
-        return meta;
+    public MetaDoc(LinksObject links) {
+        this(links, null, null);
     }
+
 }

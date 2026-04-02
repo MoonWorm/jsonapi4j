@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.util.MappingUtil;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.BaseDoc;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import org.apache.commons.lang3.Validate;
