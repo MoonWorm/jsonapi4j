@@ -1,6 +1,9 @@
 package pro.api4.jsonapi4j;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.*;
@@ -9,7 +12,9 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
-import pro.api4.jsonapi4j.processor.*;
+import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.IdSupplier;
+import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
@@ -23,8 +28,8 @@ import pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipR
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcessor;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
-import pro.api4.jsonapi4j.request.DefaultJsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
 import pro.api4.jsonapi4j.response.CursorPageableResponse;
 
 import java.util.*;
@@ -494,11 +499,15 @@ public class JsonApi4j {
         ) {
             return request -> {
                 List<RESOURCE_DTO> result = request.getFilters().get(ReadMultipleResourcesOperation.ID_FILTER_NAME).stream().map(id -> {
-                    JsonApiRequest readByIdRequest = DefaultJsonApiRequest.composeResourceRequest(
-                            id,
-                            resourceType,
-                            OperationType.READ_RESOURCE_BY_ID
-                    );
+                    JsonApiRequest readByIdRequest = new JsonApiRequestBuilder(request)
+                            .resourceId(id)
+                            .operationType(OperationType.READ_RESOURCE_BY_ID)
+                            .filterBy(Collections.emptyMap())
+                            .cursor(null)
+                            .limit(null)
+                            .offset(null)
+                            .sortBy(Collections.emptyMap())
+                            .build();
                     return readByIdExecutable.readById(readByIdRequest);
                 }).toList();
                 return CursorPageableResponse.fromItemsNotPageable(result);
@@ -623,9 +632,9 @@ public class JsonApi4j {
                     = relRequest -> executable.readManyForResource(relRequest, dataSourceDto);
 
             List<PluginSettings> pluginSettings = getPluginSettings(
-                registeredOperation,
-                domainRegistry.getResource(resourceType),
-                domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
             );
 
             return resolveToManyRelationshipsDocCommon(
@@ -815,9 +824,9 @@ public class JsonApi4j {
                     = (BatchReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>) registeredOperation.getOperation();
 
             List<PluginSettings> pluginSettings = getPluginSettings(
-                registeredOperation,
-                domainRegistry.getResource(resourceType),
-                domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName)
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToOneRelationshipStrict(resourceType, relationshipName)
             );
 
             RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> relationshipRequestSupplier = getRelationshipRequestSupplier(
@@ -857,12 +866,20 @@ public class JsonApi4j {
                 Consumer<JsonApiRequest> validator
         ) {
             return (originalRequest, dataSourceDto) -> {
-                JsonApiRequest relationshipRequest = DefaultJsonApiRequest.composeRelationshipRequest(
-                        resourceIdSupplier.getId(dataSourceDto),
-                        operationMeta.getResourceType(),
-                        operationMeta.getRelationshipName(),
-                        operationMeta.getOperationType()
-                );
+                JsonApiRequest relationshipRequest = new JsonApiRequestBuilder(originalRequest)
+                        .resourceId(resourceIdSupplier.getId(dataSourceDto))
+                        .targetResourceType(operationMeta.getResourceType())
+                        .targetRelationship(operationMeta.getRelationshipName())
+                        .operationType(operationMeta.getOperationType())
+                        .effectiveIncludes(Collections.emptyList())
+                        .originalIncludes(Collections.emptyList())
+                        .filterBy(Collections.emptyMap())
+                        .fieldSets(Collections.emptyMap())
+                        .cursor(null)
+                        .limit(null)
+                        .offset(null)
+                        .sortBy(Collections.emptyMap())
+                        .build();
 
                 validator.accept(relationshipRequest);
 

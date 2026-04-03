@@ -18,6 +18,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -79,6 +80,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
         Long limit = parseLimit(params.get(LimitOffsetAwareRequest.LIMIT_PARAM));
         Long offset = parseOffset(params.get(LimitOffsetAwareRequest.OFFSET_PARAM));
+        URI ext = parseExt(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
+        URI profile = parseProfile(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
 
         OperationDetailsResolver.OperationDetails operationDetails = operationDetailsResolver.fromUrlAndMethod(
                 path,
@@ -128,6 +131,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setFieldSets(fieldSets);
         jsonApiRequest.setCustomQueryParams(customQueryParams);
         jsonApiRequest.setPayload(payload);
+        jsonApiRequest.setExtension(ext);
+        jsonApiRequest.setProfile(profile);
         log.info("Composed JsonApiRequest: {}", jsonApiRequest);
         return jsonApiRequest;
     }
