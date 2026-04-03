@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.model.document.data;
 
-import pro.api4.jsonapi4j.model.document.BaseDoc;
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 
 import java.util.List;
 
@@ -29,16 +29,25 @@ import java.util.List;
  *     }
  * </pre>
  */
+@Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class ToOneRelationshipDoc extends AbstractSingleDataItemDoc<ResourceIdentifierObject> {
+public class ToOneRelationshipDoc extends ToOneRelationshipObject {
+
+    public static final String INCLUDED_FIELD = "included";
+    public static final String JSONAPI_FIELD = "jsonapi";
+
+    private final List<? extends ResourceObject<?, ?>> included;
+    private final JsonApiObject jsonapi;
 
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
                                 LinksObject links,
                                 Object meta,
                                 List<? extends ResourceObject<?, ?>> included,
                                 JsonApiObject jsonapi) {
-        super(data, links, meta, included, jsonapi);
+        super(data, links, meta);
+        this.included = included;
+        this.jsonapi = jsonapi;
     }
 
     public ToOneRelationshipDoc(ResourceIdentifierObject data,
@@ -68,11 +77,6 @@ public class ToOneRelationshipDoc extends AbstractSingleDataItemDoc<ResourceIden
 
     public ToOneRelationshipDoc() {
         this(null, null);
-    }
-
-    public static ToOneRelationshipDoc fromBaseDoc(ResourceIdentifierObject data,
-                                                   BaseDoc base) {
-        return new ToOneRelationshipDoc(data, base.getLinks(), base.getMeta());
     }
 
 }

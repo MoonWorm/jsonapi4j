@@ -1,9 +1,6 @@
 package pro.api4.jsonapi4j.model.document;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -15,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode
 @ToString
 @SuperBuilder
+@AllArgsConstructor
 public class LinksObject {
 
     public static final String SELF_FIELD = "self";
@@ -24,13 +22,5 @@ public class LinksObject {
     private String self;
     private Object related;
     private String next;
-
-    public LinksObject(String self,
-                       Object related,
-                       String next) {
-        this.self = self;
-        this.related = related;
-        this.next = next;
-    }
 
 }

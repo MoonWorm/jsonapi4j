@@ -1,8 +1,15 @@
 package pro.api4.jsonapi4j.model.document.data;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+
 import java.net.URI;
 import java.util.List;
 
+@Getter
+@EqualsAndHashCode
+@ToString
 public class JsonApiObject {
 
     public static final String JSONAPI_VERSION_1_0 = "1.0";
@@ -13,10 +20,10 @@ public class JsonApiObject {
     public static final String PROFILE_FIELD = "profile";
     public static final String META_FIELD = "meta";
 
-    private String version;
-    private List<URI> ext;
-    private List<URI> profile;
-    private Object meta;
+    private final String version;
+    private final List<URI> ext;
+    private final List<URI> profile;
+    private final Object meta;
 
     public JsonApiObject(String version,
                          List<URI> ext,
@@ -37,9 +44,7 @@ public class JsonApiObject {
     public JsonApiObject(String version,
                          List<URI> ext,
                          List<URI> profile) {
-        this.version = version;
-        this.ext = ext;
-        this.profile = profile;
+        this(version, ext, profile, null);
     }
 
     public JsonApiObject(List<URI> ext,

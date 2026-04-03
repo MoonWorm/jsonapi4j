@@ -1,13 +1,13 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.processor.RelationshipsSupplier;
 import pro.api4.jsonapi4j.processor.ResourceJsonApiMembersResolver;
 import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.Principal;
 import org.apache.commons.collections4.MapUtils;
@@ -59,36 +59,36 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
         }
 
         // supply async futures and execute everything in parallel
-        SingleResourceRelationshipDocFutures futures = supplyAsyncRelationshipDataFutures(request, dataSourceDto);
+        SingleResourceRelationshipFutures futures = supplyAsyncRelationshipDataFutures(request, dataSourceDto);
 
-        // wait for toManyRelationshipsDocs map
-        Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocs = unwrapCompletionException(
-                () -> resolveToManyRelationshipsDocs(
-                        futures.toManyRelationshipsDocBasicFutures(),
+        // wait for toManyRelationships map
+        Map<RelationshipName, ToManyRelationshipObject> toManyRelationships = unwrapCompletionException(
+                () -> resolveToManyRelationships(
+                        futures.toManyRelationshipBasicFutures(),
                         request,
                         dataSourceDto
                 )
         );
 
-        // wait for toOneRelationshipDocs map
-        Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocs = unwrapCompletionException(
-                () -> resolveToOneRelationshipsDocs(
-                        futures.toOneRelationshipDocBasicFutures(),
+        // wait for toOneRelationship map
+        Map<RelationshipName, ToOneRelationshipObject> toOneRelationships = unwrapCompletionException(
+                () -> resolveToOneRelationships(
+                        futures.toOneRelationshipBasicFutures(),
                         request,
                         dataSourceDto
                 )
         );
 
         // instantiate RELATIONSHIPS object
-        return relationshipsSupplier.get(toManyRelationshipsDocs, toOneRelationshipDocs);
+        return relationshipsSupplier.get(toManyRelationships, toOneRelationships);
     }
 
-    private SingleResourceRelationshipDocFutures supplyAsyncRelationshipDataFutures(
+    private SingleResourceRelationshipFutures supplyAsyncRelationshipDataFutures(
             REQUEST request,
             DATA_SOURCE_DTO dto
     ) {
         // to many relationships - basic resolvers
-        Map<RelationshipName, CompletableFuture<ToManyRelationshipsDoc>> toManyRelationshipsDocBasicFutures =
+        Map<RelationshipName, CompletableFuture<ToManyRelationshipObject>> toManyRelationshipBasicFutures =
                 getDefaultRelationshipResolvers().keySet().stream()
                         .filter(this::isToManyRelationship)
                         .filter(rel -> getToManyRelationshipResolvers().containsKey(rel) || getBatchToManyRelationshipResolvers().containsKey(rel))
@@ -105,13 +105,13 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                                                 .get(rel)
                                                                 .resolveRequestedData(request, dto);
                                                     } else {
-                                                        Map<DATA_SOURCE_DTO, ToManyRelationshipsDoc> batchResult = getBatchToManyRelationshipResolvers()
+                                                        Map<DATA_SOURCE_DTO, ToManyRelationshipObject> batchResult = getBatchToManyRelationshipResolvers()
                                                                 .get(rel)
                                                                 .resolveRequestedData(request, Collections.singletonList(dto));
                                                         return MapUtils.emptyIfNull(batchResult).values().stream().findFirst().orElse(null);
                                                     }
                                                 } catch (ResourceNotFoundException nfe) {
-                                                    return createToManyRelationshipsDocWithEmptyData(rel, request, dto);
+                                                    return createToManyRelationshipsWithEmptyData(rel, request, dto);
                                                 }
                                             },
                                             executor
@@ -119,7 +119,7 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                 }));
 
         // to one relationship - basic resolvers
-        Map<RelationshipName, CompletableFuture<ToOneRelationshipDoc>> toOneRelationshipDocBasicFutures =
+        Map<RelationshipName, CompletableFuture<ToOneRelationshipObject>> toOneRelationshipBasicFutures =
                 getDefaultRelationshipResolvers().keySet().stream()
                         .filter(this::isToOneRelationship)
                         .filter(rel -> getToOneRelationshipResolvers().containsKey(rel) || getBatchToOneRelationshipResolvers().containsKey(rel))
@@ -136,13 +136,13 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                                                 .get(rel)
                                                                 .resolveRequestedData(request, dto);
                                                     } else {
-                                                        Map<DATA_SOURCE_DTO, ToOneRelationshipDoc> batchResult = getBatchToOneRelationshipResolvers()
+                                                        Map<DATA_SOURCE_DTO, ToOneRelationshipObject> batchResult = getBatchToOneRelationshipResolvers()
                                                                 .get(rel)
                                                                 .resolveRequestedData(request, Collections.singletonList(dto));
                                                         return MapUtils.emptyIfNull(batchResult).values().stream().findFirst().orElse(null);
                                                     }
                                                 } catch (ResourceNotFoundException nfe) {
-                                                    return createToOneRelationshipDocWithNullData(rel, request, dto);
+                                                    return createToOneRelationshipWithNullData(rel, request, dto);
                                                 }
                                             },
                                             executor
@@ -150,15 +150,15 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                 }
                         ));
 
-        return new SingleResourceRelationshipDocFutures(
-                toManyRelationshipsDocBasicFutures,
-                toOneRelationshipDocBasicFutures
+        return new SingleResourceRelationshipFutures(
+                toManyRelationshipBasicFutures,
+                toOneRelationshipBasicFutures
         );
     }
 
-    private Map<RelationshipName, ToOneRelationshipDoc> resolveToOneRelationshipsDocs(Map<RelationshipName, CompletableFuture<ToOneRelationshipDoc>> futures,
-                                                                                      REQUEST request,
-                                                                                      DATA_SOURCE_DTO dto) {
+    private Map<RelationshipName, ToOneRelationshipObject> resolveToOneRelationships(Map<RelationshipName, CompletableFuture<ToOneRelationshipObject>> futures,
+                                                                                  REQUEST request,
+                                                                                  DATA_SOURCE_DTO dto) {
         return getDefaultRelationshipResolvers().keySet()
                 .stream()
                 .filter(this::isToOneRelationship)
@@ -170,14 +170,14 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                 return futures.get(relName).join();
                             } else {
                                 log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-one-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
-                                return createToOneRelationshipDocWithNullData(relName, request, dto);
+                                return createToOneRelationshipWithNullData(relName, request, dto);
                             }
                         }
                 ));
     }
 
-    private Map<RelationshipName, ToManyRelationshipsDoc> resolveToManyRelationshipsDocs(
-            Map<RelationshipName, CompletableFuture<ToManyRelationshipsDoc>> futures,
+    private Map<RelationshipName, ToManyRelationshipObject> resolveToManyRelationships(
+            Map<RelationshipName, CompletableFuture<ToManyRelationshipObject>> futures,
             REQUEST request,
             DATA_SOURCE_DTO dto
     ) {
@@ -192,15 +192,15 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                 return futures.get(relName).join();
                             } else {
                                 log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-many-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
-                                return createToManyRelationshipsDocWithNullData(relName, request, dto);
+                                return createToManyRelationshipsWithNullData(relName, request, dto);
                             }
                         }
                 ));
     }
 
-    record SingleResourceRelationshipDocFutures(
-            Map<RelationshipName, CompletableFuture<ToManyRelationshipsDoc>> toManyRelationshipsDocBasicFutures,
-            Map<RelationshipName, CompletableFuture<ToOneRelationshipDoc>> toOneRelationshipDocBasicFutures) {
+    record SingleResourceRelationshipFutures(
+            Map<RelationshipName, CompletableFuture<ToManyRelationshipObject>> toManyRelationshipBasicFutures,
+            Map<RelationshipName, CompletableFuture<ToOneRelationshipObject>> toOneRelationshipBasicFutures) {
     }
 
 }

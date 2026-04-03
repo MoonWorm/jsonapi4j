@@ -1,14 +1,16 @@
 package pro.api4.jsonapi4j.model.document.data;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
 
 /**
  * JSON:API Specification reference:
  * <a href="https://jsonapi.org/format/#document-resource-identifier-objects">Resource Identifier Object</a>
  */
-@EqualsAndHashCode(of = {"id", "type"})
-@ToString(of = {"id", "type"})
+@Getter
+@EqualsAndHashCode
+@ToString
 public class ResourceIdentifierObject {
 
     public static final String ID_FIELD = "id";
@@ -18,8 +20,8 @@ public class ResourceIdentifierObject {
 
     private final String id;
     private final String type;
-    private Object meta;
-    private String lid;
+    private final Object meta;
+    private final String lid;
 
     public ResourceIdentifierObject(String id,
                                     String type,
@@ -34,9 +36,7 @@ public class ResourceIdentifierObject {
     public ResourceIdentifierObject(String id,
                                     String type,
                                     Object meta) {
-        this.id = id;
-        this.type = type;
-        this.meta = meta;
+        this(id, type, meta, null);
     }
 
     public ResourceIdentifierObject(String id,
@@ -44,19 +44,4 @@ public class ResourceIdentifierObject {
         this(id, type, null);
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public Object getMeta() {
-        return meta;
-    }
-
-    public String getLid() {
-        return lid;
-    }
 }

@@ -23,7 +23,7 @@ import pro.api4.jsonapi4j.model.document.data.JsonApiObject;
  * It's never used in jsonapi4j framework but can be used as a dedicated model if needed.
  */
 @ToString
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class MetaDoc extends BaseDoc {
 
     public MetaDoc(LinksObject links,

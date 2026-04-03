@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.processor.resolvers.relationships;
 
-import pro.api4.jsonapi4j.model.document.meta.MetaDoc;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.processor.IdSupplier;
 import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.links.LinksGenerator;
@@ -32,7 +32,7 @@ public final class DefaultRelationshipResolvers {
             String selfLink = new LinksGenerator(request).generateSelfLink(
                     relationshipBasePath, false, false, false, false, true, true
             );
-            return new MetaDoc(LinksObject.builder().self(selfLink).build());
+            return new RelationshipObject(LinksObject.builder().self(selfLink).build(), null);
         };
     }
 

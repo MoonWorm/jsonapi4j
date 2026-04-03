@@ -3,10 +3,7 @@ package pro.api4.jsonapi4j;
 import lombok.*;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
@@ -661,7 +658,7 @@ public class JsonApi4j {
                     );
         }
 
-        private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToManyRelationshipsDoc> resolveToManyRelationshipsInBatch(
+        private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToManyRelationshipObject> resolveToManyRelationshipsInBatch(
                 RegisteredRelationship<ToManyRelationship<?>> registeredRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
@@ -797,7 +794,7 @@ public class JsonApi4j {
                     );
         }
 
-        private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToOneRelationshipDoc> resolveToOneRelationshipInBatch(
+        private <RESOURCE_DTO, RELATIONSHIP_DTO> Map<RESOURCE_DTO, ToOneRelationshipObject> resolveToOneRelationshipInBatch(
                 RegisteredRelationship<ToOneRelationship<?>> registeredRelationship,
                 List<RESOURCE_DTO> dataSourceDtos,
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,

@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.model.document.data;
 
+import lombok.Getter;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -62,17 +64,25 @@ import java.util.List;
  *     }
  * </pre>
  */
+@Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>>
-        extends AbstractMultipleDataItemsDoc<PRIMARY_RESOURCE> {
+public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>> extends BaseDoc {
+
+    public static final String DATA_FIELD = "data";
+    public static final String INCLUDED_FIELD = "included";
+
+    private final List<PRIMARY_RESOURCE> data;
+    private final List<? extends ResourceObject<?, ?>> included;
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
                                 LinksObject links,
                                 Object meta,
                                 List<? extends ResourceObject<?, ?>> included,
                                 JsonApiObject jsonapi) {
-        super(data, links, meta, included, jsonapi);
+        super(links, meta, jsonapi);
+        this.data = data;
+        this.included = included;
     }
 
     public MultipleResourcesDoc(List<PRIMARY_RESOURCE> data,
