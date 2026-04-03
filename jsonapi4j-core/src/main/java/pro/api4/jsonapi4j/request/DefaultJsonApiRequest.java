@@ -33,6 +33,10 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private List<String> originalIncludes = new ArrayList<>();
 
     private String cursor = null;
+
+    private Long limit = null;
+    private Long offset = null;
+
     private Map<String, List<String>> customQueryParams = new LinkedHashMap<>();
 
     private byte[] payload = new byte[0];
@@ -40,11 +44,6 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private Map<String, SortOrder> sortBy = new LinkedHashMap<>();
 
     private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
-
-    @Override
-    public Map<String, List<String>> getFilters() {
-        return filters;
-    }
 
     // lombok workaround
     @Override

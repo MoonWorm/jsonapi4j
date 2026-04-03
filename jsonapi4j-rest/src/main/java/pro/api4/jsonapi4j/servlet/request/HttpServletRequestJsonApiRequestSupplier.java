@@ -12,13 +12,7 @@ import pro.api4.jsonapi4j.http.exception.UnsupportedMediaTypeException;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.request.CursorAwareRequest;
-import pro.api4.jsonapi4j.request.DefaultJsonApiRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
-import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +26,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.OperationType.Method.isSupportedMethod;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCursor;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCustomQueryParams;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEffectiveIncludes;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFieldSets;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFilter;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOriginalIncludes;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseResourceIdFromThePath;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseSortBy;
 import static java.util.stream.Collectors.toMap;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.*;
 
 @Data
 @Slf4j
@@ -90,6 +77,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         Map<String, List<String>> fieldSets = parseFieldSets(params);
         Map<String, List<String>> customQueryParams = parseCustomQueryParams(params);
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
+        Long limit = parseLimit(params.get(LimitOffsetAwareRequest.LIMIT_PARAM));
+        Long offset = parseOffset(params.get(LimitOffsetAwareRequest.OFFSET_PARAM));
 
         OperationDetailsResolver.OperationDetails operationDetails = operationDetailsResolver.fromUrlAndMethod(
                 path,
@@ -133,6 +122,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setEffectiveIncludes(effectiveIncludes);
         jsonApiRequest.setOriginalIncludes(originalIncludes);
         jsonApiRequest.setCursor(cursor);
+        jsonApiRequest.setLimit(limit);
+        jsonApiRequest.setOffset(offset);
         jsonApiRequest.setSortBy(sortBy);
         jsonApiRequest.setFieldSets(fieldSets);
         jsonApiRequest.setCustomQueryParams(customQueryParams);

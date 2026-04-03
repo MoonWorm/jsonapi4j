@@ -59,9 +59,9 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
 
     public IdAndType resolveResourceIdAndType(DATA_SOURCE_DTO dataSourceDto) {
         IdAndType idAndType = jsonApiContext.getResourceTypeAndIdResolver().resolveTypeAndId(dataSourceDto);
-        Validate.notNull(idAndType);
-        Validate.notNull(idAndType.getId());
-        Validate.notNull(idAndType.getType());
+        Validate.notNull(idAndType, "idAndType can't be null");
+        Validate.notNull(idAndType.getId(), "idAndType.id can't be null");
+        Validate.notNull(idAndType.getType(), "idAndType.type can't be null");
         return idAndType;
     }
 

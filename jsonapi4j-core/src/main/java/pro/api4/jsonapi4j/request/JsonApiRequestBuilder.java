@@ -27,6 +27,8 @@ public class JsonApiRequestBuilder {
     private List<String> originalIncludes = new ArrayList<>();
     private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
     private String cursor = null;
+    private Long limit = null;
+    private Long offset = null;
     private Map<String, SortAwareRequest.SortOrder> sortBy = new LinkedHashMap<>();
     private Map<String, List<String>> queryParams = new LinkedHashMap<>();
     private Object payload;
@@ -53,6 +55,21 @@ public class JsonApiRequestBuilder {
 
     public JsonApiRequestBuilder queryParams(Map<String, List<String>> queryParams) {
         this.queryParams = queryParams;
+        return this;
+    }
+
+    public JsonApiRequestBuilder cursor(String cursor) {
+        this.cursor = cursor;
+        return this;
+    }
+
+    public JsonApiRequestBuilder limit(Long limit) {
+        this.limit = limit;
+        return this;
+    }
+
+    public JsonApiRequestBuilder offset(Long offset) {
+        this.offset = offset;
         return this;
     }
 
@@ -120,6 +137,8 @@ public class JsonApiRequestBuilder {
         request.setEffectiveIncludes(effectiveIncludes);
         request.setFieldSets(fieldSets);
         request.setCursor(cursor);
+        request.setLimit(limit);
+        request.setOffset(offset);
         request.setSortBy(sortBy);
         request.setCustomQueryParams(queryParams);
         return request;

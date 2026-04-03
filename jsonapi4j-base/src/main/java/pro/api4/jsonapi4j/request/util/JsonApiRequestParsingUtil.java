@@ -114,6 +114,20 @@ public final class JsonApiRequestParsingUtil {
         return cursorParamValue.stream().findFirst().orElse(null);
     }
 
+    public static Long parseLimit(List<String> limitParamValue) {
+        if (CollectionUtils.isEmpty(limitParamValue)) {
+            return null;
+        }
+        return limitParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+    }
+
+    public static Long parseOffset(List<String> offsetParamValue) {
+        if (CollectionUtils.isEmpty(offsetParamValue)) {
+            return null;
+        }
+        return offsetParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+    }
+
     public static Map<String, List<String>> parseFilter(Map<String, List<String>> params) {
         return params.entrySet()
                 .stream()
