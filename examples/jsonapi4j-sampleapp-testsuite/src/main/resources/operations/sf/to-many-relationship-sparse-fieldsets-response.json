@@ -1,15 +1,12 @@
 {
   "links": {
     "self": "/users/5/relationships/citizenships?include=citizenships&fields%5Bcountries%5D=name",
-    "related": {
-      "countries": {
-        "href": "/countries?filter[id]=US",
-        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-        "meta": {
-          "ids": [
-            "US"
-          ]
-        }
+    "related:countries": {
+      "href": "/countries?filter[id]=US",
+      "meta": {
+        "ids": [
+          "US"
+        ]
       }
     }
   },
@@ -30,15 +27,12 @@
         "currencies": {
           "links": {
             "self": "/countries/US/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=USD",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "USD"
-                  ]
-                }
+            "related:currencies": {
+              "href": "/currencies?filter[id]=USD",
+              "meta": {
+                "ids": [
+                  "USD"
+                ]
               }
             }
           },

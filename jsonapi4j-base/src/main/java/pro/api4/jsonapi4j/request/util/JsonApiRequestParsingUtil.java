@@ -1,24 +1,19 @@
 package pro.api4.jsonapi4j.request.util;
 
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.request.CursorAwareRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.request.SortAwareRequest;
-import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
-import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.extractFilterName;
@@ -112,6 +107,53 @@ public final class JsonApiRequestParsingUtil {
             return null;
         }
         return cursorParamValue.stream().findFirst().orElse(null);
+    }
+
+    public static Long parseLimit(List<String> limitParamValue) {
+        if (CollectionUtils.isEmpty(limitParamValue)) {
+            return null;
+        }
+        return limitParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+    }
+
+    public static Long parseOffset(List<String> offsetParamValue) {
+        if (CollectionUtils.isEmpty(offsetParamValue)) {
+            return null;
+        }
+        return offsetParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+    }
+
+    public static URI parseExt(String contentType) {
+        return parseMediaTypeURIParam(contentType, "ext");
+    }
+
+    public static URI parseProfile(String contentType) {
+        return parseMediaTypeURIParam(contentType, "profile");
+    }
+
+    private static URI parseMediaTypeURIParam(String mediaType, String paramName) {
+        String extStr = JsonApiMediaType.getParam(mediaType, paramName);
+        extStr = unwrapDoubleQuotes(extStr);
+        try {
+            return URI.create(extStr);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String unwrapDoubleQuotes(String input) {
+        if (input == null || input.length() < 2) {
+            return input;
+        }
+        int start = 0;
+        int end = input.length();
+        if (input.startsWith("\"")) {
+            start = 1;
+        }
+        if (input.endsWith("\"")) {
+            end -= 1;
+        }
+        return input.substring(start, end);
     }
 
     public static Map<String, List<String>> parseFilter(Map<String, List<String>> params) {

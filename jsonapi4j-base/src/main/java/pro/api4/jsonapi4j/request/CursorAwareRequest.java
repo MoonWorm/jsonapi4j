@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.request;
 
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 
-public interface CursorAwareRequest extends PaginationAwareRequest {
+public interface CursorAwareRequest {
 
     String CURSOR_PARAM = "page[cursor]";
 

@@ -7,29 +7,58 @@ import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.net.URI;
+import java.util.*;
 
 public class JsonApiRequestBuilder {
 
-    private String resourceId = null;
+    private String resourceId;
     private ResourceType targetResourceType;
     private RelationshipName targetRelationshipName;
     private OperationType operationType;
-    private Map<String, List<String>> filterBy = new LinkedHashMap<>();
-    private List<String> effectiveIncludes = new ArrayList<>();
-    private List<String> originalIncludes = new ArrayList<>();
-    private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
-    private String cursor = null;
-    private Map<String, SortAwareRequest.SortOrder> sortBy = new LinkedHashMap<>();
-    private Map<String, List<String>> queryParams = new LinkedHashMap<>();
+    private Map<String, List<String>> filterBy;
+    private List<String> effectiveIncludes;
+    private List<String> originalIncludes;
+    private Map<String, List<String>> fieldSets;
+    private String cursor;
+    private Long limit;
+    private Long offset;
+    private Map<String, SortAwareRequest.SortOrder> sortBy;
+    private Map<String, List<String>> customQueryParams;
     private Object payload;
+    private URI extension;
+    private URI profile;
+
+    public JsonApiRequestBuilder() {
+
+    }
+
+    public JsonApiRequestBuilder(JsonApiRequest from) {
+        this.resourceId = from.getResourceId();
+        this.targetResourceType = from.getTargetResourceType();
+        this.targetRelationshipName = from.getTargetRelationshipName();
+        this.operationType = from.getOperationType();
+        this.filterBy = from.getFilters();
+        this.effectiveIncludes = from.getEffectiveIncludes();
+        this.originalIncludes = from.getOriginalIncludes();
+        this.fieldSets = from.getFieldSets();
+        this.cursor = from.getCursor();
+        this.limit = from.getLimit();
+        this.offset = from.getOffset();
+        this.sortBy = from.getSortBy();
+        this.customQueryParams = from.getCustomQueryParams();
+        this.payload = from.getSingleResourceDocPayload();
+        if (this.payload == null) {
+            this.payload = from.getToOneRelationshipDocPayload();
+        }
+        if (this.payload == null) {
+            this.payload = from.getToManyRelationshipDocPayload();
+        }
+        this.extension = from.getExtension();
+        this.profile = from.getProfile();
+    }
 
     public JsonApiRequestBuilder resourceId(String resourceId) {
         this.resourceId = resourceId;
@@ -51,8 +80,23 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    public JsonApiRequestBuilder queryParams(Map<String, List<String>> queryParams) {
-        this.queryParams = queryParams;
+    public JsonApiRequestBuilder customQueryParams(Map<String, List<String>> queryParams) {
+        this.customQueryParams = queryParams;
+        return this;
+    }
+
+    public JsonApiRequestBuilder cursor(String cursor) {
+        this.cursor = cursor;
+        return this;
+    }
+
+    public JsonApiRequestBuilder limit(Long limit) {
+        this.limit = limit;
+        return this;
+    }
+
+    public JsonApiRequestBuilder offset(Long offset) {
+        this.offset = offset;
         return this;
     }
 
@@ -61,15 +105,13 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    public JsonApiRequestBuilder filterBy(String filterName,
-                                          List<String> filterValue) {
-        this.filterBy.put(filterName, filterValue);
+    public JsonApiRequestBuilder filterBy(Map<String, List<String>> filterBy) {
+        this.filterBy = filterBy;
         return this;
     }
 
-    public JsonApiRequestBuilder addSortBy(String sortBy,
-                                           SortAwareRequest.SortOrder sortOrder) {
-        this.sortBy.put(sortBy, sortOrder);
+    public JsonApiRequestBuilder sortBy(Map<String, SortAwareRequest.SortOrder> sortBy) {
+        this.sortBy = sortBy;
         return this;
     }
 
@@ -88,9 +130,23 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    public JsonApiRequestBuilder includes(Set<String> includes) {
-        this.originalIncludes.addAll(JsonApiRequestParsingUtil.parseOriginalIncludes(List.copyOf(includes)));
-        this.effectiveIncludes.addAll(JsonApiRequestParsingUtil.parseEffectiveIncludes(List.copyOf(includes)));
+    public JsonApiRequestBuilder extension(URI extension) {
+        this.extension = extension;
+        return this;
+    }
+
+    public JsonApiRequestBuilder profile(URI profile) {
+        this.profile = profile;
+        return this;
+    }
+
+    public JsonApiRequestBuilder originalIncludes(List<String> originalIncludes) {
+        this.originalIncludes = originalIncludes;
+        return this;
+    }
+
+    public JsonApiRequestBuilder effectiveIncludes(List<String> effectiveIncludes) {
+        this.effectiveIncludes = effectiveIncludes;
         return this;
     }
 
@@ -118,10 +174,15 @@ public class JsonApiRequestBuilder {
         request.setOperationType(operationType);
         request.setFilters(filterBy);
         request.setEffectiveIncludes(effectiveIncludes);
-        request.setFieldSets(fieldSets);
+        request.setOriginalIncludes(originalIncludes);
         request.setCursor(cursor);
+        request.setLimit(limit);
+        request.setOffset(offset);
+        request.setCustomQueryParams(customQueryParams);
         request.setSortBy(sortBy);
-        request.setCustomQueryParams(queryParams);
+        request.setFieldSets(fieldSets);
+        request.setExtension(extension);
+        request.setProfile(profile);
         return request;
     }
 

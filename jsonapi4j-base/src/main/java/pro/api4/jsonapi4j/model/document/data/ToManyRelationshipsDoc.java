@@ -1,8 +1,9 @@
 package pro.api4.jsonapi4j.model.document.data;
 
-import pro.api4.jsonapi4j.model.document.LinksObject;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.ToString;
+import pro.api4.jsonapi4j.model.document.LinksObject;
 
 import java.util.List;
 
@@ -35,25 +36,51 @@ import java.util.List;
  *     }
  * </pre>
  */
+@Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class ToManyRelationshipsDoc extends AbstractMultipleDataItemsDoc<ResourceIdentifierObject> {
+public class ToManyRelationshipsDoc extends ToManyRelationshipObject {
+
+    public static final String INCLUDED_FIELD = "included";
+    public static final String JSONAPI_FIELD = "jsonapi";
+
+    private final List<? extends ResourceObject<?, ?>> included;
+    private final JsonApiObject jsonapi;
+
+    public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
+                                  LinksObject links,
+                                  Object meta,
+                                  List<? extends ResourceObject<?, ?>> included,
+                                  JsonApiObject jsonapi
+    ) {
+        super(data, links, meta);
+        this.included = included;
+        this.jsonapi = jsonapi;
+    }
+
+    public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
+                                  LinksObject links,
+                                  Object meta,
+                                  List<? extends ResourceObject<?, ?>> included
+    ) {
+        this(data, links, meta, included, null);
+    }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links,
                                   Object meta
     ) {
-        super(data, meta, links);
+        this(data, links, meta, null);
     }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data,
                                   LinksObject links
     ) {
-        super(data, null, links);
+        this(data, links, null);
     }
 
     public ToManyRelationshipsDoc(LinksObject links) {
-        super(null, null, links);
+        this(null, links);
     }
 
     public ToManyRelationshipsDoc(List<ResourceIdentifierObject> data) {
@@ -62,11 +89,6 @@ public class ToManyRelationshipsDoc extends AbstractMultipleDataItemsDoc<Resourc
 
     public ToManyRelationshipsDoc() {
         this(null, null);
-    }
-
-    public static ToManyRelationshipsDoc fromBaseDoc(List<ResourceIdentifierObject> data,
-                                                     BaseDoc base) {
-        return new ToManyRelationshipsDoc(data, base.getLinks(), base.getMeta());
     }
 
 }

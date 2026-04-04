@@ -118,8 +118,8 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
     ) {
 
         // validations
-        Validate.notNull(resourceSupplier);
-        Validate.notNull(docSupplier);
+        Validate.notNull(resourceSupplier, "resourceSupplier can't be null");
+        Validate.notNull(docSupplier, "docSupplier can't be null");
 
         REQUEST effectiveRequest = this.request;
         List<PluginSettings> plugins = this.processorContext.getPlugins();

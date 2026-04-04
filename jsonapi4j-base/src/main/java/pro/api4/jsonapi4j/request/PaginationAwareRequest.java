@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.request;
 
 
-public interface PaginationAwareRequest {
+public interface PaginationAwareRequest extends LimitOffsetAwareRequest, CursorAwareRequest {
 
     static boolean isJsonApiPaginationParam(String paramName) {
         if (paramName == null) {

@@ -32,14 +32,11 @@ public interface ToManyRelationship<RELATIONSHIP_DTO> extends Relationship<RELAT
      * {@snippet :
      * "links": {
      *     "self": "/countries/NO/relationships/currencies",
-     *     "related": {
-     *        "currencies": {
-     *           "href": "/currencies?filter[id]=NOK",
-     *           "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-     *           "meta": {
-     *              "ids": ["NOK"]
-     *           }
-     *        }
+     *     "related:currencies": {
+     *         "href": "/currencies?filter[id]=NOK",
+     *         "meta": {
+     *            "ids": ["NOK"]
+     *         }
      *    }
      * }
      * }

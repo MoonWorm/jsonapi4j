@@ -1,38 +1,37 @@
 {
+  "links": {
+    "self": "/countries/TG?include=currencies"
+  },
   "data": {
+    "id": "TG",
+    "type": "countries",
     "attributes": {
       "name": "Togo",
       "region": "Africa"
     },
     "relationships": {
       "currencies": {
+        "links": {
+          "self": "/countries/TG/relationships/currencies",
+          "related:currencies": {
+            "href": "/currencies?filter[id]=XOF",
+            "meta": {
+              "ids": [
+                "XOF"
+              ]
+            }
+          }
+        },
         "data": [
           {
             "id": "XOF",
             "type": "currencies"
           }
-        ],
-        "links": {
-          "self": "/countries/TG/relationships/currencies",
-          "related": {
-            "currencies": {
-              "href": "/currencies?filter[id]=XOF",
-              "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-              "meta": {
-                "ids": ["XOF"]
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "links": {
       "self": "/countries/TG"
-    },
-    "id": "TG",
-    "type": "countries"
-  },
-  "links": {
-    "self": "/countries/TG?include=currencies"
+    }
   }
 }

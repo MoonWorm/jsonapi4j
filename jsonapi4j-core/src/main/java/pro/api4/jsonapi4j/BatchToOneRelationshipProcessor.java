@@ -4,7 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceMetaResolver;
@@ -128,7 +128,7 @@ class BatchToOneRelationshipProcessor {
             this.resourceIdentifierTypeAndIdResolver = jsonApiConfigurations.resourceIdentifierTypeAndIdResolver;
         }
 
-        Map<RESOURCE_DTO, ToOneRelationshipDoc> toOneRelationshipDocBatch(
+        Map<RESOURCE_DTO, ToOneRelationshipObject> toOneRelationshipDocBatch(
                 REQUEST originalRequest,
                 List<RESOURCE_DTO> resourceDtos,
                 RelationshipRequestSupplier<REQUEST, RESOURCE_DTO> relationshipRequestSupplier
@@ -138,8 +138,8 @@ class BatchToOneRelationshipProcessor {
             }
 
             // validation
-            Validate.notNull(dataSupplier);
-            Validate.notNull(resourceIdentifierTypeAndIdResolver);
+            Validate.notNull(dataSupplier, "dataSupplier can't be null");
+            Validate.notNull(resourceIdentifierTypeAndIdResolver, "resourceIdentifierTypeAndIdResolver can't be null");
 
             // compose relationship requests
             Map<RESOURCE_DTO, REQUEST> resourceDtosToRelationshipRequestMap = resourceDtos

@@ -241,17 +241,18 @@ public class SingleResourceProcessorAccessControlTests {
 
     public static class Relationships {
 
-        private final ToOneRelationshipDoc foo;
+        private final ToOneRelationshipObject foo;
 
-        private final ToManyRelationshipsDoc bars;
+        private final ToManyRelationshipObject bars;
 
-        public Relationships(Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocMap,
-                             Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocMap) {
-            this.foo = toOneRelationshipDocMap.get(FOO);
-            this.bars = toManyRelationshipsDocMap.get(BARS);
+        public Relationships(Map<RelationshipName, ToManyRelationshipObject> toManyRelationshipsMap,
+                             Map<RelationshipName, ToOneRelationshipObject> toOneRelationshipsMap) {
+            this.foo = toOneRelationshipsMap.get(FOO);
+            this.bars = toManyRelationshipsMap.get(BARS);
         }
 
-        public Relationships(ToOneRelationshipDoc foo, ToManyRelationshipsDoc bars) {
+        public Relationships(ToOneRelationshipObject foo,
+                             ToManyRelationshipObject bars) {
             this.foo = foo;
             this.bars = bars;
         }

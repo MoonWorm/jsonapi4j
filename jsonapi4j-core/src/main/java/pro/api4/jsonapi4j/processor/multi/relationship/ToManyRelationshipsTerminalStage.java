@@ -45,7 +45,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             ToManyRelationshipsDocSupplier<DOC> docSupplier
     ) {
         // validation
-        Validate.notNull(docSupplier);
+        Validate.notNull(docSupplier, "docSupplier can't be null");
 
         REQUEST effectiveRequest = this.request;
 

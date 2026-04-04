@@ -28,16 +28,13 @@
       "relatives": {
         "links": {
           "self": "/users/1/relationships/relatives",
-          "related": {
-            "users": {
-              "href": "/users?filter[id]=2,3",
-              "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-              "meta": {
-                "ids": [
-                  "2",
-                  "3"
-                ]
-              }
+          "related:users": {
+            "href": "/users?filter[id]=2,3",
+            "meta": {
+              "ids": [
+                "2",
+                "3"
+              ]
             }
           }
         },

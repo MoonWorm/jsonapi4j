@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor;
 
+import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesDocSupplier;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
@@ -7,12 +8,6 @@ import pro.api4.jsonapi4j.processor.single.resource.SingleResourceDocSupplier;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,7 +17,6 @@ import pro.api4.jsonapi4j.response.CursorPageableResponse;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -86,7 +80,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToManyRelationshipsDoc(
+                        return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("2", "secondtype")),
                                 LinksObject.builder().self("http://self.link").build()
                         );
@@ -98,7 +92,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToManyRelationshipsDoc(
+                        return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("3", "thirdtype")),
                                 LinksObject.builder().self("http://self2.link").build()
                         );
@@ -110,7 +104,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToManyRelationshipsDoc(
+                        return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("4", "fourthtype")),
                                 LinksObject.builder().self("http://self3.link").build()
                         );
@@ -122,7 +116,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToOneRelationshipDoc(
+                        return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("5", "fifthtype"),
                                 LinksObject.builder().self("http://self4.link").build()
                         );
@@ -134,7 +128,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToOneRelationshipDoc(
+                        return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("6", "sixthtype"),
                                 LinksObject.builder().self("http://self5.link").build()
                         );
@@ -146,7 +140,7 @@ public class ConcurrentExecutorTests {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
-                        return new ToOneRelationshipDoc(
+                        return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("7", "seventhtype"),
                                 LinksObject.builder().self("http://self6.link").build()
                         );
@@ -159,9 +153,9 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return Map.of(
-                                1, new ToOneRelationshipDoc(new ResourceIdentifierObject("8", "eitthtype")),
-                                2, new ToOneRelationshipDoc(new ResourceIdentifierObject("9", "eitthtype")),
-                                3, new ToOneRelationshipDoc(new ResourceIdentifierObject("10", "eitthtype"))
+                                1, new ToOneRelationshipObject(new ResourceIdentifierObject("8", "eitthtype")),
+                                2, new ToOneRelationshipObject(new ResourceIdentifierObject("9", "eitthtype")),
+                                3, new ToOneRelationshipObject(new ResourceIdentifierObject("10", "eitthtype"))
                         );
                     })
                     .batchToManyRelationshipResolver(REL8_MULTI_BATCH, (req, dto) -> {
@@ -173,21 +167,21 @@ public class ConcurrentExecutorTests {
                         }
                         return Map.of(
                                 1,
-                                new ToManyRelationshipsDoc(
+                                new ToManyRelationshipObject(
                                         List.of(
                                                 new ResourceIdentifierObject("11", "eleventhtype"),
                                                 new ResourceIdentifierObject("12", "eleventhtype")
                                         )
                                 ),
                                 2,
-                                new ToManyRelationshipsDoc(
+                                new ToManyRelationshipObject(
                                         List.of(
                                                 new ResourceIdentifierObject("13", "eleventhtype"),
                                                 new ResourceIdentifierObject("14", "eleventhtype")
                                         )
                                 ),
                                 3,
-                                new ToManyRelationshipsDoc(
+                                new ToManyRelationshipObject(
                                         List.of(
                                                 new ResourceIdentifierObject("15", "eleventhtype"),
                                                 new ResourceIdentifierObject("16", "eleventhtype")
@@ -373,18 +367,18 @@ public class ConcurrentExecutorTests {
     @Data
     public class MyRelationships {
 
-        private final ToManyRelationshipsDoc rel1;
-        private final ToManyRelationshipsDoc rel2;
-        private final ToManyRelationshipsDoc rel3;
-        private final ToOneRelationshipDoc rel4;
-        private final ToOneRelationshipDoc rel5;
-        private final ToOneRelationshipDoc rel6;
-        private final ToOneRelationshipDoc rel7;
-        private final ToManyRelationshipsDoc rel8;
+        private final ToManyRelationshipObject rel1;
+        private final ToManyRelationshipObject rel2;
+        private final ToManyRelationshipObject rel3;
+        private final ToOneRelationshipObject rel4;
+        private final ToOneRelationshipObject rel5;
+        private final ToOneRelationshipObject rel6;
+        private final ToOneRelationshipObject rel7;
+        private final ToManyRelationshipObject rel8;
 
         public MyRelationships(
-                Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocMap,
-                Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocMap
+                Map<RelationshipName, ToManyRelationshipObject> toManyRelationshipsDocMap,
+                Map<RelationshipName, ToOneRelationshipObject> toOneRelationshipDocMap
         ) {
             this.rel1 = toManyRelationshipsDocMap.get(REL1_MULTI);
             this.rel2 = toManyRelationshipsDocMap.get(REL2_MULTI);

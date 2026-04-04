@@ -13,7 +13,11 @@ import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 
 import java.io.IOException;
-import java.util.*;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @Slf4j
@@ -33,6 +37,10 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private List<String> originalIncludes = new ArrayList<>();
 
     private String cursor = null;
+
+    private Long limit = null;
+    private Long offset = null;
+
     private Map<String, List<String>> customQueryParams = new LinkedHashMap<>();
 
     private byte[] payload = new byte[0];
@@ -41,10 +49,8 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
     private Map<String, List<String>> fieldSets = new LinkedHashMap<>();
 
-    @Override
-    public Map<String, List<String>> getFilters() {
-        return filters;
-    }
+    private URI extension;
+    private URI profile;
 
     // lombok workaround
     @Override
@@ -106,28 +112,6 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
     public static JsonApiRequestBuilder builder() {
         return new JsonApiRequestBuilder();
-    }
-
-    public static JsonApiRequest composeRelationshipRequest(String resourceId,
-                                                     ResourceType resourceType,
-                                                     RelationshipName relationshipName,
-                                                     OperationType operationType) {
-        return builder()
-                .targetResourceType(resourceType)
-                .operationType(operationType)
-                .resourceId(resourceId)
-                .targetRelationship(relationshipName)
-                .build();
-    }
-
-    public static JsonApiRequest composeResourceRequest(String resourceId,
-                                                        ResourceType resourceType,
-                                                        OperationType operationType) {
-        return builder()
-                .targetResourceType(resourceType)
-                .resourceId(resourceId)
-                .operationType(operationType)
-                .build();
     }
 
 }

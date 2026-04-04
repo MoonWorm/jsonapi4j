@@ -527,14 +527,11 @@ Response:
   ],
   "links": {
     "self": "/users/1/relationships/citizenships",
-    "related": {
-      "countries": {
-        "href": "/countries?filter[id]=FI,NO", 
-        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml", 
+    "related:countries": {
+        "href": "/countries?filter[id]=FI,NO",
         "meta": {
           "ids": ["FI", "NO"]
         }
-      }
     },
     "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
   }
@@ -566,14 +563,11 @@ Response:
   ],
   "links": {
     "self": "/users/1/relationships/citizenships?include=citizenships",
-    "related": {
-      "countries": {
+    "related:countries": {
         "href": "/countries?filter[id]=FI,NO",
-        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": ["FI", "NO"]
-        }  
-      }
+        }
     },
     "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
   },
@@ -668,14 +662,11 @@ Response:
           ],
           "links": {
             "self": "/users/3/relationships/citizenships",
-            "related": {
-              "countries": {
+            "related:countries": {
                 "href": "/countries?filter[id]=FI,US",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["FI", "US"]
                 }
-              }
             }
           }
         }
@@ -705,14 +696,11 @@ Response:
           ],
           "links": {
             "self": "/users/4/relationships/citizenships",
-            "related": {
-              "countries": {
+            "related:countries": {
                 "href": "/countries?filter[id]=NO,US",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": ["NO", "US"]
                 }
-              }
             }
           }
         }

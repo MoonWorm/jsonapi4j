@@ -27,16 +27,13 @@
       "relatives": {
         "links": {
           "self": "/users/1/relationships/relatives",
-          "related": {
-            "users": {
-              "href": "/users?filter[id]=2,3",
-              "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-              "meta": {
-                "ids": [
-                  "2",
-                  "3"
-                ]
-              }
+          "related:users": {
+            "href": "/users?filter[id]=2,3",
+            "meta": {
+              "ids": [
+                "2",
+                "3"
+              ]
             }
           }
         },
@@ -127,15 +124,12 @@
         "currencies": {
           "links": {
             "self": "/countries/US/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=USD",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "USD"
-                  ]
-                }
+            "related:currencies": {
+              "href": "/currencies?filter[id]=USD",
+              "meta": {
+                "ids": [
+                  "USD"
+                ]
               }
             }
           },

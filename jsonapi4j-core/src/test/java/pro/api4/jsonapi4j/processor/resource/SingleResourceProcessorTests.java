@@ -1,20 +1,5 @@
 package pro.api4.jsonapi4j.processor.resource;
 
-import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
-import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -22,17 +7,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.model.document.data.*;
+import pro.api4.jsonapi4j.processor.IdAndType;
+import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
+import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
+import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
 
 @ExtendWith(MockitoExtension.class)
 public class SingleResourceProcessorTests {
@@ -92,13 +85,13 @@ public class SingleResourceProcessorTests {
         when(ds.get(REQUEST_ALL_INCLUDES)).thenReturn(DTO);
         when(attributesResolver.resolveAttributes(DTO)).thenReturn(ATTRIBUTES);
         when(fooRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO)).thenReturn(
-                new ToOneRelationshipDoc(
+                new ToOneRelationshipObject(
                         new ResourceIdentifierObject("31", FOO.getName()),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
                 )
         );
         when(barsRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO)).thenReturn(
-                new ToManyRelationshipsDoc(
+                new ToManyRelationshipObject(
                         List.of(
                                 new ResourceIdentifierObject("51", BARS.getName()),
                                 new ResourceIdentifierObject("55", BARS.getName())
@@ -126,17 +119,17 @@ public class SingleResourceProcessorTests {
                 .hasFieldOrPropertyWithValue(
                         "relationships",
                         new Relationships(
-                            new ToOneRelationshipDoc(
-                                    new ResourceIdentifierObject("31", FOO.getName()),
-                                    LinksObject.builder().self("/silver/1/relationships/foo").build()
-                            ),
-                            new ToManyRelationshipsDoc(
-                                    List.of(
-                                            new ResourceIdentifierObject("51", BARS.getName()),
-                                            new ResourceIdentifierObject("55", BARS.getName())
-                                    ),
-                                    LinksObject.builder().self("/silver/1/relationships/bars").build()
-                            )
+                                new ToOneRelationshipObject(
+                                        new ResourceIdentifierObject("31", FOO.getName()),
+                                        LinksObject.builder().self("/silver/1/relationships/foo").build()
+                                ),
+                                new ToManyRelationshipObject(
+                                        List.of(
+                                                new ResourceIdentifierObject("51", BARS.getName()),
+                                                new ResourceIdentifierObject("55", BARS.getName())
+                                        ),
+                                        LinksObject.builder().self("/silver/1/relationships/bars").build()
+                                )
                         )
                 )
                 .extracting("attributes")
@@ -169,10 +162,10 @@ public class SingleResourceProcessorTests {
                 .extracting("data")
                 .hasFieldOrPropertyWithValue("id", ID)
                 .hasFieldOrPropertyWithValue("type", SILVER.getType())
-                .hasFieldOrPropertyWithValue("relationships", new Relationships(
-                        new ToOneRelationshipDoc(LinksObject.builder().self("/silver/1/relationships/foo").build()),
-                        new ToManyRelationshipsDoc(LinksObject.builder().self("/silver/1/relationships/bars").build()))
-                )
+                .hasFieldOrPropertyWithValue("relationships.foo.links",
+                        LinksObject.builder().self("/silver/1/relationships/foo").build())
+                .hasFieldOrPropertyWithValue("relationships.bars.links",
+                        LinksObject.builder().self("/silver/1/relationships/bars").build())
                 .extracting("attributes")
                 .hasFieldOrPropertyWithValue("name", NAME);
         verify(ds, times(1)).get(REQUEST_NO_INCLUDES);
@@ -505,16 +498,17 @@ public class SingleResourceProcessorTests {
     @Data
     public static class Relationships {
 
-        private final ToOneRelationshipDoc foo;
-        private final ToManyRelationshipsDoc bars;
+        private final ToOneRelationshipObject foo;
+        private final ToManyRelationshipObject bars;
 
-        public Relationships(Map<RelationshipName, ToManyRelationshipsDoc> toManyRelationshipsDocMap,
-                             Map<RelationshipName, ToOneRelationshipDoc> toOneRelationshipDocMap) {
-            this.foo = toOneRelationshipDocMap.get(FOO);
-            this.bars = toManyRelationshipsDocMap.get(BARS);
+        public Relationships(Map<RelationshipName, ToManyRelationshipObject> toManyRelationshipMap,
+                             Map<RelationshipName, ToOneRelationshipObject> toOneRelationshipMap) {
+            this.foo = toOneRelationshipMap.get(FOO);
+            this.bars = toManyRelationshipMap.get(BARS);
         }
 
-        public Relationships(ToOneRelationshipDoc foo, ToManyRelationshipsDoc bars) {
+        public Relationships(ToOneRelationshipObject foo,
+                             ToManyRelationshipObject bars) {
             this.foo = foo;
             this.bars = bars;
         }

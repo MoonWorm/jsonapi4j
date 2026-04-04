@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.LinkObject;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.processor.IdSupplier;
 import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocLinksResolver;
@@ -16,8 +17,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class ToManyRelationshipLinksDefaultResolvers {
-
-    private static final String RELATED_LINKS_DESCRIBED_BY = "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml";
 
     private ToManyRelationshipLinksDefaultResolvers() {
 
@@ -45,7 +44,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                     true
             );
 
-            Map<String, RelatedLinkObject> relatedLinks = null;
+            Map<String, LinkObject> relatedLinks = null;
             if (dataSourceDtos != null) {
                 relatedLinks = dataSourceDtos.stream().map(dto -> {
                             ResourceType type = relationshipResourceTypeResolver.getResourceType(dto);
@@ -60,7 +59,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                 )
                         ).entrySet().stream().collect(
                                 Collectors.toMap(
-                                        e -> e.getKey().getType(),
+                                        e -> String.format("related:%s", e.getKey().getType()),
                                         e -> {
                                             List<String> ids = e.getValue()
                                                     .stream()
@@ -72,12 +71,12 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                                     LinksGenerator.resourcesBasePath(e.getKey()),
                                                     FiltersAwareRequest.getFilterParamWithValue("id", ids)
                                             );
-                                            return new RelatedLinkObject(
-                                                    href,
-                                                    RELATED_LINKS_DESCRIBED_BY,
-                                                    Map.of("ids", ids)
-                                            );
-                                        })
+                                            return LinkObject.builder()
+                                                    .href(href)
+                                                    .meta(Map.of("ids", ids))
+                                                    .build();
+                                        }
+                                )
                         );
             }
 
@@ -85,11 +84,8 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                     relationshipBasePath, nextCursor, true, true, true, true, true, true
             );
 
-            return LinksObject.builder().self(selfLink).next(nextLink).related(relatedLinks).build();
+            return LinksObject.builder().self(selfLink).next(nextLink).putAll(relatedLinks).build();
         };
-    }
-
-    public record RelatedLinkObject(String href, String describedby, Map<String, Object> meta) {
     }
 
 }

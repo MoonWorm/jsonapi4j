@@ -1,25 +1,21 @@
 package pro.api4.jsonapi4j.processor;
 
-import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
-import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
-import pro.api4.jsonapi4j.processor.util.MappingUtil;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.BaseDoc;
-import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
+import pro.api4.jsonapi4j.processor.resolvers.*;
+import pro.api4.jsonapi4j.processor.util.MappingUtil;
 
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
 import static pro.api4.jsonapi4j.domain.RelationshipType.TO_MANY;
 import static pro.api4.jsonapi4j.domain.RelationshipType.TO_ONE;
-import static java.util.Collections.emptyList;
 
 public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
@@ -29,8 +25,8 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
             ResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> jsonApiContext
     ) {
         this.jsonApiContext = jsonApiContext;
-        Validate.notNull(jsonApiContext.getAttributesResolver());
-        Validate.notNull(jsonApiContext.getResourceTypeAndIdResolver());
+        Validate.notNull(jsonApiContext.getAttributesResolver(), "attributesResolver can't be null");
+        Validate.notNull(jsonApiContext.getResourceTypeAndIdResolver(), "resourceTypeAndIdResolver can't be null");
         validateRelationshipResolvers();
     }
 
@@ -63,9 +59,9 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
 
     public IdAndType resolveResourceIdAndType(DATA_SOURCE_DTO dataSourceDto) {
         IdAndType idAndType = jsonApiContext.getResourceTypeAndIdResolver().resolveTypeAndId(dataSourceDto);
-        Validate.notNull(idAndType);
-        Validate.notNull(idAndType.getId());
-        Validate.notNull(idAndType.getType());
+        Validate.notNull(idAndType, "idAndType can't be null");
+        Validate.notNull(idAndType.getId(), "idAndType.id can't be null");
+        Validate.notNull(idAndType.getType(), "idAndType.type can't be null");
         return idAndType;
     }
 
@@ -116,37 +112,37 @@ public abstract class ResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
         return jsonApiContext.getBatchToOneRelationshipResolvers();
     }
 
-    protected ToOneRelationshipDoc createToOneRelationshipDocWithNullData(
+    protected ToOneRelationshipObject createToOneRelationshipWithNullData(
             RelationshipName relationshipName,
             REQUEST request,
             DATA_SOURCE_DTO dataSourceDto
     ) {
-        BaseDoc baseDoc = getDefaultRelationshipResolvers()
+        RelationshipObject relationshipObject = getDefaultRelationshipResolvers()
                 .get(relationshipName)
                 .resolveDefaultRelationship(relationshipName, request, dataSourceDto);
-        return ToOneRelationshipDoc.fromBaseDoc(null, baseDoc);
+        return ToOneRelationshipObject.fromRelationshipObject(null, relationshipObject);
     }
 
-    protected ToManyRelationshipsDoc createToManyRelationshipsDocWithNullData(
+    protected ToManyRelationshipObject createToManyRelationshipsWithNullData(
             RelationshipName relationshipName,
             REQUEST request,
             DATA_SOURCE_DTO dataSourceDto
     ) {
-        BaseDoc baseDoc = getDefaultRelationshipResolvers()
+        RelationshipObject relationshipObject = getDefaultRelationshipResolvers()
                 .get(relationshipName)
                 .resolveDefaultRelationship(relationshipName, request, dataSourceDto);
-        return ToManyRelationshipsDoc.fromBaseDoc(null, baseDoc);
+        return ToManyRelationshipObject.fromRelationshipObject(null, relationshipObject);
     }
 
-    protected ToManyRelationshipsDoc createToManyRelationshipsDocWithEmptyData(
+    protected ToManyRelationshipObject createToManyRelationshipsWithEmptyData(
             RelationshipName relationshipName,
             REQUEST request,
             DATA_SOURCE_DTO dataSourceDto
     ) {
-        BaseDoc baseDoc = getDefaultRelationshipResolvers()
+        RelationshipObject relationshipObject = getDefaultRelationshipResolvers()
                 .get(relationshipName)
                 .resolveDefaultRelationship(relationshipName, request, dataSourceDto);
-        return ToManyRelationshipsDoc.fromBaseDoc(emptyList(), baseDoc);
+        return ToManyRelationshipObject.fromRelationshipObject(emptyList(), relationshipObject);
     }
 
 }
