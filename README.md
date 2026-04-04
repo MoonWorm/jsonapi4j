@@ -13,7 +13,7 @@ A lightweight Java framework for building REST APIs compliant with the [JSON:API
 
 ## Features
 
-- **Full [JSON:API](https://jsonapi.org/) compliance** — resources, relationships, compound documents, pagination, filtering, sparse fieldsets, and error handling
+- **Full [JSON:API](https://jsonapi.org/) compliance** — resources, relationships, compound documents, pagination, filtering, sparse fieldsets, error handling, and more
 - **Spring Boot, Quarkus, and Servlet API** — integrates with popular Java web frameworks out of the box
 - **Declarative API design** — define resources, relationships, and operations with annotations; the framework handles routing, serialization, and response formatting
 - **Compound documents & includes** — multi-level `?include=` support (e.g., `include=comments.author.followers`) with parallel resolution
@@ -441,17 +441,14 @@ Request: [/users/5/relationships/relatives](http://localhost:8080/jsonapi/users/
 {
   "links": {
     "self": "/users/5/relationships/relatives",
-    "related": {
-      "users": {
+    "related:users": {
         "href": "/users?filter[id]=1,2",
-        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": [
             "1",
             "2"
           ]
         }
-      }
     },
     "next": "/users/5/relationships/relatives?page%5Bcursor%5D=DoJu"
   },
@@ -492,17 +489,14 @@ Request: [/users/5/relationships/relatives?include=relatives](http://localhost:8
 {
   "links": {
     "self": "/users/5/relationships/relatives?include=relatives",
-    "related": {
-      "users": {
+    "related:users": {
         "href": "/users?filter[id]=1,2",
-        "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
         "meta": {
           "ids": [
             "1",
             "2"
           ]
         }
-      }
     },
     "next": "/users/5/relationships/relatives?include=relatives&page%5Bcursor%5D=DoJu"
   },
@@ -671,17 +665,14 @@ Request: [/users?page[cursor]=DoJu&include=relatives](http://localhost:8080/json
         "relatives": {
           "links": {
             "self": "/users/4/relationships/relatives",
-            "related": {
-              "users": {
+            "related:users": {
                 "href": "/users?filter[id]=1,2",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
                     "1",
                     "2"
                   ]
                 }
-              }
             }
           },
           "data": [
@@ -803,17 +794,14 @@ Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost
         "relatives": {
           "links": {
             "self": "/users/4/relationships/relatives",
-            "related": {
-              "users": {
+            "related:users": {
                 "href": "/users?filter[id]=1,2",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
                     "1",
                     "2"
                   ]
                 }
-              }
             }
           },
           "data": [
@@ -890,17 +878,14 @@ Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost
         "relatives": {
           "links": {
             "self": "/users/1/relationships/relatives",
-            "related": {
-              "users": {
+            "related:users": {
                 "href": "/users?filter[id]=2,3",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
                     "2",
                     "3"
                   ]
                 }
-              }
             }
           },
           "data": [
@@ -937,17 +922,14 @@ Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost
         "relatives": {
           "links": {
             "self": "/users/2/relationships/relatives",
-            "related": {
-              "users": {
+            "related:users": {
                 "href": "/users?filter[id]=1,4",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
                 "meta": {
                   "ids": [
                     "1",
                     "4"
                   ]
                 }
-              }
             }
           },
           "data": [
