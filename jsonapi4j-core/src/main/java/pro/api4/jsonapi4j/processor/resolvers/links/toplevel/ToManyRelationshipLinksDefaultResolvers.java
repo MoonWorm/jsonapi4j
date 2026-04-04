@@ -12,14 +12,11 @@ import pro.api4.jsonapi4j.processor.resolvers.links.LinksGenerator;
 import pro.api4.jsonapi4j.processor.resolvers.links.ResourceTypeSupplier;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class ToManyRelationshipLinksDefaultResolvers {
-
-    private static final String RELATED_LINKS_DESCRIBED_BY = "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml";
 
     private ToManyRelationshipLinksDefaultResolvers() {
 
@@ -62,7 +59,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                 )
                         ).entrySet().stream().collect(
                                 Collectors.toMap(
-                                        e -> e.getKey().getType(),
+                                        e -> String.format("related:%s", e.getKey().getType()),
                                         e -> {
                                             List<String> ids = e.getValue()
                                                     .stream()
@@ -76,10 +73,10 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                             );
                                             return LinkObject.builder()
                                                     .href(href)
-                                                    .describedby(URI.create(RELATED_LINKS_DESCRIBED_BY))
                                                     .meta(Map.of("ids", ids))
                                                     .build();
-                                        })
+                                        }
+                                )
                         );
             }
 
@@ -87,7 +84,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                     relationshipBasePath, nextCursor, true, true, true, true, true, true
             );
 
-            return LinksObject.builder().self(selfLink).next(nextLink).related(relatedLinks).build();
+            return LinksObject.builder().self(selfLink).next(nextLink).putAll(relatedLinks).build();
         };
     }
 

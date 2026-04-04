@@ -16,17 +16,14 @@
         "citizenships": {
           "links": {
             "self": "/users/1/relationships/citizenships",
-            "related": {
-              "countries": {
-                "href": "/countries?filter[id]=FI,NO,US",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "FI",
-                    "NO",
-                    "US"
-                  ]
-                }
+            "related:countries": {
+              "href": "/countries?filter[id]=FI,NO,US",
+              "meta": {
+                "ids": [
+                  "FI",
+                  "NO",
+                  "US"
+                ]
               }
             }
           },
@@ -58,16 +55,13 @@
         "relatives": {
           "links": {
             "self": "/users/1/relationships/relatives",
-            "related": {
-              "users": {
-                "href": "/users?filter[id]=2,3",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "2",
-                    "3"
-                  ]
-                }
+            "related:users": {
+              "href": "/users?filter[id]=2,3",
+              "meta": {
+                "ids": [
+                  "2",
+                  "3"
+                ]
               }
             }
           },
@@ -105,15 +99,12 @@
         "citizenships": {
           "links": {
             "self": "/users/2/relationships/citizenships",
-            "related": {
-              "countries": {
-                "href": "/countries?filter[id]=US",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "US"
-                  ]
-                }
+            "related:countries": {
+              "href": "/countries?filter[id]=US",
+              "meta": {
+                "ids": [
+                  "US"
+                ]
               }
             }
           },
@@ -137,16 +128,13 @@
         "relatives": {
           "links": {
             "self": "/users/2/relationships/relatives",
-            "related": {
-              "users": {
-                "href": "/users?filter[id]=1,4",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "1",
-                    "4"
-                  ]
-                }
+            "related:users": {
+              "href": "/users?filter[id]=1,4",
+              "meta": {
+                "ids": [
+                  "1",
+                  "4"
+                ]
               }
             }
           },
@@ -312,15 +300,12 @@
         "currencies": {
           "links": {
             "self": "/countries/FI/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=EUR",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "EUR"
-                  ]
-                }
+            "related:currencies": {
+              "href": "/currencies?filter[id]=EUR",
+              "meta": {
+                "ids": [
+                  "EUR"
+                ]
               }
             }
           },
@@ -347,15 +332,12 @@
         "currencies": {
           "links": {
             "self": "/countries/NO/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=NOK",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "NOK"
-                  ]
-                }
+            "related:currencies": {
+              "href": "/currencies?filter[id]=NOK",
+              "meta": {
+                "ids": [
+                  "NOK"
+                ]
               }
             }
           },
@@ -393,15 +375,12 @@
         "currencies": {
           "links": {
             "self": "/countries/US/relationships/currencies",
-            "related": {
-              "currencies": {
-                "href": "/currencies?filter[id]=USD",
-                "describedby": "https://api4.pro/oas-schema-to-many-relationships-related-link.yaml",
-                "meta": {
-                  "ids": [
-                    "USD"
-                  ]
-                }
+            "related:currencies": {
+              "href": "/currencies?filter[id]=USD",
+              "meta": {
+                "ids": [
+                  "USD"
+                ]
               }
             }
           },

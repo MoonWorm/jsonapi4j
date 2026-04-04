@@ -2,8 +2,10 @@ package pro.api4.jsonapi4j.model.document;
 
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * JSON:API specification reference:
@@ -26,17 +28,38 @@ public class LinksObject extends LinkedHashMap<String, Object> {
         private final LinksObject links = new LinksObject();
 
         public LinksObjectBuilder self(String href) {
-            links.put(SELF_FIELD, href);
+            this.links.put(SELF_FIELD, href);
             return this;
         }
 
         public LinksObjectBuilder next(String href) {
-            links.put(NEXT_FIELD, href);
+            this.links.put(NEXT_FIELD, href);
             return this;
         }
 
         public LinksObjectBuilder related(Object linkObject) {
-            links.put(RELATED_FIELD, linkObject);
+            this.links.put(RELATED_FIELD, linkObject);
+            return this;
+        }
+
+        public LinksObjectBuilder linkObject(String linkName, Object linkObject) {
+            if (StringUtils.isNotBlank(linkName)) {
+                this.links.put(linkName, linkObject);
+            }
+            return this;
+        }
+
+        public LinksObjectBuilder href(String linkName, String href) {
+            if (StringUtils.isNotBlank(linkName)) {
+                this.links.put(linkName, href);
+            }
+            return this;
+        }
+
+        public LinksObjectBuilder putAll(Map<String, ?> links) {
+            if (links != null) {
+                this.links.putAll(links);
+            }
             return this;
         }
 
