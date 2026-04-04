@@ -39,7 +39,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     @Override
     public JsonApiRequest from(HttpServletRequest servletRequest) {
-        if (!JsonApiMediaType.isAccepted(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()))) {
+        if (!JsonApiMediaType.isAccepted(servletRequest.getHeaders(HttpHeaders.ACCEPT.getName()))) {
             throw new NotAcceptableException(servletRequest.getHeader(HttpHeaders.ACCEPT.getName()), JsonApiMediaType.MEDIA_TYPE);
         }
 

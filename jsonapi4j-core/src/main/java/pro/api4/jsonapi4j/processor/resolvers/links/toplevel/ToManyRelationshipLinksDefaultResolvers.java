@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.LinkObject;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.processor.IdSupplier;
 import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocLinksResolver;
@@ -11,6 +12,7 @@ import pro.api4.jsonapi4j.processor.resolvers.links.LinksGenerator;
 import pro.api4.jsonapi4j.processor.resolvers.links.ResourceTypeSupplier;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,7 +47,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                     true
             );
 
-            Map<String, RelatedLinkObject> relatedLinks = null;
+            Map<String, LinkObject> relatedLinks = null;
             if (dataSourceDtos != null) {
                 relatedLinks = dataSourceDtos.stream().map(dto -> {
                             ResourceType type = relationshipResourceTypeResolver.getResourceType(dto);
@@ -72,11 +74,11 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                                     LinksGenerator.resourcesBasePath(e.getKey()),
                                                     FiltersAwareRequest.getFilterParamWithValue("id", ids)
                                             );
-                                            return new RelatedLinkObject(
-                                                    href,
-                                                    RELATED_LINKS_DESCRIBED_BY,
-                                                    Map.of("ids", ids)
-                                            );
+                                            return LinkObject.builder()
+                                                    .href(href)
+                                                    .describedby(URI.create(RELATED_LINKS_DESCRIBED_BY))
+                                                    .meta(Map.of("ids", ids))
+                                                    .build();
                                         })
                         );
             }
@@ -87,9 +89,6 @@ public final class ToManyRelationshipLinksDefaultResolvers {
 
             return LinksObject.builder().self(selfLink).next(nextLink).related(relatedLinks).build();
         };
-    }
-
-    public record RelatedLinkObject(String href, String describedby, Map<String, Object> meta) {
     }
 
 }

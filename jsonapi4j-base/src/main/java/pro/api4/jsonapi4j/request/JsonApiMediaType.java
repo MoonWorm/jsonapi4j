@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.request;
 
+import java.util.Enumeration;
+
 public final class JsonApiMediaType {
 
     public static final String TYPE = "application";
@@ -23,13 +25,12 @@ public final class JsonApiMediaType {
         return SUBTYPE.equals(normalizedSubtype);
     }
 
-    public static boolean isAccepted(String accepts) {
+    public static boolean isAccepted(Enumeration<String> accepts) {
         if (accepts == null) {
             return true;
         }
-        String[] parts = accepts.split(",");
-        for (String part : parts) {
-            String mediaType = part.split(";")[0].toLowerCase().trim();
+        while (accepts.hasMoreElements()) {
+            String mediaType = accepts.nextElement().split(";")[0].toLowerCase().trim();
             if (mediaType.equals("*/*")
                     || mediaType.equals(TYPE + "/*")
                     || JsonApiMediaType.MEDIA_TYPE.equalsIgnoreCase(mediaType)) {
