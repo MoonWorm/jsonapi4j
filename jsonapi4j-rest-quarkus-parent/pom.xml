@@ -49,7 +49,7 @@
     <properties>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
         <failsafe-plugin.version>${surefire-plugin.version}</failsafe-plugin.version>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>23</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.version>3.31.3</quarkus.version>
