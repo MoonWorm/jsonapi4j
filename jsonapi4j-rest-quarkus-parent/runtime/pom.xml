@@ -113,6 +113,7 @@
                     <execution>
                         <id>default-compile</id>
                         <configuration>
+                            <proc>full</proc>
                             <annotationProcessorPaths>
                                 <path>
                                     <groupId>io.quarkus</groupId>

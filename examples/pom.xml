@@ -24,7 +24,8 @@
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
         <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
         <swagger.model.version>2.2.31</swagger.model.version>
-        <lombok.version>1.18.36</lombok.version>
+        <lombok.version>1.18.44</lombok.version>
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
 
         <junit-jupiter.version>5.11.3</junit-jupiter.version>
         <assertj-core.version>3.26.3</assertj-core.version>
