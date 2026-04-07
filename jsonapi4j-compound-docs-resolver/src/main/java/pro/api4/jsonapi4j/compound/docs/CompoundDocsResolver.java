@@ -3,6 +3,8 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
@@ -26,7 +28,7 @@ public class CompoundDocsResolver {
     private final CompoundDocsResolverConfig config;
     private final DomainUrlResolver domainUrlResolver;
 
-    private final JsonApi4jCompoundDocsApiHttpClient httpClient;
+    private final CachingCompoundDocsFetcher fetcher;
 
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
@@ -37,6 +39,19 @@ public class CompoundDocsResolver {
                                 DomainUrlResolver domainUrlResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService) {
+        this(config, domainUrlResolver, objectMapper, executorService, null);
+    }
+
+    /**
+     * Creates a resolver with caching support.
+     *
+     * @param cache the resource cache, or {@code null} to disable caching
+     */
+    public CompoundDocsResolver(CompoundDocsResolverConfig config,
+                                DomainUrlResolver domainUrlResolver,
+                                ObjectMapper objectMapper,
+                                ExecutorService executorService,
+                                CompoundDocsResourceCache cache) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
         Validate.notNull(domainUrlResolver, "DomainUrlResolver is not configured");
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
@@ -45,7 +60,9 @@ public class CompoundDocsResolver {
         this.config = config;
         this.domainUrlResolver = domainUrlResolver;
 
-        this.httpClient = new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
+        JsonApi4jCompoundDocsApiHttpClient httpClient =
+                new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
+        this.fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
@@ -112,7 +129,7 @@ public class CompoundDocsResolver {
                                                                     Map<String, String> metaHeaders) {
         URI domainUri = resolveDomainUrl(resourceType);
         return CompletableFuture.supplyAsync(
-                () -> httpClient.doBatchFetch(
+                () -> fetcher.fetch(
                         domainUri,
                         resourceType,
                         ids,
@@ -120,7 +137,7 @@ public class CompoundDocsResolver {
                         originalRequest,
                         config,
                         metaHeaders
-                ),
+                ).resources(),
                 executorService
         );
     }
