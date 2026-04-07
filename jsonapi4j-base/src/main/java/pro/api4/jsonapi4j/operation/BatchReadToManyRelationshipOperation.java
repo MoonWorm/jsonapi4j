@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.List;
@@ -25,13 +25,13 @@ public interface BatchReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP
 
     /**
      * Reads a resource linkage objects that relates to this relationship in batch.
-     * If no relationship exist returns <code>null</code> {@link CursorPageableResponse}
+     * If no relationship exist returns <code>null</code> {@link PaginationAwareResponse}
      *
      * @param originalRequest incoming {@link JsonApiRequest}
      * @param resourceDtos    contextual list of primary resource's {@link RESOURCE_DTO}
-     * @return map of ({@link RESOURCE_DTO} / {@link CursorPageableResponse} of {@link RELATIONSHIP_DTO}) pairs
+     * @return map of ({@link RESOURCE_DTO} / {@link PaginationAwareResponse} of {@link RELATIONSHIP_DTO}) pairs
      */
-    Map<RESOURCE_DTO, CursorPageableResponse<RELATIONSHIP_DTO>> readBatches(JsonApiRequest originalRequest,
-                                                                            List<RESOURCE_DTO> resourceDtos);
+    Map<RESOURCE_DTO, PaginationAwareResponse<RELATIONSHIP_DTO>> readBatches(JsonApiRequest originalRequest,
+                                                                             List<RESOURCE_DTO> resourceDtos);
 
 }

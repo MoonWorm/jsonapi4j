@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Param
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
@@ -68,8 +68,8 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
             }
     )
     @Override
-    public CursorPageableResponse<DownstreamCurrencyWithCode> readPage(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsNotPageable(
+    public PaginationAwareResponse<DownstreamCurrencyWithCode> readPage(JsonApiRequest request) {
+        return PaginationAwareResponse.fromItemsNotPageable(
                 readCurrenciesByIds(
                         request.getFilters().get(ID_FILTER_NAME),
                         client

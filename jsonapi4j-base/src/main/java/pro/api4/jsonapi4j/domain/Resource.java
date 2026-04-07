@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.domain;
 
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.response.PaginationContext;
 
 import java.util.List;
 
@@ -92,12 +93,12 @@ public interface Resource<RESOURCE_DTO> {
      *
      * @param request        the original JSON:API request
      * @param dataSourceDtos a list of the corresponding {@link RESOURCE_DTO}
-     * @param nextCursor     next cursor string
+     * @param paginationContext  pagination context that contains some server-side info e.g. next cursor string
      * @return an instance of {@link LinksObject}
      */
     default LinksObject resolveTopLevelLinksForMultiResourcesDoc(JsonApiRequest request,
                                                                  List<RESOURCE_DTO> dataSourceDtos,
-                                                                 String nextCursor) {
+                                                                 PaginationContext paginationContext) {
         return NOT_IMPLEMENTED_LINKS_STUB;
     }
 

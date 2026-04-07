@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
@@ -36,9 +36,9 @@ public interface ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>
      * Reads a certain page of resource linkage objects that relate to this relationship.
      *
      * @param relationshipRequest incoming {@link JsonApiRequest}
-     * @return {@link CursorPageableResponse} containing a certain page of {@link RELATIONSHIP_DTO} items
+     * @return {@link PaginationAwareResponse} containing a certain page of {@link RELATIONSHIP_DTO} items
      */
-    CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest);
+    PaginationAwareResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest);
 
     /**
      * Triggered when querying the primary resource(s) as part of its relationship resolution
@@ -53,10 +53,10 @@ public interface ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>
      *
      * @param relationshipRequest relationship {@link JsonApiRequest} that is composed during primary resource request
      *                            processing from the original {@link JsonApiRequest} and {@link RESOURCE_DTO}
-     * @return {@link CursorPageableResponse} containing the first page of {@link RELATIONSHIP_DTO} items
+     * @return {@link PaginationAwareResponse} containing the first page of {@link RELATIONSHIP_DTO} items
      */
-    default CursorPageableResponse<RELATIONSHIP_DTO> readManyForResource(JsonApiRequest relationshipRequest,
-                                                                         RESOURCE_DTO resourceDto) {
+    default PaginationAwareResponse<RELATIONSHIP_DTO> readManyForResource(JsonApiRequest relationshipRequest,
+                                                                          RESOURCE_DTO resourceDto) {
         return readMany(relationshipRequest);
     }
 

@@ -8,10 +8,10 @@ import org.apache.commons.lang3.StringUtils;
 
 public class LimitOffsetToCursorAdapter {
 
-    public static final int DEFAULT_LIMIT = 10;
+    public static final long DEFAULT_LIMIT = 10;
 
     private final String cursor;
-    private int defaultLimit = DEFAULT_LIMIT;
+    private long defaultLimit = DEFAULT_LIMIT;
 
     private static final Base62 BASE_62 = Base62.createInstance();
 
@@ -23,7 +23,7 @@ public class LimitOffsetToCursorAdapter {
         this.cursor = request.getCursor();
     }
 
-    public LimitOffsetToCursorAdapter withDefaultLimit(int defaultLimit) {
+    public LimitOffsetToCursorAdapter withDefaultLimit(long defaultLimit) {
         this.defaultLimit = defaultLimit;
         return this;
     }
@@ -43,7 +43,7 @@ public class LimitOffsetToCursorAdapter {
             throw new InvalidCursorException(this.cursor);
         }
         try {
-            int actualLimit = Integer.parseInt(limitAndOffset[0]);
+            long actualLimit = Long.parseLong(limitAndOffset[0]);
             if (actualLimit != defaultLimit) {
                 throw new InvalidCursorException(this.cursor);
             }
@@ -54,7 +54,7 @@ public class LimitOffsetToCursorAdapter {
     }
 
     public String nextCursor(LimitAndOffset limitAndOffset, long totalNumberOfItems) {
-        int nextOffset = limitAndOffset.getOffset() + limitAndOffset.getLimit();
+        long nextOffset = limitAndOffset.getOffset() + limitAndOffset.getLimit();
         if (nextOffset >= totalNumberOfItems) {
             return null;
         }
@@ -63,7 +63,7 @@ public class LimitOffsetToCursorAdapter {
 
     public String nextCursor(long totalNumberOfItems) {
         LimitAndOffset limitAndOffset = decodeLimitAndOffset();
-        int nextOffset = limitAndOffset.getOffset() + limitAndOffset.getLimit();
+        long nextOffset = limitAndOffset.getOffset() + limitAndOffset.getLimit();
         if (nextOffset >= totalNumberOfItems) {
             return null;
         }
@@ -79,15 +79,15 @@ public class LimitOffsetToCursorAdapter {
         return nextCursor(Long.MAX_VALUE);
     }
 
-    static String encodeCursor(int limit, int offset) {
+    public static String encodeCursor(long limit, long offset) {
         String value = String.format("%s:%s", limit, offset);
         return new String(BASE_62.encode(value.getBytes()));
     }
 
     @Data
     public static class LimitAndOffset {
-        private final int limit;
-        private final int offset;
+        private final long limit;
+        private final long offset;
     }
 
 }

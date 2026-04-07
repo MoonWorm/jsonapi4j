@@ -1,7 +1,8 @@
 package pro.api4.jsonapi4j.domain;
 
-import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.response.PaginationContext;
 
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
  * <p>
  * Usually, the classes that are implementing this interface are put into beans context for better convenience.
  * Then, they should be automatically registered in {@link DomainRegistry}. If not - can be manually registered
- *  * in {@link DomainRegistry}.
+ * * in {@link DomainRegistry}.
  * <p>
  * This interface declares a number of methods that can be overridden if you need to customize how
  * members like 'meta', 'links' are generated for the given JSON:API relationship. Usually, you can rely on the
@@ -39,16 +40,16 @@ public interface ToManyRelationship<RELATIONSHIP_DTO> extends Relationship<RELAT
      *         }
      *    }
      * }
-     * }
+     *}
      *
      * @param relationshipRequest the corresponding relationship request
      * @param relationshipDtos    to-many relationship dtos
-     * @param nextCursor          next cursor string
+     * @param paginationContext   pagination context that contains some server-side info e.g. next cursor string
      * @return an instance of {@link LinksObject}
      */
     default LinksObject resolveRelationshipLinks(JsonApiRequest relationshipRequest,
                                                  List<RELATIONSHIP_DTO> relationshipDtos,
-                                                 String nextCursor) {
+                                                 PaginationContext paginationContext) {
         return NOT_IMPLEMENTED_LINKS_STUB;
     }
 

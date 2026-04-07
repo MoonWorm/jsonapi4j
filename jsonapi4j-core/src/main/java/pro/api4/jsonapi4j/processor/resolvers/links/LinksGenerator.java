@@ -6,6 +6,8 @@ import pro.api4.jsonapi4j.request.*;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.response.PaginationContext;
+import pro.api4.jsonapi4j.response.PaginationMode;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -72,25 +74,9 @@ public final class LinksGenerator {
     }
 
     public String generateRelatedLink(String basePath,
-                                      boolean propagateIncludes,
-                                      boolean propagateCursor,
-                                      boolean propagateFilters,
-                                      boolean propagateSortBy,
                                       boolean propagateFields,
                                       boolean propagateQueryParams) {
         Map<String, String> relatedLinkParams = new LinkedHashMap<>();
-        if (propagateIncludes) {
-            populateIncludes(relatedLinkParams);
-        }
-        if (propagateCursor) {
-            populateCursor(relatedLinkParams);
-        }
-        if (propagateFilters) {
-            populateFilters(relatedLinkParams);
-        }
-        if (propagateSortBy) {
-            populateSortBy(relatedLinkParams);
-        }
         if (propagateFields) {
             populateFields(relatedLinkParams);
         }
@@ -100,37 +86,64 @@ public final class LinksGenerator {
         return basePath + toParamsStr(relatedLinkParams);
     }
 
+    private boolean isCursorAwareRequest(PaginationContext paginationContext) {
+        return paginationContext.getMode() == PaginationMode.CURSOR && StringUtils.isNotBlank(paginationContext.getNextCursor());
+    }
+
+    private boolean isLimitOffsetAwareRequest() {
+        if (request instanceof LimitOffsetAwareRequest r) {
+            return r.getLimit() != null && r.getOffset() != null;
+        }
+        return false;
+    }
+
     public String generateNextLink(String basePath,
-                                   String nextCursor,
+                                   PaginationContext paginationContext,
                                    boolean propagateIncludes,
-                                   boolean propagateCursor,
                                    boolean propagateFilters,
                                    boolean propagateSortBy,
                                    boolean propagateFields,
                                    boolean propagateQueryParams) {
-        if (StringUtils.isBlank(nextCursor)) {
-            return null;
+        if (paginationContext != null) {
+            Map<String, String> nextLinkParams = new LinkedHashMap<>();
+            if (propagateIncludes) {
+                populateIncludes(nextLinkParams);
+            }
+            if (isCursorAwareRequest(paginationContext)) {
+                populateCursor(nextLinkParams, paginationContext.getNextCursor());
+            } else if (isLimitOffsetAwareRequest()) {
+                populateLimitOffset(nextLinkParams, paginationContext.getTotalItems());
+            } else {
+                return null;
+            }
+            if (propagateFilters) {
+                populateFilters(nextLinkParams);
+            }
+            if (propagateSortBy) {
+                populateSortBy(nextLinkParams);
+            }
+            if (propagateFields) {
+                populateFields(nextLinkParams);
+            }
+            if (propagateQueryParams) {
+                populateQueryParams(nextLinkParams);
+            }
+            return basePath + toParamsStr(nextLinkParams);
         }
-        Map<String, String> nextLinkParams = new LinkedHashMap<>();
-        if (propagateIncludes) {
-            populateIncludes(nextLinkParams);
+        return null;
+    }
+
+    private void populateLimitOffset(Map<String, String> linkParams,
+                                     Long totalItems) {
+        if (request instanceof LimitOffsetAwareRequest r) {
+            Long limit = r.getLimit();
+            Long offset = r.getOffset();
+            if (limit != null && offset != null) {
+                long nextOffset = Math.min(offset + limit, totalItems != null ? totalItems : Long.MAX_VALUE);
+                linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+                linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(nextOffset));
+            }
         }
-        if (propagateCursor) {
-            nextLinkParams.put(CursorAwareRequest.CURSOR_PARAM, nextCursor);
-        }
-        if (propagateFilters) {
-            populateFilters(nextLinkParams);
-        }
-        if (propagateSortBy) {
-            populateSortBy(nextLinkParams);
-        }
-        if (propagateFields) {
-            populateFields(nextLinkParams);
-        }
-        if (propagateQueryParams) {
-            populateQueryParams(nextLinkParams);
-        }
-        return basePath + toParamsStr(nextLinkParams);
     }
 
     private void populateIncludes(Map<String, String> linkParams) {
@@ -149,6 +162,11 @@ public final class LinksGenerator {
                 linkParams.putAll(r.asSingleValueMap());
             }
         }
+    }
+
+    private void populateCursor(Map<String, String> linkParams,
+                                String nextCursor) {
+        linkParams.put(CursorAwareRequest.CURSOR_PARAM, nextCursor);
     }
 
     private void populateCursor(Map<String, String> linkParams) {

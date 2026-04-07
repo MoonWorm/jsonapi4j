@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -80,9 +80,9 @@ public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOp
      * by default.
      *
      * @param request incoming {@link JsonApiRequest}
-     * @return {@link CursorPageableResponse} of downstream {@link RESOURCE_DTO}
+     * @return {@link PaginationAwareResponse} of downstream {@link RESOURCE_DTO}
      */
-    CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request);
+    PaginationAwareResponse<RESOURCE_DTO> readPage(JsonApiRequest request);
 
     /**
      * Overrides NO-OP implementation by {@link ReadMultipleResourcesOperation}-specific default validations, namely it

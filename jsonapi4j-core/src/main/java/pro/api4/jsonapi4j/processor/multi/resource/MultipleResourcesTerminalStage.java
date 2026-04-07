@@ -19,7 +19,7 @@ import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.processor.util.DataRetrievalUtil;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -127,7 +127,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
             }
         }
 
-        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = retrieveData(effectiveRequest);
+        PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse = retrieveData(effectiveRequest);
 
         // PHASE: onDataPostRetrieval
         for (PluginSettings plugin : plugins) {
@@ -136,7 +136,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
-                            cursorPageableResponse,
+                            paginationAwareResponse,
                             jsonApiContext,
                             plugin.getInfo()
                     );
@@ -151,7 +151,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
             }
         }
 
-        if (cursorPageableResponse == null) {
+        if (paginationAwareResponse == null) {
             // top-level links
             LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null, null);
             // top-level meta
@@ -162,9 +162,9 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // compose data
         List<RESOURCE> data = null;
-        if (cursorPageableResponse.getItems() != null) {
+        if (paginationAwareResponse.getItems() != null) {
             data = new ArrayList<>();
-            for (DATA_SOURCE_DTO dto : cursorPageableResponse.getItems()) {
+            for (DATA_SOURCE_DTO dto : paginationAwareResponse.getItems()) {
                 // resource id and type
                 IdAndType idAndType = jsonApiMembersResolver.resolveResourceIdAndType(dto);
                 // attributes
@@ -188,11 +188,11 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
         // top-level links
         LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
                 effectiveRequest,
-                cursorPageableResponse.getItems(),
-                cursorPageableResponse.getNextCursor()
+                paginationAwareResponse.getItems(),
+                paginationAwareResponse.getPaginationContext()
         );
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, cursorPageableResponse.getItems());
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, paginationAwareResponse.getItems());
 
         // compose doc
         DOC doc = docSupplier.get(data, docLinks, docMeta);
@@ -204,7 +204,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
                             effectiveRequest,
-                            cursorPageableResponse,
+                            paginationAwareResponse,
                             doc,
                             jsonApiContext,
                             plugin.getInfo()
@@ -221,7 +221,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
         }
 
         // filter out dtos
-        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = emptyIfNull(cursorPageableResponse.getItems()).stream()
+        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = emptyIfNull(paginationAwareResponse.getItems()).stream()
                 .collect(Collectors.toMap(
                         jsonApiMembersResolver::resolveResourceIdAndType,
                         dto -> dto
@@ -266,7 +266,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
                             effectiveRequest,
-                            cursorPageableResponse,
+                            paginationAwareResponse,
                             doc,
                             jsonApiContext,
                             plugin.getInfo()
@@ -286,7 +286,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
         return docSupplier.get(data, docLinks, docMeta);
     }
 
-    private CursorPageableResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {
+    private PaginationAwareResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {
         return DataRetrievalUtil.retrieveDataNullable(() -> dataSupplier.get(req));
     }
 

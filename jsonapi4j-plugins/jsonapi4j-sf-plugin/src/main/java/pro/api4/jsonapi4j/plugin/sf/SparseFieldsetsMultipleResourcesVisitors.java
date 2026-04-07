@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisitors {
 
@@ -20,7 +20,7 @@ class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisit
     @Override
     public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo

@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Param
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
@@ -43,8 +43,8 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
             }
     )
     @Override
-    public CursorPageableResponse<DownstreamCurrencyWithCode> readMany(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<DownstreamCurrencyWithCode> readMany(JsonApiRequest request) {
+        return PaginationAwareResponse.inMemoryCursorAware(
                 new ArrayList<>(
                         readCountryById(request.getResourceId(), client)
                                 .getCurrencies()
@@ -58,9 +58,9 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
     }
 
     @Override
-    public CursorPageableResponse<DownstreamCurrencyWithCode> readManyForResource(JsonApiRequest relationshipRequest,
-                                                                                  DownstreamCountry resourceDto) {
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<DownstreamCurrencyWithCode> readManyForResource(JsonApiRequest relationshipRequest,
+                                                                                   DownstreamCountry resourceDto) {
+        return PaginationAwareResponse.inMemoryCursorAware(
                 new ArrayList<>(resourceDto.getCurrencies()
                         .entrySet()
                         .stream()

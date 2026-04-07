@@ -13,7 +13,7 @@ import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonA
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,18 +56,18 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
     @Override
     public <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             ToManyRelationshipsDoc doc,
             ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
             JsonApiPluginInfo pluginInfo
     ) {
-        if (doc == null || doc.getData() == null || cursorPageableResponse.getItems() == null) {
+        if (doc == null || doc.getData() == null || paginationAwareResponse.getItems() == null) {
             return DataPostRetrievalPhase.doNothing();
         }
 
         List<ResourceIdentifierObject> data = doc.getData();
 
-        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = cursorPageableResponse.getItems().stream()
+        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = paginationAwareResponse.getItems().stream()
                 .collect(Collectors.toMap(
                         dto -> context.getResourceTypeAndIdResolver().resolveTypeAndId(dto),
                         dto -> dto
@@ -97,7 +97,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
             anonymizedData.add(anonymizationResult.targetObject());
         }
 
-        if (nonAnonymizedDtos.size() == cursorPageableResponse.getItems().size()) {
+        if (nonAnonymizedDtos.size() == paginationAwareResponse.getItems().size()) {
             return DataPostRetrievalPhase.doNothing();
         }
 
@@ -108,7 +108,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         LinksObject docLinks = context.getTopLevelLinksResolver().resolve(
                 request,
                 nonAnonymizedDtos,
-                cursorPageableResponse.getNextCursor()
+                paginationAwareResponse.getPaginationContext()
         );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 
