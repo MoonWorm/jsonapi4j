@@ -165,7 +165,15 @@ public class UserInMemoryDb implements UserDb {
 
         List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
         String nextCursor = adapter.nextCursor(users.size());
-        return new DbPage<>(nextCursor, result);
+        return new DbPage<>(result, nextCursor);
     }
 
+    @Override
+    public DbPage<UserDbEntity> readAllUsers(long limit, long offset) {
+        long effectiveFrom = offset < users.size() ? offset : users.size() - 1;
+        long effectiveTo = Math.min(effectiveFrom + limit, users.size());
+
+        List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
+        return new DbPage<>(result, users.size());
+    }
 }

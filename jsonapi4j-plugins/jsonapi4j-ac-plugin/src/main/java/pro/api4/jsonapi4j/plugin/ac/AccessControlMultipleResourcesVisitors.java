@@ -13,7 +13,7 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,18 +56,18 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
     @Override
     public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
-        if (doc == null || doc.getData() == null || cursorPageableResponse.getItems() == null) {
+        if (doc == null || doc.getData() == null || paginationAwareResponse.getItems() == null) {
             return RelationshipsPreRetrievalPhase.doNothing();
         }
 
         List<? extends ResourceObject<?, ?>> data = doc.getData();
 
-        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = cursorPageableResponse.getItems().stream()
+        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = paginationAwareResponse.getItems().stream()
                 .collect(Collectors.toMap(
                         dto -> context.getResourceTypeAndIdResolver().resolveTypeAndId(dto),
                         dto -> dto
@@ -95,7 +95,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
             anonymizedData.add(anonymizationResult.targetObject());
         }
 
-        if (nonAnonymizedDtos.size() == cursorPageableResponse.getItems().size()) {
+        if (nonAnonymizedDtos.size() == paginationAwareResponse.getItems().size()) {
             return RelationshipsPreRetrievalPhase.doNothing();
         }
 
@@ -106,7 +106,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
         LinksObject docLinks = context.getTopLevelLinksResolver().resolve(
                 request,
                 nonAnonymizedDtos,
-                cursorPageableResponse.getNextCursor()
+                paginationAwareResponse.getPaginationContext()
         );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 

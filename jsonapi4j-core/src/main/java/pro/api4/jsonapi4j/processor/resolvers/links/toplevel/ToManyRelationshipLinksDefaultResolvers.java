@@ -29,7 +29,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
             ResourceTypeSupplier<RELATIONSHIP_DTO> relationshipResourceTypeResolver,
             IdSupplier<RELATIONSHIP_DTO> relationshipIdSupplier
     ) {
-        return (request, dataSourceDtos, nextCursor) -> {
+        return (request, dataSourceDtos, paginationContext) -> {
             LinksGenerator linksGenerator = new LinksGenerator(request);
 
             String relationshipBasePath = LinksGenerator.relationshipBasePath(resourceType, parentResourceId, relationshipName);
@@ -81,7 +81,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
             }
 
             String nextLink = linksGenerator.generateNextLink(
-                    relationshipBasePath, nextCursor, true, true, true, true, true, true
+                    relationshipBasePath, paginationContext, true, true, true, true, true
             );
 
             return LinksObject.builder().self(selfLink).next(nextLink).putAll(relatedLinks).build();

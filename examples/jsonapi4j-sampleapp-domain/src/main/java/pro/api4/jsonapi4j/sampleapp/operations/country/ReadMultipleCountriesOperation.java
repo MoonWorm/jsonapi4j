@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
@@ -88,16 +88,16 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
             }
     )
     @Override
-    public CursorPageableResponse<DownstreamCountry> readPage(JsonApiRequest request) {
+    public PaginationAwareResponse<DownstreamCountry> readPage(JsonApiRequest request) {
         if (request.getFilters().containsKey(ID_FILTER_NAME)) {
-            return CursorPageableResponse.fromItemsNotPageable(
+            return PaginationAwareResponse.fromItemsNotPageable(
                     readCountriesByIds(
                             request.getFilters().get(ID_FILTER_NAME),
                             client
                     )
             );
         } else if (request.getFilters().containsKey(REGION_FILTER_NAME)) {
-            return CursorPageableResponse.fromItemsPageable(
+            return PaginationAwareResponse.inMemoryCursorAware(
                     readCountriesByRegion(
                             request.getFilters().get(REGION_FILTER_NAME).get(0),
                             client
@@ -105,7 +105,7 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
                     request.getCursor()
             );
         } else {
-            return CursorPageableResponse.fromItemsPageable(
+            return PaginationAwareResponse.inMemoryCursorAware(
                     readAllCountries(client),
                     request.getCursor(),
                     2 // page size

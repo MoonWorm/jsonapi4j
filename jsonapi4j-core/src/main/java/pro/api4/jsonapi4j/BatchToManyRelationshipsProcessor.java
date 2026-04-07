@@ -5,7 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
@@ -43,7 +43,7 @@ class BatchToManyRelationshipsProcessor {
     @FunctionalInterface
     interface BatchMultipleResourcesDataSupplier<REQUEST, RESOURCE_DTO, RELATIONSHIP_DTO> {
 
-        Map<RESOURCE_DTO, CursorPageableResponse<RELATIONSHIP_DTO>> get(
+        Map<RESOURCE_DTO, PaginationAwareResponse<RELATIONSHIP_DTO>> get(
                 REQUEST request,
                 List<RESOURCE_DTO> dataSourceDtos
         ) throws DataRetrievalException;
@@ -156,7 +156,7 @@ class BatchToManyRelationshipsProcessor {
             //
             // Resolve relationships in batch
             //
-            Map<RESOURCE_DTO, CursorPageableResponse<RELATIONSHIP_DTO>> responseMap =
+            Map<RESOURCE_DTO, PaginationAwareResponse<RELATIONSHIP_DTO>> responseMap =
                     DataRetrievalUtil.retrieveDataNullable(
                             () -> dataSupplier.get(originalRequest, resourceDtos)
                     );

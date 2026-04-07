@@ -6,7 +6,7 @@ import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -44,8 +44,8 @@ public class UserRelativesOperations implements
             }
     )
     @Override
-    public CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<UserRelationshipInfo> readMany(JsonApiRequest request) {
+        return PaginationAwareResponse.inMemoryCursorAware(
                 userDb.getUserRelatives(request.getResourceId()),
                 request.getCursor(),
                 2 // page size
@@ -53,8 +53,8 @@ public class UserRelativesOperations implements
     }
 
     @Override
-    public Map<UserDbEntity, CursorPageableResponse<UserRelationshipInfo>> readBatches(JsonApiRequest request,
-                                                                                       List<UserDbEntity> users) {
+    public Map<UserDbEntity, PaginationAwareResponse<UserRelationshipInfo>> readBatches(JsonApiRequest request,
+                                                                                        List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
         Map<String, List<UserRelationshipInfo>> usersRelativesMap = userDb.getUsersRelatives(userIds);
@@ -63,7 +63,7 @@ public class UserRelativesOperations implements
                 .collect(
                         CustomCollectors.toMapThatSupportsNullValues(
                                 e -> usersGroupedById.get(e.getKey()),
-                                e -> CursorPageableResponse.fromItemsPageable(e.getValue(), 2)
+                                e -> PaginationAwareResponse.inMemoryCursorAware(e.getValue(), 2)
                         )
                 );
     }

@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j.servlet.request;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
-import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
@@ -17,7 +16,6 @@ import pro.api4.jsonapi4j.request.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 
 import java.io.IOException;
 import java.net.URI;
@@ -82,10 +80,6 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         String cursor = parseCursor(params.get(CursorAwareRequest.CURSOR_PARAM));
         Long limit = parseLimit(params.get(LimitOffsetAwareRequest.LIMIT_PARAM));
         Long offset = parseOffset(params.get(LimitOffsetAwareRequest.OFFSET_PARAM));
-        if (StringUtils.isBlank(cursor) && limit != null && offset != null) {
-            // TODO ???
-            cursor = LimitOffsetToCursorAdapter.encodeCursor(limit, offset); xxx
-        }
         URI ext = parseExt(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
         URI profile = parseProfile(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
 

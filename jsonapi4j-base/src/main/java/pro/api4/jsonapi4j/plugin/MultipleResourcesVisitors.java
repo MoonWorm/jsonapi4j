@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 public interface MultipleResourcesVisitors {
 
@@ -20,7 +20,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
@@ -29,7 +29,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
@@ -39,7 +39,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo

@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.processor.multi.relationship;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.response.PaginationContext;
 
 import java.util.List;
 
@@ -13,24 +14,24 @@ public class ToManyRelationshipsJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO>
     public ToManyRelationshipsJsonApiMembersResolver(
             ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> jsonApiContext
     ) {
-        Validate.notNull(jsonApiContext.getResourceTypeAndIdResolver());
+        Validate.notNull(jsonApiContext.getResourceTypeAndIdResolver(), "resourceTypeAndIdResolver cannot be null");
         this.jsonApiContext = jsonApiContext;
     }
 
     public IdAndType resolveResourceTypeAndId(DATA_SOURCE_DTO dataSourceDto) {
         IdAndType idAndType =  jsonApiContext.getResourceTypeAndIdResolver().resolveTypeAndId(dataSourceDto);
         // validate none of these is null
-        Validate.notNull(idAndType);
-        Validate.notNull(idAndType.getId());
-        Validate.notNull(idAndType.getType());
+        Validate.notNull(idAndType, "idAndType cannot be null");
+        Validate.notNull(idAndType.getId(), "id cannot be null");
+        Validate.notNull(idAndType.getType(), "type cannot be null");
         return idAndType;
     }
 
     public LinksObject resolveDocLinks(REQUEST request,
                                        List<DATA_SOURCE_DTO> dataSourceDtos,
-                                       String nextCursor) {
+                                       PaginationContext paginationContext) {
         return jsonApiContext.getTopLevelLinksResolver() != null
-                ? jsonApiContext.getTopLevelLinksResolver().resolve(request, dataSourceDtos, nextCursor)
+                ? jsonApiContext.getTopLevelLinksResolver().resolve(request, dataSourceDtos, paginationContext)
                 : null;
     }
 

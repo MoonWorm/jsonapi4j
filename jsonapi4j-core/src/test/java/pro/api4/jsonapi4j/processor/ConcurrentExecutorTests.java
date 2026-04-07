@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -71,7 +71,7 @@ public class ConcurrentExecutorTests {
             new MultipleResourcesProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executorService)
-                    .dataSupplier(req -> CursorPageableResponse.fromItemsAndCursor(List.of(1, 2, 3), null))
+                    .dataSupplier(req -> PaginationAwareResponse.cursorAware(List.of(1, 2, 3), null))
                     .defaultRelationships(all(TYPE1, String::valueOf, RELATIONSHIPS))
                     .toManyRelationshipResolver(REL1_MULTI, (req, dto) -> {
                         try {

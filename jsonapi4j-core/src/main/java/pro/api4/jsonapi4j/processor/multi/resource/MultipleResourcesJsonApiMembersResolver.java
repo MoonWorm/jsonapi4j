@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.response.PaginationContext;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.util.HashMap;
@@ -46,9 +47,9 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
 
     public LinksObject resolveDocLinks(REQUEST request,
                                        List<DATA_SOURCE_DTO> dtos,
-                                       String nextCursor) {
+                                       PaginationContext paginationContext) {
         return jsonApiContext.getTopLevelLinksResolver() != null
-                ? jsonApiContext.getTopLevelLinksResolver().resolve(request, dtos, nextCursor)
+                ? jsonApiContext.getTopLevelLinksResolver().resolve(request, dtos, paginationContext)
                 : null;
     }
 

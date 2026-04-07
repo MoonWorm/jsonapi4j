@@ -12,14 +12,14 @@ public final class MultiResourcesDocLinksDefaultResolvers {
     }
 
     public static <REQUEST, DATA_SOURCE_DTO> MultipleDataItemsDocLinksResolver<REQUEST, DATA_SOURCE_DTO> defaultTopLevelLinksResolver(ResourceType resourceType) {
-        return (request, dataSourceDtos, nextCursor) -> {
+        return (request, dataSourceDtos, paginationContext) -> {
             String basePath = LinksGenerator.resourcesBasePath(resourceType);
             LinksGenerator linksGenerator = new LinksGenerator(request);
             String selfLink = linksGenerator.generateSelfLink(
                     basePath, true, true, true,true, true, true
             );
             String nextLink = linksGenerator.generateNextLink(
-                    basePath, nextCursor, true, true, true,true, true, true
+                    basePath, paginationContext, true, true,true, true, true
             );
             return LinksObject.builder().self(selfLink).next(nextLink).build();
         };

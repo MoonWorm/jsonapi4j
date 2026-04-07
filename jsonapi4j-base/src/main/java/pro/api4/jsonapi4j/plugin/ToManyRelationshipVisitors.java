@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 public interface ToManyRelationshipVisitors {
 
@@ -20,7 +20,7 @@ public interface ToManyRelationshipVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
-            CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             ToManyRelationshipsDoc doc,
             ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
             JsonApiPluginInfo pluginInfo

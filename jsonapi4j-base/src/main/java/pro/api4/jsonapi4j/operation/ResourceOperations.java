@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 public interface ResourceOperations<RESOURCE_DTO> extends
@@ -21,7 +21,7 @@ public interface ResourceOperations<RESOURCE_DTO> extends
     }
 
     @Override
-    default CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request) {
+    default PaginationAwareResponse<RESOURCE_DTO> readPage(JsonApiRequest request) {
         throw new OperationNotFoundException(
                 OperationType.READ_MULTIPLE_RESOURCES,
                 request.getTargetResourceType()
