@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.List;
@@ -23,8 +23,8 @@ public class RecipeOperations implements ResourceOperations<DishRecipe> {
 
     @OasOperationInfo
     @Override
-    public CursorPageableResponse<DishRecipe> readPage(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsNotPageable(recipes);
+    public PaginationAwareResponse<DishRecipe> readPage(JsonApiRequest request) {
+        return PaginationAwareResponse.fromItemsNotPageable(recipes);
     }
 
     @Override

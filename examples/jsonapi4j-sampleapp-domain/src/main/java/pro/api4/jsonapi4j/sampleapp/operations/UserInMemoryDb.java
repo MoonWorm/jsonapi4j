@@ -18,10 +18,10 @@ public class UserInMemoryDb implements UserDb {
 
     private static AtomicInteger ID_COUNTER;
 
-    private Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
-    private Map<String, List<String>> userCitizenships = new ConcurrentHashMap<>();
-    private Map<String, String> userPlaceOfBirth = new ConcurrentHashMap<>();
-    private Map<String, List<UserRelationshipInfo>> userRalatives = new ConcurrentHashMap<>();
+    private final Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
+    private final Map<String, List<String>> userCitizenships = new ConcurrentHashMap<>();
+    private final Map<String, String> userPlaceOfBirth = new ConcurrentHashMap<>();
+    private final Map<String, List<UserRelationshipInfo>> userRalatives = new ConcurrentHashMap<>();
 
     {
         users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789"));
@@ -150,7 +150,7 @@ public class UserInMemoryDb implements UserDb {
         return userIds.stream().collect(
                 CustomCollectors.toMapThatSupportsNullValues(
                         userId -> userId,
-                        userId -> userPlaceOfBirth.get(userId)
+                        userPlaceOfBirth::get
                 )
         );
     }
@@ -160,12 +160,20 @@ public class UserInMemoryDb implements UserDb {
         LimitOffsetToCursorAdapter adapter = new LimitOffsetToCursorAdapter(cursor).withDefaultLimit(2);
         LimitOffsetToCursorAdapter.LimitAndOffset limitAndOffset = adapter.decodeLimitAndOffset();
 
-        int effectiveFrom = limitAndOffset.getOffset() < users.size() ? limitAndOffset.getOffset() : users.size() - 1;
-        int effectiveTo = Math.min(effectiveFrom + limitAndOffset.getLimit(), users.size());
+        long effectiveFrom = limitAndOffset.getOffset() < users.size() ? limitAndOffset.getOffset() : users.size() - 1;
+        long effectiveTo = Math.min(effectiveFrom + limitAndOffset.getLimit(), users.size());
 
-        List<UserDbEntity> result = new ArrayList<>(users.values()).subList(effectiveFrom, effectiveTo);
+        List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
         String nextCursor = adapter.nextCursor(users.size());
-        return new DbPage<>(nextCursor, result);
+        return new DbPage<>(result, nextCursor);
     }
 
+    @Override
+    public DbPage<UserDbEntity> readAllUsers(long limit, long offset) {
+        long effectiveFrom = offset < users.size() ? offset : users.size() - 1;
+        long effectiveTo = Math.min(effectiveFrom + limit, users.size());
+
+        List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
+        return new DbPage<>(result, users.size());
+    }
 }

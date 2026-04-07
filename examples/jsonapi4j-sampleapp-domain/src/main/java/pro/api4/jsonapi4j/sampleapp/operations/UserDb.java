@@ -34,14 +34,22 @@ public interface UserDb {
 
     DbPage<UserDbEntity> readAllUsers(String cursor);
 
+    DbPage<UserDbEntity> readAllUsers(long limit, long offset);
+
     class DbPage<E> {
 
-        private final String cursor;
         private final List<E> entities;
+        private String cursor;
+        private long totalItems;
 
-        public DbPage(String cursor, List<E> entities) {
-            this.cursor = cursor;
+        public DbPage(List<E> entities, String cursor) {
             this.entities = entities;
+            this.cursor = cursor;
+        }
+
+        public DbPage(List<E> entities, long totalItems) {
+            this.entities = entities;
+            this.totalItems = totalItems;
         }
 
         public String getCursor() {
@@ -50,6 +58,10 @@ public interface UserDb {
 
         public List<E> getEntities() {
             return entities;
+        }
+
+        public long getTotalItems() {
+            return totalItems;
         }
     }
 }

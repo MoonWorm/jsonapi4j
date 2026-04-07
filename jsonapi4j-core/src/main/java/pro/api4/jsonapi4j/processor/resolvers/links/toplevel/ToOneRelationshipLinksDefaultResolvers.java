@@ -36,10 +36,7 @@ public final class ToOneRelationshipLinksDefaultResolvers {
                     relationshipResourceTypeResolver.getResourceType(dataSourceDto),
                     () -> relationshipIdSupplier.getId(dataSourceDto)
             );
-            String relatedLink = linkGenerator.generateRelatedLink(
-                    relatedLinkBasePath, false, false, false, false, true, true
-            );
-
+            String relatedLink = linkGenerator.generateRelatedLink(relatedLinkBasePath, true, true);
             return LinksObject.builder().self(selfLink).related(relatedLink).build();
         };
     }

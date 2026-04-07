@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.Collections;
@@ -193,8 +193,8 @@ public class OperationsRegistryTests {
     private static class TestReadMultipleResourcesOperation implements ReadMultipleResourcesOperation<String> {
 
         @Override
-        public CursorPageableResponse<String> readPage(JsonApiRequest request) {
-            return CursorPageableResponse.empty();
+        public PaginationAwareResponse<String> readPage(JsonApiRequest request) {
+            return PaginationAwareResponse.empty();
         }
 
     }
@@ -240,8 +240,8 @@ public class OperationsRegistryTests {
     private static class TestReadToManyRelationshipOperation implements ReadToManyRelationshipOperation<String, String> {
 
         @Override
-        public CursorPageableResponse<String> readMany(JsonApiRequest relationshipRequest) {
-            return CursorPageableResponse.empty();
+        public PaginationAwareResponse<String> readMany(JsonApiRequest relationshipRequest) {
+            return PaginationAwareResponse.empty();
         }
     }
 

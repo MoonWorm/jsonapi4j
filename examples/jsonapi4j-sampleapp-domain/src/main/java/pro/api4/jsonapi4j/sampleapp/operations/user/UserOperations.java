@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -8,7 +9,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -66,17 +67,33 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             }
     )
     @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
         if (request.getFilters().containsKey(ID_FILTER_NAME)) {
-            return CursorPageableResponse.fromItemsNotPageable(
+            return PaginationAwareResponse.fromItemsNotPageable(
                     userDb.readByIds(request.getFilters().get(ID_FILTER_NAME))
             );
         } else {
-            UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
-            return CursorPageableResponse.fromItemsAndCursor(
-                    pagedResult.getEntities(),
-                    pagedResult.getCursor()
-            );
+            if (StringUtils.isNotBlank(request.getCursor())) {
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
+                return PaginationAwareResponse.cursorAware(
+                        pagedResult.getEntities(),
+                        pagedResult.getCursor()
+                );
+            } else if (request.getLimit() != null && request.getOffset() != null) {
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getLimit(), request.getOffset());
+                return PaginationAwareResponse.limitOffsetAware(
+                        pagedResult.getEntities(),
+                        pagedResult.getTotalItems()
+                );
+            } else {
+                // fallback to 'null' cursor pagination
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(null);
+                return PaginationAwareResponse.cursorAware(
+                        pagedResult.getEntities(),
+                        pagedResult.getCursor()
+                );
+            }
+
         }
     }
 

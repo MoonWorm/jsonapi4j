@@ -14,7 +14,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
@@ -60,8 +60,8 @@ public class UserCitizenshipsOperations implements
             }
     )
     @Override
-    public CursorPageableResponse<DownstreamCountry> readMany(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<DownstreamCountry> readMany(JsonApiRequest request) {
+        return PaginationAwareResponse.inMemoryCursorAware(
                 ReadMultipleCountriesOperation.readCountriesByIds(
                         userDb.getUserCitizenships(request.getResourceId()),
                         client
@@ -72,8 +72,8 @@ public class UserCitizenshipsOperations implements
     }
 
     @Override
-    public Map<UserDbEntity, CursorPageableResponse<DownstreamCountry>> readBatches(JsonApiRequest request,
-                                                                                    List<UserDbEntity> users) {
+    public Map<UserDbEntity, PaginationAwareResponse<DownstreamCountry>> readBatches(JsonApiRequest request,
+                                                                                     List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
         Map<String, List<String>> usersCitizenshipsMap = userDb.getUsersCitizenships(userIds);
@@ -94,7 +94,7 @@ public class UserCitizenshipsOperations implements
         return usersCitizenshipsMap.entrySet().stream().collect(
                 Collectors.toMap(
                         userId -> usersGroupedById.get(userId.getKey()),
-                        e -> CursorPageableResponse.fromItemsPageable(
+                        e -> PaginationAwareResponse.inMemoryCursorAware(
                                 e.getValue().stream().map(countries::get).filter(Objects::nonNull).toList()
                         )
                 )

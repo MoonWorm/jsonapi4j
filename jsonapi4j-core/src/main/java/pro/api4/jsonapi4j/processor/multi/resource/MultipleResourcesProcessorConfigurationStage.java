@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext.ResourceProcessorContextBuilder;
@@ -49,7 +49,7 @@ public class MultipleResourcesProcessorConfigurationStage<REQUEST> {
      * Specifies related to primary resource data provider. Moves processor to the second configuration stage -
      * JSON:API spec configuration settings.
      *
-     * @param dataSupplier      data supplier function, returns {@link CursorPageableResponse}, accepts parameter of type REQUEST
+     * @param dataSupplier      data supplier function, returns {@link PaginationAwareResponse}, accepts parameter of type REQUEST
      * @param <DATA_SOURCE_DTO> data source dto type, usually represents intermediate dto type of data source service
      * @return the second configuration state - {@link SingleResourceJsonApiConfigurationStage}
      */

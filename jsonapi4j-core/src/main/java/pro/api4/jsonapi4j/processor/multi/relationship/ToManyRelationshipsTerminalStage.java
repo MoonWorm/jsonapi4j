@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors.DataPreRetrievalPhase;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
@@ -72,10 +72,10 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
             }
         }
 
-        CursorPageableResponse<DATA_SOURCE_DTO> cursorPageableResponse = retrieveData(effectiveRequest);
+        PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse = retrieveData(effectiveRequest);
 
         // return if downstream response is null or inbound access is not allowed or the response is null
-        if (cursorPageableResponse == null) {
+        if (paginationAwareResponse == null) {
             // top-level links
             LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null, null);
             // top-level meta
@@ -86,9 +86,9 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // data
         List<ResourceIdentifierObject> data = null;
-        if (cursorPageableResponse.getItems() != null) {
+        if (paginationAwareResponse.getItems() != null) {
             data = new ArrayList<>();
-            for (DATA_SOURCE_DTO dataSourceDto : cursorPageableResponse.getItems()) {
+            for (DATA_SOURCE_DTO dataSourceDto : paginationAwareResponse.getItems()) {
                 // id and type
                 IdAndType idAndType = jsonApiMembersResolver.resolveResourceTypeAndId(dataSourceDto);
                 // resource identifier meta
@@ -106,11 +106,11 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // top-level links
         LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(
                 effectiveRequest,
-                cursorPageableResponse.getItems(),
-                cursorPageableResponse.getNextCursor()
+                paginationAwareResponse.getItems(),
+                paginationAwareResponse.getPaginationContext()
         );
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, cursorPageableResponse.getItems());
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, paginationAwareResponse.getItems());
 
         DOC doc = docSupplier.get(data, docLinks, docMeta);
 
@@ -121,7 +121,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
-                            cursorPageableResponse,
+                            paginationAwareResponse,
                             doc,
                             jsonApiContext,
                             plugin.getInfo()
@@ -144,7 +144,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         return toToManyRelationshipsDoc(ToManyRelationshipsDoc::new);
     }
 
-    private CursorPageableResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {
+    private PaginationAwareResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {
         return DataRetrievalUtil.retrieveDataNullable(() -> dataSupplier.get(req));
     }
 

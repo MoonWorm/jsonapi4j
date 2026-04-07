@@ -30,7 +30,7 @@ import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipProcess
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
-import pro.api4.jsonapi4j.response.CursorPageableResponse;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -228,8 +228,8 @@ public class JsonApi4j {
             ResourceType resourceType,
             RelationshipName relationshipName
     ) {
-        return (req, dtos, nextCursor) -> {
-            LinksObject linksObject = toManyRelationshipCasted.resolveRelationshipLinks(req, dtos, nextCursor);
+        return (req, dtos, paginationContext) -> {
+            LinksObject linksObject = toManyRelationshipCasted.resolveRelationshipLinks(req, dtos, paginationContext);
             if (linksObject == Relationship.NOT_IMPLEMENTED_LINKS_STUB) {
                 return ToManyRelationshipLinksDefaultResolvers.defaultLinksResolver(
                         resourceType,
@@ -237,7 +237,7 @@ public class JsonApi4j {
                         relationshipName,
                         resourceTypeStr -> new ResourceType(toManyRelationshipCasted.resolveResourceIdentifierType(resourceTypeStr)),
                         toManyRelationshipCasted::resolveResourceIdentifierId
-                ).resolve(req, dtos, nextCursor);
+                ).resolve(req, dtos, paginationContext);
             }
             return linksObject;
         };
@@ -510,7 +510,7 @@ public class JsonApi4j {
                             .build();
                     return readByIdExecutable.readById(readByIdRequest);
                 }).toList();
-                return CursorPageableResponse.fromItemsNotPageable(result);
+                return PaginationAwareResponse.fromItemsNotPageable(result);
             };
         }
 
@@ -562,12 +562,12 @@ public class JsonApi4j {
                 ResourceType resourceType,
                 Resource<DATA_SOURCE_DTO> resourceConfig
         ) {
-            return (req, dtos, nextCursor) -> {
-                LinksObject linksObject = resourceConfig.resolveTopLevelLinksForMultiResourcesDoc(req, dtos, nextCursor);
+            return (req, dtos, paginationContext) -> {
+                LinksObject linksObject = resourceConfig.resolveTopLevelLinksForMultiResourcesDoc(req, dtos, paginationContext);
                 if (linksObject == Resource.NOT_IMPLEMENTED_LINKS_STUB) {
                     return MultiResourcesDocLinksDefaultResolvers.<JsonApiRequest, DATA_SOURCE_DTO>defaultTopLevelLinksResolver(
                             resourceType
-                    ).resolve(req, dtos, nextCursor);
+                    ).resolve(req, dtos, paginationContext);
                 }
                 return linksObject;
             };
