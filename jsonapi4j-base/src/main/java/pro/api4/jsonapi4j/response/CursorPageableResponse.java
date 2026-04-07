@@ -87,15 +87,15 @@ public class CursorPageableResponse<DATA_SOURCE_DTO> {
      */
     public static <T> CursorPageableResponse<T> fromItemsPageable(List<T> items,
                                                                   String cursorEncoded,
-                                                                  int defaultLimit) {
+                                                                  long defaultLimit) {
         if (items == null) {
             return new CursorPageableResponse<>(null, null);
         } else {
             LimitOffsetToCursorAdapter adapter = new LimitOffsetToCursorAdapter(cursorEncoded).withDefaultLimit(defaultLimit);
             LimitAndOffset limitAndOffset = adapter.decodeLimitAndOffset();
-            int from = Math.min(limitAndOffset.getOffset(), items.size());
-            int to = Math.min(limitAndOffset.getOffset() + limitAndOffset.getLimit(), items.size());
-            List<T> itemsTruncated = items.subList(from, to);
+            long from = Math.min(limitAndOffset.getOffset(), items.size());
+            long to = Math.min(limitAndOffset.getOffset() + limitAndOffset.getLimit(), items.size());
+            List<T> itemsTruncated = items.subList((int) from, (int) to);
             return new CursorPageableResponse<>(
                     itemsTruncated,
                     adapter.nextCursor(limitAndOffset, items.size())
@@ -104,7 +104,7 @@ public class CursorPageableResponse<DATA_SOURCE_DTO> {
     }
 
     /**
-     * Variation of {@link #fromItemsPageable(List, String, int)} with default limit set to
+     * Variation of {@link #fromItemsPageable(List, String, long)} with default limit set to
      * {@link LimitOffsetToCursorAdapter#DEFAULT_LIMIT}.
      *
      * @param items         list of downstream dtos (relatively small amount)
@@ -118,7 +118,7 @@ public class CursorPageableResponse<DATA_SOURCE_DTO> {
     }
 
     /**
-     * Variation of {@link #fromItemsPageable(List, String, int)} with <code>null</code> cursor.
+     * Variation of {@link #fromItemsPageable(List, String, long)} with <code>null</code> cursor.
      * Can be used for creation of the first page only or when we want to expose only first N elements
      * for some reason.
      *
@@ -128,12 +128,12 @@ public class CursorPageableResponse<DATA_SOURCE_DTO> {
      * @return an instance of {@link CursorPageableResponse}
      */
     public static <T> CursorPageableResponse<T> fromItemsPageable(List<T> items,
-                                                                  int defaultLimit) {
+                                                                  long defaultLimit) {
         return fromItemsPageable(items, null, defaultLimit);
     }
 
     /**
-     * Variation of {@link #fromItemsPageable(List, String, int)} with <code>null</code> cursor default limit set to
+     * Variation of {@link #fromItemsPageable(List, String, long)} with <code>null</code> cursor default limit set to
      * {@link LimitOffsetToCursorAdapter#DEFAULT_LIMIT}.
      * Can be used for creation of the first page only or when we want to expose only first N elements
      * for some reason (with default value).

@@ -155,11 +155,11 @@ public class CursorPageableResponseTests {
         CursorPageableResponse<String> response = CursorPageableResponse.fromItemsPageable(items);
 
         // then
-        assertThat(response.getItems()).hasSize(DEFAULT_LIMIT);
+        assertThat(response.getItems()).hasSize((int) DEFAULT_LIMIT);
     }
 
-    private static List<String> generateItems(int count) {
-        return IntStream.range(0, count)
+    private static List<String> generateItems(long count) {
+        return IntStream.range(0, (int) count)
                 .mapToObj(i -> "item-" + i)
                 .toList();
     }
