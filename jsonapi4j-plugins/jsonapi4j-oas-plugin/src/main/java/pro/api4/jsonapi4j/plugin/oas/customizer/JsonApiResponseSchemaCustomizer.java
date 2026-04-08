@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.NoLinkageMeta;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
+import pro.api4.jsonapi4j.model.document.LinkObject;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -40,16 +41,17 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private void registerLinksObjectSchema(OpenAPI openApi) {
-        Schema<?> linksObjectSchema = generateSchemaFromType(LinksObject.class);
-        ((Schema) linksObjectSchema.getProperties().get(LinksObject.SELF_FIELD))
-                .example("http://example.com/users")
-                .description("Request self-pointing link");
-        ((Schema) linksObjectSchema.getProperties().get(LinksObject.NEXT_FIELD))
-                .example("http://example.com/users?page[cursor]=xyz")
-                .description("Link pointing to the next page of resources (when applicable)");
-        ((Schema) linksObjectSchema.getProperties().get(LinksObject.RELATED_FIELD))
-                .example("http://example.com/users/123")
-                .description("Related resource link (when applicable)");
+        Schema<Object> linkValueSchema = new Schema<>();
+        linkValueSchema.oneOf(List.of(
+                new Schema<String>().type("string").description("A URL string"),
+                generateSchemaFromType(LinkObject.class).required(List.of("href"))
+        ));
+
+        Schema<Object> linksObjectSchema = new Schema<>();
+        linksObjectSchema.setName(LinksObject.class.getSimpleName());
+        linksObjectSchema.setType("object");
+        linksObjectSchema.setDescription("A JSON:API links object. May contain additional custom links beyond the standard ones.");
+        linksObjectSchema.setAdditionalProperties(linkValueSchema);
         registerSchemaIfNotExists(linksObjectSchema, openApi);
     }
 
