@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
