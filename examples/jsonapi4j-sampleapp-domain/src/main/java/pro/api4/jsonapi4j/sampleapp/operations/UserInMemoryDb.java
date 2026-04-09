@@ -125,10 +125,10 @@ public class UserInMemoryDb implements UserDb {
             updatedUser = updatedUser.withFirstName(firstName);
         }
         if (StringUtils.isNotBlank(lastName)) {
-            updatedUser = updatedUser.withFirstName(lastName);
+            updatedUser = updatedUser.withLastName(lastName);
         }
         if (StringUtils.isNotBlank(email)) {
-            updatedUser = updatedUser.withFirstName(email);
+            updatedUser = updatedUser.withEmail(email);
         }
         if (StringUtils.isNotBlank(creditCardNumber)) {
             updatedUser = updatedUser.withCreditCardNumber(creditCardNumber);

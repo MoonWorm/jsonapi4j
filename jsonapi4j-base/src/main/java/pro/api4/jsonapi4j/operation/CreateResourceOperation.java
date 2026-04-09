@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.function.Consumer;
 
@@ -26,7 +26,8 @@ import java.util.function.Consumer;
 public interface CreateResourceOperation<RESOURCE_DTO> extends ResourceOperation {
 
     String CREATE_METHOD_NAME = "create";
-    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {};
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
+    };
 
     /**
      * Create a new resource: attributes section with relationships or without.

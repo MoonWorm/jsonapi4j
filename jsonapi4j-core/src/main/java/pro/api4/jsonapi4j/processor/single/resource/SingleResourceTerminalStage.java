@@ -84,7 +84,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                                     Map.Entry::getValue
                             ));
                 },
-                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) ResourceObject::new,
+                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) (id, type, attributes, relationships, links, meta) -> new ResourceObject<>(id, null, type, attributes, relationships, links, meta),
                 (SingleResourceDocSupplier<ResourceObject<ATTRIBUTES, Map<String, Object>>, SingleResourceDoc<ResourceObject<ATTRIBUTES, Map<String, Object>>>>) SingleResourceDoc::new
         );
     }

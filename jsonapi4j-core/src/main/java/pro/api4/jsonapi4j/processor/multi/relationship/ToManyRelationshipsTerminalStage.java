@@ -96,6 +96,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 // compose resource identifier
                 ResourceIdentifierObject resourceIdentifierObject = new ResourceIdentifierObject(
                         idAndType.getId(),
+                        null,
                         idAndType.getType().getType(),
                         resourceIdentifierMeta
                 );

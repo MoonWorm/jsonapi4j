@@ -4,9 +4,13 @@ import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
-import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -15,6 +19,8 @@ import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
+import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
+import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +37,8 @@ public class UserPlaceOfBirthOperations implements
 
     private final CountriesClient client;
     private final UserDb userDb;
+    private final JsonApi4jDefaultValidator jsonApiValidator = new JsonApi4jDefaultValidator();
+    private final CountryInputParamsValidator countryValidator;
 
     @OasOperationInfo(
             securityConfig = @OasOperationInfo.SecurityConfig(
@@ -78,6 +86,35 @@ public class UserPlaceOfBirthOperations implements
                         userId -> usersGroupedById.get(userId.getKey()),
                         e -> countries.get(e.getValue())
                 )
+        );
+    }
+
+    @AccessControl(
+            authenticated = Authenticated.AUTHENTICATED,
+            ownership = @AccessControlOwnership(
+                    ownerIdExtractor = ResourceIdFromUrlPathExtractor.class
+            )
+    )
+    @Override
+    public void update(JsonApiRequest request) {
+        var payload = request.getToOneRelationshipDocPayload();
+        if (payload.getData() == null) {
+            userDb.deleteUser(request.getResourceId());
+        } else {
+            userDb.updateUserPlaceOfBirth(
+                    request.getResourceId(),
+                    payload.getData().getId()
+            );
+        }
+    }
+
+    @Override
+    public void validateUpdateToOne(JsonApiRequest request) {
+        ToOneRelationshipOperations.super.validateUpdateToOne(request);
+        jsonApiValidator.validateToOneRelationshipDoc(
+                request.getToOneRelationshipDocPayload(),
+                countryValidator::validateCountryId,
+                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
         );
     }
 

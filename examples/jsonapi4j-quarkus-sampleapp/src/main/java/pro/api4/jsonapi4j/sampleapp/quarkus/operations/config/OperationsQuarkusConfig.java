@@ -44,9 +44,10 @@ public class OperationsQuarkusConfig {
     @Produces
     public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
             CountriesClient client,
-            UserDb userDb
+            UserDb userDb,
+            CountryInputParamsValidator validator
     ) {
-        return new UserPlaceOfBirthOperations(client, userDb);
+        return new UserPlaceOfBirthOperations(client, userDb, validator);
     }
 
     @ApplicationScoped

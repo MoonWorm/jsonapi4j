@@ -12,14 +12,17 @@ public class UserInputParamsValidatorJsr380Impl implements UserInputParamsValida
 
     @Override
     public void validateFirstName(String firstName) {
+        // can be empty
     }
 
     @Override
     public void validateLastName(String lastName) {
+        // can be empty
     }
 
     @Override
     public void validateEmail(String email) {
+        // can be empty
     }
 
 }

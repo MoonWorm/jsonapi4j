@@ -4,11 +4,11 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
+import static org.hamcrest.Matchers.equalTo;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 public abstract class AccessControlOperationsTests {
@@ -154,6 +154,61 @@ public abstract class AccessControlOperationsTests {
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-byids-ac-response.json")));
+    }
+
+    @Test
+    public void test_updateUser_acDenied_nonOwner() {
+        // user 2 tries to update user 1 — ownership check should deny
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": {
+                            "id": "1",
+                            "type": "users",
+                            "attributes": {
+                              "email": "hacked@evil.com"
+                            }
+                          }
+                        }
+                        """)
+                .patch("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(202);
+
+        // verify user 1's email was NOT changed
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.email", equalTo("john@doe.com"));
+    }
+
+    @Test
+    public void test_deleteUser_acDenied_nonAdmin() {
+        // non-admin user tries to delete — admin tier check should deny
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "3")
+                .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(202);
+
+        // verify user 3 still exists
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "3")
+                .pathParam("userId", "3")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo("3"));
     }
 
 }

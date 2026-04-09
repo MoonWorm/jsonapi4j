@@ -81,7 +81,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipObject(
-                                List.of(new ResourceIdentifierObject("2", "secondtype")),
+                                List.of(new ResourceIdentifierObject("2", null, "secondtype", null)),
                                 LinksObject.builder().self("http://self.link").build()
                         );
                     })
@@ -93,7 +93,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipObject(
-                                List.of(new ResourceIdentifierObject("3", "thirdtype")),
+                                List.of(new ResourceIdentifierObject("3", null, "thirdtype", null)),
                                 LinksObject.builder().self("http://self2.link").build()
                         );
                     })
@@ -105,7 +105,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipObject(
-                                List.of(new ResourceIdentifierObject("4", "fourthtype")),
+                                List.of(new ResourceIdentifierObject("4", null, "fourthtype", null)),
                                 LinksObject.builder().self("http://self3.link").build()
                         );
                     })
@@ -117,7 +117,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipObject(
-                                new ResourceIdentifierObject("5", "fifthtype"),
+                                new ResourceIdentifierObject("5", null, "fifthtype", null),
                                 LinksObject.builder().self("http://self4.link").build()
                         );
                     })
@@ -129,7 +129,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipObject(
-                                new ResourceIdentifierObject("6", "sixthtype"),
+                                new ResourceIdentifierObject("6", null, "sixthtype", null),
                                 LinksObject.builder().self("http://self5.link").build()
                         );
                     })
@@ -141,7 +141,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipObject(
-                                new ResourceIdentifierObject("7", "seventhtype"),
+                                new ResourceIdentifierObject("7", null, "seventhtype", null),
                                 LinksObject.builder().self("http://self6.link").build()
                         );
                     })
@@ -153,9 +153,9 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return Map.of(
-                                1, new ToOneRelationshipObject(new ResourceIdentifierObject("8", "eitthtype")),
-                                2, new ToOneRelationshipObject(new ResourceIdentifierObject("9", "eitthtype")),
-                                3, new ToOneRelationshipObject(new ResourceIdentifierObject("10", "eitthtype"))
+                                1, new ToOneRelationshipObject(new ResourceIdentifierObject("8", null, "eitthtype", null)),
+                                2, new ToOneRelationshipObject(new ResourceIdentifierObject("9", null, "eitthtype", null)),
+                                3, new ToOneRelationshipObject(new ResourceIdentifierObject("10", null, "eitthtype", null))
                         );
                     })
                     .batchToManyRelationshipResolver(REL8_MULTI_BATCH, (req, dto) -> {
@@ -169,22 +169,22 @@ public class ConcurrentExecutorTests {
                                 1,
                                 new ToManyRelationshipObject(
                                         List.of(
-                                                new ResourceIdentifierObject("11", "eleventhtype"),
-                                                new ResourceIdentifierObject("12", "eleventhtype")
+                                                new ResourceIdentifierObject("11", null, "eleventhtype", null),
+                                                new ResourceIdentifierObject("12", null, "eleventhtype", null)
                                         )
                                 ),
                                 2,
                                 new ToManyRelationshipObject(
                                         List.of(
-                                                new ResourceIdentifierObject("13", "eleventhtype"),
-                                                new ResourceIdentifierObject("14", "eleventhtype")
+                                                new ResourceIdentifierObject("13", null, "eleventhtype", null),
+                                                new ResourceIdentifierObject("14", null, "eleventhtype", null)
                                         )
                                 ),
                                 3,
                                 new ToManyRelationshipObject(
                                         List.of(
-                                                new ResourceIdentifierObject("15", "eleventhtype"),
-                                                new ResourceIdentifierObject("16", "eleventhtype")
+                                                new ResourceIdentifierObject("15", null, "eleventhtype", null),
+                                                new ResourceIdentifierObject("16", null, "eleventhtype", null)
                                         )
                                 )
                         );
@@ -196,7 +196,7 @@ public class ConcurrentExecutorTests {
                             new ResourceSupplier<Integer, MyRelationships, ResourceObject<Integer, MyRelationships>>() {
                                 @Override
                                 public ResourceObject<Integer, MyRelationships> get(String id, String type, Integer att, MyRelationships rel, LinksObject links, Object meta) {
-                                    return new ResourceObject<>(id, type, att, rel, links, meta);
+                                    return new ResourceObject<>(id, null, type, att, rel, links, meta);
                                 }
                             },
                             new MultipleResourcesDocSupplier<ResourceObject<Integer, MyRelationships>, MultipleResourcesDoc<ResourceObject<Integer, MyRelationships>>>() {
@@ -240,7 +240,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipsDoc(
-                                List.of(new ResourceIdentifierObject("2", "secondtype")),
+                                List.of(new ResourceIdentifierObject("2", null, "secondtype", null)),
                                 LinksObject.builder().self("http://self.link").build()
                         );
                     })
@@ -252,7 +252,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipsDoc(
-                                List.of(new ResourceIdentifierObject("3", "thirdtype")),
+                                List.of(new ResourceIdentifierObject("3", null, "thirdtype", null)),
                                 LinksObject.builder().self("http://self2.link").build()
                         );
                     })
@@ -264,7 +264,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipsDoc(
-                                List.of(new ResourceIdentifierObject("4", "fourthtype")),
+                                List.of(new ResourceIdentifierObject("4", null, "fourthtype", null)),
                                 LinksObject.builder().self("http://self3.link").build()
                         );
                     })
@@ -276,7 +276,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipDoc(
-                                new ResourceIdentifierObject("5", "fifthtype"),
+                                new ResourceIdentifierObject("5", null, "fifthtype", null),
                                 LinksObject.builder().self("http://self4.link").build()
                         );
                     })
@@ -288,7 +288,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipDoc(
-                                new ResourceIdentifierObject("6", "sixthtype"),
+                                new ResourceIdentifierObject("6", null, "sixthtype", null),
                                 LinksObject.builder().self("http://self5.link").build()
                         );
                     })
@@ -300,7 +300,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipDoc(
-                                new ResourceIdentifierObject("7", "seventh"),
+                                new ResourceIdentifierObject("7", null, "seventh", null),
                                 LinksObject.builder().self("http://self6.link").build()
                         );
                     })
@@ -313,7 +313,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToOneRelationshipDoc(
-                                new ResourceIdentifierObject("8", "eight"),
+                                new ResourceIdentifierObject("8", null, "eight", null),
                                 LinksObject.builder().self("http://self7.link").build()
                         );
                     })
@@ -325,7 +325,7 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return new ToManyRelationshipsDoc(
-                                List.of(new ResourceIdentifierObject("9", "nineth")),
+                                List.of(new ResourceIdentifierObject("9", null, "nineth", null)),
                                 LinksObject.builder().self("http://self8.link").build()
                         );
                     })
@@ -336,7 +336,7 @@ public class ConcurrentExecutorTests {
                             new ResourceSupplier<Integer, MyRelationships, ResourceObject<Integer, MyRelationships>>() {
                                 @Override
                                 public ResourceObject<Integer, MyRelationships> get(String id, String type, Integer att, MyRelationships rel, LinksObject links, Object meta) {
-                                    return new ResourceObject<>(id, type, att, rel, links, meta);
+                                    return new ResourceObject<>(id, null, type, att, rel, links, meta);
                                 }
                             },
                             new SingleResourceDocSupplier<ResourceObject<Integer, MyRelationships>, SingleResourceDoc<ResourceObject<Integer, MyRelationships>>>() {

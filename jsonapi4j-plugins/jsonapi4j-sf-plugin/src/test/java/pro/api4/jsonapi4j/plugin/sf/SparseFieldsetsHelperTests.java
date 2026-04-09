@@ -54,7 +54,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.b.c.d", "non.existing")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -71,7 +71,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.b.c.d", "non.existing")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -98,7 +98,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.b.c", "non.existing")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -125,7 +125,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, Collections.emptyList()))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -143,7 +143,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("s")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -160,7 +160,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("a")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -180,7 +180,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("s", "a.b.c")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -201,7 +201,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.b.c")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);
@@ -219,7 +219,7 @@ public class SparseFieldsetsHelperTests {
         JsonApiRequest request = new JsonApiRequestBuilder()
                 .fieldSets(Map.of("orders", List.of("status")))
                 .build();
-        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, RESOURCE_TYPE, new Att(), null);
+        ResourceObject<Att, ?> resourceObject = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Att(), null, null, null);
 
         // when
         helper.sparseFieldsets(request, resourceObject);

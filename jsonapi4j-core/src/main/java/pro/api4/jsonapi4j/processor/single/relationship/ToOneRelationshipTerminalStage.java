@@ -86,6 +86,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // compose data
         ResourceIdentifierObject data = new ResourceIdentifierObject(
                 idAndType.getId(),
+                null,
                 idAndType.getType().getType(),
                 resourceMeta
         );
