@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin.sf;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
@@ -20,6 +21,7 @@ class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisit
     @Override
     public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
             REQUEST request,
+            OperationMeta meta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,

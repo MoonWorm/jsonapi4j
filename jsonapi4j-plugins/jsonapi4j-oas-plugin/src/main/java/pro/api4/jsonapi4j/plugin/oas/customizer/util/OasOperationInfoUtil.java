@@ -3,10 +3,10 @@ package pro.api4.jsonapi4j.plugin.oas.customizer.util;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.operation.OperationType;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.operation.RegisteredOperation;
 
 import java.util.Set;
 
@@ -24,7 +24,7 @@ public final class OasOperationInfoUtil {
 
     }
 
-    public static Info resolveOperationOasInfo(RegisteredOperation.OperationMeta operationMeta,
+    public static Info resolveOperationOasInfo(OperationMeta operationMeta,
                                                String customResourceNameSingle,
                                                String customResourceNamePlural) {
         OperationType operationType = operationMeta.getOperationType();

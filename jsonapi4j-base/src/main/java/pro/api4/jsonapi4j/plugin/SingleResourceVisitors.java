@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
 
 public interface SingleResourceVisitors {
 
     default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             SingleResourceJsonApiContext<REQUEST, ?, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
@@ -19,6 +21,7 @@ public interface SingleResourceVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             DATA_SOURCE_DTO dataSourceDto,
             SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
@@ -28,6 +31,7 @@ public interface SingleResourceVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             DATA_SOURCE_DTO dataSourceDto,
             DOC doc,
             SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
@@ -38,6 +42,7 @@ public interface SingleResourceVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             DATA_SOURCE_DTO dataSourceDto,
             DOC doc,
             SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,

@@ -3,10 +3,14 @@ package pro.api4.jsonapi4j.plugin.ac;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.operation.OperationMeta;
+import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
@@ -32,6 +36,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
 
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
+                                                                 OperationMeta operationMeta,
                                                                  MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
                                                                  JsonApiPluginInfo pluginInfo) {
 
@@ -43,19 +48,25 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
             log.info("Inbound Access is allowed for a request {}. Proceeding...", request);
             return DataPreRetrievalPhase.doNothing();
         } else {
-            log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
-            MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
-                    null,
-                    context.getTopLevelLinksResolver().resolve(request, null, null),
-                    context.getTopLevelMetaResolver().resolve(request, null)
-            );
-            return DataPreRetrievalPhase.returnDoc(doc);
+            if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
+                log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
+                MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
+                        null,
+                        context.getTopLevelLinksResolver().resolve(request, null, null),
+                        context.getTopLevelMetaResolver().resolve(request, null)
+                );
+                return DataPreRetrievalPhase.returnDoc(doc);
+            } else {
+                log.info("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                throw new JsonApi4jException(403, DefaultErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
+            }
         }
     }
 
     @Override
     public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,

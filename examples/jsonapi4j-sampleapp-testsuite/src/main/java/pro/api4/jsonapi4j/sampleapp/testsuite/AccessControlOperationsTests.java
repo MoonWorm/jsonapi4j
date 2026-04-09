@@ -176,7 +176,7 @@ public abstract class AccessControlOperationsTests {
                         """)
                 .patch("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(403);
 
         // verify user 1's email was NOT changed
         given()
@@ -190,6 +190,92 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
+    public void test_updateCitizenships_acDenied_nonOwner() {
+        // user 2 tries to update user 1's citizenships — ownership check should deny
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": [
+                            { "type": "countries", "id": "TG" }
+                          ]
+                        }
+                        """)
+                .patch("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
+                .then()
+                .statusCode(403);
+
+        // verify user 1's citizenships were NOT changed (should still include US)
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.citizenships.read")
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
+                .then()
+                .statusCode(200)
+                .body("data[0].type", equalTo("countries"));
+    }
+
+    @Test
+    public void test_updatePlaceOfBirth_acDenied_nonOwner() {
+        // user 2 tries to update user 1's placeOfBirth — ownership check should deny
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": { "type": "countries", "id": "TG" }
+                        }
+                        """)
+                .patch("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
+                .then()
+                .statusCode(403);
+
+        // verify user 1's placeOfBirth was NOT changed (should still be US)
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo("US"));
+    }
+
+    @Test
+    public void test_updateRelatives_acDenied_nonOwner() {
+        // user 2 tries to update user 1's relatives — ownership check should deny
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": [
+                            { "type": "users", "id": "5", "meta": { "relationshipType": "BROTHER" } }
+                          ]
+                        }
+                        """)
+                .patch("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
+                .then()
+                .statusCode(403);
+
+        // verify user 1's relatives were NOT changed (should still have 2 relatives)
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
+                .then()
+                .statusCode(200)
+                .body("data.size()", equalTo(2));
+    }
+
+    @Test
     public void test_deleteUser_acDenied_nonAdmin() {
         // non-admin user tries to delete — admin tier check should deny
         given()
@@ -198,7 +284,7 @@ public abstract class AccessControlOperationsTests {
                 .pathParam("userId", "3")
                 .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(403);
 
         // verify user 3 still exists
         given()

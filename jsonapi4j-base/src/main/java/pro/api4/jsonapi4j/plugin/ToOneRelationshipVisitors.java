@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipJsonApiContext;
 
 public interface ToOneRelationshipVisitors {
 
     default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             ToOneRelationshipJsonApiContext<REQUEST, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
@@ -19,6 +21,7 @@ public interface ToOneRelationshipVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             DATA_SOURCE_DTO dataSourceDto,
             ToOneRelationshipDoc doc,
             ToOneRelationshipJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,

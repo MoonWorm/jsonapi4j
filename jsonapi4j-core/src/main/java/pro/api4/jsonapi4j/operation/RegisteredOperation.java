@@ -1,10 +1,11 @@
 package pro.api4.jsonapi4j.operation;
 
-import lombok.*;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-
-import java.util.Map;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -14,33 +15,6 @@ import java.util.Map;
 public class RegisteredOperation<T extends ResourceOperation> {
 
     private final T operation;
-    private final Class<?> registeredAs;
-    private final ResourceType resourceType;
-    private final RelationshipName relationshipName;
-    private final OperationType operationType;
-    private final Map<String, Object> pluginInfo;
-
-    @Builder
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    @Getter
-    @ToString
-    @EqualsAndHashCode
-    public static class OperationMeta {
-        private final Class<?> registeredAs;
-        private final ResourceType resourceType;
-        private final RelationshipName relationshipName;
-        private final OperationType operationType;
-        private final Map<String, Object> pluginInfo;
-    }
-
-    public OperationMeta getOperationMeta() {
-        return OperationMeta.builder()
-                .registeredAs(this.registeredAs)
-                .resourceType(this.resourceType)
-                .relationshipName(this.relationshipName)
-                .operationType(this.operationType)
-                .pluginInfo(this.pluginInfo)
-                .build();
-    }
+    private final OperationMeta operationMeta;
 
 }

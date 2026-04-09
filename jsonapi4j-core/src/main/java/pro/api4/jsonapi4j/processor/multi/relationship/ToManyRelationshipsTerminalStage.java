@@ -58,6 +58,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             jsonApiContext,
                             plugin.getInfo()
                     );
@@ -122,6 +123,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             paginationAwareResponse,
                             doc,
                             jsonApiContext,

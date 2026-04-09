@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.operation.OperationMeta;
+import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
@@ -12,6 +14,7 @@ public interface ToManyRelationshipVisitors {
 
     default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             ToManyRelationshipsJsonApiContext<REQUEST, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
@@ -20,6 +23,7 @@ public interface ToManyRelationshipVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             ToManyRelationshipsDoc doc,
             ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,

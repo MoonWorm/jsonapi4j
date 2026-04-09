@@ -263,12 +263,13 @@ public class JsonApi4j {
             RegisteredRelationship<?> registeredRelationship) {
         List<PluginSettings> result = new ArrayList<>();
         for (JsonApi4jPlugin plugin : plugins) {
+            OperationMeta operationMeta = registeredOperation.getOperationMeta();
             JsonApiPluginInfo info = new JsonApiPluginInfo(
-                    registeredOperation.getPluginInfo().get(plugin.pluginName()),
+                    operationMeta.getPluginInfo().get(plugin.pluginName()),
                     registeredResource.getPluginInfo().get(plugin.pluginName()),
                     registeredRelationship != null ? registeredRelationship.getPluginInfo().get(plugin.pluginName()) : null
             );
-            result.add(PluginSettings.builder().plugin(plugin).info(info).build());
+            result.add(PluginSettings.builder().operationMeta(operationMeta).plugin(plugin).info(info).build());
         }
         return result.stream().sorted(Comparator.comparingInt(p -> p.getPlugin().precedence())).toList();
     }
@@ -862,7 +863,7 @@ public class JsonApi4j {
 
         private <RESOURCE_DTO> RelationshipRequestSupplier<JsonApiRequest, RESOURCE_DTO> getRelationshipRequestSupplier(
                 IdSupplier<RESOURCE_DTO> resourceIdSupplier,
-                RegisteredOperation.OperationMeta operationMeta,
+                OperationMeta operationMeta,
                 Consumer<JsonApiRequest> validator
         ) {
             return (originalRequest, dataSourceDto) -> {
@@ -932,9 +933,9 @@ public class JsonApi4j {
                             return executable.readMany(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
-                                    registeredOperation.getOperationType(),
-                                    registeredOperation.getResourceType(),
-                                    registeredOperation.getRelationshipName(),
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
                                     onfe
                             );
                         }
@@ -965,9 +966,9 @@ public class JsonApi4j {
                             executable.update(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
-                                    registeredOperation.getOperationType(),
-                                    registeredOperation.getResourceType(),
-                                    registeredOperation.getRelationshipName(),
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
                                     onfe
                             );
                         }
@@ -1030,9 +1031,9 @@ public class JsonApi4j {
                             return executable.readOne(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
-                                    registeredOperation.getOperationType(),
-                                    registeredOperation.getResourceType(),
-                                    registeredOperation.getRelationshipName(),
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
                                     onfe
                             );
                         }
@@ -1063,9 +1064,9 @@ public class JsonApi4j {
                             executable.update(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
-                                    registeredOperation.getOperationType(),
-                                    registeredOperation.getResourceType(),
-                                    registeredOperation.getRelationshipName(),
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
                                     onfe
                             );
                         }
