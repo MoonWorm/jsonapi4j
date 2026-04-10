@@ -12,6 +12,9 @@ cd:
   deduplicateResources: true
   httpConnectTimeoutMs: 5000
   httpTotalTimeoutMs: 10000
+  cache:
+    enabled: true
+    maxSize: 1000
   mapping:
     users: http://localhost:8080/jsonapi
     countries: http://localhost:8080/jsonapi

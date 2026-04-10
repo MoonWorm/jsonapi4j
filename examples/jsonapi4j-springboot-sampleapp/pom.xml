@@ -16,7 +16,6 @@
 
     <properties>
         <maven.compiler.release>23</maven.compiler.release>
-        <java.version>21</java.version>
 
         <spring-boot.version>3.4.0</spring-boot.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>

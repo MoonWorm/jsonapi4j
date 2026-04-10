@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
+import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 
@@ -23,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initExecutorService;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initObjectMapper;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
 
@@ -54,7 +56,9 @@ public class CompoundDocsFilter implements Filter {
                 cdProperties.propagation(),
                 cdProperties.deduplicateResources(),
                 cdProperties.httpConnectTimeoutMs(),
-                cdProperties.httpTotalTimeoutMs()
+                cdProperties.httpTotalTimeoutMs(),
+                cdProperties.cache() != null ? cdProperties.cache().enabled() : Boolean.parseBoolean(CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE),
+                cdProperties.cache() != null ? cdProperties.cache().maxSize() : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE)
         );
 
         log.info("Effective compound docs settings: {}", config);
@@ -62,11 +66,17 @@ public class CompoundDocsFilter implements Filter {
         if (config.isEnabled()) {
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
+
+            CompoundDocsResourceCache cache = (CompoundDocsResourceCache) filterConfig
+                    .getServletContext()
+                    .getAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME);
+
             resolver = new CompoundDocsResolver(
                     config,
                     domainUrlResolver,
                     objectMapper,
-                    executorService
+                    executorService,
+                    cache
             );
 
             log.info("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
