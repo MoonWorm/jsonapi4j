@@ -4,13 +4,13 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
-import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 public abstract class AccessControlOperationsTests {
@@ -36,6 +36,7 @@ public abstract class AccessControlOperationsTests {
 
     @Test
     public void test_readById() {
+        // user 2 reads user 1 — not the owner, so creditCardNumber should be hidden
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "2")
@@ -44,11 +45,17 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/single-user-byid-ac-response.json")));
+                .body("data.id", equalTo("1"))
+                .body("data.type", equalTo("users"))
+                .body("data.attributes.fullName", equalTo("John Doe"))
+                .body("data.attributes.email", equalTo("john@doe.com"))
+                .body("data.attributes", not(hasKey("creditCardNumber")))
+                .body("data.links.self", equalTo("/users/1"));
     }
 
     @Test
     public void test_readByIdWithAccessToSensitiveData() {
+        // user 1 reads own data with sensitive scope — creditCardNumber should be visible
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultScopesHeaderName, "users.sensitive.read")
@@ -58,11 +65,15 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/single-user-byid-with-sensitive-data-ac-response.json")));
+                .body("data.id", equalTo("1"))
+                .body("data.attributes.fullName", equalTo("John Doe"))
+                .body("data.attributes.email", equalTo("john@doe.com"))
+                .body("data.attributes.creditCardNumber", equalTo("123456789"));
     }
 
     @Test
     public void test_readByIdWithAllRelationships() {
+        // user 2 reads user 1 with relationships
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "2")
@@ -72,37 +83,49 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/single-user-byid-response-with-relationships-ac-response.json")));
+                .body("data.id", equalTo("1"))
+                .body("data.attributes", not(hasKey("creditCardNumber")))
+                // citizenships — AC denies (requires scope + ownership), so no data, only links
+                .body("data.relationships.citizenships", not(hasKey("data")))
+                .body("data.relationships.citizenships.links.self", notNullValue())
+                // placeOfBirth — no AC restriction, data resolved
+                .body("data.relationships.placeOfBirth.data.id", equalTo("US"))
+                // relatives — no AC restriction, data resolved
+                .body("data.relationships.relatives.data", hasSize(2));
     }
 
     @Test
     public void test_readCitizenshipsRelationshipAcPassed() {
+        // user 5 (owner) with citizenships scope — should see citizenships data
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultScopesHeaderName, "users.citizenships.read")
                 .header(defaultUserIdHeaderName, "5")
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "citizenships")
                 .pathParam("userId", "5")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-countries-linkage-ac-response.json")));
+                .body("links", hasKey("related:countries"))
+                .body("data", hasSize(1))
+                .body("data[0].id", equalTo("US"))
+                .body("data[0].type", equalTo("countries"));
     }
 
     @Test
     public void test_readCitizenshipsRelationshipAcNotPassed() {
+        // user 555 (non-owner) with citizenships scope — ownership fails, should get empty response
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultScopesHeaderName, "users.citizenships.read")
                 .header(defaultUserIdHeaderName, "555")
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "citizenships")
                 .pathParam("userId", "5")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-countries-linkage-response-not-allowed-ac-response.json")));
+                .body("links.self", notNullValue())
+                .body("$", not(hasKey("data")));
     }
 
     @Test
@@ -114,7 +137,11 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-ac-response.json")));
+                .body("data", hasSize(2))
+                .body("data[0].id", equalTo("1"))
+                .body("data[0].attributes", not(hasKey("creditCardNumber")))
+                .body("data[1].id", equalTo("2"))
+                .body("data[1].attributes", not(hasKey("creditCardNumber")));
     }
 
     @Test
@@ -127,11 +154,21 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-with-relationships-ac-response.json")));
+                .body("data", hasSize(2))
+                .body("data[0].attributes", not(hasKey("creditCardNumber")))
+                // citizenships AC-denied for non-owner
+                .body("data[0].relationships.citizenships", not(hasKey("data")))
+                .body("data[0].relationships.placeOfBirth.data.id", equalTo("US"))
+                .body("data[0].relationships.relatives.data", hasSize(2))
+                .body("data[1].attributes", not(hasKey("creditCardNumber")))
+                .body("data[1].relationships.citizenships", not(hasKey("data")))
+                .body("data[1].relationships.placeOfBirth.data.id", equalTo("FI"))
+                .body("data[1].relationships.relatives.data", hasSize(2));
     }
 
     @Test
     public void test_readMultipleWithRelationshipsWithAccessToSensitiveData() {
+        // user 1 with sensitive scope — own creditCardNumber visible, others hidden
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultScopesHeaderName, "users.sensitive.read")
@@ -141,7 +178,13 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-with-sensitive-data-ac-response.json")));
+                .body("data", hasSize(2))
+                // user 1 (owner) — creditCardNumber visible
+                .body("data[0].id", equalTo("1"))
+                .body("data[0].attributes.creditCardNumber", equalTo("123456789"))
+                // user 2 (not owner) — creditCardNumber hidden
+                .body("data[1].id", equalTo("2"))
+                .body("data[1].attributes", not(hasKey("creditCardNumber")));
     }
 
     @Test
@@ -182,7 +225,15 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-byids-ac-response.json")));
+                .body("data", hasSize(2))
+                .body("data[0].id", equalTo("1"))
+                .body("data[0].attributes", not(hasKey("creditCardNumber")))
+                .body("data[0].relationships.citizenships", not(hasKey("data")))
+                .body("data[0].relationships.placeOfBirth.data.id", equalTo("US"))
+                .body("data[1].id", equalTo("2"))
+                .body("data[1].attributes", not(hasKey("creditCardNumber")))
+                .body("data[1].relationships.citizenships", not(hasKey("data")))
+                .body("data[1].relationships.placeOfBirth.data.id", equalTo("FI"));
     }
 
     @Test

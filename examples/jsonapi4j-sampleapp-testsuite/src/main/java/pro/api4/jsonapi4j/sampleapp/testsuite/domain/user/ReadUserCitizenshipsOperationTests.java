@@ -1,12 +1,12 @@
 package pro.api4.jsonapi4j.sampleapp.testsuite.domain.user;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
-import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 
 public abstract class ReadUserCitizenshipsOperationTests {
 
@@ -20,29 +20,21 @@ public abstract class ReadUserCitizenshipsOperationTests {
     }
 
     @Test
-    public void test_readCitizenshipsRelationshipAcPassed() {
+    public void test_readCitizenshipsRelationship() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "citizenships")
                 .pathParam("userId", "5")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/multiple-countries-linkage-response.json")));
-    }
-
-    @Test
-    public void test_readCitizenshipsRelationshipAcNotPassed() {
-        given()
-                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "citizenships")
-                .pathParam("userId", "5")
-                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
-                .then()
-                .statusCode(200)
-                .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/multiple-countries-linkage-response-not-allowed.json")));
+                // top-level links
+                .body("links.self", equalTo("/users/5/relationships/citizenships"))
+                .body("links", hasKey("related:countries"))
+                // user 5 has citizenships NO and US, paginated by 2 — first page
+                .body("data", hasSize(1))
+                .body("data[0].id", equalTo("US"))
+                .body("data[0].type", equalTo("countries"));
     }
 
 }

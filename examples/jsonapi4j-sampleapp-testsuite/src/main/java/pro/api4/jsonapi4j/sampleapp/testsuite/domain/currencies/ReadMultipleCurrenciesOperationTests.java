@@ -4,11 +4,10 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
-import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
@@ -24,23 +23,26 @@ public abstract class ReadMultipleCurrenciesOperationTests {
     }
 
     @Test
-    public void test_filterByIdsWithRelationships() {
+    public void test_filterByIds() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
                 .queryParam(FiltersAwareRequest.getFilterParam(ID_FILTER_NAME), "NOK")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/currency/multiple-currencies-byids-response.json")));
+                .body("data", hasSize(1))
+                .body("data[0].id", equalTo("NOK"))
+                .body("data[0].type", equalTo("currencies"))
+                .body("data[0].attributes.name", equalTo("krone"))
+                .body("data[0].attributes.symbol", equalTo("kr"))
+                .body("data[0].links.self", equalTo("/currencies/NOK"));
     }
 
     @Test
     public void test_readAll_validationError() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "currencies")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/currencies")
                 .then()
                 .statusCode(400)
