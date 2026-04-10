@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
@@ -481,5 +482,120 @@ class CachingCompoundDocsFetcherTests {
         assertThatThrownBy(() -> new CachingCompoundDocsFetcher(null, cache))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("httpClient must not be null");
+    }
+
+    // --- Directives — no cache ---
+
+    @Test
+    void fetch_nullCache_returnsParsedDirectives() {
+        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        "max-age=300"));
+
+        var fetcher = new CachingCompoundDocsFetcher(httpClient, null);
+
+        BatchFetchResult result = fetcher.fetch(
+                DOMAIN_URL, "countries",
+                Set.of("FI"), Collections.emptySet(),
+                mockRequest, mockConfig, Map.of());
+
+        assertThat(result.directives()).isNotNull();
+        assertThat(result.directives().getMaxAge()).isEqualTo(300L);
+    }
+
+    // --- Directives — all cached ---
+
+    @Test
+    void fetch_allCached_directivesReflectMinRemainingTtl() {
+        stubConfigNoPropagation();
+        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyNO = CacheKey.of("countries", "NO");
+        cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
+        cache.put(keyNO, COUNTRY_NO_JSON, CacheControlParser.parse("max-age=60"));
+
+        var fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
+
+        BatchFetchResult result = fetcher.fetch(
+                DOMAIN_URL, "countries",
+                Set.of("FI", "NO"), Collections.emptySet(),
+                mockRequest, mockConfig, Map.of());
+
+        assertThat(result.directives()).isNotNull();
+        // min TTL should be <= 60 (from the shorter-lived entry)
+        assertThat(result.directives().getMaxAge()).isLessThanOrEqualTo(60L);
+        assertThat(result.directives().getMaxAge()).isGreaterThan(0L);
+    }
+
+    // --- Directives — none cached ---
+
+    @Test
+    void fetch_noneCached_directivesFromHttpResponse() {
+        stubConfigNoPropagation();
+        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        "max-age=120, no-cache"));
+
+        var fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
+
+        BatchFetchResult result = fetcher.fetch(
+                DOMAIN_URL, "countries",
+                Set.of("FI"), Collections.emptySet(),
+                mockRequest, mockConfig, Map.of());
+
+        assertThat(result.directives()).isNotNull();
+        assertThat(result.directives().getMaxAge()).isEqualTo(120L);
+        assertThat(result.directives().isNoCache()).isTrue();
+    }
+
+    // --- Directives — partial ---
+
+    @Test
+    void fetch_someCached_directivesMergedFromCacheAndHttp() {
+        stubConfigNoPropagation();
+        CacheKey keyFI = CacheKey.of("countries", "FI");
+        cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
+
+        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
+                any(), any(), any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
+                        "max-age=60"));
+
+        var fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
+
+        BatchFetchResult result = fetcher.fetch(
+                DOMAIN_URL, "countries",
+                Set.of("FI", "NO"), Collections.emptySet(),
+                mockRequest, mockConfig, Map.of());
+
+        CacheControlDirectives directives = result.directives();
+        assertThat(directives).isNotNull();
+        // Should be min of cache remaining TTL and HTTP max-age=60
+        assertThat(directives.getMaxAge()).isLessThanOrEqualTo(60L);
+    }
+
+    // --- Directives — no Cache-Control header ---
+
+    @Test
+    void fetch_noCacheControlHeader_directivesNonCacheable() {
+        stubConfigNoPropagation();
+        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        null));
+
+        var fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
+
+        BatchFetchResult result = fetcher.fetch(
+                DOMAIN_URL, "countries",
+                Set.of("FI"), Collections.emptySet(),
+                mockRequest, mockConfig, Map.of());
+
+        CacheControlDirectives directives = result.directives();
+        assertThat(directives).isNotNull();
+        assertThat(directives.getMaxAge()).isNull();
+        assertThat(directives.isNoStore()).isFalse();
     }
 }

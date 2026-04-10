@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
@@ -76,7 +77,7 @@ public class CachingCompoundDocsFetcher {
                                    CompoundDocsResolverConfig config,
                                    Map<String, String> metaHeaders) {
         if (ids == null || ids.isEmpty()) {
-            return new BatchFetchResult(Collections.emptyList());
+            return new BatchFetchResult(Collections.emptyList(), null);
         }
 
         if (cache == null) {
@@ -100,7 +101,8 @@ public class CachingCompoundDocsFetcher {
         List<String> resources = httpResult.resources().stream()
                 .map(ParsedResource::json)
                 .toList();
-        return new BatchFetchResult(resources);
+        CacheControlDirectives directives = CacheControlParser.parse(httpResult.cacheControlHeader());
+        return new BatchFetchResult(resources, directives);
     }
 
     private BatchFetchResult fetchWithCache(URI domainBaseUrl,
@@ -134,7 +136,7 @@ public class CachingCompoundDocsFetcher {
                 .collect(Collectors.toSet());
 
         if (missIds.isEmpty()) {
-            return new BatchFetchResult(cacheHitJsons);
+            return new BatchFetchResult(cacheHitJsons, computeDirectives(cacheHits, null));
         }
 
         // Fetch misses via HTTP
@@ -158,7 +160,32 @@ public class CachingCompoundDocsFetcher {
         merged.addAll(cacheHitJsons);
         merged.addAll(httpResultJsons);
 
-        return new BatchFetchResult(merged);
+        return new BatchFetchResult(merged, computeDirectives(cacheHits, httpResult));
+    }
+
+    /**
+     * Computes the most restrictive Cache-Control directives from cache hits
+     * and an optional HTTP fetch result.
+     */
+    private CacheControlDirectives computeDirectives(Map<CacheKey, CacheResult> cacheHits,
+                                                      HttpFetchResult httpResult) {
+        CacheControlAggregator aggregator = new CacheControlAggregator();
+
+        if (!cacheHits.isEmpty()) {
+            long minTtl = cacheHits.values().stream()
+                    .mapToLong(CacheResult::getRemainingTtlSeconds)
+                    .min()
+                    .orElse(0);
+            if (minTtl > 0) {
+                aggregator.add(CacheControlDirectives.ofMaxAge(minTtl));
+            }
+        }
+
+        if (httpResult != null) {
+            aggregator.add(CacheControlParser.parse(httpResult.cacheControlHeader()));
+        }
+
+        return aggregator.getResult();
     }
 
     /**

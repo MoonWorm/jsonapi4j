@@ -17,8 +17,23 @@ public class CacheControlDirectives {
      * Represents a non-cacheable response (no Cache-Control header, or unparseable).
      * {@link #isCacheable()} returns {@code false}.
      */
+    /**
+     * Represents a non-cacheable response (no Cache-Control header, or unparseable).
+     * {@link #isCacheable()} returns {@code false}.
+     */
     public static final CacheControlDirectives NON_CACHEABLE =
             new CacheControlDirectives(null, null, false, false, false);
+
+    /**
+     * Creates directives with only a {@code max-age} value set.
+     * Useful for synthesizing directives from cache hit remaining TTLs.
+     *
+     * @param maxAgeSeconds the max-age value in seconds
+     * @return directives with only max-age set
+     */
+    public static CacheControlDirectives ofMaxAge(long maxAgeSeconds) {
+        return new CacheControlDirectives(maxAgeSeconds, null, false, false, false);
+    }
 
     private final Long maxAge;
     private final Long sMaxAge;

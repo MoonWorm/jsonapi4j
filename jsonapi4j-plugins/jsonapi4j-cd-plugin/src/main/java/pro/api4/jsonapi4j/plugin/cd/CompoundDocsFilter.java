@@ -10,7 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 
@@ -87,8 +91,9 @@ public class CompoundDocsFilter implements Filter {
 
                 String responseBody = responseWrapper.getCaptureAsString();
                 if (is2xxResponseCode(responseWrapper.getStatus())) {
-                    String responseBodyWithCompoundDocs = resolver.resolveCompoundDocs(responseBody, compoundDocsRequest);
-                    servletResponse.getWriter().write(responseBodyWithCompoundDocs);
+                    CompoundDocsResult result = resolver.resolveCompoundDocs(responseBody, compoundDocsRequest);
+                    applyCacheControlHeader(httpServletResponse, responseWrapper, result);
+                    servletResponse.getWriter().write(result.responseBody());
                 } else {
                     servletResponse.getWriter().write(responseBody);
                 }
@@ -101,9 +106,29 @@ public class CompoundDocsFilter implements Filter {
         }
     }
 
+    private void applyCacheControlHeader(HttpServletResponse response,
+                                         BufferedResponseWrapper responseWrapper,
+                                         CompoundDocsResult result) {
+        CacheControlAggregator aggregator = new CacheControlAggregator();
+
+        String primaryCacheControl = responseWrapper.getHeader("Cache-Control");
+        if (primaryCacheControl != null) {
+            aggregator.add(CacheControlParser.parse(primaryCacheControl));
+        }
+
+        aggregator.add(result.cacheControlDirectives());
+
+        CacheControlDirectives aggregated = aggregator.getResult();
+        if (aggregated != null) {
+            String headerValue = CacheControlParser.format(aggregated);
+            if (headerValue != null) {
+                response.setHeader("Cache-Control", headerValue);
+            }
+        }
+    }
+
     private boolean is2xxResponseCode(int statusCode) {
         return statusCode >= 200 && statusCode < 300;
     }
-
 
 }

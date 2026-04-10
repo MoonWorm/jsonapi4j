@@ -1,5 +1,8 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Parses {@code Cache-Control} HTTP header values into {@link CacheControlDirectives}.
  *
@@ -51,6 +54,33 @@ public final class CacheControlParser {
         }
 
         return new CacheControlDirectives(maxAge, sMaxAge, noStore, noCache, privateCacheControl);
+    }
+
+    /**
+     * Formats {@link CacheControlDirectives} into a {@code Cache-Control} header value string.
+     *
+     * @param directives the directives to format, must not be {@code null}
+     * @return the formatted header value, or {@code null} if the directives produce
+     *         no output (e.g. {@link CacheControlDirectives#NON_CACHEABLE})
+     */
+    public static String format(CacheControlDirectives directives) {
+        List<String> parts = new ArrayList<>();
+        if (directives.isNoStore()) {
+            parts.add("no-store");
+        }
+        if (directives.isNoCache()) {
+            parts.add("no-cache");
+        }
+        if (directives.isPrivateCacheControl()) {
+            parts.add("private");
+        }
+        if (directives.getSMaxAge() != null) {
+            parts.add("s-maxage=" + directives.getSMaxAge());
+        }
+        if (directives.getMaxAge() != null) {
+            parts.add("max-age=" + directives.getMaxAge());
+        }
+        return parts.isEmpty() ? null : String.join(", ", parts);
     }
 
     private static Long parseNonNegativeLong(String value) {
