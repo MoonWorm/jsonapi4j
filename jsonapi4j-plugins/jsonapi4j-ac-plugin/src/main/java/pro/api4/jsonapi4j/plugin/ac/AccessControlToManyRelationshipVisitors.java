@@ -36,6 +36,9 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
 
     private final AccessControlEvaluator accessControlEvaluator;
 
+    /**
+     * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
+     */
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
                                                                  OperationMeta operationMeta,

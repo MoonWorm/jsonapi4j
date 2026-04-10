@@ -27,6 +27,9 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
 
     private final AccessControlEvaluator accessControlEvaluator;
 
+    /**
+     * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
+     */
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
                                                                  OperationMeta operationMeta,

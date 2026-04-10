@@ -24,6 +24,23 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
 
     private final AccessControlEvaluator accessControlEvaluator;
 
+    /**
+     * Evaluates inbound access control requirements before data retrieval.
+     * <p>
+     * When access is denied, the behavior differs based on the HTTP method:
+     * <ul>
+     *     <li><b>GET</b> — returns an empty document ({@code data: null}) with a 200 status code.
+     *         This is intentional: the Compound Documents resolver makes internal GET requests
+     *         to fetch included resources. Returning 403 would either break the entire compound
+     *         document resolution (with {@code errorStrategy: FAIL}) or silently drop the included
+     *         resource (with {@code errorStrategy: IGNORE}). By returning an empty document instead,
+     *         the resolver receives a valid JSON:API response and can continue processing — the
+     *         resource simply has no data, which is a legitimate "nothing to show" signal.</li>
+     *     <li><b>Non-GET (PATCH, DELETE, POST)</b> — throws a 403 Forbidden exception.
+     *         Write operations should fail explicitly since there is no Compound Documents
+     *         resolution involved.</li>
+     * </ul>
+     */
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
                                                                  OperationMeta operationMeta,

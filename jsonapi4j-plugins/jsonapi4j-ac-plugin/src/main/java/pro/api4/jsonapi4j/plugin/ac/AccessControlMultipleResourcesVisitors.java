@@ -34,6 +34,9 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
 
     private final AccessControlEvaluator accessControlEvaluator;
 
+    /**
+     * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
+     */
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
                                                                  OperationMeta operationMeta,
