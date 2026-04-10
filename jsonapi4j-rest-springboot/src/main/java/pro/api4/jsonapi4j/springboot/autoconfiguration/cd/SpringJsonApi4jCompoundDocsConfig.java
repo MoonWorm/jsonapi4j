@@ -23,7 +23,8 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 @ConditionalOnProperty(
         prefix = "jsonapi4j.cd",
         name = "enabled",
-        havingValue = "true"
+        havingValue = "true",
+        matchIfMissing = true
 )
 @Configuration
 public class SpringJsonApi4jCompoundDocsConfig {
@@ -33,6 +34,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
         return new JsonApiCompoundDocsPlugin();
     }
 
+    @ConditionalOnMissingBean(DomainUrlResolver.class)
     @Bean
     public DomainUrlResolver jsonApi4jCdDomainUrlResolver(CompoundDocsProperties cdProperties) {
         return DefaultDomainUrlResolver.from(cdProperties.mapping());

@@ -1,6 +1,5 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration.ac;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -13,11 +12,10 @@ import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.ac",
-        name = {"enabled"},
+        name = "enabled",
         havingValue = "true",
         matchIfMissing = true
 )
-@ConditionalOnClass(value = JsonApiAccessControlPlugin.class)
 @Configuration
 public class SpringJsonApi4jAcPluginConfig {
 
