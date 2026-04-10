@@ -9,6 +9,8 @@ import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 public abstract class AccessControlOperationsTests {
@@ -140,6 +142,33 @@ public abstract class AccessControlOperationsTests {
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body(jsonEquals(ResourceUtil.readResourceFile("operations/ac/multiple-users-with-sensitive-data-ac-response.json")));
+    }
+
+    @Test
+    public void test_headersPropagatedThroughCompoundDocs_sensitiveDataVisibleInIncluded() {
+        // User 1 requests user 2's data with include=relatives.
+        // User 2's relatives are user 1 and user 4.
+        // AC headers (scopes=users.sensitive.read, userId=1) propagate through CD internal HTTP calls.
+        // So in the included section, user 1 (the owner) should have creditCardNumber visible
+        // because the scope+ownership headers were propagated to the internal fetch.
+        // User 2 (primary) and user 4 (included) should NOT have creditCardNumber
+        // because user 1 is not their owner.
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .pathParam("userId", "2")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                // primary resource (user 2) — user 1 is NOT the owner, so no creditCardNumber
+                .body("data.attributes", not(hasKey("creditCardNumber")))
+                // included user 1 — user 1 IS the owner, headers propagated via CD, so creditCardNumber visible
+                .body("included.find { it.id == '1' }.attributes.creditCardNumber", equalTo("123456789"))
+                // included user 4 — user 1 is NOT the owner, so no creditCardNumber
+                .body("included.find { it.id == '4' }.attributes", not(hasKey("creditCardNumber")));
     }
 
     @Test

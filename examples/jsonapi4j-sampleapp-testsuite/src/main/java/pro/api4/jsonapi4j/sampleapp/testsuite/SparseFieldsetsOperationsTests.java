@@ -9,8 +9,8 @@ import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 
 public abstract class SparseFieldsetsOperationsTests {
 

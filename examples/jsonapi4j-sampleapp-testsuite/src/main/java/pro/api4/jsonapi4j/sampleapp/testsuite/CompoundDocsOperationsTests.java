@@ -7,6 +7,9 @@ import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
 import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThan;
 
 public abstract class CompoundDocsOperationsTests {
 
@@ -68,6 +71,38 @@ public abstract class CompoundDocsOperationsTests {
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body(jsonEquals(ResourceUtil.readResourceFile("operations/cd/to-many-relationship-compound-docs-response.json")));
+    }
+
+    @Test
+    public void test_readById_maxHopsExceeded_stopsAtConfiguredDepth() {
+        // maxHops=3, requesting 4 hops: relatives.relatives.relatives.relatives
+        // should produce the same result as 3 hops since the 4th hop is cut off
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives.relatives.relatives.relatives")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body(jsonEquals(ResourceUtil.readResourceFile("operations/cd/single-user-compound-docs-deduplicated-response.json")));
+    }
+
+    @Test
+    public void test_readById_customQueryParamsPropagated() {
+        // custom query params should be propagated to internal CD HTTP calls
+        // and appear in self-links of included resources
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .queryParam("customParam", "customValue")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("included.size()", greaterThan(0))
+                .body("included.links.self", everyItem(containsString("customParam")));
     }
 
     @Test
