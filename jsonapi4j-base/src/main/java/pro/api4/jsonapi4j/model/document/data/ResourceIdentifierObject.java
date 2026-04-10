@@ -24,24 +24,13 @@ public class ResourceIdentifierObject {
     private final String lid;
 
     public ResourceIdentifierObject(String id,
-                                    String type,
-                                    Object meta,
-                                    String lid) {
-        this.id = id;
-        this.type = type;
-        this.meta = meta;
-        this.lid = lid;
-    }
-
-    public ResourceIdentifierObject(String id,
+                                    String lid,
                                     String type,
                                     Object meta) {
-        this(id, type, meta, null);
-    }
-
-    public ResourceIdentifierObject(String id,
-                                    String type) {
-        this(id, type, null);
+        this.id = id;
+        this.lid = lid;
+        this.type = type;
+        this.meta = meta;
     }
 
 }

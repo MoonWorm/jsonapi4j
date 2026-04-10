@@ -65,7 +65,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                                     Map.Entry::getValue
                             ));
                 },
-                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) ResourceObject::new,
+                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) (id, type, attributes, relationships, links, meta) -> new ResourceObject<>(id, null, type, attributes, relationships, links, meta),
                 (MultipleResourcesDocSupplier<ResourceObject<ATTRIBUTES, Map<String, Object>>, MultipleResourcesDoc<ResourceObject<ATTRIBUTES, Map<String, Object>>>>) MultipleResourcesDoc::new
         );
     }
@@ -113,6 +113,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             jsonApiContext,
                             plugin.getInfo()
                     );
@@ -136,6 +137,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             paginationAwareResponse,
                             jsonApiContext,
                             plugin.getInfo()
@@ -204,6 +206,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             paginationAwareResponse,
                             doc,
                             jsonApiContext,
@@ -266,6 +269,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 if (visitors != null) {
                     RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             paginationAwareResponse,
                             doc,
                             jsonApiContext,

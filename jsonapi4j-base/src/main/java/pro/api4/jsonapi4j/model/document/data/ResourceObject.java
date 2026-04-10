@@ -22,30 +22,16 @@ public class ResourceObject<A, R> extends ResourceIdentifierObject {
     private final LinksObject links;
 
     public ResourceObject(String id,
+                          String lid,
                           String type,
                           A attributes,
                           R relationships,
                           LinksObject links,
                           Object meta) {
-        super(id, type, meta);
+        super(id, lid, type, meta);
         this.attributes = attributes;
         this.relationships = relationships;
         this.links = links;
-    }
-
-    public ResourceObject(String id,
-                          String type,
-                          A attributes,
-                          R relationships,
-                          LinksObject links) {
-        this(id, type, attributes, relationships, links, null);
-    }
-
-    public ResourceObject(String id,
-                          String type,
-                          A attributes,
-                          R relationships) {
-        this(id, type, attributes, relationships, null);
     }
 
 }

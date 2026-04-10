@@ -1,6 +1,10 @@
 package pro.api4.jsonapi4j.sampleapp.operations;
 
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -93,6 +97,9 @@ public class UserInMemoryDb implements UserDb {
                                    String lastName,
                                    String email,
                                    String creditCardNumber) {
+        Validate.notBlank(firstName, "firstName is required");
+        Validate.notBlank(lastName, "lastName is required");
+        Validate.notBlank(email, "email is required");
         UserDbEntity newUser = new UserDbEntity(
                 String.valueOf(ID_COUNTER.getAndIncrement()),
                 firstName,
@@ -102,6 +109,40 @@ public class UserInMemoryDb implements UserDb {
         );
         users.put(newUser.getId(), newUser);
         return newUser;
+    }
+
+    @Override
+    public UserDbEntity updateUser(String userId,
+                                   String firstName,
+                                   String lastName,
+                                   String email,
+                                   String creditCardNumber) {
+        if (!users.containsKey(userId)) {
+            throw new ResourceNotFoundException(userId, new ResourceType("users"));
+        }
+        UserDbEntity updatedUser = users.get(userId);
+        if (StringUtils.isNotBlank(firstName)) {
+            updatedUser = updatedUser.withFirstName(firstName);
+        }
+        if (StringUtils.isNotBlank(lastName)) {
+            updatedUser = updatedUser.withLastName(lastName);
+        }
+        if (StringUtils.isNotBlank(email)) {
+            updatedUser = updatedUser.withEmail(email);
+        }
+        if (StringUtils.isNotBlank(creditCardNumber)) {
+            updatedUser = updatedUser.withCreditCardNumber(creditCardNumber);
+        }
+        users.put(updatedUser.getId(), updatedUser);
+        return updatedUser;
+    }
+
+    @Override
+    public void deleteUser(String userId) {
+        users.remove(userId);
+        userCitizenships.remove(userId);
+        userPlaceOfBirth.remove(userId);
+        userRalatives.remove(userId);
     }
 
     @Override
@@ -116,7 +157,6 @@ public class UserInMemoryDb implements UserDb {
 
     @Override
     public void updateUserCitizenships(String userId, List<String> cca2s) {
-        userCitizenships.remove(userId);
         userCitizenships.put(userId, cca2s);
     }
 
@@ -138,6 +178,22 @@ public class UserInMemoryDb implements UserDb {
                         userId -> ListUtils.emptyIfNull(userRalatives.get(userId))
                 )
         );
+    }
+
+    @Override
+    public void updateUserRelatives(String userId, Map<String, RelationshipType> relationsMap) {
+        List<UserRelationshipInfo> relations = relationsMap.entrySet()
+                .stream()
+                .filter(e -> StringUtils.isNotBlank(e.getKey()))
+                .filter(e -> e.getValue() != null)
+                .map(e -> new UserRelationshipInfo(e.getKey(), e.getValue()))
+                .toList();
+        userRalatives.put(userId, relations);
+    }
+
+    @Override
+    public void updateUserPlaceOfBirth(String userId, String cca2) {
+        userPlaceOfBirth.put(userId, cca2);
     }
 
     @Override

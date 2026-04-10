@@ -92,13 +92,13 @@ public class SingleResourceProcessorAccessControlTests {
                 .dataSupplier(ds)
                 .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
-                        new ResourceIdentifierObject("31", FOO.getName()),
+                        new ResourceIdentifierObject("31", null, FOO.getName(), null),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
                 ))
                 .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc(
                         List.of(
-                                new ResourceIdentifierObject("51", BARS.getName()),
-                                new ResourceIdentifierObject("55", BARS.getName())
+                                new ResourceIdentifierObject("51", null, BARS.getName(), null),
+                                new ResourceIdentifierObject("55", null, BARS.getName(), null)
                         ),
                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                 ))
@@ -127,13 +127,13 @@ public class SingleResourceProcessorAccessControlTests {
 
         // when
         var foo = new ToOneRelationshipDoc(
-                new ResourceIdentifierObject("31", FOO.getName()),
+                new ResourceIdentifierObject("31", null, FOO.getName(), null),
                 LinksObject.builder().self("/silver/1/relationships/foo").build()
         );
         var bar = new ToManyRelationshipsDoc(
                 List.of(
-                        new ResourceIdentifierObject("51", BARS.getName()),
-                        new ResourceIdentifierObject("55", BARS.getName())),
+                        new ResourceIdentifierObject("51", null, BARS.getName(), null),
+                        new ResourceIdentifierObject("55", null, BARS.getName(), null)),
                 LinksObject.builder().self("/silver/1/relationships/bars").build()
         );
         ResourceWithRelationshipsDoc result = new SingleResourceProcessor()
@@ -178,13 +178,13 @@ public class SingleResourceProcessorAccessControlTests {
                 .dataSupplier(ds)
                 .defaultRelationships(all(SILVER, dto -> String.valueOf(dto.getId()), new RelationshipName[]{FOO, BARS}))
                 .toOneRelationshipResolver(FOO, (req, dto) -> new ToOneRelationshipDoc(
-                        new ResourceIdentifierObject("31", FOO.getName()),
+                        new ResourceIdentifierObject("31", null, FOO.getName(), null),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
                 ))
                 .toManyRelationshipResolver(BARS, (req, dto) -> new ToManyRelationshipsDoc(
                         List.of(
-                                new ResourceIdentifierObject("51", BARS.getName()),
-                                new ResourceIdentifierObject("55", BARS.getName())
+                                new ResourceIdentifierObject("51", null, BARS.getName(), null),
+                                new ResourceIdentifierObject("55", null, BARS.getName(), null)
                         ),
                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                 ))
@@ -272,7 +272,7 @@ public class SingleResourceProcessorAccessControlTests {
                                                       Relationships relationships,
                                                       LinksObject links,
                                                       Object meta) {
-            super(id, type, attributes, relationships, links, meta);
+            super(id, null, type, attributes, relationships, links, meta);
         }
     }
 

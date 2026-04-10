@@ -419,59 +419,59 @@ public class OperationsRegistry {
             if (operation instanceof ReadResourceByIdOperation<?> o) {
                 RegisteredOperation<ReadResourceByIdOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_RESOURCE_BY_ID, ReadResourceByIdOperation.class);
-                readResourceByIdOperations.put(ro.getResourceType(), ro);
+                readResourceByIdOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadMultipleResourcesOperation<?> o) {
                 RegisteredOperation<ReadMultipleResourcesOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_MULTIPLE_RESOURCES, ReadMultipleResourcesOperation.class);
-                readMultipleResourcesOperations.put(ro.getResourceType(), ro);
+                readMultipleResourcesOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof CreateResourceOperation<?> o) {
                 RegisteredOperation<CreateResourceOperation<?>> ro
                         = enrichWithMetaInfo(o, CREATE_RESOURCE, CreateResourceOperation.class);
-                createResourceOperations.put(ro.getResourceType(), ro);
+                createResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateResourceOperation o) {
                 RegisteredOperation<UpdateResourceOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_RESOURCE, UpdateResourceOperation.class);
-                updateResourceOperations.put(ro.getResourceType(), ro);
+                updateResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof DeleteResourceOperation o) {
                 RegisteredOperation<DeleteResourceOperation> ro
                         = enrichWithMetaInfo(o, DELETE_RESOURCE, DeleteResourceOperation.class);
-                deleteResourceOperations.put(ro.getResourceType(), ro);
+                deleteResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadToOneRelationshipOperation<?, ?> o) {
                 RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_ONE_RELATIONSHIP, ReadToOneRelationshipOperation.class);
-                readToOneRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
-                        .put(ro.getRelationshipName(), ro);
+                readToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadToManyRelationshipOperation<?, ?> o) {
                 RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_MANY_RELATIONSHIP, ReadToManyRelationshipOperation.class);
-                readToManyRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
-                        .put(ro.getRelationshipName(), ro);
+                readToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateToOneRelationshipOperation o) {
                 RegisteredOperation<UpdateToOneRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_ONE_RELATIONSHIP, UpdateToOneRelationshipOperation.class);
-                updateToOneRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
-                        .put(ro.getRelationshipName(), ro);
+                updateToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateToManyRelationshipOperation o) {
                 RegisteredOperation<UpdateToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_MANY_RELATIONSHIP, UpdateToManyRelationshipOperation.class);
-                updateToManyRelationshipOperations.computeIfAbsent(ro.getResourceType(), rt -> new HashMap<>())
-                        .put(ro.getRelationshipName(), ro);
+                updateToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
             if (registeredAs.isEmpty()) {
@@ -495,12 +495,12 @@ public class OperationsRegistry {
             }
             registeredAs.forEach(this::logOperationRegistered);
             registeredAs.forEach(o -> {
-                resourceTypesWithAnyOperationConfigured.add(o.getResourceType());
-                if (o.getRelationshipName() != null) {
+                resourceTypesWithAnyOperationConfigured.add(o.getOperationMeta().getResourceType());
+                if (o.getOperationMeta().getRelationshipName() != null) {
                     relationshipNamesWithAnyOperationConfigured.computeIfAbsent(
-                            o.getResourceType(),
+                            o.getOperationMeta().getResourceType(),
                             rt -> new HashSet<>()
-                    ).add(o.getRelationshipName());
+                    ).add(o.getOperationMeta().getRelationshipName());
                 }
             });
             return this;
@@ -510,7 +510,7 @@ public class OperationsRegistry {
             log.info(
                     "{} operation has been registered as {}.",
                     registeredOperation.getOperation().getClass().getSimpleName(),
-                    registeredOperation.getRegisteredAs().getSimpleName()
+                    registeredOperation.getOperationMeta().getRegisteredAs().getSimpleName()
             );
         }
 
@@ -575,11 +575,13 @@ public class OperationsRegistry {
             }
             return RegisteredOperation.<T>builder()
                     .operation(operation)
-                    .registeredAs(operationClass)
-                    .resourceType(resourceType)
-                    .relationshipName(relationshipName)
-                    .operationType(operationType)
-                    .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
+                    .operationMeta(OperationMeta.builder()
+                            .registeredAs(operationClass)
+                            .resourceType(resourceType)
+                            .relationshipName(relationshipName)
+                            .operationType(operationType)
+                            .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
+                            .build())
                     .build();
         }
 

@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 import java.util.function.Consumer;
 

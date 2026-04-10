@@ -1,7 +1,10 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+
+import java.util.function.Consumer;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to update or delete this to-many relationship
@@ -25,6 +28,9 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 public interface UpdateToManyRelationshipOperation extends RelationshipOperation {
 
     String UPDATE_MANY_METHOD_NAME = "update";
+    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
+        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
+    };
 
     /**
      * Updates or deletes the relationship for the given resource.

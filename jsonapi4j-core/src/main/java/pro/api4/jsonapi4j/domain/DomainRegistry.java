@@ -4,6 +4,7 @@ package pro.api4.jsonapi4j.domain;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
+import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
@@ -298,7 +299,7 @@ public class DomainRegistry {
             return RegisteredResource.builder()
                     .resource(resource)
                     .resourceType(resolveResourceType(resource.getClass()))
-                    .registeredAs(resource.getClass())
+                    .registeredAs(ReflectionUtils.findClassWithAnnotation(resource.getClass(), JsonApiResource.class))
                     .pluginInfo(Collections.unmodifiableMap(pluginsInfo))
                     .build();
         }

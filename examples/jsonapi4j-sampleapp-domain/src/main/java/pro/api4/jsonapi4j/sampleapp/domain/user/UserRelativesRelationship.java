@@ -14,6 +14,8 @@ import java.util.Map;
 )
 public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> {
 
+    public static final String RELATIONSHIP_TYPE_META_KEY = "relationshipType";
+
     @Override
     public String resolveResourceIdentifierType(UserRelationshipInfo userRelationshipInfo) {
         return "users";
@@ -26,7 +28,7 @@ public class UserRelativesRelationship implements ToManyRelationship<UserRelatio
 
     @Override
     public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, UserRelationshipInfo userRelationshipInfo) {
-        return Map.of("relationshipType", userRelationshipInfo.getRelationshipType());
+        return Map.of(RELATIONSHIP_TYPE_META_KEY, userRelationshipInfo.getRelationshipType());
     }
 
 }

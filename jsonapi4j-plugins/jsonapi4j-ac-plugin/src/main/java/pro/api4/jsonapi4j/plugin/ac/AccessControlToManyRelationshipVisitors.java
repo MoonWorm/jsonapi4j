@@ -3,9 +3,15 @@ package pro.api4.jsonapi4j.plugin.ac;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.model.document.error.ErrorCode;
+import pro.api4.jsonapi4j.operation.OperationMeta;
+import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
@@ -30,8 +36,12 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
 
     private final AccessControlEvaluator accessControlEvaluator;
 
+    /**
+     * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
+     */
     @Override
     public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
+                                                                 OperationMeta operationMeta,
                                                                  ToManyRelationshipsJsonApiContext<REQUEST, ?> context,
                                                                  JsonApiPluginInfo pluginInfo) {
 
@@ -43,19 +53,25 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
             log.info("Inbound Access is allowed for a request {}. Proceeding...", request);
             return DataPreRetrievalPhase.doNothing();
         } else {
-            log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
-            ToManyRelationshipsDoc doc = new ToManyRelationshipsDoc(
-                    null,
-                    context.getTopLevelLinksResolver().resolve(request, null, null),
-                    context.getTopLevelMetaResolver().resolve(request, null)
-            );
-            return DataPreRetrievalPhase.returnDoc(doc);
+            if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
+                log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
+                ToManyRelationshipsDoc doc = new ToManyRelationshipsDoc(
+                        null,
+                        context.getTopLevelLinksResolver().resolve(request, null, null),
+                        context.getTopLevelMetaResolver().resolve(request, null)
+                );
+                return DataPreRetrievalPhase.returnDoc(doc);
+            } else {
+                log.info("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                throw new JsonApi4jException(403, DefaultErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
+            }
         }
     }
 
     @Override
     public <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             ToManyRelationshipsDoc doc,
             ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,

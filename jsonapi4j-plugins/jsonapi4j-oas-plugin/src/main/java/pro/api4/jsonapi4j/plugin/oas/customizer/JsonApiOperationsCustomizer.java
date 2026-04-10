@@ -4,6 +4,7 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
@@ -180,7 +181,7 @@ public class JsonApiOperationsCustomizer {
         return createOperation(registeredOperation.getOperationMeta());
     }
 
-    private Operation createOperation(RegisteredOperation.OperationMeta operationMeta) {
+    private Operation createOperation(OperationMeta operationMeta) {
         Object oasOperationInfoObject = MapUtils.emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         if (!(oasOperationInfoObject instanceof OasOperationInfoModel oasOperationInfo)) {
             log.warn(

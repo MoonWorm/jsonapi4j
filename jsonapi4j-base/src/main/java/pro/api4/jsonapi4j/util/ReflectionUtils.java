@@ -189,6 +189,26 @@ public final class ReflectionUtils {
     }
 
     /**
+     * CDI proxy fault-tolerant way to find the class that declares a given annotation.
+     * Walks superclass hierarchy (handles proxies that subclass the real bean).
+     *
+     * @param type           target object type (possibly a proxy)
+     * @param annotationType annotation type to look for
+     * @return the class that declares the annotation, or {@code type} itself if not found
+     */
+    public static Class<?> findClassWithAnnotation(Class<?> type,
+                                                   Class<? extends Annotation> annotationType) {
+        Class<?> currentType = type;
+        while (currentType != null && currentType != Object.class) {
+            if (currentType.getAnnotation(annotationType) != null) {
+                return currentType;
+            }
+            currentType = currentType.getSuperclass();
+        }
+        return type;
+    }
+
+    /**
      * Explores the full set of existing field paths. Recursively analyzes all fields up until reaching
      * {@link Object} superclass.
      *

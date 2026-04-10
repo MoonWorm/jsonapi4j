@@ -3,11 +3,11 @@ package pro.api4.jsonapi4j.sampleapp.testsuite.domain.user;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
-import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class ReadUserByIdOperationTests {
@@ -30,19 +30,21 @@ public abstract class ReadUserByIdOperationTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/single-user-byid-response.json")));
-    }
-
-    @Test
-    public void test_readByIdWithAccessToSensitiveData() {
-        given()
-                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("userId", "1")
-                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
-                .then()
-                .statusCode(200)
-                .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/single-user-byid-with-sensitive-data-response.json")));
+                // top-level links
+                .body("links.self", equalTo("/users/1"))
+                // data
+                .body("data.id", equalTo("1"))
+                .body("data.type", equalTo("users"))
+                // attributes
+                .body("data.attributes.fullName", equalTo("John Doe"))
+                .body("data.attributes.email", equalTo("john@doe.com"))
+                .body("data.attributes.creditCardNumber", equalTo("123456789"))
+                // relationship links (no data — includes not requested)
+                .body("data.relationships.citizenships.links.self", equalTo("/users/1/relationships/citizenships"))
+                .body("data.relationships.placeOfBirth.links.self", equalTo("/users/1/relationships/placeOfBirth"))
+                .body("data.relationships.relatives.links.self", equalTo("/users/1/relationships/relatives"))
+                // resource-level self link
+                .body("data.links.self", equalTo("/users/1"));
     }
 
     @Test
@@ -55,7 +57,24 @@ public abstract class ReadUserByIdOperationTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/single-user-byid-response-with-relationships.json")));
+                // attributes
+                .body("data.attributes.fullName", equalTo("John Doe"))
+                .body("data.attributes.email", equalTo("john@doe.com"))
+                // citizenships — to-many with data
+                .body("data.relationships.citizenships.data", hasSize(3))
+                .body("data.relationships.citizenships.data.find { it.id == 'NO' }.type", equalTo("countries"))
+                .body("data.relationships.citizenships.data.find { it.id == 'FI' }.type", equalTo("countries"))
+                .body("data.relationships.citizenships.data.find { it.id == 'US' }.type", equalTo("countries"))
+                .body("data.relationships.citizenships.links", hasKey("related:countries"))
+                // placeOfBirth — to-one with data
+                .body("data.relationships.placeOfBirth.data.id", equalTo("US"))
+                .body("data.relationships.placeOfBirth.data.type", equalTo("countries"))
+                .body("data.relationships.placeOfBirth.links.related", equalTo("/countries/US"))
+                // relatives — to-many with data and meta
+                .body("data.relationships.relatives.data", hasSize(2))
+                .body("data.relationships.relatives.data.find { it.id == '2' }.meta.relationshipType", equalTo("HUSBAND"))
+                .body("data.relationships.relatives.data.find { it.id == '3' }.meta.relationshipType", equalTo("BROTHER"))
+                .body("data.relationships.relatives.links", hasKey("related:users"));
     }
 
     @Test

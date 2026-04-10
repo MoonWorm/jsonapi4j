@@ -54,6 +54,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             jsonApiContext,
                             plugin.getInfo()
                     );
@@ -86,6 +87,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
         // compose data
         ResourceIdentifierObject data = new ResourceIdentifierObject(
                 idAndType.getId(),
+                null,
                 idAndType.getType().getType(),
                 resourceMeta
         );
@@ -106,6 +108,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             dataSourceDto,
                             doc,
                             jsonApiContext,

@@ -32,11 +32,15 @@ public final class ToOneRelationshipLinksDefaultResolvers {
                     selfLinkBasePath, true, true, true, true, true, true
             );
 
-            String relatedLinkBasePath = LinksGenerator.resourceBasePath(
-                    relationshipResourceTypeResolver.getResourceType(dataSourceDto),
-                    () -> relationshipIdSupplier.getId(dataSourceDto)
-            );
-            String relatedLink = linkGenerator.generateRelatedLink(relatedLinkBasePath, true, true);
+            String relatedLink = null;
+            if (dataSourceDto != null) {
+                String relatedLinkBasePath = LinksGenerator.resourceBasePath(
+                        relationshipResourceTypeResolver.getResourceType(dataSourceDto),
+                        () -> relationshipIdSupplier.getId(dataSourceDto)
+                );
+                relatedLink = linkGenerator.generateRelatedLink(relatedLinkBasePath, true, true);
+            }
+
             return LinksObject.builder().self(selfLink).related(relatedLink).build();
         };
     }

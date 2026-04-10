@@ -84,7 +84,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                                     Map.Entry::getValue
                             ));
                 },
-                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) ResourceObject::new,
+                (ResourceSupplier<ATTRIBUTES, Map<String, Object>, ResourceObject<ATTRIBUTES, Map<String, Object>>>) (id, type, attributes, relationships, links, meta) -> new ResourceObject<>(id, null, type, attributes, relationships, links, meta),
                 (SingleResourceDocSupplier<ResourceObject<ATTRIBUTES, Map<String, Object>>, SingleResourceDoc<ResourceObject<ATTRIBUTES, Map<String, Object>>>>) SingleResourceDoc::new
         );
     }
@@ -131,6 +131,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             jsonApiContext,
                             plugin.getInfo()
                     );
@@ -155,6 +156,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             dataSourceDto,
                             jsonApiContext,
                             plugin.getInfo()
@@ -213,6 +215,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 if (visitors != null) {
                     RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             dataSourceDto,
                             doc,
                             jsonApiContext,
@@ -252,6 +255,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 if (visitors != null) {
                     RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
                             effectiveRequest,
+                            plugin.getOperationMeta(),
                             dataSourceDto,
                             doc,
                             jsonApiContext,

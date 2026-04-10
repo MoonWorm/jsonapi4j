@@ -86,15 +86,15 @@ public class SingleResourceProcessorTests {
         when(attributesResolver.resolveAttributes(DTO)).thenReturn(ATTRIBUTES);
         when(fooRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO)).thenReturn(
                 new ToOneRelationshipObject(
-                        new ResourceIdentifierObject("31", FOO.getName()),
+                        new ResourceIdentifierObject("31", null, FOO.getName(), null),
                         LinksObject.builder().self("/silver/1/relationships/foo").build()
                 )
         );
         when(barsRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO)).thenReturn(
                 new ToManyRelationshipObject(
                         List.of(
-                                new ResourceIdentifierObject("51", BARS.getName()),
-                                new ResourceIdentifierObject("55", BARS.getName())
+                                new ResourceIdentifierObject("51", null, BARS.getName(), null),
+                                new ResourceIdentifierObject("55", null, BARS.getName(), null)
                         ),
                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                 )
@@ -120,13 +120,13 @@ public class SingleResourceProcessorTests {
                         "relationships",
                         new Relationships(
                                 new ToOneRelationshipObject(
-                                        new ResourceIdentifierObject("31", FOO.getName()),
+                                        new ResourceIdentifierObject("31", null, FOO.getName(), null),
                                         LinksObject.builder().self("/silver/1/relationships/foo").build()
                                 ),
                                 new ToManyRelationshipObject(
                                         List.of(
-                                                new ResourceIdentifierObject("51", BARS.getName()),
-                                                new ResourceIdentifierObject("55", BARS.getName())
+                                                new ResourceIdentifierObject("51", null, BARS.getName(), null),
+                                                new ResourceIdentifierObject("55", null, BARS.getName(), null)
                                         ),
                                         LinksObject.builder().self("/silver/1/relationships/bars").build()
                                 )
@@ -491,7 +491,7 @@ public class SingleResourceProcessorTests {
                                                         Object relationships,
                                                         LinksObject links,
                                                         Object meta) {
-            super(id, type, attributes, null, links, meta);
+            super(id, null, type, attributes, null, links, meta);
         }
     }
 
@@ -523,7 +523,7 @@ public class SingleResourceProcessorTests {
                                                       Relationships relationships,
                                                       LinksObject links,
                                                       Object meta) {
-            super(id, type, attributes, relationships, links, meta);
+            super(id, null, type, attributes, relationships, links, meta);
         }
     }
 

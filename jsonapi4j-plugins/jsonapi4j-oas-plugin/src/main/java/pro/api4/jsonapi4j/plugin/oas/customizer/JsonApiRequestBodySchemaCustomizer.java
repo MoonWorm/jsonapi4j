@@ -37,7 +37,7 @@ public class JsonApiRequestBodySchemaCustomizer {
     private void registerPayloadSchemas(RegisteredOperation<?> operation,
                                         OpenAPI openApi) {
         if (operation != null) {
-            if (emptyIfNull(operation.getPluginInfo()).get(JsonApiOasPlugin.NAME) instanceof OasOperationInfo oasOperationInfo) {
+            if (emptyIfNull(operation.getOperationMeta().getPluginInfo()).get(JsonApiOasPlugin.NAME) instanceof OasOperationInfo oasOperationInfo) {
                 Class<?> payloadType = oasOperationInfo.payloadType();
                 if (payloadType != null && !NotApplicable.class.isAssignableFrom(payloadType)) {
                     PrimaryAndNestedSchemas schemas = generateAllSchemasFromType(payloadType);

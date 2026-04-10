@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
+import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
@@ -12,6 +13,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
             JsonApiPluginInfo pluginInfo
     ) {
@@ -20,6 +22,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
             JsonApiPluginInfo pluginInfo
@@ -29,6 +32,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
@@ -39,6 +43,7 @@ public interface MultipleResourcesVisitors {
 
     default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
             REQUEST request,
+            OperationMeta operationMeta,
             PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
             DOC doc,
             MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,

@@ -1,12 +1,10 @@
 package pro.api4.jsonapi4j.sampleapp.testsuite.domain.user;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.sampleapp.testsuite.util.ResourceUtil;
 
 import static io.restassured.RestAssured.given;
-import static net.javacrumbs.jsonunit.JsonMatchers.jsonEquals;
+import static org.hamcrest.Matchers.equalTo;
 
 public abstract class ReadUserPlaceOfBirthOperationTests {
 
@@ -22,13 +20,17 @@ public abstract class ReadUserPlaceOfBirthOperationTests {
     public void test_readPlaceOfBirthRelationship() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "placeOfBirth")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body(jsonEquals(ResourceUtil.readResourceFile("operations/domain/user/single-country-linkage-response.json")));
+                // top-level links
+                .body("links.self", equalTo("/users/1/relationships/placeOfBirth"))
+                .body("links.related", equalTo("/countries/US"))
+                // to-one data
+                .body("data.id", equalTo("US"))
+                .body("data.type", equalTo("countries"));
     }
 
 }

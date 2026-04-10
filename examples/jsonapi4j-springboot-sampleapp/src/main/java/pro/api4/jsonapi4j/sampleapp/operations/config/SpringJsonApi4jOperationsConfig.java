@@ -43,9 +43,10 @@ public class SpringJsonApi4jOperationsConfig {
     @Bean
     public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
             CountriesClient client,
-            UserDb userDb
+            UserDb userDb,
+            CountryInputParamsValidator validator
     ) {
-        return new UserPlaceOfBirthOperations(client, userDb);
+        return new UserPlaceOfBirthOperations(client, userDb, validator);
     }
 
     @Bean
