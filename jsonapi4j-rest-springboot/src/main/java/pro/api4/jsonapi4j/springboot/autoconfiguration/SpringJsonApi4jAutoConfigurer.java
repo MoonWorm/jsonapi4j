@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -56,11 +57,13 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 @ComponentScan(basePackages = {"pro.api4.jsonapi4j.springboot.autoconfiguration"})
 public class SpringJsonApi4jAutoConfigurer {
 
+    @ConditionalOnMissingBean(AccessTierRegistry.class)
     @Bean
     public AccessTierRegistry jsonapi4jAccessTierRegistry() {
         return new DefaultAccessTierRegistry();
     }
 
+    @ConditionalOnMissingBean(PrincipalResolver.class)
     @Bean
     public PrincipalResolver jsonapi4jPrincipalResolver(
             AccessTierRegistry accessTierRegistry
@@ -84,6 +87,7 @@ public class SpringJsonApi4jAutoConfigurer {
         return plugins == null ? Collections.emptyList() : plugins;
     }
 
+    @ConditionalOnMissingBean(DomainRegistry.class)
     @Bean
     public DomainRegistry jsonApi4jDomainRegistry(
             List<JsonApi4jPlugin> defaultPlugins,
@@ -95,6 +99,7 @@ public class SpringJsonApi4jAutoConfigurer {
                 .build();
     }
 
+    @ConditionalOnMissingBean(OperationsRegistry.class)
     @Bean
     public OperationsRegistry jsonApi4jOperationsRegistry(
             SpringContextJsonApi4jOperationsScanner operationsScanner,
@@ -105,11 +110,13 @@ public class SpringJsonApi4jAutoConfigurer {
                 .build();
     }
 
+    @ConditionalOnMissingBean(name = "jsonApi4jExecutorService")
     @Bean("jsonApi4jExecutorService")
     public ExecutorService jsonApi4jExecutorService() {
         return Executors.newCachedThreadPool();
     }
 
+    @ConditionalOnMissingBean(JsonApi4j.class)
     @Bean
     public JsonApi4j jsonApi4j(
             DomainRegistry domainRegistry,
@@ -125,6 +132,7 @@ public class SpringJsonApi4jAutoConfigurer {
                 .build();
     }
 
+    @ConditionalOnMissingBean(name = "jsonApi4jObjectMapper")
     @Bean(name = "jsonApi4jObjectMapper")
     public ObjectMapper jsonApi4jObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -136,6 +144,7 @@ public class SpringJsonApi4jAutoConfigurer {
         return mapper;
     }
 
+    @ConditionalOnMissingBean(ErrorHandlerFactoriesRegistry.class)
     @Bean
     public ErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry(
             SpringContextJsonApi4jErrorHandlerFactoriesScanner errorHandlerFactoriesScanner

@@ -25,6 +25,25 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private boolean deduplicateResources = Boolean.parseBoolean(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE);
     private long httpConnectTimeoutMs = Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
     private long httpTotalTimeoutMs = Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
+    private DefaultCache cache;
+
+    @Getter
+    @Setter
+    public static class DefaultCache implements Cache {
+
+        private boolean enabled = Boolean.parseBoolean(CD_CACHE_ENABLED_DEFAULT_VALUE);
+        private int maxSize = Integer.parseInt(CD_CACHE_MAX_SIZE_DEFAULT_VALUE);
+
+        @Override
+        public boolean enabled() {
+            return enabled;
+        }
+
+        @Override
+        public int maxSize() {
+            return maxSize;
+        }
+    }
 
     public static CompoundDocsProperties toCdProperties(Map<String, Object> jsonApi4jPropertiesRaw) {
         Object cdPropertiesObject = jsonApi4jPropertiesRaw.get(CompoundDocsProperties.CD_PROPERTY_NAME);
@@ -88,4 +107,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
         return httpTotalTimeoutMs;
     }
 
+    @Override
+    public Cache cache() {
+        return cache;
+    }
 }

@@ -12,6 +12,8 @@ public class CompoundDocsResolverConfig {
     private final boolean deduplicateResources;
     private final long httpConnectTimeoutMs;
     private final long httpTotalTimeoutMs;
+    private final boolean cacheEnabled;
+    private final int cacheMaxSize;
 
     public CompoundDocsResolverConfig(boolean enabled,
                                       int maxHops,
@@ -20,7 +22,9 @@ public class CompoundDocsResolverConfig {
                                       List<Propagation> propagation,
                                       boolean deduplicateResources,
                                       long httpConnectTimeoutMs,
-                                      long httpTotalTimeoutMs) {
+                                      long httpTotalTimeoutMs,
+                                      boolean cacheEnabled,
+                                      int cacheMaxSize) {
         this.enabled = enabled;
         this.maxHops = maxHops;
         this.maxIncludedResources = maxIncludedResources;
@@ -29,6 +33,8 @@ public class CompoundDocsResolverConfig {
         this.deduplicateResources = deduplicateResources;
         this.httpConnectTimeoutMs = httpConnectTimeoutMs;
         this.httpTotalTimeoutMs = httpTotalTimeoutMs;
+        this.cacheEnabled = cacheEnabled;
+        this.cacheMaxSize = cacheMaxSize;
     }
 
     public boolean isEnabled() {
@@ -63,6 +69,14 @@ public class CompoundDocsResolverConfig {
         return httpTotalTimeoutMs;
     }
 
+    public boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+
+    public int getCacheMaxSize() {
+        return cacheMaxSize;
+    }
+
     @Override
     public String toString() {
         return "CompoundDocsResolverConfig{" +
@@ -73,6 +87,8 @@ public class CompoundDocsResolverConfig {
                 ", propagation=" + propagation +
                 ", httpConnectTimeoutMs=" + httpConnectTimeoutMs +
                 ", httpTotalTimeoutMs=" + httpTotalTimeoutMs +
+                ", cacheEnabled=" + cacheEnabled +
+                ", cacheMaxSize=" + cacheMaxSize +
                 '}';
     }
 

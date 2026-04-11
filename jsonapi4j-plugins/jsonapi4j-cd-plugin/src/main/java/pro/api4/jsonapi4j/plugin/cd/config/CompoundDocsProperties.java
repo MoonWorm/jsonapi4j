@@ -61,4 +61,17 @@ public interface CompoundDocsProperties {
         return Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
     }
 
+    Cache cache();
+
+    interface Cache {
+
+        String CD_CACHE_ENABLED_DEFAULT_VALUE = "true";
+        String CD_CACHE_MAX_SIZE_DEFAULT_VALUE = "1000";
+
+        boolean enabled();
+
+        int maxSize();
+
+    }
+
 }

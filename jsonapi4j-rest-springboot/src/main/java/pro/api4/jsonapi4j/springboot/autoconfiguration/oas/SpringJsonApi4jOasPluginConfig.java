@@ -21,7 +21,7 @@ import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerIniti
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.oas",
-        name = {"enabled"},
+        name = "enabled",
         havingValue = "true",
         matchIfMissing = true
 )

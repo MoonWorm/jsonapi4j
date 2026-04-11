@@ -1,10 +1,10 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration;
 
-import pro.api4.jsonapi4j.domain.Relationship;
-import pro.api4.jsonapi4j.domain.Resource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.domain.Relationship;
+import pro.api4.jsonapi4j.domain.Resource;
 
 import java.util.Set;
 

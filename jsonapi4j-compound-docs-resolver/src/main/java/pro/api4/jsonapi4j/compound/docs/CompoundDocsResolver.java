@@ -3,6 +3,10 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
+import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
+import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
@@ -26,7 +30,7 @@ public class CompoundDocsResolver {
     private final CompoundDocsResolverConfig config;
     private final DomainUrlResolver domainUrlResolver;
 
-    private final JsonApi4jCompoundDocsApiHttpClient httpClient;
+    private final CachingCompoundDocsFetcher fetcher;
 
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
@@ -37,6 +41,19 @@ public class CompoundDocsResolver {
                                 DomainUrlResolver domainUrlResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService) {
+        this(config, domainUrlResolver, objectMapper, executorService, null);
+    }
+
+    /**
+     * Creates a resolver with caching support.
+     *
+     * @param cache the resource cache, or {@code null} to disable caching
+     */
+    public CompoundDocsResolver(CompoundDocsResolverConfig config,
+                                DomainUrlResolver domainUrlResolver,
+                                ObjectMapper objectMapper,
+                                ExecutorService executorService,
+                                CompoundDocsResourceCache cache) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
         Validate.notNull(domainUrlResolver, "DomainUrlResolver is not configured");
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
@@ -45,7 +62,9 @@ public class CompoundDocsResolver {
         this.config = config;
         this.domainUrlResolver = domainUrlResolver;
 
-        this.httpClient = new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
+        JsonApi4jCompoundDocsApiHttpClient httpClient =
+                new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
+        this.fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
@@ -53,8 +72,8 @@ public class CompoundDocsResolver {
         this.executorService = executorService;
     }
 
-    public String resolveCompoundDocs(String originalJsonApiResponse,
-                                      CompoundDocsRequest compoundDocsRequest) {
+    public CompoundDocsResult resolveCompoundDocs(String originalJsonApiResponse,
+                                                  CompoundDocsRequest compoundDocsRequest) {
         String relationshipName = compoundDocsRequest.getRelationshipNameFromRequestUri();
         if (relationshipName == null) {
             return resolveCompoundDocsForPrimaryResourceResponse(
@@ -69,7 +88,7 @@ public class CompoundDocsResolver {
         );
     }
 
-    public String resolveCompoundDocsForPrimaryResourceResponse(
+    public CompoundDocsResult resolveCompoundDocsForPrimaryResourceResponse(
             String originalJsonApiResponse,
             CompoundDocsRequest compoundDocsRequest
     ) throws ErrorJsonApiResponseException {
@@ -81,12 +100,12 @@ public class CompoundDocsResolver {
                     () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
             );
         }
-        return originalJsonApiResponse;
+        return new CompoundDocsResult(originalJsonApiResponse, null);
     }
 
-    public String resolveCompoundDocsForRelationshipResponse(String originalJsonApiResponse,
-                                                             CompoundDocsRequest compoundDocsRequest,
-                                                             String relationshipName) throws ErrorJsonApiResponseException {
+    public CompoundDocsResult resolveCompoundDocsForRelationshipResponse(String originalJsonApiResponse,
+                                                                         CompoundDocsRequest compoundDocsRequest,
+                                                                         String relationshipName) throws ErrorJsonApiResponseException {
         if (compoundDocsRequest.isProcessable()) {
             List<String> effectiveOriginalRequestIncludes =
                     compoundDocsRequest.includes() == null ?
@@ -102,17 +121,17 @@ public class CompoundDocsResolver {
                     () -> jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName)
             );
         }
-        return originalJsonApiResponse;
+        return new CompoundDocsResult(originalJsonApiResponse, null);
     }
 
-    private CompletableFuture<List<String>> sendJsonApiRequestAsync(Set<String> ids,
-                                                                    String resourceType,
-                                                                    Set<String> requestIncludes,
-                                                                    CompoundDocsRequest originalRequest,
-                                                                    Map<String, String> metaHeaders) {
+    private CompletableFuture<BatchFetchResult> sendJsonApiRequestAsync(Set<String> ids,
+                                                                       String resourceType,
+                                                                       Set<String> requestIncludes,
+                                                                       CompoundDocsRequest originalRequest,
+                                                                       Map<String, String> metaHeaders) {
         URI domainUri = resolveDomainUrl(resourceType);
         return CompletableFuture.supplyAsync(
-                () -> httpClient.doBatchFetch(
+                () -> fetcher.fetch(
                         domainUri,
                         resourceType,
                         ids,
@@ -125,13 +144,14 @@ public class CompoundDocsResolver {
         );
     }
 
-    private String resolveCompoundDocsInternal(String originalJsonApiResponse,
-                                               List<String> effectiveRequestIncludes,
-                                               CompoundDocsRequest request,
-                                               Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
+    private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
+                                                          List<String> effectiveRequestIncludes,
+                                                          CompoundDocsRequest request,
+                                                          Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
 
         ParseResult originalParseResult = parseResultSupplier.get();
         Set<String> allResources = new HashSet<>();
+        CacheControlAggregator aggregator = new CacheControlAggregator();
         int currentLevel = 1;
         Map<String, Set<String>> nextLevelIncludes = getNextLevelIncludes(effectiveRequestIncludes, currentLevel);
         boolean hasNextHops = !nextLevelIncludes.isEmpty();
@@ -152,7 +172,7 @@ public class CompoundDocsResolver {
             Map<String, Set<String>> resourceIdsByType = getResourceIdsByType(currentLevelParseResults);
             Map<String, Set<String>> typeToRelationshipsName = getTypeToRelationships(currentLevelParseResults);
 
-            Set<CompletableFuture<List<String>>> futures = new HashSet<>();
+            Set<CompletableFuture<BatchFetchResult>> futures = new HashSet<>();
             for (Map.Entry<String, Set<String>> e : resourceIdsByType.entrySet()) {
 
                 String resourceType = e.getKey();
@@ -179,10 +199,12 @@ public class CompoundDocsResolver {
 
             }
 
-            Set<String> currentLevelResources = futures.stream()
-                    .map(CompletableFuture::join)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
+            Set<String> currentLevelResources = new HashSet<>();
+            for (CompletableFuture<BatchFetchResult> future : futures) {
+                BatchFetchResult fetchResult = future.join();
+                currentLevelResources.addAll(fetchResult.resources());
+                aggregator.add(fetchResult.directives());
+            }
 
             allResources.addAll(currentLevelResources);
 
@@ -196,13 +218,14 @@ public class CompoundDocsResolver {
         }
 
         if (!allResources.isEmpty()) {
-            return jsonApiResponseWriter.composeWithIncludedMember(
+            String responseBody = jsonApiResponseWriter.composeWithIncludedMember(
                     (ObjectNode) originalParseResult.rootNode(),
                     allResources
             );
+            return new CompoundDocsResult(responseBody, aggregator.getResult());
         }
 
-        return originalJsonApiResponse;
+        return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
     }
 
     private URI resolveDomainUrl(String resourceType) {

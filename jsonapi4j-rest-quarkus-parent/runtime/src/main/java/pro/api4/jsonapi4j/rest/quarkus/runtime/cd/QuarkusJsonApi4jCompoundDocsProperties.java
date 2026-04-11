@@ -12,9 +12,12 @@ import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.*;
+import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE;
+import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE;
 
 @Singleton
 @ConfigMapping(prefix = "jsonapi4j.cd", namingStrategy = VERBATIM)
@@ -92,6 +95,28 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     @WithDefault(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE)
     long httpTotalTimeoutMs();
 
+    /**
+     * Cache settings. Optional.
+     */
+    Optional<CacheConfig> cache();
+
+    /**
+     * Cache configuration under {@code jsonapi4j.cd.cache.*}.
+     */
+    interface CacheConfig {
+        /**
+         * Enables compound docs resource cache.
+         */
+        @WithDefault(CD_CACHE_ENABLED_DEFAULT_VALUE)
+        boolean enabled();
+
+        /**
+         * Maximum number of entries in the in-memory cache.
+         */
+        @WithDefault(CD_CACHE_MAX_SIZE_DEFAULT_VALUE)
+        int maxSize();
+    }
+
     default CompoundDocsProperties toCdProperties() {
         DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
         cdProperties.setEnabled(enabled());
@@ -103,6 +128,12 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setDeduplicateResources(deduplicateResources());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
         cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
+        cdProperties.setCache(cache().map(c -> {
+            DefaultCompoundDocsProperties.DefaultCache dc = new DefaultCompoundDocsProperties.DefaultCache();
+            dc.setEnabled(c.enabled());
+            dc.setMaxSize(c.maxSize());
+            return dc;
+        }).orElse(null));
         return cdProperties;
     }
 }

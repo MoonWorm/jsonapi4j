@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.sf",
-        name = {"enabled"},
+        name = "enabled",
         havingValue = "true",
         matchIfMissing = true
 )
