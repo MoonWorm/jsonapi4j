@@ -17,10 +17,6 @@ public class CacheControlDirectives {
      * Represents a non-cacheable response (no Cache-Control header, or unparseable).
      * {@link #isCacheable()} returns {@code false}.
      */
-    /**
-     * Represents a non-cacheable response (no Cache-Control header, or unparseable).
-     * {@link #isCacheable()} returns {@code false}.
-     */
     public static final CacheControlDirectives NON_CACHEABLE =
             new CacheControlDirectives(null, null, false, false, false);
 
