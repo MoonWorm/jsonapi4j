@@ -47,7 +47,7 @@ public abstract class DeleteUserOperationTests {
                 .pathParam("userId", "999")
                 .delete("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(404);
     }
 
 }

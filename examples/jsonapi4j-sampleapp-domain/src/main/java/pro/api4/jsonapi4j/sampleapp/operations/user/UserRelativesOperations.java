@@ -99,7 +99,7 @@ public class UserRelativesOperations implements
                 resourceId -> {
                     jsonApiValidator.validateResourceId(resourceId);
                     if (userDb.readById(resourceId) == null) {
-                        throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
+                        throwResourceNotFoundException(request);
                     }
                 },
                 resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("users")),

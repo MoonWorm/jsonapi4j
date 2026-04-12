@@ -164,7 +164,6 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public UserDbEntity create(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        jsonApiValidator.validateSingleResourceDoc(singleResourceDoc);
         UserAttributes att = singleResourceDoc.getData().getAttributes();
         UserDbEntity result = userDb.createUser(
                 att.getFullName().split("\\s+")[0],
@@ -250,8 +249,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public void validateCreate(JsonApiRequest request) {
         ResourceOperations.super.validateCreate(request);
-        var payload = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        UserAttributes att = payload.getData().getAttributes();
+        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
+        jsonApiValidator.validateSingleResourceDoc(singleResourceDoc);
+        UserAttributes att = singleResourceDoc.getData().getAttributes();
         if (att == null) {
             throw new JsonApi4jConstraintViolationException("'attributes' is null", "attributes");
         }
@@ -261,7 +261,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
         userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
         userValidator.validateEmail(att.getEmail());
-        validateRelationships(payload.getData().getRelationships());
+        validateRelationships(singleResourceDoc.getData().getRelationships());
     }
 
     @Override
@@ -278,6 +278,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             userValidator.validateEmail(att.getEmail());
         }
         validateRelationships(singleResourceDoc.getData().getRelationships());
+        if (userDb.readById(request.getResourceId()) == null) {
+            throwResourceNotFoundException(request);
+        }
     }
 
     private void validateRelationships(UserRelationships rel) {
@@ -309,6 +312,14 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                         UserOperations::validateRelationsMeta
                 );
             }
+        }
+    }
+
+    @Override
+    public void validateDelete(JsonApiRequest request) {
+        ResourceOperations.super.validateDelete(request);
+        if (userDb.readById(request.getResourceId()) == null) {
+            throwResourceNotFoundException(request);
         }
     }
 

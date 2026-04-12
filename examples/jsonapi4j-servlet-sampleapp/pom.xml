@@ -32,6 +32,12 @@
             <artifactId>jsonapi4j-all-plugins</artifactId>
         </dependency>
 
+        <!--domain-->
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-sampleapp-domain</artifactId>
+        </dependency>
+
         <!-- jetty -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -95,7 +101,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>pro.api4.jsonapi4j.sampleapp.servlet.CookbookApp</mainClass>
+                    <mainClass>pro.api4.jsonapi4j.sampleapp.servlet.ServletJsonapi4jSampleApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

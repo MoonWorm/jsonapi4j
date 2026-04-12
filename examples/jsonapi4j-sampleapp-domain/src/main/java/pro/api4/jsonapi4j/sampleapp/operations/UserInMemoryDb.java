@@ -118,7 +118,7 @@ public class UserInMemoryDb implements UserDb {
                                    String email,
                                    String creditCardNumber) {
         if (!users.containsKey(userId)) {
-            throw new ResourceNotFoundException(userId, new ResourceType("users"));
+            throw new RuntimeException("User with id " + userId + "doesn't exist");
         }
         UserDbEntity updatedUser = users.get(userId);
         if (StringUtils.isNotBlank(firstName)) {
