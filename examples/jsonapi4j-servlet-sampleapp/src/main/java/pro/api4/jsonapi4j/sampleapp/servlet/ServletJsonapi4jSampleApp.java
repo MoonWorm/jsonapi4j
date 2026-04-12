@@ -69,6 +69,17 @@ public class ServletJsonapi4jSampleApp {
         );
     }
 
+    static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
+        DomainRegistry domainRegistry = createDomainRegistry(plugins);
+        OperationsRegistry operationsRegistry = createOperationRegistry(plugins);
+        return JsonApi4j.builder()
+                .domainRegistry(domainRegistry)
+                .operationsRegistry(operationsRegistry)
+                .plugins(plugins)
+                .executor(Executors.newCachedThreadPool())
+                .build();
+    }
+
     private static DomainRegistry createDomainRegistry(List<JsonApi4jPlugin> plugins) {
         return DomainRegistry.builder(plugins)
                 .resource(new UserResource())
@@ -78,17 +89,6 @@ public class ServletJsonapi4jSampleApp {
                 .relationship(new UserPlaceOfBirthRelationship())
                 .relationship(new UserRelativesRelationship())
                 .relationship(new CountryCurrenciesRelationship())
-                .build();
-    }
-
-    static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
-        DomainRegistry domainRegistry = createDomainRegistry(plugins);
-        OperationsRegistry operationsRegistry = createOperationRegistry(plugins);
-        return JsonApi4j.builder()
-                .domainRegistry(domainRegistry)
-                .operationsRegistry(operationsRegistry)
-                .plugins(plugins)
-                .executor(Executors.newCachedThreadPool())
                 .build();
     }
 

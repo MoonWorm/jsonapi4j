@@ -1,8 +1,9 @@
-package pro.api4.jsonapi4j.sampleapp.operations.country.validation;
+package pro.api4.jsonapi4j.sampleapp.validation;
 
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
+import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.List;
 

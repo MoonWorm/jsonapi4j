@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.operations.config;
+package pro.api4.jsonapi4j.sampleapp.config.operations;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

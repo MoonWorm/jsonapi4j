@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.sampleapp.operations.user.validation;
+package pro.api4.jsonapi4j.sampleapp.validation;
 
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;

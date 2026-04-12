@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.springboot.autoconfiguration.oas.springdoc.customizers;
+package pro.api4.jsonapi4j.sampleapp.config.swagger.customizers;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springdoc.core.customizers.OpenApiCustomizer;
