@@ -173,71 +173,7 @@ public class JsonApiOperationsCustomizer {
         if (registeredOperation == null) {
             return null;
         }
-        if (!isOperationImplemented(registeredOperation)) {
-            return null;
-        }
         return createOperation(registeredOperation.getOperationMeta());
-    }
-
-    private static boolean isOperationImplemented(RegisteredOperation<?> registeredOperation) {
-        OperationMeta operationMeta = registeredOperation.getOperationMeta();
-        OperationType operationType = operationMeta.getOperationType();
-        if (operationType == OperationType.READ_RESOURCE_BY_ID) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.READ_MULTIPLE_RESOURCES) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    ReadMultipleResourcesOperation.READ_PAGE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.CREATE_RESOURCE) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    CreateResourceOperation.CREATE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.UPDATE_RESOURCE) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    UpdateResourceOperation.UPDATE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.DELETE_RESOURCE) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    DeleteResourceOperation.DELETE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.READ_TO_ONE_RELATIONSHIP) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    ReadToOneRelationshipOperation.READ_ONE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.READ_TO_MANY_RELATIONSHIP) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    ReadToManyRelationshipOperation.READ_MANY_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    UpdateToOneRelationshipOperation.UPDATE_ONE_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP) {
-            return ReflectionUtils.isMethodOverridden(
-                    registeredOperation.getOperation().getClass(),
-                    UpdateToManyRelationshipOperation.UPDATE_MANY_METHOD_NAME,
-                    JsonApiRequest.class
-            );
-        }
-        return false;
     }
 
     private Operation createOperation(OperationMeta operationMeta) {

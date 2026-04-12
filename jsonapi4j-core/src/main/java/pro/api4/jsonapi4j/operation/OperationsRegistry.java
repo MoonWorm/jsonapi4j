@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
@@ -416,58 +417,67 @@ public class OperationsRegistry {
         public OperationsRegistryBuilder operation(ResourceOperation operation) {
             Validate.notNull(operation);
             Set<RegisteredOperation<?>> registeredAs = new HashSet<>();
-            if (operation instanceof ReadResourceByIdOperation<?> o) {
+            if (operation instanceof ReadResourceByIdOperation<?> o
+                    && isOperationImplemented(READ_RESOURCE_BY_ID, operation.getClass())) {
                 RegisteredOperation<ReadResourceByIdOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_RESOURCE_BY_ID, ReadResourceByIdOperation.class);
                 readResourceByIdOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof ReadMultipleResourcesOperation<?> o) {
+            if (operation instanceof ReadMultipleResourcesOperation<?> o
+                    && isOperationImplemented(READ_MULTIPLE_RESOURCES, operation.getClass())) {
                 RegisteredOperation<ReadMultipleResourcesOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_MULTIPLE_RESOURCES, ReadMultipleResourcesOperation.class);
                 readMultipleResourcesOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof CreateResourceOperation<?> o) {
+            if (operation instanceof CreateResourceOperation<?> o
+                    && isOperationImplemented(CREATE_RESOURCE, operation.getClass())) {
                 RegisteredOperation<CreateResourceOperation<?>> ro
                         = enrichWithMetaInfo(o, CREATE_RESOURCE, CreateResourceOperation.class);
                 createResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof UpdateResourceOperation o) {
+            if (operation instanceof UpdateResourceOperation o
+                    && isOperationImplemented(UPDATE_RESOURCE, operation.getClass())) {
                 RegisteredOperation<UpdateResourceOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_RESOURCE, UpdateResourceOperation.class);
                 updateResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof DeleteResourceOperation o) {
+            if (operation instanceof DeleteResourceOperation o
+                    && isOperationImplemented(DELETE_RESOURCE, operation.getClass())) {
                 RegisteredOperation<DeleteResourceOperation> ro
                         = enrichWithMetaInfo(o, DELETE_RESOURCE, DeleteResourceOperation.class);
                 deleteResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof ReadToOneRelationshipOperation<?, ?> o) {
+            if (operation instanceof ReadToOneRelationshipOperation<?, ?> o
+                    && isOperationImplemented(READ_TO_ONE_RELATIONSHIP, operation.getClass())) {
                 RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_ONE_RELATIONSHIP, ReadToOneRelationshipOperation.class);
                 readToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
                         .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof ReadToManyRelationshipOperation<?, ?> o) {
+            if (operation instanceof ReadToManyRelationshipOperation<?, ?> o
+                    && isOperationImplemented(READ_TO_MANY_RELATIONSHIP, operation.getClass())) {
                 RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_MANY_RELATIONSHIP, ReadToManyRelationshipOperation.class);
                 readToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
                         .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof UpdateToOneRelationshipOperation o) {
+            if (operation instanceof UpdateToOneRelationshipOperation o
+                    && isOperationImplemented(UPDATE_TO_ONE_RELATIONSHIP, operation.getClass())) {
                 RegisteredOperation<UpdateToOneRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_ONE_RELATIONSHIP, UpdateToOneRelationshipOperation.class);
                 updateToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
                         .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
-            if (operation instanceof UpdateToManyRelationshipOperation o) {
+            if (operation instanceof UpdateToManyRelationshipOperation o
+                    && isOperationImplemented(UPDATE_TO_MANY_RELATIONSHIP, operation.getClass())) {
                 RegisteredOperation<UpdateToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_MANY_RELATIONSHIP, UpdateToManyRelationshipOperation.class);
                 updateToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -515,19 +525,19 @@ public class OperationsRegistry {
         }
 
         public OperationsRegistryBuilder operations(ResourceOperation... operations) {
-            Validate.notNull(operations);
+            Validate.notNull(operations, "operations can't be null");
             Arrays.stream(operations).forEach(this::operation);
             return this;
         }
 
         public OperationsRegistryBuilder operations(Collection<? extends ResourceOperation> operations) {
-            Validate.notNull(operations);
+            Validate.notNull(operations, "operations can't be null");
             operations.forEach(this::operation);
             return this;
         }
 
         public OperationsRegistryBuilder operations(Set<? extends ResourceOperation> operations) {
-            Validate.notNull(operations);
+            Validate.notNull(operations, "operations can't be null");
             operations.forEach(this::operation);
             return this;
         }
@@ -585,6 +595,65 @@ public class OperationsRegistry {
                     .build();
         }
 
+    }
+
+    private static boolean isOperationImplemented(OperationType operationType, Class<?> operationClass) {
+        if (operationType == OperationType.READ_RESOURCE_BY_ID) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_MULTIPLE_RESOURCES) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    ReadMultipleResourcesOperation.READ_PAGE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.CREATE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    CreateResourceOperation.CREATE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    UpdateResourceOperation.UPDATE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.DELETE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    DeleteResourceOperation.DELETE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_TO_ONE_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    ReadToOneRelationshipOperation.READ_ONE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    ReadToManyRelationshipOperation.READ_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    UpdateToOneRelationshipOperation.UPDATE_ONE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    UpdateToManyRelationshipOperation.UPDATE_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        }
+        return false;
     }
 
 }
