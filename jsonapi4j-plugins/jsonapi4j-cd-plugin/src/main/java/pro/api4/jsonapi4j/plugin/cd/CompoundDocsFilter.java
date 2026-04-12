@@ -10,7 +10,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
+import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 
@@ -19,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initExecutorService;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initObjectMapper;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
 
@@ -50,7 +56,9 @@ public class CompoundDocsFilter implements Filter {
                 cdProperties.propagation(),
                 cdProperties.deduplicateResources(),
                 cdProperties.httpConnectTimeoutMs(),
-                cdProperties.httpTotalTimeoutMs()
+                cdProperties.httpTotalTimeoutMs(),
+                cdProperties.cache() != null ? cdProperties.cache().enabled() : Boolean.parseBoolean(CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE),
+                cdProperties.cache() != null ? cdProperties.cache().maxSize() : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE)
         );
 
         log.info("Effective compound docs settings: {}", config);
@@ -58,11 +66,17 @@ public class CompoundDocsFilter implements Filter {
         if (config.isEnabled()) {
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
+
+            CompoundDocsResourceCache cache = (CompoundDocsResourceCache) filterConfig
+                    .getServletContext()
+                    .getAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME);
+
             resolver = new CompoundDocsResolver(
                     config,
                     domainUrlResolver,
                     objectMapper,
-                    executorService
+                    executorService,
+                    cache
             );
 
             log.info("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
@@ -87,8 +101,9 @@ public class CompoundDocsFilter implements Filter {
 
                 String responseBody = responseWrapper.getCaptureAsString();
                 if (is2xxResponseCode(responseWrapper.getStatus())) {
-                    String responseBodyWithCompoundDocs = resolver.resolveCompoundDocs(responseBody, compoundDocsRequest);
-                    servletResponse.getWriter().write(responseBodyWithCompoundDocs);
+                    CompoundDocsResult result = resolver.resolveCompoundDocs(responseBody, compoundDocsRequest);
+                    applyCacheControlHeader(httpServletResponse, responseWrapper, result);
+                    servletResponse.getWriter().write(result.responseBody());
                 } else {
                     servletResponse.getWriter().write(responseBody);
                 }
@@ -101,9 +116,29 @@ public class CompoundDocsFilter implements Filter {
         }
     }
 
+    private void applyCacheControlHeader(HttpServletResponse response,
+                                         BufferedResponseWrapper responseWrapper,
+                                         CompoundDocsResult result) {
+        CacheControlAggregator aggregator = new CacheControlAggregator();
+
+        String primaryCacheControl = responseWrapper.getHeader("Cache-Control");
+        if (primaryCacheControl != null) {
+            aggregator.add(CacheControlParser.parse(primaryCacheControl));
+        }
+
+        aggregator.add(result.cacheControlDirectives());
+
+        CacheControlDirectives aggregated = aggregator.getResult();
+        if (aggregated != null) {
+            String headerValue = CacheControlParser.format(aggregated);
+            if (headerValue != null) {
+                response.setHeader("Cache-Control", headerValue);
+            }
+        }
+    }
+
     private boolean is2xxResponseCode(int statusCode) {
         return statusCode >= 200 && statusCode < 300;
     }
-
 
 }

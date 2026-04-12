@@ -1,18 +1,19 @@
 server:
-  port: 9393
+  port: 9394
 
 jsonapi4j:
   rootPath: /jsonapi
 
   cd:
     enabled: true
-    maxHops: 3
+    maxHops: 2
     cache:
-      enabled: false
+      enabled: true
+      maxSize: 100
     mapping:
       users: http://localhost:${server.port}${jsonapi4j.rootPath}
-      countries: http://localhost:${server.port}${jsonapi4j.rootPath}
-      currencies: http://localhost:${server.port}${jsonapi4j.rootPath}
+      countries: http://localhost:${server.port}/test-api
+      currencies: http://localhost:${server.port}/test-api
   ac:
     enabled: false
   oas:

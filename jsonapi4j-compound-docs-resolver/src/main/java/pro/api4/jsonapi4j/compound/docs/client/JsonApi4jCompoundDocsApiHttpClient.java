@@ -39,13 +39,13 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         this.errorStrategy = errorStrategy;
     }
 
-    public List<String> doBatchFetch(URI domainBaseUrl,
-                                     String resourceType,
-                                     Set<String> ids,
-                                     Set<String> includes,
-                                     CompoundDocsRequest originalRequest,
-                                     CompoundDocsResolverConfig config,
-                                     Map<String, String> metaHeaders) {
+    public HttpFetchResult doBatchFetch(URI domainBaseUrl,
+                                        String resourceType,
+                                        Set<String> ids,
+                                        Set<String> includes,
+                                        CompoundDocsRequest originalRequest,
+                                        CompoundDocsResolverConfig config,
+                                        Map<String, String> metaHeaders) {
         try (HttpClient client = buildHttpClient(config)) {
 
             String uri = domainBaseUrl.toString();
@@ -103,12 +103,15 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 if (errorStrategy == ErrorStrategy.IGNORE) {
-                    return Collections.emptyList();
+                    return new HttpFetchResult(Collections.emptyList(), null);
                 } else {
                     throw new ErrorJsonApiResponseException("Got error response from a downstream service on GET " + uri + " url");
                 }
             }
-            return parseResponse(response);
+            List<ParsedResource> resources = parseResponse(response);
+            String cacheControlHeader = response.headers()
+                    .firstValue("Cache-Control").orElse(null);
+            return new HttpFetchResult(resources, cacheControlHeader);
         } catch (Exception e) {
             throw new ErrorJsonApiResponseException("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
         }
@@ -120,7 +123,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                 .build();
     }
 
-    private List<String> parseResponse(HttpResponse<String> response) {
+    private List<ParsedResource> parseResponse(HttpResponse<String> response) {
         try {
             JsonNode rootNode = objectMapper.readTree(response.body());
             if (rootNode == null || rootNode.isNull() || !rootNode.isObject()) {
@@ -131,18 +134,26 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                 return Collections.emptyList();
             }
             if (dataNode.isArray()) {
-                List<String> result = new ArrayList<>();
+                List<ParsedResource> result = new ArrayList<>();
                 for (JsonNode node : dataNode) {
-                    result.add(objectMapper.writeValueAsString(node));
+                    result.add(toParsedResource(node));
                 }
                 return result;
             } else if (dataNode.isObject()) {
-                return Collections.singletonList(objectMapper.writeValueAsString(dataNode));
+                return Collections.singletonList(toParsedResource(dataNode));
             }
             return Collections.emptyList();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ParsedResource toParsedResource(JsonNode node) throws IOException {
+        String type = node.has("type") && node.get("type").isTextual()
+                ? node.get("type").asText() : null;
+        String id = node.has("id") && node.get("id").isTextual()
+                ? node.get("id").asText() : null;
+        return new ParsedResource(type, id, objectMapper.writeValueAsString(node));
     }
 
 }

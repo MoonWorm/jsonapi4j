@@ -6,6 +6,8 @@ import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
 import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
 import pro.api4.jsonapi4j.plugin.cd.CompoundDocsFilter;
@@ -22,12 +24,14 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
     public static final String COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME = "jsonApi4jCdPluginRootPath";
     public static final String COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME = "jsonApi4jCdPluginProperties";
     public static final String COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME = "jsonApi4jCdPluginDomainResolver";
+    public static final String COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME = "jsonApi4jCdPluginCache";
 
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
         CompoundDocsProperties cdProperties = initCdProperties(servletContext);
         if (cdProperties.enabled()) {
             initDomainUriResolver(servletContext, cdProperties);
+            initCache(servletContext, cdProperties);
 
             String rootPath = initRootPath(servletContext);
             String dispatcherServletMapping = rootPath + "/*";
@@ -36,6 +40,24 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
                     servletContext,
                     dispatcherServletMapping
             );
+        }
+    }
+
+    private void initCache(ServletContext servletContext, CompoundDocsProperties cdProperties) {
+        boolean cacheEnabled = cdProperties.cache() != null
+                ? cdProperties.cache().enabled()
+                : Boolean.parseBoolean(CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE);
+        if (!cacheEnabled) {
+            log.info("CD Cache is disabled via configuration.");
+            return;
+        }
+        if (servletContext.getAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME) == null) {
+            log.warn("CD Cache is not found in servlet context. Composing a default InMemoryCompoundDocsResourceCache...");
+            int maxSize = cdProperties.cache() != null
+                    ? cdProperties.cache().maxSize()
+                    : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE);
+            CompoundDocsResourceCache cache = new InMemoryCompoundDocsResourceCache(maxSize);
+            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cache);
         }
     }
 

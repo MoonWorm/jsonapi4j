@@ -7,4 +7,5 @@ import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 @Component
 @ConfigurationProperties(prefix = "jsonapi4j.cd")
 public class SpringCompoundDocsProperties extends DefaultCompoundDocsProperties {
+
 }

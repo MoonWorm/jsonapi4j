@@ -1364,13 +1364,33 @@ Because it's a standalone module, you can host this logic either:
 | `jsonapi4j.cd.mapping.<resourceType>` | empty map                            | Per-resource-type base URL mapping used by compound docs resolver.                                                                                                                |
 
 
-#### Performance and Caching
+#### Caching
 
-Since JSON:API defines a clear way to uniquely identify resources using the "type" + "id" pair, a cache layer can be integrated - internally or externally - to store resources based on these identifiers.
-You can respect TTLs from HTTP `Cache-Control` headers to manage freshness.
+Since JSON:API defines a clear way to uniquely identify resources using the "type" + "id" pair, a cache layer can be integrated to store resolved resources and avoid redundant downstream requests.
 
-To propagate downstream cache settings upstream, use: `CacheControlPropagator#propagateCacheControl(String cacheSettings)`.
-This method forwards cache headers so that the Compound Documents Resolver (or an upstream cache) can reuse them appropriately. 
+The Compound Documents Resolver includes a built-in in-memory cache that stores individual resources keyed by type, id, requested includes, and sparse fieldsets.
+Cache entries respect `Cache-Control` headers from downstream HTTP responses: the `max-age` (or `s-maxage`) directive determines TTL, while `no-store`, `no-cache`, and `private` directives prevent caching entirely.
+
+When a compound document request arrives, the resolver checks the cache for each required resource.
+Only cache misses trigger downstream HTTP calls. Cached and freshly fetched resources are merged transparently.
+
+The final compound document response carries an aggregated `Cache-Control` header reflecting the most restrictive directive across all included resources.
+For example, if `countries` returns `max-age=300` and `currencies` returns `max-age=60`, the compound document response will contain `max-age=60`.
+
+**Cache configuration**
+
+| Property name                | Default value | Description                                                                 |
+|------------------------------|---------------|-----------------------------------------------------------------------------|
+| `jsonapi4j.cd.cache.enabled` | `true`        | Enables/disables the built-in resource cache for compound docs resolution.  |
+| `jsonapi4j.cd.cache.maxSize` | `1000`        | Soft maximum number of cached entries. Eviction uses LRU + TTL expiration.  |
+
+The built-in cache uses a `ConcurrentHashMap` with lazy expiration and LRU eviction when the soft capacity is exceeded.
+For distributed deployments or custom eviction policies, implement the `CompoundDocsResourceCache` SPI and register your own bean - the framework will use it instead of the default in-memory cache.
+
+**Cache-Control propagation for primary resources**
+
+To propagate downstream cache settings from your primary resource operations upstream, use: `CacheControlPropagator#propagateCacheControl(String cacheSettings)`.
+This method forwards cache headers so that the Compound Documents Resolver can aggregate them with the included resources' directives.
 
 #### Sequence Overview
 
