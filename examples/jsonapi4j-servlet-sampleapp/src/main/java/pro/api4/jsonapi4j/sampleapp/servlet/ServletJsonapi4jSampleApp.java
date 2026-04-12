@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.sampleapp.servlet;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.servlet.ServletContext;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import pro.api4.jsonapi4j.JsonApi4j;
@@ -13,9 +13,9 @@ import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
+import pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
 import pro.api4.jsonapi4j.plugin.sf.config.DefaultSfProperties;
@@ -34,13 +34,10 @@ import pro.api4.jsonapi4j.sampleapp.operations.UserInMemoryDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.*;
+import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleCountryInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleUserInputParamsValidator;
 
 import java.util.List;
 import java.util.Map;
@@ -48,26 +45,32 @@ import java.util.concurrent.Executors;
 
 public class ServletJsonapi4jSampleApp {
 
-    public static void main(String[] args) throws Exception {
-        Server server = new Server(8080);
+    private static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+        // load props
+        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
 
-        ServletContextHandler context = new ServletContextHandler();
-        context.setContextPath("/");
-        context.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
-        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(context.getServletContext());
-        OasProperties oasProperties = DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw);
-        List<JsonApi4jPlugin> plugins = List.of(
+        // init Compound Docs plugin
+        JsonApi4jCompoundDocsServletContainerInitializer cdPluginInitializer = new JsonApi4jCompoundDocsServletContainerInitializer();
+        cdPluginInitializer.onStartup(null, servletContext);
+
+        // init OAS plugin
+        JsonApiOasServletContainerInitializer oasPluginInitializer = new JsonApiOasServletContainerInitializer();
+        oasPluginInitializer.onStartup(null, servletContext);
+
+        // build plugins
+        return List.of(
                 new JsonApiAccessControlPlugin(
                         new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry()),
                         DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
                 ),
                 new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)),
-                new JsonApiOasPlugin(oasProperties),
+                new JsonApiOasPlugin(DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw)),
                 new JsonApiCompoundDocsPlugin()
         );
+    }
 
-        UserDb userDb = new UserInMemoryDb();
-        var domainRegistry = DomainRegistry.builder(plugins)
+    private static DomainRegistry createDomainRegistry(List<JsonApi4jPlugin> plugins) {
+        return DomainRegistry.builder(plugins)
                 .resource(new UserResource())
                 .resource(new CountryResource())
                 .resource(new CurrencyResource())
@@ -76,43 +79,26 @@ public class ServletJsonapi4jSampleApp {
                 .relationship(new UserRelativesRelationship())
                 .relationship(new CountryCurrenciesRelationship())
                 .build();
+    }
 
-        UserInputParamsValidator userInputParamsValidator = new UserInputParamsValidator() {
-            @Override
-            public void validateFirstName(String firstName) {
+    private static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
+        DomainRegistry domainRegistry = createDomainRegistry(plugins);
+        OperationsRegistry operationsRegistry = createOperationRegistry(plugins);
+        return JsonApi4j.builder()
+                .domainRegistry(domainRegistry)
+                .operationsRegistry(operationsRegistry)
+                .plugins(plugins)
+                .executor(Executors.newCachedThreadPool())
+                .build();
+    }
 
-            }
-
-            @Override
-            public void validateLastName(String lastName) {
-
-            }
-
-            @Override
-            public void validateEmail(String email) {
-
-            }
-        };
-        CountryInputParamsValidator countryInputParamsValidator = new CountryInputParamsValidator() {
-
-            @Override
-            public void validateCountryId(String countryId) {
-
-            }
-
-            @Override
-            public void validateCountryIds(List<@NotBlank String> countryIds) {
-
-            }
-
-            @Override
-            public void validateRegion(String region) {
-
-            }
-        };
-
+    private static OperationsRegistry createOperationRegistry(List<JsonApi4jPlugin> plugins) {
+        UserDb userDb = new UserInMemoryDb();
         CountriesClient countriesClient = new CountriesInMemoryClient();
-        var operationsRegistry = OperationsRegistry.builder(plugins)
+        UserInputParamsValidator userInputParamsValidator = new SimpleUserInputParamsValidator();
+        SimpleCountryInputParamsValidator countryInputParamsValidator = new SimpleCountryInputParamsValidator();
+
+        return OperationsRegistry.builder(plugins)
                 .operation(new UserOperations(userDb, userInputParamsValidator, countryInputParamsValidator))
                 .operation(new UserCitizenshipsOperations(countriesClient, userDb, countryInputParamsValidator))
                 .operation(new UserPlaceOfBirthOperations(countriesClient, userDb, countryInputParamsValidator))
@@ -122,22 +108,27 @@ public class ServletJsonapi4jSampleApp {
                 .operation(new ReadCountryCurrenciesRelationshipOperation(countriesClient, countryInputParamsValidator))
                 .operation(new CurrencyOperations(countriesClient))
                 .build();
+    }
 
-        var jsonApi4j = JsonApi4j.builder()
-                .domainRegistry(domainRegistry)
-                .operationsRegistry(operationsRegistry)
-                .plugins(plugins)
-                .executor(Executors.newCachedThreadPool())
-                .build();
+    public static void main(String[] args) throws Exception {
+        Server server = new Server(8080);
 
-        context.setAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME, jsonApi4j);
+        ServletContextHandler context = new ServletContextHandler();
+        context.setContextPath("/");
+        context.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
 
-        var jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
+        // init dispatcher servlet
+        JsonApi4jServletContainerInitializer jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
         jsonApi4jInitializer.onStartup(null, context.getServletContext());
 
-        var oasPluginInitializer = new JsonApiOasServletContainerInitializer();
-        oasPluginInitializer.onStartup(null, context.getServletContext());
+        // init plugins
+        List<JsonApi4jPlugin> plugins = initPlugins(context.getServletContext());
 
+        // compose and register JsonApi4j
+        JsonApi4j jsonApi4j = createJsonApi4j(plugins);
+        context.setAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME, jsonApi4j);
+
+        // start server
         server.setHandler(context);
         server.start();
         server.join();
