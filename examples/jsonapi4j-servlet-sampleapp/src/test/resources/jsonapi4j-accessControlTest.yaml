@@ -1,0 +1,17 @@
+rootPath: /jsonapi
+
+cd:
+  enabled: true
+  maxHops: 3
+  cache:
+    enabled: false
+  mapping:
+    users: http://localhost:9595/jsonapi
+    countries: http://localhost:9595/jsonapi
+    currencies: http://localhost:9595/jsonapi
+ac:
+  enabled: true
+oas:
+  enabled: false
+sf:
+  enabled: false

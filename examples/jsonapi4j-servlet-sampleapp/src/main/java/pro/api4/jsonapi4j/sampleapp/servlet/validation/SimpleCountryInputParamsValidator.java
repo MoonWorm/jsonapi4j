@@ -46,8 +46,8 @@ public class SimpleCountryInputParamsValidator implements CountryInputParamsVali
         validateNotBlank(region, "region");
         if (Region.fromName(region) == null) {
             throw new BadJsonApiRequestException(
-                    DefaultErrorCodes.VALUE_INVALID_FORMAT, "region",
-                    "Unsupported region: " + region);
+                    DefaultErrorCodes.GENERIC_REQUEST_ERROR, "region",
+                    "Unknown region");
         }
     }
 

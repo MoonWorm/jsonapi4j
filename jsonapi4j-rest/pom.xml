@@ -46,6 +46,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
+        <jackson-module-parameter-names.version>2.20.1</jackson-module-parameter-names.version>
     </properties>
 
     <dependencies>
@@ -79,6 +80,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson-module-parameter-names.version}</version>
         </dependency>
 
         <!-- Servlet API -->

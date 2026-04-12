@@ -28,7 +28,7 @@ public class SimpleUserInputParamsValidator implements UserInputParamsValidator 
     public void validateEmail(String email) {
         validateNotBlank(email, "email");
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new BadJsonApiRequestException(DefaultErrorCodes.VALUE_INVALID_FORMAT, "email", "Invalid email format");
+            throw new BadJsonApiRequestException(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "email", "Invalid email format");
         }
     }
 

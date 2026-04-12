@@ -45,7 +45,7 @@ import java.util.concurrent.Executors;
 
 public class ServletJsonapi4jSampleApp {
 
-    private static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+    static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
         // load props
         Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
 
@@ -81,7 +81,7 @@ public class ServletJsonapi4jSampleApp {
                 .build();
     }
 
-    private static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
+    static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
         DomainRegistry domainRegistry = createDomainRegistry(plugins);
         OperationsRegistry operationsRegistry = createOperationRegistry(plugins);
         return JsonApi4j.builder()

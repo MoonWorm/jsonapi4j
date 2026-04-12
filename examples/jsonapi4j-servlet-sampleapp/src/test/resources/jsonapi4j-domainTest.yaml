@@ -1,0 +1,10 @@
+rootPath: /jsonapi
+
+cd:
+  enabled: false
+ac:
+  enabled: false
+oas:
+  enabled: false
+sf:
+  enabled: false

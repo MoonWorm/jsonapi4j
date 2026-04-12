@@ -54,7 +54,6 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.version>3.31.3</quarkus.version>
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
-        <jackson-module-parameter-names.version>2.20.1</jackson-module-parameter-names.version>
     </properties>
 
     <dependencyManagement>
@@ -86,11 +85,6 @@
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-undertow</artifactId>
                 <version>${quarkus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-parameter-names</artifactId>
-                <version>${jackson-module-parameter-names.version}</version>
             </dependency>
 
             <!-- jsonapi4j -->

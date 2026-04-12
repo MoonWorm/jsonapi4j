@@ -1,10 +1,12 @@
 package pro.api4.jsonapi4j.init;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
@@ -174,6 +176,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.registerModule(new JavaTimeModule());
             om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
             om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            om.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, om);
         } else {
             log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
