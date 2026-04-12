@@ -1,38 +1,12 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.domain.RegisteredResource;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
-import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
-import pro.api4.jsonapi4j.http.HttpStatusCodes;
-import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
-import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
-import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
-import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
-import pro.api4.jsonapi4j.operation.RegisteredOperation;
-import pro.api4.jsonapi4j.request.CursorAwareRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
-import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.headers.Header;
-import io.swagger.v3.oas.models.media.ArraySchema;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.IntegerSchema;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -43,10 +17,31 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.domain.RegisteredResource;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
+import pro.api4.jsonapi4j.operation.*;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
+import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
+import pro.api4.jsonapi4j.request.CursorAwareRequest;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
 
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.operation.ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.URL_COMPATIBLE_UNIQUE_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensions.X_OPERATION_PROPERTIES;
@@ -178,19 +173,78 @@ public class JsonApiOperationsCustomizer {
         if (registeredOperation == null) {
             return null;
         }
+        if (!isOperationImplemented(registeredOperation)) {
+            return null;
+        }
         return createOperation(registeredOperation.getOperationMeta());
+    }
+
+    private static boolean isOperationImplemented(RegisteredOperation<?> registeredOperation) {
+        OperationMeta operationMeta = registeredOperation.getOperationMeta();
+        OperationType operationType = operationMeta.getOperationType();
+        if (operationType == OperationType.READ_RESOURCE_BY_ID) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_MULTIPLE_RESOURCES) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    ReadMultipleResourcesOperation.READ_PAGE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.CREATE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    CreateResourceOperation.CREATE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    UpdateResourceOperation.UPDATE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.DELETE_RESOURCE) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    DeleteResourceOperation.DELETE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_TO_ONE_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    ReadToOneRelationshipOperation.READ_ONE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.READ_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    ReadToManyRelationshipOperation.READ_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    UpdateToOneRelationshipOperation.UPDATE_ONE_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    registeredOperation.getOperation().getClass(),
+                    UpdateToManyRelationshipOperation.UPDATE_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        }
+        return false;
     }
 
     private Operation createOperation(OperationMeta operationMeta) {
         Object oasOperationInfoObject = MapUtils.emptyIfNull(operationMeta.getPluginInfo()).get(JsonApiOasPlugin.NAME);
-        if (!(oasOperationInfoObject instanceof OasOperationInfoModel oasOperationInfo)) {
-            log.warn(
-                    "Can't generate OAS info for {} operation for '{}' resource. To enable generation put '@{}' annotation on method or operation class",
-                    operationMeta.getOperationType().name(),
-                    operationMeta.getResourceType().getType(),
-                    OasOperationInfo.class.getSimpleName()
-            );
-            return null;
+        OasOperationInfoModel oasOperationInfo = null;
+        if (oasOperationInfoObject instanceof OasOperationInfoModel ooim) {
+            oasOperationInfo = ooim;
         }
 
         ResourceType resourceType = operationMeta.getResourceType();
@@ -213,7 +267,13 @@ public class JsonApiOperationsCustomizer {
         // tags
         oasOperation.setTags(Collections.singletonList(extraOasOperationInfo.getOperationTag()));
         // parameters
-        oasOperation.setParameters(generateParameters(oasOperationInfo, supportedIncludes, extraOasOperationInfo));
+        oasOperation.setParameters(
+                generateParameters(
+                        oasOperationInfo != null ? oasOperationInfo.getParameters() : Collections.emptyList(),
+                        supportedIncludes,
+                        extraOasOperationInfo
+                )
+        );
         // request body
         String payloadSchemaName = getSchemaName(getPayloadType(oasOperationInfoObject));
         if (StringUtils.isNotBlank(payloadSchemaName)) {
@@ -232,7 +292,9 @@ public class JsonApiOperationsCustomizer {
                 )
         );
         // security requirements
-        oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.getSecurityConfig()));
+        if (oasOperationInfo != null) {
+            oasOperation.setSecurity(generateSecurityRequirements(oasOperationInfo.getSecurityConfig()));
+        }
         // oas extensions
         addOperationExtensions(oasOperation, extraOasOperationInfo.getUrlCompatibleUniqueName(), supportedIncludes);
 
@@ -281,14 +343,14 @@ public class JsonApiOperationsCustomizer {
         return Collections.emptyList();
     }
 
-    private List<Parameter> generateParameters(OasOperationInfoModel oasOperationInfo,
+    private List<Parameter> generateParameters(List<OasOperationInfoModel.Parameter> customParameters,
                                                List<String> supportedIncludes,
                                                OasOperationInfoUtil.Info extraOperationInfo) {
         Map<String, Parameter> parameters = new LinkedHashMap<>();
         // generate Json:Api default parameters first
         generateJsonApiParameters(supportedIncludes, extraOperationInfo).forEach(p -> parameters.put(p.getName(), p));
         // custom parameters can override Json:Api default parameters
-        generateCustomParameters(oasOperationInfo).forEach(p -> parameters.put(p.getName(), p));
+        generateCustomParameters(customParameters).forEach(p -> parameters.put(p.getName(), p));
         return List.copyOf(parameters.values());
     }
 
@@ -410,26 +472,23 @@ public class JsonApiOperationsCustomizer {
         return null;
     }
 
-    private List<Parameter> generateCustomParameters(OasOperationInfoModel oasOperationInfo) {
-        if (oasOperationInfo != null) {
-            return oasOperationInfo.getParameters().stream().map(
-                    p -> {
-                        Parameter parameter = new Parameter();
-                        parameter.setName(p.getName());
-                        parameter.setDescription(p.getDescription());
-                        parameter.setRequired(p.isRequired());
-                        parameter.setIn(p.getIn().getName());
-                        if (p.isArray()) {
-                            parameter.setSchema(new ArraySchema().items(new Schema().type(p.getType().getType()).example(p.getExample())));
-                        } else {
-                            parameter.setExample(p.getExample());
-                            parameter.setSchema(new Schema().type(p.getType().getType()));
-                        }
-                        return parameter;
+    private List<Parameter> generateCustomParameters(List<OasOperationInfoModel.Parameter> customParameters) {
+        return customParameters.stream().map(
+                p -> {
+                    Parameter parameter = new Parameter();
+                    parameter.setName(p.getName());
+                    parameter.setDescription(p.getDescription());
+                    parameter.setRequired(p.isRequired());
+                    parameter.setIn(p.getIn().getName());
+                    if (p.isArray()) {
+                        parameter.setSchema(new ArraySchema().items(new Schema().type(p.getType().getType()).example(p.getExample())));
+                    } else {
+                        parameter.setExample(p.getExample());
+                        parameter.setSchema(new Schema().type(p.getType().getType()));
                     }
-            ).toList();
-        }
-        return Collections.emptyList();
+                    return parameter;
+                }
+        ).toList();
     }
 
     private List<Parameter> generateJsonApiParameters(List<String> availableIncludes,

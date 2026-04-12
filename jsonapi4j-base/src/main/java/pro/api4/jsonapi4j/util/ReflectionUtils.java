@@ -293,6 +293,28 @@ public final class ReflectionUtils {
         return Collections.unmodifiableMap(result);
     }
 
+    /**
+     * Checks whether a method declared in a parent class or interface has been overridden
+     * in the given implementation class.
+     *
+     * @param implementationClass the concrete class to check
+     * @param methodName          the method name
+     * @param parameterTypes      the method parameter types
+     * @return {@code true} if the implementation class overrides the method, {@code false} otherwise
+     */
+    public static boolean isMethodOverridden(Class<?> implementationClass,
+                                             String methodName,
+                                             Class<?>... parameterTypes) {
+        Validate.notNull(implementationClass, "implementationClass must not be null");
+        Validate.notBlank(methodName, "methodName must not be blank");
+        try {
+            Method method = implementationClass.getMethod(methodName, parameterTypes);
+            return method.getDeclaringClass().equals(implementationClass);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
     private static Field findField(Object object, String fieldName) {
         Class<?> type = object.getClass();
         Map<String, Field> allFields = getAllFields(type);
