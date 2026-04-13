@@ -9,7 +9,6 @@
 // Expand main content area to use full width when TOC is disabled
 .page {
   float: left;
-  width: 100%;
 
   @include breakpoint($large) {
     padding-right: 0;
@@ -22,9 +21,9 @@
 
 // Make article body text slightly smaller
 .page__content {
-  font-size: 0.85em;
+  font-size: 0.75em;
 
   p, li, td, th, dd, dt {
-    font-size: 1em;
+    font-size: 0.9em;
   }
 }
