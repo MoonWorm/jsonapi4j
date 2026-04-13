@@ -94,6 +94,26 @@ public enum OperationType {
         }
     }
 
+    /**
+     * Formats a human-readable URL pattern for this operation type,
+     * e.g. {@code GET /users/{id}} or {@code PATCH /users/{id}/relationships/placeOfBirth}.
+     *
+     * @param resourceType     the resource type string (e.g. "users")
+     * @param relationshipName the relationship name, or {@code null} for resource operations
+     * @return formatted URL pattern prefixed with the HTTP method
+     */
+    public String formatUrl(String resourceType, String relationshipName) {
+        return switch (this) {
+            case READ_MULTIPLE_RESOURCES, CREATE_RESOURCE ->
+                    String.format("%s /%s (%s)", method, resourceType, name);
+            case READ_RESOURCE_BY_ID, UPDATE_RESOURCE, DELETE_RESOURCE ->
+                    String.format("%s /%s/{id} (%s)", method, resourceType, name);
+            case READ_TO_ONE_RELATIONSHIP, UPDATE_TO_ONE_RELATIONSHIP,
+                 READ_TO_MANY_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIP ->
+                    String.format("%s /%s/{id}/relationships/%s (%s)", method, resourceType, relationshipName, name);
+        };
+    }
+
     public enum SubType {
         RESOURCE,
         TO_ONE_RELATIONSHIP,

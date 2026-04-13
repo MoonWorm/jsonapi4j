@@ -46,8 +46,10 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         super.init(config);
 
         jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
-        Validate.notNull(jsonApi4j);
+        Validate.notNull(jsonApi4j, "JsonApi4j can't be null");
         log.info("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
+        // print state
+        log.info(jsonApi4j.printState());
 
         errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         if (errorHandlerFactory == null) {
@@ -58,7 +60,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         }
 
         objectMapper = initObjectMapper(config.getServletContext());
-        Validate.notNull(objectMapper);
+        Validate.notNull(objectMapper, "ObjectMapper can't be null");
 
         OperationDetailsResolver operationDetailsResolver = new OperationDetailsResolver(
                 jsonApi4j.getDomainRegistry()

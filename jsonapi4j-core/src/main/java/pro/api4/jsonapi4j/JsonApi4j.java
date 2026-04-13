@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
@@ -54,18 +53,134 @@ import static java.util.stream.Collectors.toMap;
  * </ol>
  * </p>
  */
-@Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class JsonApi4j {
-    @Builder.Default
-    private DomainRegistry domainRegistry = DomainRegistry.empty();
-    @Builder.Default
-    private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
-    @Builder.Default
-    private List<JsonApi4jPlugin> plugins = Collections.emptyList();
-    @Builder.Default
-    private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
+
+    private final List<JsonApi4jPlugin> plugins;
+    private final DomainRegistry domainRegistry;
+    private final OperationsRegistry operationsRegistry;
+    private final Executor executor;
+
+    public static class JsonApi4jBuilder {
+
+        private List<JsonApi4jPlugin> plugins = Collections.emptyList();
+        private DomainRegistry domainRegistry = DomainRegistry.empty();
+        private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
+        private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
+
+        private JsonApi4jBuilder() {
+
+        }
+
+        public JsonApi4jBuilder plugins(List<JsonApi4jPlugin> plugins) {
+            this.plugins = plugins;
+            return this;
+        }
+
+        public JsonApi4jBuilder domainRegistry(DomainRegistry domainRegistry) {
+            this.domainRegistry = domainRegistry;
+            return this;
+        }
+
+        public JsonApi4jBuilder operationsRegistry(OperationsRegistry operationsRegistry) {
+            this.operationsRegistry = operationsRegistry;
+            return this;
+        }
+
+        public JsonApi4jBuilder executor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        public JsonApi4j build() {
+            return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor);
+        }
+
+    }
+
+    public static JsonApi4jBuilder builder() {
+        return new JsonApi4jBuilder();
+    }
+
+    /**
+     * Prints a human-readable summary of the current JsonApi4j state including:
+     * <ul>
+     *     <li>All registered resources and their relationships</li>
+     *     <li>All registered operations grouped by resource type</li>
+     *     <li>Active plugins</li>
+     * </ul>
+     *
+     * @return formatted state summary
+     */
+    public String printState() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== JsonApi4j State ===\n");
+
+        // Plugins
+        List<String> enabledPlugins = plugins.stream()
+                .filter(JsonApi4jPlugin::enabled)
+                .map(JsonApi4jPlugin::pluginName)
+                .toList();
+        sb.append("\n--- Plugins (").append(enabledPlugins.size()).append(") ---\n");
+        if (enabledPlugins.isEmpty()) {
+            sb.append("  (none)\n");
+        } else {
+            enabledPlugins.forEach(name -> sb.append("  - ").append(name).append("\n"));
+        }
+
+        // Resources & Relationships
+        Collection<RegisteredResource<Resource<?>>> resources = domainRegistry.getResources();
+        sb.append("\n--- Resources (").append(resources.size()).append(") ---\n");
+        resources.stream()
+                .sorted()
+                .forEach(rr -> {
+                    ResourceType rt = rr.getResourceType();
+                    sb.append("  ").append(rt.getType())
+                            .append(" (").append(rr.getRegisteredAs().getSimpleName()).append(")\n");
+
+                    // To-One relationships
+                    domainRegistry.getToOneRelationships(rt).forEach(rel ->
+                            sb.append("    -> ").append(rel.getRelationshipName().getName())
+                                    .append(" [TO_ONE]\n"));
+
+                    // To-Many relationships
+                    domainRegistry.getToManyRelationships(rt).forEach(rel ->
+                            sb.append("    -> ").append(rel.getRelationshipName().getName())
+                                    .append(" [TO_MANY]\n"));
+                });
+
+        // Operations
+        sb.append("\n--- Operations ---\n");
+        operationsRegistry.getResourceTypesWithAnyOperationConfigured()
+                .stream()
+                .sorted()
+                .forEach(rt -> {
+                    String type = rt.getType();
+                    sb.append("  ").append(type).append(":\n");
+
+                    // Resource operations
+                    OperationType.getResourceOperationTypes().forEach(ot -> {
+                        if (operationsRegistry.isResourceOperationConfigured(rt, ot)) {
+                            sb.append("    ").append(ot.formatUrl(type, null)).append("\n");
+                        }
+                    });
+
+                    // Relationship operations
+                    operationsRegistry.getRelationshipNamesWithAnyOperationConfigured(rt)
+                            .stream()
+                            .sorted()
+                            .forEach(relName -> {
+                                OperationType.getAllRelationshipOperationTypes().forEach(ot -> {
+                                    if (operationsRegistry.isRelationshipOperationConfigured(rt, relName, ot)) {
+                                        sb.append("    ").append(ot.formatUrl(type, relName.getName())).append("\n");
+                                    }
+                                });
+                            });
+                });
+
+        return sb.toString();
+    }
 
     public Object execute(JsonApiRequest request) {
         if (request.getTargetRelationshipName() == null) {
