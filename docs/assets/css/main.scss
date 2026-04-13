@@ -4,14 +4,27 @@
 
 @charset "utf-8";
 
-// Smaller type scale (~25% reduction from previous)
-$type-size-1: 1.65em;
-$type-size-2: 1.31em;
-$type-size-3: 1.05em;
-$type-size-4: 0.86em;
-$type-size-5: 0.69em;
-$type-size-6: 0.6em;
-$type-size-7: 0.525em;
-$type-size-8: 0.435em;
-
 @import "minimal-mistakes";
+
+// Expand main content area to use full width when TOC is disabled
+.page {
+  float: left;
+  width: 100%;
+
+  @include breakpoint($large) {
+    padding-right: 0;
+  }
+
+  @include breakpoint($x-large) {
+    padding-right: 0;
+  }
+}
+
+// Make article body text slightly smaller
+.page__content {
+  font-size: 0.85em;
+
+  p, li, td, th, dd, dt {
+    font-size: 1em;
+  }
+}
