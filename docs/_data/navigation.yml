@@ -1,14 +1,14 @@
 main:
   - title: "Docs"
-    url: /
+    url: /introduction/
   - title: "Blog"
     url: /blog/
 
 docs:
   - title: "Documentation"
     children:
-      - title: "Home"
-        url: /
+      - title: "Introduction"
+        url: /introduction/
       - title: "Configuration"
         url: /configuration/
       - title: "Getting Started"

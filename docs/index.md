@@ -1,53 +1,101 @@
 ---
-title: "JsonApi4j Documentation"
+title: "JsonApi4j"
+layout: splash
 permalink: /
+header:
+  overlay_color: "#1a1a2e"
+  overlay_filter: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)"
+  actions:
+    - label: "Get Started"
+      url: /getting-started/
+    - label: "View on GitHub"
+      url: "https://github.com/MoonWorm/jsonapi4j"
+excerpt: "A modern, lightweight Java framework for building production-ready REST APIs compliant with the JSON:API specification. Define your domain — the framework handles the rest."
+
+feature_row_main:
+  - title: "JSON:API Compliant"
+    excerpt: "Purpose-built around the [JSON:API specification](https://jsonapi.org) — predictable request/response format, automatic error handling, cursor-based pagination, and resource linking out of the box."
+    image_path: /jsonapi4j-logo-square-small.png
+  - title: "Framework Agnostic"
+    excerpt: "Works with **Spring Boot**, **Quarkus**, and plain **Jakarta Servlet API**. Add one dependency and the framework auto-configures itself in your environment."
+  - title: "Pluggable Architecture"
+    excerpt: "Hook into the request pipeline with the visitor-based Plugin System. Ships with **Access Control**, **Sparse Fieldsets**, **OpenAPI**, and **Compound Documents** plugins."
+
+feature_row_advanced:
+  - title: "Compound Documents"
+    excerpt: "Multi-level `include` queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level."
+  - title: "Fine-Grained Access Control"
+    excerpt: "Declarative, annotation-driven authorization — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
+  - title: "Parallel Execution"
+    excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."
+
+feature_row_dx:
+  - title: "Minimal Boilerplate"
+    excerpt: "Define resources, relationships, and operations — the framework generates JSON:API documents, pagination links, error responses, and OpenAPI specs automatically."
+  - title: "Persistence Agnostic"
+    excerpt: "No JPA or Hibernate required. Works with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
+  - title: "Auto-Generated OpenAPI"
+    excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime. Exposed as JSON or YAML via a dedicated endpoint."
 ---
 
-## Introduction
+{% include feature_row id="feature_row_main" %}
 
-**JsonApi4j** is a modern, lightweight Java framework for building well-structured, scalable, and production-ready RESTful APIs.
-It streamlines the API design and development process by enforcing a consistent data format, eliminating repetitive boilerplate, and providing clear extension points for advanced use cases.
+## Built for Scale
 
-Unlike generic REST frameworks, **JsonApi4j** is purpose-built around the [JSON:API specification](https://jsonapi.org), which promotes best practices and addresses common pain points in designing and maintaining mature APIs.
+Whether you're standardizing your organization's API layer across dozens of services or building a new microservice from scratch, **JsonApi4j** provides a consistent foundation that eliminates API design debates and reduces boilerplate.
 
-This approach helps **organizations** drastically simplify API governance at scale.
+{% include feature_row id="feature_row_advanced" %}
 
-By abstracting the repetitive parts of RESTful design, **JsonApi4j** enables **developers** to focus on business logic instead of API plumbing.
+## Developer Experience
 
-## Why JsonApi4j?
+{% include feature_row id="feature_row_dx" %}
 
-The following features and design principles will help you determine whether **JsonApi4j** fits your use case.
+## Quick Example
 
-### Organizational & Business Motivation
+Define a resource and an operation — that's all it takes to expose a fully compliant JSON:API endpoint:
 
-Modern systems often consist of multiple services that need to expose and consume consistent data structures.
-**JsonApi4j** helps achieve this by:
+```java
+@JsonApiResource(resourceType = "users")
+public class UserResource implements Resource<UserDbEntity> {
 
-- 🧩 Implements the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format - eliminating the need for custom, company-wide API guidelines.
-- 📘 Generates [OpenAPI specifications](https://swagger.io/specification/) out of the box, enabling clear and transparent API documentation across the organization.
+    @Override
+    public String resolveResourceId(UserDbEntity dto) {
+        return dto.getId();
+    }
 
-### Engineering Motivation
+    @Override
+    public UserAttributes resolveAttributes(UserDbEntity dto) {
+        return new UserAttributes(dto.getFullName(), dto.getEmail());
+    }
+}
+```
 
-Whether you're standardizing your organization's API layer or building a new service from scratch, **JsonApi4j** provides a strong foundation for creating robust, performant, and secure APIs.
+```java
+@JsonApiResourceOperation(resource = UserResource.class)
+public class UserOperations implements ResourceOperations<UserDbEntity> {
 
-- ⚙️ **Framework Agnostic.** Works with modern Java web frameworks such [Spring Boot](https://spring.io/projects/spring-boot) and [Quarkus](https://quarkus.io/).
-  The HTTP layer is built on top of the [Jakarta Servlet API](https://jakarta.ee/specifications/servlet/), the foundation for all Java web applications.
+    @Override
+    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+        return CursorPageableResponse.fromItemsAndCursor(
+                userDb.readAll(request.getCursor()),
+                userDb.nextCursor()
+        );
+    }
+}
+```
 
-- 🔄 **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
+This produces paginated, JSON:API-compliant responses at `GET /users` — with links, resource identifiers, and error handling included automatically.
 
-- 🔌 **Pluggable architecture.** The Plugin System provides an extension mechanism for **JsonApi4j** that allows developers to hook into the request processing pipeline and enrich JSON:API behavior without modifying core logic. Out from the box provides two plugins - Access Control plugin and OpenAPI plugin.
+[Read the full Getting Started guide](/getting-started/){: .btn .btn--primary .btn--large}
+{: .text-center}
 
-- 🔐 **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership. Implemented as a separate plugin.
+## Works With
 
-- 🚀 **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently - from relationship resolution to compound document processing - and supports advanced concurrency optimizations, including virtual threads.
+| Spring Boot | Quarkus | Jakarta Servlet API | Maven Central |
+|:-:|:-:|:-:|:-:|
+| Auto-configuration | Quarkus Extension | Direct integration | Published artifacts |
 
-- 📦 **Compound Documents.** Supports multi-level `include` queries (for example, `include=comments.authors.followers`) for complex, client-driven requests.
-  The compound document resolver is available as a standalone, embeddable module that can also run at the API Gateway level, using a shared resource cache to reduce latency and improve performance.
-
-- 🎯 **Sparse Fieldsets**. Supports `fields[TYPE]=field1,field2` to return only requested attributes per resource type, reducing payload size and improving response efficiency for client-driven data selection.
-
-- 🧠 **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
-
-## Sample Apps
-
-Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory — check them out for practical guidance on using the framework.
+[Browse Sample Apps](https://github.com/MoonWorm/jsonapi4j/tree/main/examples){: .btn .btn--info}
+[Read the Documentation](/introduction/){: .btn .btn--info}
+[View on GitHub](https://github.com/MoonWorm/jsonapi4j){: .btn .btn--info}
+{: .text-center}

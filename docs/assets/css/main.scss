@@ -9,6 +9,7 @@
 // Expand main content area to use full width when TOC is disabled
 .page {
   float: left;
+  padding-left: 20px;
 
   @include breakpoint($large) {
     padding-right: 0;
@@ -25,5 +26,62 @@
 
   p, li, td, th, dd, dt {
     font-size: 0.9em;
+  }
+}
+
+// Landing page hero styling
+.page__hero--overlay {
+  padding: 6em 0 4em;
+  min-height: 400px;
+
+  .page__title {
+    font-size: 2.8em;
+    font-weight: 700;
+  }
+
+  .page__lead {
+    font-size: 1.2em;
+    max-width: 700px;
+  }
+
+  .btn--primary {
+    background-color: #e94560;
+    border-color: #e94560;
+    font-size: 1.1em;
+    padding: 0.6em 1.4em;
+
+    &:hover {
+      background-color: #c73a52;
+    }
+  }
+}
+
+// Feature row cards on landing page
+.feature__item {
+  .archive__item-title {
+    font-size: 1.1em;
+  }
+
+  .archive__item-excerpt {
+    font-size: 0.85em;
+  }
+}
+
+// Landing page section headings
+.splash .page__content h2 {
+  margin-top: 2em;
+  padding-bottom: 0.4em;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+// "Works With" table on landing page - clean look
+.splash .page__content table {
+  th {
+    font-weight: 600;
+    font-size: 1em;
+  }
+  td {
+    font-size: 0.85em;
+    color: #555;
   }
 }
