@@ -33,6 +33,7 @@
 .page__hero--overlay {
   padding: 6em 0 4em;
   min-height: 400px;
+  position: relative;
 
   .page__title {
     font-size: 2.8em;
@@ -52,6 +53,27 @@
 
     &:hover {
       background-color: #c73a52;
+    }
+  }
+
+  // Logo positioned in the empty right side of the hero
+  &::after {
+    content: "";
+    background-image: url("/jsonapi4j-logo-square-small.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    position: absolute;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 220px;
+    height: 220px;
+    opacity: 0.85;
+    display: none;
+
+    @include breakpoint($large) {
+      display: block;
     }
   }
 }
@@ -74,14 +96,40 @@
   border-bottom: 2px solid #f0f0f0;
 }
 
-// "Works With" table on landing page - clean look
-.splash .page__content table {
-  th {
-    font-weight: 600;
-    font-size: 1em;
+// "Works With" pill grid
+.works-with-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2em;
+  margin: 1.5em 0 2em;
+}
+
+.works-with-item {
+  background: #f7f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 10px;
+  padding: 1.2em 2em;
+  text-align: center;
+  min-width: 180px;
+  flex: 0 1 auto;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
   }
-  td {
-    font-size: 0.85em;
-    color: #555;
+
+  strong {
+    display: block;
+    font-size: 1.1em;
+    color: #1a1a2e;
+    margin-bottom: 0.3em;
+  }
+
+  span {
+    display: block;
+    font-size: 0.82em;
+    color: #666;
   }
 }

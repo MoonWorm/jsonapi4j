@@ -15,7 +15,6 @@ excerpt: "A modern, lightweight Java framework for building production-ready RES
 feature_row_main:
   - title: "JSON:API Compliant"
     excerpt: "Purpose-built around the [JSON:API specification](https://jsonapi.org) — predictable request/response format, automatic error handling, cursor-based pagination, and resource linking out of the box."
-    image_path: /jsonapi4j-logo-square-small.png
   - title: "Framework Agnostic"
     excerpt: "Works with **Spring Boot**, **Quarkus**, and plain **Jakarta Servlet API**. Add one dependency and the framework auto-configures itself in your environment."
   - title: "Pluggable Architecture"
@@ -91,9 +90,24 @@ This produces paginated, JSON:API-compliant responses at `GET /users` — with l
 
 ## Works With
 
-| Spring Boot | Quarkus | Jakarta Servlet API | Maven Central |
-|:-:|:-:|:-:|:-:|
-| Auto-configuration | Quarkus Extension | Direct integration | Published artifacts |
+<div class="works-with-grid" markdown="0">
+  <div class="works-with-item">
+    <strong>Spring Boot</strong>
+    <span>Auto-configuration</span>
+  </div>
+  <div class="works-with-item">
+    <strong>Quarkus</strong>
+    <span>Quarkus Extension</span>
+  </div>
+  <div class="works-with-item">
+    <strong>Jakarta Servlet API</strong>
+    <span>Direct integration</span>
+  </div>
+  <div class="works-with-item">
+    <strong>Maven Central</strong>
+    <span>Published artifacts</span>
+  </div>
+</div>
 
 [Browse Sample Apps](https://github.com/MoonWorm/jsonapi4j/tree/main/examples){: .btn .btn--info}
 [Read the Documentation](/introduction/){: .btn .btn--info}
