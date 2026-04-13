@@ -129,55 +129,8 @@ public class JsonApi4j {
             enabledPlugins.forEach(name -> sb.append("  - ").append(name).append("\n"));
         }
 
-        // Resources & Relationships
-        Collection<RegisteredResource<Resource<?>>> resources = domainRegistry.getResources();
-        sb.append("\n--- Resources (").append(resources.size()).append(") ---\n");
-        resources.stream()
-                .sorted()
-                .forEach(rr -> {
-                    ResourceType rt = rr.getResourceType();
-                    sb.append("  ").append(rt.getType())
-                            .append(" (").append(rr.getRegisteredAs().getSimpleName()).append(")\n");
-
-                    // To-One relationships
-                    domainRegistry.getToOneRelationships(rt).forEach(rel ->
-                            sb.append("    -> ").append(rel.getRelationshipName().getName())
-                                    .append(" [TO_ONE]\n"));
-
-                    // To-Many relationships
-                    domainRegistry.getToManyRelationships(rt).forEach(rel ->
-                            sb.append("    -> ").append(rel.getRelationshipName().getName())
-                                    .append(" [TO_MANY]\n"));
-                });
-
-        // Operations
-        sb.append("\n--- Operations ---\n");
-        operationsRegistry.getResourceTypesWithAnyOperationConfigured()
-                .stream()
-                .sorted()
-                .forEach(rt -> {
-                    String type = rt.getType();
-                    sb.append("  ").append(type).append(":\n");
-
-                    // Resource operations
-                    OperationType.getResourceOperationTypes().forEach(ot -> {
-                        if (operationsRegistry.isResourceOperationConfigured(rt, ot)) {
-                            sb.append("    ").append(ot.formatUrl(type, null)).append("\n");
-                        }
-                    });
-
-                    // Relationship operations
-                    operationsRegistry.getRelationshipNamesWithAnyOperationConfigured(rt)
-                            .stream()
-                            .sorted()
-                            .forEach(relName -> {
-                                OperationType.getAllRelationshipOperationTypes().forEach(ot -> {
-                                    if (operationsRegistry.isRelationshipOperationConfigured(rt, relName, ot)) {
-                                        sb.append("    ").append(ot.formatUrl(type, relName.getName())).append("\n");
-                                    }
-                                });
-                            });
-                });
+        sb.append("\n").append(domainRegistry.printState());
+        sb.append("\n").append(operationsRegistry.printState());
 
         return sb.toString();
     }

@@ -366,6 +366,41 @@ public class OperationsRegistry {
         return Collections.unmodifiableList(result);
     }
 
+    /**
+     * Prints a human-readable summary of all registered operations grouped by resource type.
+     *
+     * @return formatted operations registry summary
+     */
+    public String printState() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("--- Operations ---\n");
+        getResourceTypesWithAnyOperationConfigured()
+                .stream()
+                .sorted()
+                .forEach(rt -> {
+                    String type = rt.getType();
+                    sb.append("  ").append(type).append(":\n");
+
+                    OperationType.getResourceOperationTypes().forEach(ot -> {
+                        if (isResourceOperationConfigured(rt, ot)) {
+                            sb.append("    ").append(ot.formatUrl(type, null)).append("\n");
+                        }
+                    });
+
+                    getRelationshipNamesWithAnyOperationConfigured(rt)
+                            .stream()
+                            .sorted()
+                            .forEach(relName -> {
+                                OperationType.getAllRelationshipOperationTypes().forEach(ot -> {
+                                    if (isRelationshipOperationConfigured(rt, relName, ot)) {
+                                        sb.append("    ").append(ot.formatUrl(type, relName.getName())).append("\n");
+                                    }
+                                });
+                            });
+                });
+        return sb.toString();
+    }
+
     @Slf4j
     public static class OperationsRegistryBuilder {
 

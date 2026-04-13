@@ -173,6 +173,33 @@ public class DomainRegistry {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    /**
+     * Prints a human-readable summary of all registered resources and their relationships.
+     *
+     * @return formatted domain registry summary
+     */
+    public String printState() {
+        StringBuilder sb = new StringBuilder();
+        Collection<RegisteredResource<Resource<?>>> allResources = getResources();
+        sb.append("--- Resources (").append(allResources.size()).append(") ---\n");
+        allResources.stream()
+                .sorted()
+                .forEach(rr -> {
+                    ResourceType rt = rr.getResourceType();
+                    sb.append("  ").append(rt.getType())
+                            .append(" (").append(rr.getRegisteredAs().getSimpleName()).append(")\n");
+
+                    getToOneRelationships(rt).forEach(rel ->
+                            sb.append("    -> ").append(rel.getRelationshipName().getName())
+                                    .append(" [TO_ONE]\n"));
+
+                    getToManyRelationships(rt).forEach(rel ->
+                            sb.append("    -> ").append(rel.getRelationshipName().getName())
+                                    .append(" [TO_MANY]\n"));
+                });
+        return sb.toString();
+    }
+
     @Slf4j
     public static class DomainRegistryBuilder {
 
