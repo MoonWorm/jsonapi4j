@@ -1,6 +1,40 @@
-remote_theme: pages-themes/cayman@v0.2.0
+remote_theme: "mmistakes/minimal-mistakes@4.26.2"
+
 plugins:
   - jekyll-remote-theme
-title: "JsonApi4j — JSON:API Specification Framework for Java"
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-include-cache
+
+title: "JsonApi4j"
+subtitle: "JSON:API Specification Framework for Java"
 description: "Lightweight Java framework for building REST APIs compliant with the JSON:API specification. Works with Spring Boot, Quarkus, and Jakarta Servlet API."
+url: "https://api4.pro"
+baseurl: ""
+
+minimal_mistakes_skin: "default"
+
 show_downloads: false
+
+# SEO
+locale: "en-US"
+og_image: "/jsonapi4j-logo-square-small.png"
+
+# Site footer
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/MoonWorm/jsonapi4j"
+
+# Front matter defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: single
+      toc: true
+      toc_sticky: true
+      sidebar:
+        nav: "docs"

@@ -1,0 +1,9 @@
+main:
+  - title: "Docs"
+    url: /
+
+docs:
+  - title: "Documentation"
+    children:
+      - title: "Home"
+        url: /

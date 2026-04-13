@@ -1,4 +1,7 @@
-# JsonApi4j Documentation
+---
+title: "JsonApi4j Documentation"
+permalink: /
+---
 
 ## Introduction
 
