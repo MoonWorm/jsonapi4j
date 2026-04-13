@@ -7,3 +7,35 @@ docs:
     children:
       - title: "Home"
         url: /
+      - title: "Configuration"
+        url: /configuration/
+      - title: "Getting Started"
+        url: /getting-started/
+      - title: "Request/Response Examples"
+        url: /request-response-examples/
+  - title: "Framework Internals"
+    children:
+      - title: "Project Structure"
+        url: /project-structure/
+      - title: "Designing the Domain"
+        url: /domain/
+      - title: "Operations"
+        url: /operations/
+  - title: "Plugins"
+    children:
+      - title: "Plugin System"
+        url: /plugins/
+      - title: "Access Control Plugin"
+        url: /access-control/
+      - title: "Sparse Fieldsets Plugin"
+        url: /sparse-fieldsets/
+      - title: "OpenAPI Plugin"
+        url: /openapi/
+  - title: "Advanced"
+    children:
+      - title: "Compound Documents"
+        url: /compound-docs/
+      - title: "Performance Tuning"
+        url: /performance/
+      - title: "Spec Deviations"
+        url: /spec-deviations/
