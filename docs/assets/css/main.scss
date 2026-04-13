@@ -4,14 +4,14 @@
 
 @charset "utf-8";
 
-// Slightly smaller type scale
-$type-size-1: 2.2em;
-$type-size-2: 1.75em;
-$type-size-3: 1.4em;
-$type-size-4: 1.15em;
-$type-size-5: 0.92em;
-$type-size-6: 0.8em;
-$type-size-7: 0.7em;
-$type-size-8: 0.58em;
+// Smaller type scale (~25% reduction from previous)
+$type-size-1: 1.65em;
+$type-size-2: 1.31em;
+$type-size-3: 1.05em;
+$type-size-4: 0.86em;
+$type-size-5: 0.69em;
+$type-size-6: 0.6em;
+$type-size-7: 0.525em;
+$type-size-8: 0.435em;
 
 @import "minimal-mistakes";

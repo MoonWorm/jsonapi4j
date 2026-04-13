@@ -90,10 +90,10 @@ For distributed deployments or custom eviction policies, implement the `Compound
 
 **Cache-Control propagation for primary resources**
 
-To propagate downstream cache settings from your primary resource operations upstream, use: `CacheControlPropagator#propagateCacheControl(String cacheSettings)`.
+To propagate downstream cache settings from your primary resource operations upstream, use: `ResponseHeaders#propagateCacheControl(CacheControlDirectives cacheControlDirectives)`.
 This method forwards cache headers so that the Compound Documents Resolver can aggregate them with the included resources' directives.
 
 ### Sequence Overview
 
 Here's a high-level sequence diagram for the Compound Documents resolution process:
-![Compound Docs Sequence Diagram](compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")
+![Compound Docs Sequence Diagram](/compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")

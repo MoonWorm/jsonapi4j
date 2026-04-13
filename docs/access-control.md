@@ -33,7 +33,7 @@ This design enables declarative, centralized security policies while keeping dom
 
 As it was mentioned above access control evaluation is performed twice during the request lifecycle - during the **inbound** and **outbound** stages.
 
-![Access Control Evaluation Stages](access-control-evaluation-stages-medium.png)
+![Access Control Evaluation Stages](/access-control-evaluation-stages-medium.png)
 
 #### Inbound Evaluation Stage
 
