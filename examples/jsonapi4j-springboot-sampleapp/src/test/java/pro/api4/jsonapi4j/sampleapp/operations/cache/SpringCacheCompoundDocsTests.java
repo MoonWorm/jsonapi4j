@@ -13,8 +13,9 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @ActiveProfiles("cacheTest")
@@ -51,7 +52,9 @@ public class SpringCacheCompoundDocsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("included.size()", greaterThan(0));
+                // user 1's citizenships: {NO, FI, US}
+                .body("included", hasSize(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"));
 
         int firstCallCountCountries = invocationTracker.getCount("countries");
         assertThat(firstCallCountCountries).as("First request should hit the downstream controller").isEqualTo(1);
@@ -65,7 +68,9 @@ public class SpringCacheCompoundDocsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("included.size()", greaterThan(0));
+                // user 1's citizenships: {NO, FI, US}
+                .body("included", hasSize(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"));
 
         int secondCallCountCountries = invocationTracker.getCount("countries");
         assertThat(secondCallCountCountries).as("Second request should be served from cache — no downstream calls").isEqualTo(1);
@@ -83,7 +88,10 @@ public class SpringCacheCompoundDocsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("included.size()", greaterThan(0))
+                // user 1's citizenships {NO, FI, US} + their currencies {NOK, EUR, USD} = 6 included
+                .body("included", hasSize(6))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
+                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("NOK", "EUR", "USD"))
                 .header("Cache-Control", "max-age=60");
     }
 
@@ -101,7 +109,9 @@ public class SpringCacheCompoundDocsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("included.size()", greaterThan(0));
+                // user 1's citizenships: {NO, FI, US}
+                .body("included", hasSize(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"));
 
         int firstCallCount = invocationTracker.getCount("countries");
         assertThat(firstCallCount).isEqualTo(1);
@@ -116,7 +126,9 @@ public class SpringCacheCompoundDocsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("included.size()", greaterThan(0));
+                // user 1's citizenships: {NO, FI, US}
+                .body("included", hasSize(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"));
 
         int secondCallCount = invocationTracker.getCount("countries");
         assertThat(secondCallCount).as("no-store should prevent caching — downstream still called").isEqualTo(2);

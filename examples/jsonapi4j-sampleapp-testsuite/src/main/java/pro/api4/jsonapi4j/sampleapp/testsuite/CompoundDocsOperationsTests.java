@@ -5,14 +5,12 @@ import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class CompoundDocsOperationsTests {
 
@@ -41,8 +39,17 @@ public abstract class CompoundDocsOperationsTests {
                 .body("data.relationships.citizenships.data", hasSize(3))
                 .body("data.relationships.placeOfBirth.data.id", equalTo("US"))
                 .body("data.relationships.relatives.data", hasSize(2))
-                // included resources — countries, currencies, and relative users resolved via CD
-                .body("included.size()", greaterThan(0))
+                // included resources — countries, currencies, and relative users resolved via CD, deduplicated:
+                // - users (relatives): {2, 3}
+                // - countries (citizenships ∪ placeOfBirth): {NO, FI, US}
+                // - currencies (currencies of all included countries): NO -> NOK, FI -> EUR, US -> USD => {NOK, EUR, USD}
+                .body("included", hasSize(8))
+                .body("included.findAll { it.type == 'users' }.size()", equalTo(2))
+                .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("2", "3"))
+                .body("included.findAll { it.type == 'countries' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
+                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("NOK", "EUR", "USD"))
                 .body("included.find { it.id == 'US' && it.type == 'countries' }.attributes.name", equalTo("United States"))
                 .body("included.find { it.id == 'USD' && it.type == 'currencies' }.attributes.name", equalTo("United States dollar"))
                 .body("included.find { it.id == '2' && it.type == 'users' }.attributes.fullName", equalTo("Jane Doe"))
@@ -61,11 +68,17 @@ public abstract class CompoundDocsOperationsTests {
                 .body("data", hasSize(2))
                 .body("data[0].relationships.citizenships.data", hasSize(3))
                 .body("data[1].relationships.citizenships.data", hasSize(1))
-                // included resources from both users' relationships
-                .body("included.size()", greaterThan(0))
-                .body("included.findAll { it.type == 'countries' }.size()", greaterThanOrEqualTo(1))
-                .body("included.findAll { it.type == 'currencies' }.size()", greaterThanOrEqualTo(1))
-                .body("included.findAll { it.type == 'users' }.size()", greaterThanOrEqualTo(1));
+                // included resources from both users' relationships, deduplicated:
+                // - users (relatives): user 1 -> {2, 3}, user 2 -> {1, 4} => {1, 2, 3, 4}
+                // - countries (citizenships ∪ placeOfBirth): user 1 -> {NO, FI, US} + US; user 2 -> {US} + FI => {NO, FI, US}
+                // - currencies (currencies of all included countries): NO -> NOK, FI -> EUR, US -> USD => {NOK, EUR, USD}
+                .body("included", hasSize(10))
+                .body("included.findAll { it.type == 'users' }.size()", equalTo(4))
+                .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("1", "2", "3", "4"))
+                .body("included.findAll { it.type == 'countries' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
+                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("NOK", "EUR", "USD"));
     }
 
     @Test
@@ -145,7 +158,9 @@ public abstract class CompoundDocsOperationsTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body("included.size()", greaterThan(0))
+                // user 1's relatives: {2, 3}
+                .body("included", hasSize(2))
+                .body("included.id", containsInAnyOrder("2", "3"))
                 .body("included.links.self", everyItem(containsString("customParam")));
     }
 
