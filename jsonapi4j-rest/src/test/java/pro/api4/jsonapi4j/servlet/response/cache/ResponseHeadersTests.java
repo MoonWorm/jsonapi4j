@@ -8,13 +8,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.servlet.response.ResponseHeaders;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class ResponseHeadersPropagatorTests {
+public class ResponseHeadersTests {
 
     @Mock
     private HttpServletResponse response;
@@ -22,7 +23,7 @@ public class ResponseHeadersPropagatorTests {
     @AfterEach
     void cleanup() {
         // ensure ThreadLocal is always cleaned up between tests
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.flush(response);
     }
 
     // --- propagateCacheControl(HttpServletResponse) ---
@@ -35,8 +36,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(downstreamResponse);
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(downstreamResponse);
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader(HttpHeaders.CACHE_CONTROL.getName(), "max-age=300");
@@ -48,8 +49,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl((HttpServletResponse) null);
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl((HttpServletResponse) null);
+        ResponseHeaders.flush(response);
 
         // then
         verify(response, never()).addHeader(
@@ -66,8 +67,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(downstreamResponse);
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(downstreamResponse);
+        ResponseHeaders.flush(response);
 
         // then
         verify(response, never()).addHeader(
@@ -85,8 +86,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(directives);
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(directives);
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader(HttpHeaders.CACHE_CONTROL.getName(), "max-age=600");
@@ -98,9 +99,9 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when - second call replaces the first
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(60));
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(60));
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader(HttpHeaders.CACHE_CONTROL.getName(), "max-age=60");
@@ -115,8 +116,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(500);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
+        ResponseHeaders.flush(response);
 
         // then
         verify(response, never()).addHeader(
@@ -131,8 +132,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(404);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
+        ResponseHeaders.flush(response);
 
         // then
         verify(response, never()).addHeader(
@@ -148,8 +149,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getHeader(HttpHeaders.CACHE_CONTROL.getName())).thenReturn("no-cache");
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
+        ResponseHeaders.flush(response);
 
         // then
         verify(response, never()).addHeader(
@@ -166,8 +167,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateHeader("X-Custom", "value1");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateHeader("X-Custom", "value1");
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader("X-Custom", "value1");
@@ -179,9 +180,9 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateHeader("X-Custom", "value1");
-        ResponseHeadersPropagator.propagateHeader("X-Custom", "value2");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateHeader("X-Custom", "value1");
+        ResponseHeaders.propagateHeader("X-Custom", "value2");
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader("X-Custom", "value1");
@@ -194,9 +195,9 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateHeader("X-First", "a");
-        ResponseHeadersPropagator.propagateHeader("X-Second", "b");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateHeader("X-First", "a");
+        ResponseHeaders.propagateHeader("X-Second", "b");
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader("X-First", "a");
@@ -209,8 +210,8 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(500);
 
         // when
-        ResponseHeadersPropagator.propagateHeader("X-Custom", "value");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateHeader("X-Custom", "value");
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader("X-Custom", "value");
@@ -222,16 +223,16 @@ public class ResponseHeadersPropagatorTests {
     void flush_clearsThreadLocal_subsequentFlushDoesNothing() {
         // given
         when(response.getStatus()).thenReturn(200);
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
-        ResponseHeadersPropagator.propagateHeader("X-Custom", "value");
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(300));
+        ResponseHeaders.propagateHeader("X-Custom", "value");
 
         // when - first flush applies headers
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.flush(response);
 
         // then - second flush on a fresh mock does nothing
         HttpServletResponse secondResponse = org.mockito.Mockito.mock(HttpServletResponse.class);
         when(secondResponse.getStatus()).thenReturn(200);
-        ResponseHeadersPropagator.flush(secondResponse);
+        ResponseHeaders.flush(secondResponse);
 
         verify(secondResponse, never()).addHeader(
                 org.mockito.Mockito.anyString(),
@@ -247,9 +248,9 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(200);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(120));
-        ResponseHeadersPropagator.propagateHeader("X-Request-Id", "abc-123");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(120));
+        ResponseHeaders.propagateHeader("X-Request-Id", "abc-123");
+        ResponseHeaders.flush(response);
 
         // then
         verify(response).addHeader(HttpHeaders.CACHE_CONTROL.getName(), "max-age=120");
@@ -262,9 +263,9 @@ public class ResponseHeadersPropagatorTests {
         when(response.getStatus()).thenReturn(403);
 
         // when
-        ResponseHeadersPropagator.propagateCacheControl(CacheControlDirectives.ofMaxAge(120));
-        ResponseHeadersPropagator.propagateHeader("X-Request-Id", "abc-123");
-        ResponseHeadersPropagator.flush(response);
+        ResponseHeaders.propagateCacheControl(CacheControlDirectives.ofMaxAge(120));
+        ResponseHeaders.propagateHeader("X-Request-Id", "abc-123");
+        ResponseHeaders.flush(response);
 
         // then - Cache-Control not propagated for non-2xx
         verify(response, never()).addHeader(

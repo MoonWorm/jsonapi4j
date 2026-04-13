@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
@@ -18,7 +19,8 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
-import pro.api4.jsonapi4j.servlet.response.cache.ResponseHeadersPropagator;
+import pro.api4.jsonapi4j.servlet.response.ResponseHeaders;
+import pro.api4.jsonapi4j.servlet.response.ResponseStatus;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
@@ -92,6 +94,9 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             Object dataDoc = jsonApi4j.execute(jsonApiRequest);
 
             int status = targetOperationType.getHttpStatus();
+            // check if status is overridden
+            status = ResponseStatus.getOverriddenStatus().orElse(status);
+
             resp.setStatus(status);
             log.info("Setting response status code: {}", status);
 
@@ -99,14 +104,15 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 SingleResourceDoc<?> singleResourceDoc = (SingleResourceDoc<?>) dataDoc;
                 if (singleResourceDoc != null) {
                     String location = URI.create("/" + targetResourceType.getType() + "/" + singleResourceDoc.getData().getId()).toString();
-                    resp.setHeader("Location", location);
+                    resp.setHeader(HttpHeaders.LOCATION.getName(), location);
                     log.info("Setting HTTP Location header: {}", location);
                 }
             }
 
-            writeResponseBody(resp, dataDoc);
+            // populate custom headers
+            ResponseHeaders.flush(resp);
 
-            ResponseHeadersPropagator.flush(resp);
+            writeResponseBody(resp, dataDoc);
 
         } catch (Exception e) {
             if (errorHandlerFactory != null) {

@@ -927,6 +927,50 @@ Two error handler factories are registered by default:
 * `DefaultErrorHandlerFactory` - encapsulates the logic for mapping framework-specific exceptions (such as `JsonApi4jException`, `ResourceNotFoundException`, and other technical exceptions) into JSON:API-compliant error documents    
 * `Jsr380ErrorHandlers` - encapsulates the logic for mapping `jakarta.validation.ConstraintViolationException` exception (JSR-380) into JSON:API error documents.
 
+### Override HTTP response status and headers
+
+JsonApi4j automatically determines the HTTP response status code based on the operation type (e.g. `200` for reads, `201` for creates, `202` for updates and deletes). However, there are cases where you may need to override the default status code or add custom headers to the response from within your operation logic.
+
+#### Override response status
+
+Use `ResponseStatus.overrideResponseStatus(HttpStatusCodes)` to override the HTTP status code for the current request. This is useful when the default status code doesn't match your business logic — for example, returning `204 No Content` instead of `202 Accepted` for a delete operation.
+
+```java
+@Override
+public void delete(JsonApiRequest request) {
+    myService.delete(request.getResourceId());
+    ResponseStatus.overrideResponseStatus(HttpStatusCodes.SC_204_NO_CONTENT);
+}
+```
+
+The overridden status is stored in a `ThreadLocal` and applied after the operation completes. It takes effect only for the current request and is automatically cleaned up.
+
+All standard HTTP status codes are available via the `HttpStatusCodes` enum.
+
+#### Propagate custom response headers
+
+Use `ResponseHeaders.propagateHeader(String, String)` to add custom headers to the outgoing HTTP response from within your operation logic.
+
+```java
+@Override
+public UserDto readById(JsonApiRequest request) {
+    UserDto user = myService.getUser(request.getResourceId());
+    ResponseHeaders.propagateHeader("X-Resource-Version", user.getVersion());
+    return user;
+}
+```
+
+Multiple values for the same header name are supported — each call accumulates values that are all added as separate header entries.
+
+```java
+ResponseHeaders.propagateHeader("X-Upstream-Timing", "db=12ms");
+ResponseHeaders.propagateHeader("X-Upstream-Timing", "cache=3ms");
+```
+
+Headers are stored in a request-scoped `ThreadLocal` context and flushed to the HTTP response at the end of request processing.
+
+`Cache-Control` headers receive special treatment — they are only propagated for `2xx` responses and will not override an existing `Cache-Control` header. For `Cache-Control` specifically, use the dedicated `ResponseHeaders.propagateCacheControl(CacheControlDirectives)` method.
+
 ### Plugin System
 
 #### Overview
@@ -1419,4 +1463,3 @@ Fine-tuning these areas can help you balance performance, resource usage, and re
 While **JsonApi4j** adheres closely to the JSON:API specification, it introduces a few deliberate deviations and simplifications aimed at improving performance, maintainability, and developer experience:
 1. Flat resource structure - encourages top-level resources like `/users` and `/articles` instead of nested structures such as `/users/{userId}/articles`. This design enables automatic link generation and simplifies Compound Document resolution.
 2. Controlled relationship resolution - by default, relationship data under 'relationships' -> {relName} -> 'data' is not automatically resolved. This prevents unnecessary "+N" requests and gives developers explicit control over relationship fetching.
-3. For using Compound Documents feature on the same host it's mandatory to implement "read by ID" operations - the framework requires implementation of either Filter by ID (`GET /users?filter[id]=123`) or Read by ID (`GET /users/123`) operations.

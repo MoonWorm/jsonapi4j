@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.response.cache;
+package pro.api4.jsonapi4j.servlet.response;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.collections4.CollectionUtils;
@@ -33,7 +33,9 @@ import static java.lang.ThreadLocal.withInitial;
  * @see CacheControlParser
  * @see CacheControlDirectives
  */
-public class ResponseHeadersPropagator {
+public class ResponseHeaders {
+
+    private static final int HARD_LIMIT = 100;
 
     private static final ThreadLocal<ConcurrentHashMap<String, List<String>>> HEADERS = withInitial(ConcurrentHashMap::new);
 
@@ -51,7 +53,7 @@ public class ResponseHeadersPropagator {
         if (downstreamServiceResponse != null) {
             String cacheControlHeaderValue = downstreamServiceResponse.getHeader(HttpHeaders.CACHE_CONTROL.getName());
             if (StringUtils.isNotBlank(cacheControlHeaderValue)) {
-                ResponseHeadersPropagator.propagateCacheControl(CacheControlParser.parse(cacheControlHeaderValue));
+                ResponseHeaders.propagateCacheControl(CacheControlParser.parse(cacheControlHeaderValue));
             }
         }
     }
@@ -81,6 +83,9 @@ public class ResponseHeadersPropagator {
      * @param value  the header value
      */
     public static void propagateHeader(String header, String value) {
+        if (HEADERS.get().size() > HARD_LIMIT) {
+            throw new IllegalStateException("Max headers limit reached: " + HARD_LIMIT);
+        }
         HEADERS.get().computeIfAbsent(
                 header,
                 k -> new ArrayList<>()
