@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs;
 
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
 /**
  * Result of compound document resolution, containing the response body

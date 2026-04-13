@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
 import java.util.List;
 

@@ -1,14 +1,14 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
+import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheResult;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 
 import java.net.URI;
 import java.util.ArrayList;

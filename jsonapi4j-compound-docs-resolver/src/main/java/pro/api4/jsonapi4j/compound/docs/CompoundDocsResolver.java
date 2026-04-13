@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.lang3.Validate;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlAggregator;
+import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;

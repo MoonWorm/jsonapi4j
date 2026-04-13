@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.compound.docs.cache;
+package pro.api4.jsonapi4j.http.cache;
 
 import java.util.ArrayList;
 import java.util.List;

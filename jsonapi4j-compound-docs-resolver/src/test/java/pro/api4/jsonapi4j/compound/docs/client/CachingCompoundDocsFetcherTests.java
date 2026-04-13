@@ -1,18 +1,17 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
-import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlDirectives;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheControlParser;
-import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
-import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
-import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
-import pro.api4.jsonapi4j.compound.docs.config.Propagation;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
+import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 
 import java.net.URI;
 import java.util.Collections;
@@ -48,13 +47,13 @@ class CachingCompoundDocsFetcherTests {
 
     private InMemoryCompoundDocsResourceCache cache;
 
+    private static ParsedResource parsedResource(String type, String id, String json) {
+        return new ParsedResource(type, id, json);
+    }
+
     @BeforeEach
     void setUp() {
         cache = new InMemoryCompoundDocsResourceCache(100);
-    }
-
-    private static ParsedResource parsedResource(String type, String id, String json) {
-        return new ParsedResource(type, id, json);
     }
 
     private void stubConfigNoPropagation() {

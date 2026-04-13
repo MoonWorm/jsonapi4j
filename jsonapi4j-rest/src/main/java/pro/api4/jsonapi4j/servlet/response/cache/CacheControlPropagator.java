@@ -2,6 +2,9 @@ package pro.api4.jsonapi4j.servlet.response.cache;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlParser;
+import pro.api4.jsonapi4j.http.HttpHeaders;
 
 /**
  * Helps to proxy Cache-Control header value if there is something in the HTTP Response Headers of the downstream
@@ -12,8 +15,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class CacheControlPropagator {
 
-    private static final String CACHE_CONTROL_HEADER = "Cache-Control";
-    private static final ThreadLocal<CacheControl> CACHE_CONTROL = new ThreadLocal<>();
+    private static final ThreadLocal<CacheControlDirectives> CACHE_CONTROL = new ThreadLocal<>();
 
     /**
      * Trying to set Cache-Control header value from the downstream service response.
@@ -26,7 +28,7 @@ public class CacheControlPropagator {
      */
     public static void propagateCacheControl(HttpServletResponse downstreamServiceResponse) {
         if (downstreamServiceResponse != null) {
-            String cacheControlHeaderValue = downstreamServiceResponse.getHeader(CACHE_CONTROL_HEADER);
+            String cacheControlHeaderValue = downstreamServiceResponse.getHeader(HttpHeaders.CACHE_CONTROL.getName());
             if (StringUtils.isNotBlank(cacheControlHeaderValue)) {
                 CacheControlPropagator.propagateCacheControl(cacheControlHeaderValue);
             }
@@ -42,7 +44,7 @@ public class CacheControlPropagator {
      * @param cacheSettings Cache-Control http header valid value
      */
     public static void propagateCacheControl(String cacheSettings) {
-        CACHE_CONTROL.set(new CacheControl(cacheSettings));
+        CACHE_CONTROL.set(CacheControlParser.parse(cacheSettings));
     }
 
     /**
@@ -53,25 +55,11 @@ public class CacheControlPropagator {
      */
     public static void propagateCacheControlIfNeeded(HttpServletResponse response) {
         if (response.getStatus() >= 200 && response.getStatus() < 300) {
-            String cacheControlHeaderValue = response.getHeader(CACHE_CONTROL_HEADER);
+            String cacheControlHeaderValue = response.getHeader(HttpHeaders.CACHE_CONTROL.getName());
             if (StringUtils.isBlank(cacheControlHeaderValue) && CACHE_CONTROL.get() != null) {
-                response.addHeader(CACHE_CONTROL_HEADER, CACHE_CONTROL.get().getValue());
+                response.addHeader(HttpHeaders.CACHE_CONTROL.getName(), CacheControlParser.format(CACHE_CONTROL.get()));
             }
             CACHE_CONTROL.remove();
-        }
-
-    }
-
-    public static class CacheControl {
-
-        private final String value;
-
-        public CacheControl(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return value;
         }
 
     }

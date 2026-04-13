@@ -48,6 +48,13 @@
     </properties>
 
     <dependencies>
+        <!-- jsonapi4j base -->
+        <dependency>
+            <groupId>pro.api4</groupId>
+            <artifactId>jsonapi4j-base</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!--JSON serialization/deserialization-->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

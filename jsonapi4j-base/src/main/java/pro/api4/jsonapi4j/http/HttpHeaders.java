@@ -3,7 +3,8 @@ package pro.api4.jsonapi4j.http;
 public enum HttpHeaders {
 
     ACCEPT("Accept"),
-    CONTENT_TYPE("Content-Type");
+    CONTENT_TYPE("Content-Type"),
+    CACHE_CONTROL("Cache-Control");
 
     private String name;
 

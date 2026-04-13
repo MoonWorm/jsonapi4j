@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.compound.docs.cache;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
+import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 
 import java.util.HashMap;
 import java.util.List;
