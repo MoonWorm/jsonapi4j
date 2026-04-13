@@ -5,6 +5,7 @@ plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
   - jekyll-include-cache
+  - jekyll-feed
 
 title: "JsonApi4j"
 subtitle: "JSON:API Specification Framework for Java"
@@ -14,11 +15,30 @@ baseurl: ""
 
 minimal_mistakes_skin: "default"
 
+logo: "/jsonapi4j-logo-square-small.png"
+
 show_downloads: false
 
 # SEO
 locale: "en-US"
 og_image: "/jsonapi4j-logo-square-small.png"
+
+# Google Analytics (replace with your tracking ID)
+# analytics:
+#   provider: "google-gtag"
+#   google:
+#     tracking_id: "G-XXXXXXXXXX"
+#     anonymize_ip: true
+
+# Site author (shown in sidebar on blog posts)
+author:
+  name: "JsonApi4j"
+  avatar: "/jsonapi4j-logo-square-small.png"
+  bio: "JSON:API Specification Framework for Java"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/MoonWorm/jsonapi4j"
 
 # Site footer
 footer:
@@ -26,6 +46,10 @@ footer:
     - label: "GitHub"
       icon: "fab fa-fw fa-github"
       url: "https://github.com/MoonWorm/jsonapi4j"
+
+# Reading files
+include:
+  - _pages
 
 # Front matter defaults
 defaults:
@@ -38,3 +62,19 @@ defaults:
       toc_sticky: true
       sidebar:
         nav: "docs"
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: single
+      toc: true
+      toc_sticky: true
+      show_date: true
+      read_time: true
+      share: true
+      related: true
+
+# Category archive
+category_archive:
+  type: liquid
+  path: /categories/
