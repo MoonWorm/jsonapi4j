@@ -4,7 +4,8 @@ public enum HttpHeaders {
 
     ACCEPT("Accept"),
     CONTENT_TYPE("Content-Type"),
-    CACHE_CONTROL("Cache-Control");
+    CACHE_CONTROL("Cache-Control"),
+    X_DISABLE_COMPOUND_DOCS("x-disable-compound-docs");
 
     private String name;
 

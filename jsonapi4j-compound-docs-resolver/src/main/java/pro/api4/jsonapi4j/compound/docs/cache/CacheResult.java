@@ -1,6 +1,9 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
-import java.util.Objects;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import org.apache.commons.lang3.Validate;
 
 /**
  * Represents a cache hit result containing the cached resource JSON and the
@@ -10,6 +13,9 @@ import java.util.Objects;
  * (Epic 5) to compute the most restrictive {@code Cache-Control} header for the
  * final compound document response.
  */
+@Getter
+@EqualsAndHashCode
+@ToString
 public class CacheResult {
 
     private final String resourceJson;
@@ -20,43 +26,11 @@ public class CacheResult {
      * @param remainingTtlSeconds remaining TTL in seconds, must be >= 0
      */
     public CacheResult(String resourceJson, long remainingTtlSeconds) {
-        this.resourceJson = Objects.requireNonNull(resourceJson, "resourceJson must not be null");
+        this.resourceJson = Validate.notNull(resourceJson, "resourceJson must not be null");
         if (remainingTtlSeconds < 0) {
             throw new IllegalArgumentException("remainingTtlSeconds must be >= 0, got: " + remainingTtlSeconds);
         }
         this.remainingTtlSeconds = remainingTtlSeconds;
-    }
-
-    public String getResourceJson() {
-        return resourceJson;
-    }
-
-    public long getRemainingTtlSeconds() {
-        return remainingTtlSeconds;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CacheResult that = (CacheResult) o;
-        return remainingTtlSeconds == that.remainingTtlSeconds
-                && Objects.equals(resourceJson, that.resourceJson);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(resourceJson, remainingTtlSeconds);
-    }
-
-    @Override
-    public String toString() {
-        return "CacheResult{" +
-                "remainingTtlSeconds=" + remainingTtlSeconds +
-                ", resourceJson='" + (resourceJson.length() > 50
-                    ? resourceJson.substring(0, 50) + "...(truncated)"
-                    : resourceJson) + '\'' +
-                '}';
     }
 
 }

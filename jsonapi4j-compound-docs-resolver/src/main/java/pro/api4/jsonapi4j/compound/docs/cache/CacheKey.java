@@ -1,7 +1,11 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import org.apache.commons.lang3.Validate;
+
 import java.util.Collections;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -15,6 +19,9 @@ import java.util.TreeSet;
  * <p>Sets are stored in sorted, immutable form for deterministic {@link #equals(Object)}
  * and {@link #hashCode()} behavior.
  */
+@Getter
+@EqualsAndHashCode
+@ToString
 public class CacheKey {
 
     private final String resourceType;
@@ -28,10 +35,12 @@ public class CacheKey {
      * @param includes     relationship names for downstream include, may be null (treated as empty)
      * @param fields       sparse fieldset field names, may be null (treated as empty)
      */
-    public CacheKey(String resourceType, String resourceId,
-                    Set<String> includes, Set<String> fields) {
-        this.resourceType = Objects.requireNonNull(resourceType, "resourceType must not be null");
-        this.resourceId = Objects.requireNonNull(resourceId, "resourceId must not be null");
+    public CacheKey(String resourceType,
+                    String resourceId,
+                    Set<String> includes,
+                    Set<String> fields) {
+        this.resourceType = Validate.notNull(resourceType, "resourceType must not be null");
+        this.resourceId = Validate.notNull(resourceId, "resourceId must not be null");
         this.includes = normalizeSet(includes);
         this.fields = normalizeSet(fields);
     }
@@ -48,48 +57,6 @@ public class CacheKey {
      */
     public static CacheKey of(String resourceType, String resourceId, Set<String> includes) {
         return new CacheKey(resourceType, resourceId, includes, null);
-    }
-
-    public String getResourceType() {
-        return resourceType;
-    }
-
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public Set<String> getIncludes() {
-        return includes;
-    }
-
-    public Set<String> getFields() {
-        return fields;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CacheKey cacheKey = (CacheKey) o;
-        return Objects.equals(resourceType, cacheKey.resourceType)
-                && Objects.equals(resourceId, cacheKey.resourceId)
-                && Objects.equals(includes, cacheKey.includes)
-                && Objects.equals(fields, cacheKey.fields);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(resourceType, resourceId, includes, fields);
-    }
-
-    @Override
-    public String toString() {
-        return "CacheKey{" +
-                "resourceType='" + resourceType + '\'' +
-                ", resourceId='" + resourceId + '\'' +
-                ", includes=" + includes +
-                ", fields=" + fields +
-                '}';
     }
 
     private static Set<String> normalizeSet(Set<String> input) {

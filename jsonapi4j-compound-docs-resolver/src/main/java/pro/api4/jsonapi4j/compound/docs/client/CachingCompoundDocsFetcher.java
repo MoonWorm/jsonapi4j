@@ -1,23 +1,19 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
-import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheResult;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -40,8 +36,8 @@ public class CachingCompoundDocsFetcher {
      *                   (fetcher acts as a pass-through to the HTTP client)
      */
     public CachingCompoundDocsFetcher(JsonApi4jCompoundDocsApiHttpClient httpClient,
-                                       CompoundDocsResourceCache cache) {
-        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
+                                      CompoundDocsResourceCache cache) {
+        this.httpClient = Validate.notNull(httpClient, "httpClient must not be null");
         this.cache = cache;
     }
 
@@ -70,13 +66,13 @@ public class CachingCompoundDocsFetcher {
      * @return the merged fetch result containing all requested resources
      */
     public BatchFetchResult fetch(URI domainBaseUrl,
-                                   String resourceType,
-                                   Set<String> ids,
-                                   Set<String> includes,
-                                   CompoundDocsRequest originalRequest,
-                                   CompoundDocsResolverConfig config,
-                                   Map<String, String> metaHeaders) {
-        if (ids == null || ids.isEmpty()) {
+                                  String resourceType,
+                                  Set<String> ids,
+                                  Set<String> includes,
+                                  CompoundDocsRequest originalRequest,
+                                  CompoundDocsResolverConfig config,
+                                  Map<String, String> metaHeaders) {
+        if (CollectionUtils.isEmpty(ids)) {
             return new BatchFetchResult(Collections.emptyList(), null);
         }
 
@@ -90,12 +86,12 @@ public class CachingCompoundDocsFetcher {
     }
 
     private BatchFetchResult fetchWithoutCache(URI domainBaseUrl,
-                                                String resourceType,
-                                                Set<String> ids,
-                                                Set<String> includes,
-                                                CompoundDocsRequest originalRequest,
-                                                CompoundDocsResolverConfig config,
-                                                Map<String, String> metaHeaders) {
+                                               String resourceType,
+                                               Set<String> ids,
+                                               Set<String> includes,
+                                               CompoundDocsRequest originalRequest,
+                                               CompoundDocsResolverConfig config,
+                                               Map<String, String> metaHeaders) {
         HttpFetchResult httpResult = httpClient.doBatchFetch(
                 domainBaseUrl, resourceType, ids, includes, originalRequest, config, metaHeaders);
         List<String> resources = httpResult.resources().stream()
@@ -106,13 +102,13 @@ public class CachingCompoundDocsFetcher {
     }
 
     private BatchFetchResult fetchWithCache(URI domainBaseUrl,
-                                             String resourceType,
-                                             Set<String> ids,
-                                             Set<String> includes,
-                                             CompoundDocsRequest originalRequest,
-                                             CompoundDocsResolverConfig config,
-                                             Map<String, String> metaHeaders) {
-        Set<String> fields = resolveFields(resourceType, originalRequest, config);
+                                            String resourceType,
+                                            Set<String> ids,
+                                            Set<String> includes,
+                                            CompoundDocsRequest originalRequest,
+                                            CompoundDocsResolverConfig config,
+                                            Map<String, String> metaHeaders) {
+        Set<String> fields = resolveFieldsQueryParam(resourceType, originalRequest, config);
 
         // Build CacheKeys for all requested IDs
         Map<CacheKey, String> keyToId = ids.stream()
@@ -168,7 +164,7 @@ public class CachingCompoundDocsFetcher {
      * and an optional HTTP fetch result.
      */
     private CacheControlDirectives computeDirectives(Map<CacheKey, CacheResult> cacheHits,
-                                                      HttpFetchResult httpResult) {
+                                                     HttpFetchResult httpResult) {
         CacheControlAggregator aggregator = new CacheControlAggregator();
 
         if (!cacheHits.isEmpty()) {
@@ -194,9 +190,9 @@ public class CachingCompoundDocsFetcher {
      *
      * @return the set of field names, or empty set if fields are not propagated
      */
-    private Set<String> resolveFields(String resourceType,
-                                       CompoundDocsRequest originalRequest,
-                                       CompoundDocsResolverConfig config) {
+    private Set<String> resolveFieldsQueryParam(String resourceType,
+                                                CompoundDocsRequest originalRequest,
+                                                CompoundDocsResolverConfig config) {
         if (!config.getPropagation().contains(Propagation.FIELDS)) {
             return Collections.emptySet();
         }

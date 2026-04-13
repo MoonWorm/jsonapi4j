@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsMetaHeaders.X_DISABLE_COMPOUND_DOCS;
+import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 public class CompoundDocsResolver {
 
@@ -192,7 +192,7 @@ public class CompoundDocsResolver {
                                     resourceType,
                                     requestIncludes,
                                     request,
-                                    Map.of(X_DISABLE_COMPOUND_DOCS, String.valueOf(true))
+                                    Map.of(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true))
                             )
                     );
                 }

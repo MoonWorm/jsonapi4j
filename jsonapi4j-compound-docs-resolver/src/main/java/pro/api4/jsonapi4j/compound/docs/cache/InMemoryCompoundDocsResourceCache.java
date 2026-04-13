@@ -1,12 +1,12 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
+import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +41,7 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
             throw new IllegalArgumentException("maxSize must be > 0, got: " + maxSize);
         }
         this.maxSize = maxSize;
-        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.clock = Validate.notNull(clock, "clock must not be null");
         this.store = new ConcurrentHashMap<>();
     }
 
@@ -146,7 +146,9 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
         private final Instant expiresAt;
         private volatile Instant lastAccessedAt;
 
-        CacheEntry(String resourceJson, Instant expiresAt, Instant insertionTime) {
+        CacheEntry(String resourceJson,
+                   Instant expiresAt,
+                   Instant insertionTime) {
             this.resourceJson = resourceJson;
             this.expiresAt = expiresAt;
             this.lastAccessedAt = insertionTime;

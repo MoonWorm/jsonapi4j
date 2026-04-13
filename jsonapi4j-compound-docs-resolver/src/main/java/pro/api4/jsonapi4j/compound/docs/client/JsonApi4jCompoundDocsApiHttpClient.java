@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class JsonApi4jCompoundDocsApiHttpClient {
 
@@ -48,38 +47,19 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                                         Map<String, String> metaHeaders) {
         try (HttpClient client = buildHttpClient(config)) {
 
-            String uri = domainBaseUrl.toString();
-            if (uri.endsWith("/")) {
-                uri += resourceType;
-            } else {
-                uri += "/" + resourceType;
-            }
-            uri += "?filter[id]=" + String.join(",", ids.stream().sorted().toList());
-            if (includes != null && !includes.isEmpty()) {
-                uri += "&include=" + String.join(",", includes);
-            }
+            JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(domainBaseUrl)
+                    .resourceType(resourceType)
+                    .filterParam("id", ids.stream().sorted().toList())
+                    .includeParam(includes);
 
             if (config.getPropagation().contains(Propagation.FIELDS)) {
-                Map<String, List<String>> fields = originalRequest.fieldSets();
-                if (fields != null && !fields.isEmpty()) {
-                    String fieldsStr = fields.entrySet()
-                            .stream()
-                            .map(e -> String.format("fields[%s]=%s", e.getKey(), String.join(",", e.getValue())))
-                            .collect(Collectors.joining("&"));
-                    uri += "&" + fieldsStr;
-                }
+                urlBuilder.fieldsParams(originalRequest.fieldSets());
+            }
+            if (config.getPropagation().contains(Propagation.CUSTOM_QUERY_PARAMS)) {
+                urlBuilder.queryParams(originalRequest.customQueryParams());
             }
 
-            if (config.getPropagation().contains(Propagation.CUSTOM_QUERY_PARAMS)) {
-                Map<String, List<String>> params = originalRequest.customQueryParams();
-                if (params != null && !params.isEmpty()) {
-                    String customQueryParamsStr = params.entrySet()
-                            .stream()
-                            .map(e -> String.format("%s=%s", e.getKey(), String.join(",", e.getValue())))
-                            .collect(Collectors.joining("&"));
-                    uri += "&" + customQueryParamsStr;
-                }
-            }
+            String uri = urlBuilder.build();
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
