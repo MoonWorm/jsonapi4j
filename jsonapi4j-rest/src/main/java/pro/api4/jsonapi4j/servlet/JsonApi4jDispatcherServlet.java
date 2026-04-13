@@ -18,7 +18,7 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSupplier;
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
-import pro.api4.jsonapi4j.servlet.response.cache.CacheControlPropagator;
+import pro.api4.jsonapi4j.servlet.response.cache.ResponseHeadersPropagator;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
@@ -106,7 +106,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
             writeResponseBody(resp, dataDoc);
 
-            CacheControlPropagator.propagateCacheControlIfNeeded(resp);
+            ResponseHeadersPropagator.flush(resp);
 
         } catch (Exception e) {
             if (errorHandlerFactory != null) {

@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.http.cache;
 
-import java.util.Objects;
+import lombok.*;
 
 /**
  * Immutable value object representing parsed Cache-Control HTTP header directives.
@@ -11,6 +11,10 @@ import java.util.Objects;
  *
  * @see <a href="https://httpwg.org/specs/rfc9111.html">RFC 9111 - HTTP Caching</a>
  */
+@Getter
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@EqualsAndHashCode
+@ToString
 public class CacheControlDirectives {
 
     /**
@@ -37,36 +41,6 @@ public class CacheControlDirectives {
     private final boolean noCache;
     private final boolean privateCacheControl;
 
-    CacheControlDirectives(Long maxAge, Long sMaxAge,
-                           boolean noStore, boolean noCache,
-                           boolean privateCacheControl) {
-        this.maxAge = maxAge;
-        this.sMaxAge = sMaxAge;
-        this.noStore = noStore;
-        this.noCache = noCache;
-        this.privateCacheControl = privateCacheControl;
-    }
-
-    public Long getMaxAge() {
-        return maxAge;
-    }
-
-    public Long getSMaxAge() {
-        return sMaxAge;
-    }
-
-    public boolean isNoStore() {
-        return noStore;
-    }
-
-    public boolean isNoCache() {
-        return noCache;
-    }
-
-    public boolean isPrivateCacheControl() {
-        return privateCacheControl;
-    }
-
     /**
      * Returns the effective TTL in seconds.
      * {@code s-maxage} takes precedence over {@code max-age} per HTTP spec (RFC 9111).
@@ -88,34 +62,6 @@ public class CacheControlDirectives {
         Long effectiveTtl = getEffectiveTtlSeconds();
         return !noStore && !noCache && !privateCacheControl
                 && effectiveTtl != null && effectiveTtl > 0;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CacheControlDirectives that = (CacheControlDirectives) o;
-        return noStore == that.noStore
-                && noCache == that.noCache
-                && privateCacheControl == that.privateCacheControl
-                && Objects.equals(maxAge, that.maxAge)
-                && Objects.equals(sMaxAge, that.sMaxAge);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(maxAge, sMaxAge, noStore, noCache, privateCacheControl);
-    }
-
-    @Override
-    public String toString() {
-        return "CacheControlDirectives{" +
-                "maxAge=" + maxAge +
-                ", sMaxAge=" + sMaxAge +
-                ", noStore=" + noStore +
-                ", noCache=" + noCache +
-                ", privateCacheControl=" + privateCacheControl +
-                '}';
     }
 
 }
