@@ -14,7 +14,7 @@ excerpt: "A modern, lightweight Java framework for building production-ready RES
 
 feature_row_main:
   - title: "JSON:API Compliant"
-    excerpt: "Purpose-built around the [JSON:API specification](https://jsonapi.org) — predictable request/response format, automatic error handling, cursor-based pagination, and resource linking out of the box."
+    excerpt: "Purpose-built around the [JSON:API specification](https://jsonapi.org) — predictable request/response format and processing rules."
   - title: "Framework Agnostic"
     excerpt: "Works with **Spring Boot**, **Quarkus**, and plain **Jakarta Servlet API**. Add one dependency and the framework auto-configures itself in your environment."
   - title: "Pluggable Architecture"
@@ -30,11 +30,11 @@ feature_row_advanced:
 
 feature_row_dx:
   - title: "Minimal Boilerplate"
-    excerpt: "Define resources, relationships, and operations — the framework generates JSON:API documents, pagination links, error responses, and OpenAPI specs automatically."
-  - title: "Persistence Agnostic"
+    excerpt: "Define resources, relationships, and operations — the framework automatically generates JSON:API documents, pagination links, error responses, and many more."
+  - title: "Persistence/Data Source Agnostic"
     excerpt: "No JPA or Hibernate required. Works with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
   - title: "Auto-Generated OpenAPI"
-    excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime. Exposed as JSON or YAML via a dedicated endpoint."
+    excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime. Powerful customization capabilities. Exposed as JSON or YAML via a dedicated endpoint."
 ---
 
 {% include feature_row id="feature_row_main" %}
