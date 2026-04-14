@@ -1,17 +1,17 @@
-# JsonApi4j Quarkus Sample App
+# JsonApi4j Spring Boot Sample App
 
-Demonstrates JsonApi4j integration with Quarkus using the JsonApi4j Quarkus Extension.
+Demonstrates JsonApi4j integration with Spring Boot using auto-configuration.
 
 ## Dependencies
 
-- `jsonapi4j-rest-quarkus` — framework + Quarkus auto-configuration
+- `jsonapi4j-rest-springboot` — framework + Spring Boot auto-configuration
 - `jsonapi4j-all-plugins` — all plugins (Access Control, OpenAPI, Sparse Fieldsets, Compound Docs)
 - `jsonapi4j-sampleapp-domain` — shared domain model
 
 ## Run
 
 ```bash
-mvn quarkus:dev
+mvn spring-boot:run
 ```
 
 App starts on `http://localhost:8080`. See [examples/README.md](../README.md) for API request examples.

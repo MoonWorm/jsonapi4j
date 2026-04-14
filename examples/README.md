@@ -16,6 +16,8 @@ graph LR
 
 ## How to run
 
+All mentioned below apps are running on port `8080` by default so example links should work without extra customizations.
+
 ### Spring Boot App example
 
 `mvn -f jsonapi4j-springboot-sampleapp spring-boot:run`

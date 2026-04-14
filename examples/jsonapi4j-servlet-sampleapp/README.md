@@ -1,8 +1,17 @@
-## Sample application to use JsonApi4J with Servlet Container
+# JsonApi4j Servlet Sample App
 
-# Running application
+Demonstrates JsonApi4j integration with plain Jakarta Servlet API using an embedded Jetty server.
 
-Application starts embedded Jetty on port 8080 with command:
+## Dependencies
+
+- `jsonapi4j-rest` — framework + Servlet API integration
+- `jsonapi4j-all-plugins` — all plugins (Access Control, OpenAPI, Sparse Fieldsets, Compound Docs)
+- `jsonapi4j-sampleapp-domain` — shared domain model
+
+## Run
+
+```bash
+mvn exec:java
 ```
-$ mvn exec:java
-```
+
+App starts on `http://localhost:8080`. See [examples/README.md](../README.md) for API request examples.
