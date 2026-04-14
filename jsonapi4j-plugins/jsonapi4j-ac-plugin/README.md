@@ -18,4 +18,4 @@ Access Control plugin. Enforces fine-grained security rules during JSON:API requ
 </dependency>
 ```
 
-See [Access Control Plugin docs](https://api4.pro/access-control/) for details.
+See [Access Control Plugin docs](https://api4.pro/access-control-plugin/) for details.

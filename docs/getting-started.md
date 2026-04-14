@@ -7,43 +7,37 @@ Let's take a quick look at what a typical **JsonApi4j**-based service looks like
 
 ### 1. Add Dependency
 
-#### Spring Boot
-
-If you want to integrate **JsonApi4j** into a clean or existing [Spring Boot](https://spring.io/projects/spring-boot) application, add:
-
-**Maven**
-```xml
-<dependency>
-  <groupId>pro.api4</groupId>
-  <artifactId>jsonapi4j-rest-springboot</artifactId>
-  <version>${jsonapi4j.version}</version>
-</dependency>
-```
-
-#### Quarkus
-
-For [Quarkus](https://quarkus.io/) app - use:
-
-**Maven**
-```xml
-<dependency>
-  <groupId>pro.api4</groupId>
-  <artifactId>jsonapi4j-rest-quarkus</artifactId>
-  <version>${jsonapi4j.version}</version>
-</dependency>
-```
-
-#### Servlet API
-
-For custom Web integrations or apps that run on Servlet API:
-
-```xml
-<dependency>
-  <groupId>pro.api4</groupId>
-  <artifactId>jsonapi4j-rest</artifactId>
-  <version>${jsonapi4j.version}</version>
-</dependency>
-```
+<div class="tabs" markdown="0">
+  <div class="tab-buttons">
+    <button class="tab-btn active" data-tab="tab-springboot">Spring Boot</button>
+    <button class="tab-btn" data-tab="tab-quarkus">Quarkus</button>
+    <button class="tab-btn" data-tab="tab-servlet">Servlet API</button>
+  </div>
+  <div id="tab-springboot" class="tab-panel active">
+    <p>If you want to integrate <strong>JsonApi4j</strong> into a clean or existing <a href="https://spring.io/projects/spring-boot">Spring Boot</a> application, add:</p>
+    <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>pro.api4<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>jsonapi4j-rest-springboot<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${jsonapi4j.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></div></div>
+  </div>
+  <div id="tab-quarkus" class="tab-panel">
+    <p>For <a href="https://quarkus.io/">Quarkus</a> app — use:</p>
+    <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>pro.api4<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>jsonapi4j-rest-quarkus<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${jsonapi4j.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></div></div>
+  </div>
+  <div id="tab-servlet" class="tab-panel">
+    <p>For custom web integrations or apps that run on Servlet API:</p>
+    <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>pro.api4<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>jsonapi4j-rest<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${jsonapi4j.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></div></div>
+  </div>
+</div>
 
 The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
 

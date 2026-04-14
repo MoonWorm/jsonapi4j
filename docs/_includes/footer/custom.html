@@ -1,0 +1,13 @@
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tabs = this.closest('.tabs');
+      tabs.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      tabs.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      tabs.querySelector('#' + this.dataset.tab).classList.add('active');
+    });
+  });
+});
+</script>

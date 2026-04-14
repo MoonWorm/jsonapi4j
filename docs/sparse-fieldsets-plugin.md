@@ -1,6 +1,6 @@
 ---
 title: "Sparse Fieldsets Plugin"
-permalink: /sparse-fieldsets/
+permalink: /sparse-fieldsets-plugin/
 ---
 
 In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next dependency:
@@ -29,7 +29,7 @@ Even though the functionality looks straightforward at first glance, there are a
 In order to request `users` with `email` and `lastName` fields and related `countries` resources with a `name` field only (via `citizenships` relationship):
 [/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name](http://localhost:8080/jsonapi/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name)
 
-**Available properties**
+### Available Properties
 
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|

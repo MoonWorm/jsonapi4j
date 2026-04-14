@@ -11,6 +11,13 @@ For example, when fetching users, you can ask the server to include each user's 
 Only relationships explicitly exposed through your resource definitions can be included.
 All resolved related resources are placed in the top-level `included` array.
 
+There are two distinct components involved in compound document support, and it's important to understand the difference:
+
+- **`jsonapi4j-cd-plugin`** — the **plugin** for JsonApi4j applications. It hooks into the JsonApi4j request processing pipeline and automatically handles compound document resolution as part of the normal request lifecycle. For plugin setup, configuration properties, and cache settings, see the [Compound Documents Plugin](/compound-docs-plugin/) page.
+- **`jsonapi4j-compound-docs-resolver`** — the standalone **resolver module**. It has no dependency on the JsonApi4j plugin system or Servlet API and can be embedded anywhere — for example, at an **API Gateway** level for centralized response composition across multiple downstream services.
+
+In short: the **plugin** is for JsonApi4j apps, the **resolver** is for anything else.
+
 ### Multiple and Nested Includes
 
 You can request multiple relationships in a single call using commas - e.g. `include=relatives,placeOfBirth`.
@@ -40,30 +47,19 @@ That's why it's important to implement either "filter[id]" or "read-by-id" opera
 Since each additional level may trigger new batches of requests, it's important to use this feature judiciously.
 You can control and limit the depth and breadth of includes using the `CompoundDocsProperties` configuration - for example, the `maxHops` property defines the maximum allowed relationship depth.
 
-### Deployment & Configuration
+### Standalone Resolver
 
-The Compound Documents Resolver is provided by a separate module: `jsonapi4j-compound-docs-resolver`.
-By default, this feature is disabled on the application server.
-To enable it, set: `jsonapi4j.compound-docs.enabled=true`.
+The resolver is provided by a separate module: `jsonapi4j-compound-docs-resolver`. It can be used independently of the JsonApi4j plugin system — for example, to add compound document support at the API Gateway level:
 
-Because it's a standalone module, you can host this logic either:
-* within your application server, or
-* at an **API Gateway** level (for example, for centralized response composition).
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
 
-**Available properties**
-
-| Property name                         | Default value                        | Description                                                                                                                                                                       |
-|---------------------------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `jsonapi4j.cd.enabled`                | `false`                              | Enables/disables Compound Documents post-processing.                                                                                                                              |
-| `jsonapi4j.cd.maxHops`                | `2`                                  | Max include traversal depth for compound document resolution.                                                                                                                     |
-| `jsonapi4j.cd.maxIncludedResources`   | `100`                                | Maximum amount of included resources. Doesn't guarantee the exact gap - can be more if fact. Checks before moving to down to the next depth level and adds all resolved resource. |
-| `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | Error handling strategy in compound docs resolver. Available options: `IGNORE`, `FAIL`                                                                                            |
-| `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`                                 |
-| `jsonapi4j.cd.deduplicateResources`   | `true`                               | Defines if Compound Docs plugin should deduplicate resources in the 'included' section (by 'type' / 'id')                                                                         |
-| `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
-| `jsonapi4j.cd.httpTotalTimeoutMs`     | `10000`                              | Controls total request timeout (in millisecond). Applied to each generated HTTP request.                                                                                                                                 |
-| `jsonapi4j.cd.mapping.<resourceType>` | empty map                            | Per-resource-type base URL mapping used by compound docs resolver.                                                                                                                |
-
+It handles multi-hop traversal, parallel batch fetching, resource deduplication, caching, and Cache-Control aggregation — all without requiring the JsonApi4j framework or Servlet API.
 
 ### Caching
 
@@ -77,13 +73,6 @@ Only cache misses trigger downstream HTTP calls. Cached and freshly fetched reso
 
 The final compound document response carries an aggregated `Cache-Control` header reflecting the most restrictive directive across all included resources.
 For example, if `countries` returns `max-age=300` and `currencies` returns `max-age=60`, the compound document response will contain `max-age=60`.
-
-**Cache configuration**
-
-| Property name                | Default value | Description                                                                 |
-|------------------------------|---------------|-----------------------------------------------------------------------------|
-| `jsonapi4j.cd.cache.enabled` | `true`        | Enables/disables the built-in resource cache for compound docs resolution.  |
-| `jsonapi4j.cd.cache.maxSize` | `1000`        | Soft maximum number of cached entries. Eviction uses LRU + TTL expiration.  |
 
 The built-in cache uses a `ConcurrentHashMap` with lazy expiration and LRU eviction when the soft capacity is exceeded.
 For distributed deployments or custom eviction policies, implement the `CompoundDocsResourceCache` SPI and register your own bean - the framework will use it instead of the default in-memory cache.

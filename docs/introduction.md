@@ -35,7 +35,7 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
 
-- **Pluggable architecture.** The Plugin System provides an extension mechanism for **JsonApi4j** that allows developers to hook into the request processing pipeline and enrich JSON:API behavior without modifying core logic. Out from the box provides two plugins - Access Control plugin and OpenAPI plugin.
+- **Pluggable architecture.** The [Plugin System](/plugins/) provides an extension mechanism for **JsonApi4j** that allows developers to hook into the request processing pipeline and enrich JSON:API behavior without modifying core logic. Out from the box provides the next plugins: [Access Control](/access-control-plugin/), [OpenAPI](/openapi-plugin/), [Sparse Fieldsets](/sparse-fieldsets-plugin/), and [Compound Documents](/compound-docs-plugin/).
 
 - **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership. Implemented as a separate plugin.
 

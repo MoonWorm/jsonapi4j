@@ -1,6 +1,6 @@
 ---
 title: "Access Control Plugin"
-permalink: /access-control/
+permalink: /access-control-plugin/
 ---
 
 ### Overview
@@ -208,7 +208,7 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<Downstre
 1. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value.
 2. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
 
-**Available properties**
+### Available Properties
 
 | Property name          | Default value | Description                            |
 |------------------------|---------------|----------------------------------------|

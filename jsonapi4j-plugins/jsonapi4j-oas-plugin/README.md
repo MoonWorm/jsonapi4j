@@ -12,4 +12,4 @@ OpenAPI Specification plugin. Automatically generates an OpenAPI-compliant spec 
 </dependency>
 ```
 
-See [OpenAPI Plugin docs](https://api4.pro/openapi/) for details.
+See [OpenAPI Plugin docs](https://api4.pro/openapi-plugin/) for details.

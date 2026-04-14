@@ -28,11 +28,13 @@ docs:
       - title: "Plugin System"
         url: /plugins/
       - title: "Access Control Plugin"
-        url: /access-control/
+        url: /access-control-plugin/
       - title: "Sparse Fieldsets Plugin"
-        url: /sparse-fieldsets/
+        url: /sparse-fieldsets-plugin/
       - title: "OpenAPI Plugin"
-        url: /openapi/
+        url: /openapi-plugin/
+      - title: "Compound Documents Plugin"
+        url: /compound-docs-plugin/
   - title: "Advanced"
     children:
       - title: "Compound Documents"

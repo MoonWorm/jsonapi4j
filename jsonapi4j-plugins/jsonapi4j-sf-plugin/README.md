@@ -12,4 +12,4 @@ Sparse Fieldsets plugin. Supports `fields[TYPE]=field1,field2` query parameter t
 </dependency>
 ```
 
-See [Sparse Fieldsets docs](https://api4.pro/sparse-fieldsets/) for details.
+See [Sparse Fieldsets docs](https://api4.pro/sparse-fieldsets-plugin/) for details.

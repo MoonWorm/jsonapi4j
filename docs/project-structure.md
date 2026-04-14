@@ -6,20 +6,33 @@ permalink: /project-structure/
 **JsonApi4j** is designed to be **modular and embeddable**, allowing you to use only the parts you need depending on your application context.
 Each module is published as a separate artifact in Maven Central.
 
-- 🌀 [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — a lightweight JSON:API request processor, ideal for embedding into non-web services (e.g., CLI tools) that need to handle JSON:API input/output without bringing in HTTP-related dependencies.
-- 🔌 [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — the Servlet API–based HTTP layer for integration with any Java web framework. Can be used directly in plain Servlet applications or as a foundation for building native integrations for frameworks like Spring Boot, Quarkus, etc.
-- 🌱 [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto-configuration module that integrates **JsonApi4j** seamlessly into a Spring environment.
-- 🚀 [jsonapi4j-rest-quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-quarkus-parent/runtime) — [Quarkus](https://quarkus.io/) auto-configuration Quarkus Extension that integrates **JsonApi4j** seamlessly into a Quarkus app.
-- 🌐 [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — a standalone **compound documents resolver** that automatically fetches and populates the `included` section of JSON:API responses. Perfect for API Gateway-level use or microservice response composition layers.
+### Core Modules
 
-Here's how transitive dependencies between modules are structured in the framework:
+- [jsonapi4j-base](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-base) — foundation module: domain interfaces (`Resource`, `Relationship`), annotations, JSON:API model classes, plugin SPI, and exception hierarchy. Minimal dependencies — no HTTP layer.
+- [jsonapi4j-core](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-core) — processing engine: `JsonApi4j` entry point, `DomainRegistry`, `OperationsRegistry`, resource/relationship processors. Ideal for embedding into non-web services (e.g., CLI tools) that need JSON:API processing without HTTP dependencies.
+- [jsonapi4j-compound-docs-resolver](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-compound-docs-resolver) — standalone compound documents resolver with multi-hop `include` traversal, parallel batch fetching, built-in caching, and Cache-Control aggregation. Can run within the application or at the API Gateway level.
+- [jsonapi4j-rest](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest) — Servlet API integration: `JsonApi4jDispatcherServlet`, request parsing, error handling, response customization. Can be used directly in plain Servlet applications or as a foundation for framework-specific integrations.
+- [jsonapi4j-rest-springboot](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-springboot) — [Spring Boot](https://spring.io/projects/spring-boot) auto-configuration module. Automatically registers servlets, filters, domain scanning, and plugin integration.
+- [jsonapi4j-rest-quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-rest-quarkus-parent/runtime) — [Quarkus](https://quarkus.io/) extension following the standard two-module pattern (`runtime/` for CDI beans + `deployment/` for build-time registration).
+
+### Plugin Modules
+
+- [jsonapi4j-ac-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-ac-plugin) — **Access Control** — fine-grained, annotation-driven authorization with per-field anonymization based on authentication, access tier, OAuth2 scopes, and resource ownership.
+- [jsonapi4j-cd-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-cd-plugin) — **Compound Documents** — integrates the compound docs resolver into the plugin pipeline, enabling `include` query parameter support.
+- [jsonapi4j-sf-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-sf-plugin) — **Sparse Fieldsets** — supports `fields[TYPE]=field1,field2` to return only requested attributes per resource type.
+- [jsonapi4j-oas-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-oas-plugin) — **OpenAPI Specification** — automatically generates an OpenAPI spec from registered resources, relationships, and operations.
+- [jsonapi4j-all-plugins](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-all-plugins) — convenience aggregator that includes all plugins as a single dependency.
+
+### Module Dependency Graph
 
 ```text
-├──jsonapi4j-core
-│
-├── jsonapi4j-compound-docs-resolver
-│
-└── jsonapi4j-rest
+jsonapi4j-base
+    │
+jsonapi4j-core
+    │
+jsonapi4j-compound-docs-resolver
+    │
+jsonapi4j-rest
     ├── depends on → jsonapi4j-core
     └── depends on → jsonapi4j-compound-docs-resolver
         │
@@ -27,13 +40,20 @@ Here's how transitive dependencies between modules are structured in the framewo
         │    └── depends on → jsonapi4j-rest
         └── jsonapi4j-rest-quarkus
              └── depends on → jsonapi4j-rest
+
+plugins (optional, depend on jsonapi4j-base or jsonapi4j-rest)
+    ├── jsonapi4j-ac-plugin
+    ├── jsonapi4j-cd-plugin
+    ├── jsonapi4j-sf-plugin
+    ├── jsonapi4j-oas-plugin
+    └── jsonapi4j-all-plugins (aggregator)
 ```
 
-There are other modules, for example `jsonapi4j-base`, but apps never need them to use an explicit dependency.
+### Which dependency do I need?
 
-In short:
-* if you're integrating **JsonApi4j** with a Spring Boot application, you only need to include a single dependency: `jsonapi4j-rest-springboot`
-* if you're integrating **JsonApi4j** with a Quarkus application - just use `jsonapi4j-rest-quarkus`
-* if you want to build a **JsonApi4j** integration with some other Java Web Frameworks or build an App on top of Servlet API - just use `jsonapi4j-rest`
-* if you want to use **JsonApi4j** for an app that is not relying on Servlet API - for example, Desktop app - just use `jsonapi4j-core`
-* if you only want to use **JsonApi4j** Compound Docs Resolver module for your App or API Gateway - use `jsonapi4j-compound-docs-resolver`
+* **Spring Boot** application → `jsonapi4j-rest-springboot`
+* **Quarkus** application → `jsonapi4j-rest-quarkus`
+* **Other Java Web Frameworks** or plain Servlet API → `jsonapi4j-rest`
+* **Non-web** application (e.g., CLI, desktop) → `jsonapi4j-core`
+* **Compound Docs only** (e.g., API Gateway) → `jsonapi4j-compound-docs-resolver`
+* **All plugins** → add `jsonapi4j-all-plugins` alongside your framework dependency

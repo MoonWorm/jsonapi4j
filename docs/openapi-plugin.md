@@ -1,6 +1,6 @@
 ---
 title: "OpenAPI Plugin"
-permalink: /openapi/
+permalink: /openapi-plugin/
 ---
 
 The OpenAPI Specification Plugin (OAS) builds on top of the JsonApi4j plugin system to provide automatic, always-in-sync API documentation.
@@ -33,7 +33,7 @@ There are more tunings available by placing the next annotations:
 * `@OasRelationshipInfo` annotation on top of JSON:API To-One or To-Many Relationship declaration
 * `@OasOperationInfo` annotation on top of operation class or any of its methods that represents some particular operation
 
-**Available properties**
+### Available Properties
 
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
