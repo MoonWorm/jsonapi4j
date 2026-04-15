@@ -2,8 +2,10 @@ package pro.api4.jsonapi4j.springboot.autoconfiguration.cd;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -26,6 +28,8 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
         havingValue = "true",
         matchIfMissing = true
 )
+@ConditionalOnClass(value = {JsonApiCompoundDocsPlugin.class})
+@EnableConfigurationProperties(SpringCompoundDocsProperties.class)
 @Configuration
 public class SpringJsonApi4jCompoundDocsConfig {
 

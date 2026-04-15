@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.springboot.autoconfiguration.sf;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
@@ -13,7 +14,8 @@ import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
         havingValue = "true",
         matchIfMissing = true
 )
-@ConditionalOnClass(value = SpringJsonApi4jSfPluginConfig.class)
+@ConditionalOnClass(value = {JsonApiSparseFieldsetsPlugin.class})
+@EnableConfigurationProperties(SpringSfProperties.class)
 @Configuration
 public class SpringJsonApi4jSfPluginConfig {
 
