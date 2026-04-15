@@ -11,7 +11,7 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 /**
  * Optional beans that are only registered when jsonapi4j-oas-plugin is available in the app classpath.
  */
-@IfBuildProperty(name = "jsonapi4j.ac.enabled", stringValue = "true")
+@IfBuildProperty(name = "jsonapi4j.oas.enabled", stringValue = "true")
 public class QuarkusJsonApi4jOasPluginBeans {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuarkusJsonApi4jOasPluginBeans.class);
