@@ -286,8 +286,8 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
             }
         }
 
-        // compose doc
-        return docSupplier.get(data, docLinks, docMeta);
+        // return doc
+        return doc;
     }
 
     private PaginationAwareResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {
