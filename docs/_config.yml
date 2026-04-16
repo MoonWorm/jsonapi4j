@@ -15,13 +15,13 @@ baseurl: ""
 
 minimal_mistakes_skin: "default"
 
-logo: "/jsonapi4j-logo-square-small.png"
+logo: "/assets/images/jsonapi4j-logo-square-small.png"
 
 show_downloads: false
 
 # SEO
 locale: "en-US"
-og_image: "/jsonapi4j-logo-square-small.png"
+og_image: "/assets/images/jsonapi4j-logo-square-small.png"
 
 # Google Analytics
 analytics:
@@ -33,7 +33,7 @@ analytics:
 # Site author (shown in sidebar on blog posts)
 author:
   name: "JsonApi4j"
-  avatar: "/jsonapi4j-logo-square-small.png"
+  avatar: "/assets/images/jsonapi4j-logo-square-small.png"
   bio: "JSON:API Specification Framework for Java"
   links:
     - label: "GitHub"

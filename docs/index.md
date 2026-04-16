@@ -43,6 +43,8 @@ feature_row_dx:
 
 Whether you're standardizing your organization's API layer across dozens of services or building a new microservice from scratch, **JsonApi4j** provides a consistent foundation that eliminates API design debates and reduces boilerplate.
 
+![Request Processing Pipeline](/assets/images/request-processing-pipeline.jpg "JsonApi4j Request Processing Pipeline"){: .align-center}
+
 {% include feature_row id="feature_row_advanced" %}
 
 ## Developer Experience
