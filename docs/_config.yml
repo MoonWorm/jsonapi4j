@@ -23,12 +23,12 @@ show_downloads: false
 locale: "en-US"
 og_image: "/jsonapi4j-logo-square-small.png"
 
-# Google Analytics (replace with your tracking ID)
-# analytics:
-#   provider: "google-gtag"
-#   google:
-#     tracking_id: "G-XXXXXXXXXX"
-#     anonymize_ip: true
+# Google Analytics
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-PPXZJ7J78G"
+    anonymize_ip: true
 
 # Site author (shown in sidebar on blog posts)
 author:
