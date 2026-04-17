@@ -341,7 +341,6 @@
 .site-cta-footer {
   font-size: 0.75em;
   margin-top: 2em;
-  border-top: 2px solid #e1e4e8;
 
   // Top: dark CTA area
   &__cta {
@@ -376,6 +375,7 @@
 
   // Bottom: slim credit strip
   &__bottom {
+    border-top: 2px solid rgba(255, 255, 255, 0.3);
     background: #12152a;
     padding: 1em 2em;
     text-align: center;
