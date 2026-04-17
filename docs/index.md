@@ -37,11 +37,18 @@ feature_row_dx:
     excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
 ---
 
-## Built for Scale
+## Why JsonApi4j
 
-Whether you're standardizing your organization's API layer across dozens of services or building a new microservice from scratch, **JsonApi4j** provides a consistent foundation that eliminates API design debates and reduces boilerplate.
+One standard. Every service. No more API design debates — just consistent, spec-compliant endpoints out of the box.
 
 {% include feature_row id="feature_row_main" %}
+
+<div class="dark-band" markdown="0">
+  <h2>Under the Hood</h2>
+  <p class="dark-band__subtitle">Built for engineers who care about what happens between the request and the response.</p>
+</div>
+
+{% include feature_row id="feature_row_advanced" %}
 
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>
@@ -55,10 +62,6 @@ Whether you're standardizing your organization's API layer across dozens of serv
     </div>
   </div>
 </div>
-
-{% include feature_row id="feature_row_advanced" %}
-
-## Developer Experience
 
 {% include feature_row id="feature_row_dx" %}
 

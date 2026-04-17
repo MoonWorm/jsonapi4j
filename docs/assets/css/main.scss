@@ -87,13 +87,55 @@
   .archive__item-excerpt {
     font-size: 0.85em;
   }
+
+  // Accent top border on feature cards
+  .archive__item {
+    border-top: 3px solid #0f3460;
+    padding-top: 0.8em;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-top-color: #e94560;
+    }
+  }
 }
 
 // Landing page section headings
 .splash .page__content h2 {
   margin-top: 2em;
   padding-bottom: 0.4em;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid #e1e4e8;
+  letter-spacing: -0.01em;
+}
+
+// Dark divider band between sections
+.dark-band {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  margin: 2.5em -1.5em 1.5em;
+  padding: 2em 1.5em;
+  text-align: center;
+
+  @include breakpoint($large) {
+    margin: 3em -2em 2em;
+    padding: 2.5em 2em;
+  }
+
+  h2 {
+    color: #fff;
+    margin: 0 0 0.3em;
+    padding: 0;
+    border: none;
+    font-size: 1.6em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95em;
+    margin: 0;
+    font-weight: 400;
+  }
 }
 
 // "Works With" pill grid
@@ -136,9 +178,9 @@
 
 // Pipeline highlight band on landing page
 .pipeline-band {
-  background: linear-gradient(135deg, #f7f8fa 0%, #eef1f5 100%);
-  border-top: 1px solid #e1e4e8;
-  border-bottom: 1px solid #e1e4e8;
+  background: linear-gradient(135deg, #f0f2f6 0%, #e8ecf2 100%);
+  border-left: 4px solid #0f3460;
+  border-radius: 4px;
   margin: 2em -1.5em;
   padding: 2em 1.5em;
 
@@ -151,10 +193,12 @@
     margin-top: 0;
     font-size: 1.3em;
     color: #1a1a2e;
+    letter-spacing: -0.01em;
   }
 
   p {
     color: #333;
+    line-height: 1.6;
   }
 }
 
