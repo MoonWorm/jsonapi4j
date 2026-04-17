@@ -104,25 +104,24 @@ This produces paginated, JSON:API-compliant responses at `GET /users` — with l
 [Read the full Getting Started guide](/getting-started/){: .btn .btn--primary .btn--large}
 {: .text-center}
 
-## Works With
+## Choose Your Stack
 
-<div class="works-with-grid" markdown="0">
-  <div class="works-with-item">
+<div class="stack-grid" markdown="0">
+  <a href="/getting-started/#spring-boot" class="stack-card stack-card--spring">
+    <img src="/assets/images/spring-icon.svg" alt="Spring" class="stack-card__icon">
     <strong>Spring Boot</strong>
-    <span>Auto-configuration</span>
-  </div>
-  <div class="works-with-item">
+    <span>Auto-configuration, zero boilerplate. Add one dependency and go.</span>
+  </a>
+  <a href="/getting-started/#quarkus" class="stack-card stack-card--quarkus">
+    <img src="/assets/images/quarkus-icon.svg" alt="Quarkus" class="stack-card__icon">
     <strong>Quarkus</strong>
-    <span>Quarkus Extension</span>
-  </div>
-  <div class="works-with-item">
+    <span>Native Quarkus extension with CDI integration and build-time processing.</span>
+  </a>
+  <a href="/getting-started/#jakarta-servlet" class="stack-card stack-card--jakarta">
+    <img src="/assets/images/jakarta-icon.svg" alt="Jakarta EE" class="stack-card__icon">
     <strong>Jakarta Servlet API</strong>
-    <span>Direct integration</span>
-  </div>
-  <div class="works-with-item">
-    <strong>Maven Central</strong>
-    <span>Published artifacts</span>
-  </div>
+    <span>Direct integration — no framework required, just the Servlet API.</span>
+  </a>
 </div>
 
 [Browse Sample Apps](https://github.com/MoonWorm/jsonapi4j/tree/main/examples){: .btn .btn--info}
