@@ -5,7 +5,7 @@
 [![Issues](https://img.shields.io/github/issues/moonworm/jsonapi4j)](https://github.com/moonworm/jsonapi4j/issues)
 [![License](https://img.shields.io/github/license/moonworm/jsonapi4j)](LICENSE)
 
-![Logo](/docs/jsonapi4j-logo-medium.png)
+![Logo](/docs/assets/images/jsonapi4j-logo-medium.png)
 
 # JsonApi4j — JSON:API Specification Framework for Java
 
@@ -182,9 +182,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> { // 2.
     }
 
     @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) { // 4.
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) { // 4.
         UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
-        return CursorPageableResponse.fromItemsAndCursor(
+        return PaginationAwareResponse.cursorAware(
                 pagedResult.getEntities(),
                 pagedResult.getCursor()
         );
@@ -344,8 +344,8 @@ public class UserRelativesOperations implements ToManyRelationshipOperations<Use
     }
     
     @Override
-    public CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request) { // 3.
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<UserRelationshipInfo> readMany(JsonApiRequest request) { // 3.
+        return PaginationAwareResponse.inMemoryCursorAware(
                 userDb.getUserRelatives(request.getResourceId()),
                 request.getCursor(),
                 2 // 4.
@@ -357,7 +357,7 @@ public class UserRelativesOperations implements ToManyRelationshipOperations<Use
 
 1. `@JsonApiRelationshipOperation(relationship = UserRelativesRelationship.class)` identifies which relationship this operation belongs to.
 2. `UserRelativesOperations implements ToManyRelationshipOperations<UserDbEntity, UserRelationshipInfo>` - this class must implement `ToManyRelationshipOperations` interface because it has 'to-many' nature. Interface is parametrized with two types: internal model of the parent resource (`UserDbEntity`) and internal model that represents relationship resource (`UserRelationshipInfo`).
-3. `CursorPageableResponse<UserRelationshipInfo> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipOperations`.
+3. `PaginationAwareResponse<UserRelationshipInfo> readMany(JsonApiRequest request)` - As of now we only implement `readMany(...)` method among others available in `ToManyRelationshipOperations`.
 4. Let's set page size to 2 in order to showcase the pagination
 
 Here is the internal modal that represents user relatives linkage:
