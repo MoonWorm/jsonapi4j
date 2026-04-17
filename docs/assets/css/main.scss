@@ -245,17 +245,20 @@
 }
 
 // Hide default footer on splash/landing page (replaced by custom CTA footer)
-.splash + .page__footer {
+.layout--splash .page__footer {
   display: none;
 }
 
-// CTA footer band
+// CTA footer band — full width breakout
 .site-cta-footer {
-  margin: 3em -1.5em -1.5em;
-
-  @include breakpoint($large) {
-    margin: 4em -2em -2em;
-  }
+  position: relative;
+  width: 100vw;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-top: 3em;
+  margin-bottom: 0;
 
   // Top: dark CTA area
   &__cta {

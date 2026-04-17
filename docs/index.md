@@ -37,9 +37,10 @@ feature_row_dx:
     excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
 ---
 
-## Why JsonApi4j
-
-One standard. Every service. No more API design debates — just consistent, spec-compliant endpoints out of the box.
+<div class="dark-band" markdown="0">
+  <h2>Why JsonApi4j</h2>
+  <p class="dark-band__subtitle">One standard. Every service. No more API design debates — just consistent, spec-compliant endpoints out of the box.</p>
+</div>
 
 {% include feature_row id="feature_row_main" %}
 
