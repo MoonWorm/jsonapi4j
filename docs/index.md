@@ -43,7 +43,9 @@ feature_row_dx:
 
 Whether you're standardizing your organization's API layer across dozens of services or building a new microservice from scratch, **JsonApi4j** provides a consistent foundation that eliminates API design debates and reduces boilerplate.
 
-![Request Processing Pipeline](/assets/images/request-processing-pipeline.png "JsonApi4j Request Processing Pipeline"){: .align-center}
+![Request Processing Pipeline](/assets/images/request-processing-pipeline.png "JsonApi4j Request Processing Pipeline"){: .align-right style="max-width: 320px;"}
+
+Every incoming API request flows through a well-defined **processing pipeline** — from data retrieval through relationship resolution to final document composition. At each stage, registered [plugins](/plugins/) can inspect, mutate, or short-circuit the request using the Visitor pattern. This gives you full control over cross-cutting concerns like access control, sparse fieldsets, and other features — without touching core logic.
 
 {% include feature_row id="feature_row_advanced" %}
 
