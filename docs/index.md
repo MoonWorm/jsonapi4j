@@ -99,7 +99,29 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 }
 ```
 
-This produces paginated, JSON:API-compliant responses at `GET /users` — with links, resource identifiers, and error handling included automatically.
+`GET /users` →
+
+```json
+{
+  "data": [
+    {
+      "type": "users",
+      "id": "1",
+      "attributes": {
+        "fullName": "John Doe",
+        "email": "john@example.com"
+      },
+      "links": {
+        "self": "/users/1"
+      }
+    }
+  ],
+  "links": {
+    "self": "/users?page[offset]=0&page[limit]=20",
+    "next": "/users?page[offset]=20&page[limit]=20"
+  }
+}
+```
 
 [Read the full Getting Started guide](/getting-started/){: .btn .btn--primary .btn--large}
 {: .text-center}
@@ -124,7 +146,22 @@ This produces paginated, JSON:API-compliant responses at `GET /users` — with l
   </a>
 </div>
 
-[Browse Sample Apps](https://github.com/MoonWorm/jsonapi4j/tree/main/examples){: .btn .btn--info}
-[Read the Documentation](/introduction/){: .btn .btn--info}
-[View on GitHub](https://github.com/MoonWorm/jsonapi4j){: .btn .btn--info}
-{: .text-center}
+<div class="site-cta-footer" markdown="0">
+  <div class="site-cta-footer__cta">
+    <h2>Start Building Today</h2>
+    <p>Add one dependency. Define your domain. Ship a spec-compliant API.</p>
+    <div class="site-cta-footer__buttons">
+      <a href="/getting-started/" class="cta-btn cta-btn--primary">Get Started</a>
+      <a href="/introduction/" class="cta-btn cta-btn--ghost">Documentation</a>
+      <a href="https://github.com/MoonWorm/jsonapi4j/tree/main/examples" class="cta-btn cta-btn--ghost">Sample Apps</a>
+      <a href="https://github.com/MoonWorm/jsonapi4j" class="cta-btn cta-btn--ghost">GitHub</a>
+    </div>
+  </div>
+  <div class="site-cta-footer__bottom">
+    <span>JsonApi4j</span>
+    <span class="site-cta-footer__sep">&middot;</span>
+    <span>JSON:API framework for Java</span>
+    <span class="site-cta-footer__sep">&middot;</span>
+    <a href="https://github.com/MoonWorm/jsonapi4j">GitHub</a>
+  </div>
+</div>
