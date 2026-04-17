@@ -29,6 +29,55 @@
   }
 }
 
+// Sidebar navigation
+.nav__list {
+  border-top: 3px solid #0f3460;
+
+  .nav__items {
+    font-size: 0.85em;
+
+    // Section group headers
+    .nav__sub-title {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+      color: #fff;
+      padding: 0.5em 0.8em;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.3em;
+      text-transform: uppercase;
+      border-bottom: none;
+    }
+
+    // Navigation links
+    a {
+      color: #444;
+      padding: 0.35em 0.8em;
+      border-left: 3px solid transparent;
+      border-radius: 0 4px 4px 0;
+      display: block;
+      text-decoration: none;
+      transition: all 0.15s ease;
+
+      &:hover {
+        color: #1a1a2e;
+        background: #f0f2f6;
+        border-left-color: #0f3460;
+      }
+    }
+
+    // Active / current page link
+    li.active a,
+    a.active {
+      color: #1a1a2e;
+      font-weight: 600;
+      border-left-color: #e94560;
+      background: rgba(233, 69, 96, 0.05);
+    }
+  }
+}
+
 // Site masthead / navigation bar
 .masthead {
   background: linear-gradient(135deg, #111227 0%, #141a32 50%, #0c2a50 100%);
