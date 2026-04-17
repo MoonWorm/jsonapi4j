@@ -15,33 +15,33 @@ excerpt: "A modern, lightweight Java framework for building production-ready RES
 feature_row_main:
   - title: "JSON:API Compliant"
     excerpt: "Purpose-built around the [JSON:API specification](https://jsonapi.org) — predictable request/response format and processing rules."
+  - title: "Auto-Generated OpenAPI"
+    excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime. Powerful customization capabilities. Exposed as JSON or YAML via a dedicated endpoint."  
   - title: "Framework Agnostic"
     excerpt: "Works with **Spring Boot**, **Quarkus**, and plain **Jakarta Servlet API**. Add one dependency and the framework auto-configures itself in your environment."
+  
+feature_row_advanced:
   - title: "Pluggable Architecture"
     excerpt: "Hook into the request pipeline with the visitor-based Plugin System. Ships with **Access Control**, **Sparse Fieldsets**, **OpenAPI**, and **Compound Documents** plugins."
-
-feature_row_advanced:
   - title: "Compound Documents"
     excerpt: "Multi-level `include` queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level."
   - title: "Fine-Grained Access Control"
     excerpt: "Declarative, annotation-driven authorization — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
-  - title: "Parallel Execution"
-    excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."
 
 feature_row_dx:
   - title: "Minimal Boilerplate"
     excerpt: "Define resources, relationships, and operations — the framework automatically generates JSON:API documents, pagination links, error responses, and many more."
   - title: "Persistence/Data Source Agnostic"
     excerpt: "No JPA or Hibernate required. Works with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
-  - title: "Auto-Generated OpenAPI"
-    excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime. Powerful customization capabilities. Exposed as JSON or YAML via a dedicated endpoint."
+  - title: "Parallel Execution"
+    excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
 ---
-
-{% include feature_row id="feature_row_main" %}
 
 ## Built for Scale
 
 Whether you're standardizing your organization's API layer across dozens of services or building a new microservice from scratch, **JsonApi4j** provides a consistent foundation that eliminates API design debates and reduces boilerplate.
+
+{% include feature_row id="feature_row_main" %}
 
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>
