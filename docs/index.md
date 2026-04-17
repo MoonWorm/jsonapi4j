@@ -3,7 +3,6 @@ title: "JsonApi4j"
 layout: splash
 permalink: /
 header:
-  overlay_color: "#0e0f20"
   actions:
     - label: "Get Started"
       url: /getting-started/

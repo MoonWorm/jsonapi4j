@@ -83,7 +83,7 @@
   // Geometric dot grid overlay layered on top of the gradient (higher contrast)
   background-image:
     radial-gradient(circle, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.2px),
-    linear-gradient(135deg, #0e0f20 0%, #12192e 40%, #0f3460 100%) !important;
+    linear-gradient(135deg, #0e0f20 0%, #12192e 40%, #0f3460 100%);
   background-size: 24px 24px, 100% 100%;
 
   .page__title {
