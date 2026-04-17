@@ -40,19 +40,22 @@
   &::before {
     content: "";
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-image:
-      radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+      radial-gradient(circle, rgba(255, 255, 255, 0.18) 1.2px, transparent 1.2px);
     background-size: 24px 24px;
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
   }
 
   // Ensure content sits above the pattern
   .page__hero-image,
   .wrapper {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   .page__title {
