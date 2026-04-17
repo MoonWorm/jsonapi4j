@@ -53,6 +53,26 @@ feature_row_dx:
 
 {% include feature_row id="feature_row_dx" %}
 
+## Choose Your Stack
+
+<div class="stack-grid" markdown="0">
+  <a href="/getting-started/#spring-boot" class="stack-card stack-card--spring">
+    <img src="/assets/images/spring-icon.svg" alt="Spring" class="stack-card__icon">
+    <strong>Spring Boot</strong>
+    <span>Auto-configuration, zero boilerplate. Add one dependency and go.</span>
+  </a>
+  <a href="/getting-started/#quarkus" class="stack-card stack-card--quarkus">
+    <img src="/assets/images/quarkus-icon.svg" alt="Quarkus" class="stack-card__icon">
+    <strong>Quarkus</strong>
+    <span>Native Quarkus extension with CDI integration and build-time processing.</span>
+  </a>
+  <a href="/getting-started/#jakarta-servlet" class="stack-card stack-card--jakarta">
+    <img src="/assets/images/jakarta-icon.svg" alt="Jakarta EE" class="stack-card__icon">
+    <strong>Jakarta Servlet API</strong>
+    <span>Direct integration — no framework required, just the Servlet API.</span>
+  </a>
+</div>
+
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>
   <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
@@ -126,26 +146,6 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
 [Read the full Getting Started guide](/getting-started/){: .btn .btn--primary .btn--large}
 {: .text-center}
-
-## Choose Your Stack
-
-<div class="stack-grid" markdown="0">
-  <a href="/getting-started/#spring-boot" class="stack-card stack-card--spring">
-    <img src="/assets/images/spring-icon.svg" alt="Spring" class="stack-card__icon">
-    <strong>Spring Boot</strong>
-    <span>Auto-configuration, zero boilerplate. Add one dependency and go.</span>
-  </a>
-  <a href="/getting-started/#quarkus" class="stack-card stack-card--quarkus">
-    <img src="/assets/images/quarkus-icon.svg" alt="Quarkus" class="stack-card__icon">
-    <strong>Quarkus</strong>
-    <span>Native Quarkus extension with CDI integration and build-time processing.</span>
-  </a>
-  <a href="/getting-started/#jakarta-servlet" class="stack-card stack-card--jakarta">
-    <img src="/assets/images/jakarta-icon.svg" alt="Jakarta EE" class="stack-card__icon">
-    <strong>Jakarta Servlet API</strong>
-    <span>Direct integration — no framework required, just the Servlet API.</span>
-  </a>
-</div>
 
 <div class="site-cta-footer" markdown="0">
   <div class="site-cta-footer__cta">
