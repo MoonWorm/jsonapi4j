@@ -116,8 +116,25 @@
   }
 
   .page__lead {
-    font-size: 1.2em;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5em;
+    font-weight: 400;
     max-width: 700px;
+    line-height: 1.4;
+    border-left: 3px solid #e94560;
+    padding-left: 0.8em;
+    text-shadow: none;
+    margin-bottom: 0.5em;
+  }
+
+  .hero-body {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95em;
+    font-weight: 400;
+    max-width: 700px;
+    line-height: 1.6;
+    text-shadow: none;
+    margin-bottom: 1em;
   }
 
   .btn--primary {
@@ -146,7 +163,7 @@
     height: 220px;
     opacity: 0.9;
     display: none;
-    z-index: 1;
+    z-index: 2;
 
     @include breakpoint($large) {
       display: block;
@@ -323,6 +340,47 @@
 // Hide default footer on splash/landing page (replaced by custom CTA footer)
 .layout--splash .page__footer {
   display: none;
+}
+
+// Global default footer restyling
+.page__footer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+
+  footer {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  a {
+    color: rgba(255, 255, 255, 0.55);
+    text-decoration: none;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  .page__footer-follow {
+    .social-icons {
+      .svg-inline--fa {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      a {
+        color: rgba(255, 255, 255, 0.55);
+
+        &:hover {
+          color: #fff;
+        }
+      }
+    }
+  }
+
+  .page__footer-copyright {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.8em;
+  }
 }
 
 // CTA footer band — full width breakout

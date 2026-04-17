@@ -3,8 +3,7 @@ title: "JsonApi4j"
 layout: splash
 permalink: /
 header:
-  overlay_color: "#1a1a2e"
-  overlay_filter: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)"
+  overlay_color: "#0e0f20"
   actions:
     - label: "Get Started"
       url: /getting-started/
@@ -12,7 +11,7 @@ header:
       url: "https://github.com/MoonWorm/jsonapi4j"
     - label: "Maven Central"
       url: "https://central.sonatype.com/namespace/pro.api4"
-excerpt: "A modern, lightweight Java framework for building production-ready REST APIs compliant with the JSON:API specification. Define your domain — the framework handles the rest."
+excerpt: "Define your domain — the framework handles the rest."
 
 feature_row_main:
   - title: "JSON:API Compliant"
