@@ -89,6 +89,30 @@
   .page__title {
     font-size: 2.8em;
     font-weight: 700;
+    text-shadow: none;
+  }
+
+  // Styled hero title parts
+  .hero-title__json {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .hero-title__colon {
+    color: #e94560;
+    font-weight: 700;
+  }
+
+  .hero-title__api {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .hero-title__4j {
+    color: #e94560;
+    font-weight: 300;
+    font-style: italic;
+    margin-left: 0.05em;
   }
 
   .page__lead {
