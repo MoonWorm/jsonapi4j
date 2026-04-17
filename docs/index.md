@@ -137,3 +137,24 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
   }
 }
 ```
+
+<div class="site-cta-footer" markdown="0">
+  <div class="site-cta-footer__cta">
+    <h2>Start Building Today</h2>
+    <p>Add one dependency. Define your domain. Ship a spec-compliant API.</p>
+    <div class="site-cta-footer__buttons">
+      <a href="/getting-started/" class="cta-btn cta-btn--ghost">Get Started</a>
+      <a href="/introduction/" class="cta-btn cta-btn--ghost">Documentation</a>
+      <a href="https://github.com/MoonWorm/jsonapi4j/tree/main/examples" class="cta-btn cta-btn--ghost">Sample Apps</a>
+      <a href="https://github.com/MoonWorm/jsonapi4j" class="cta-btn cta-btn--ghost">GitHub</a>
+      <a href="https://central.sonatype.com/namespace/pro.api4" class="cta-btn cta-btn--ghost">Maven Central</a>
+    </div>
+  </div>
+  <div class="site-cta-footer__bottom">
+    <span>JsonApi4j</span>
+    <span class="site-cta-footer__sep">&middot;</span>
+    <span>JSON:API framework for Java</span>
+    <span class="site-cta-footer__sep">&middot;</span>
+    <a href="https://github.com/MoonWorm/jsonapi4j">GitHub</a>
+  </div>
+</div>
