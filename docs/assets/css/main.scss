@@ -34,29 +34,11 @@
   padding: 6em 0 4em;
   min-height: 400px;
   position: relative;
-  overflow: hidden;
-
-  // Geometric dot grid overlay
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image:
-      radial-gradient(circle, rgba(255, 255, 255, 0.18) 1.2px, transparent 1.2px);
-    background-size: 24px 24px;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  // Ensure content sits above the pattern
-  .page__hero-image,
-  .wrapper {
-    position: relative;
-    z-index: 2;
-  }
+  // Geometric dot grid overlay layered on top of the gradient
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.2px),
+    linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+  background-size: 24px 24px, 100% 100%;
 
   .page__title {
     font-size: 2.8em;
