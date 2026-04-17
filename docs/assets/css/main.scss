@@ -32,7 +32,7 @@
 // Site masthead / navigation bar
 .masthead {
   background: linear-gradient(135deg, #111227 0%, #141a32 50%, #0c2a50 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
 
   .greedy-nav {
     background: transparent;
@@ -120,8 +120,9 @@
     transform: translateY(-50%);
     width: 220px;
     height: 220px;
-    opacity: 0.85;
+    opacity: 0.9;
     display: none;
+    z-index: 1;
 
     @include breakpoint($large) {
       display: block;
