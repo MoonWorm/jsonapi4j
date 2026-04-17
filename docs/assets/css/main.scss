@@ -60,11 +60,13 @@
       }
     }
 
-    // Active / current page link
-    li.active > a,
-    a.active {
-      color: #1a1a2e;
-      box-shadow: inset 3px 0 0 #e94560;
+    // Active / current page link — override theme's margin shift + bold
+    .active {
+      margin-left: 0 !important;
+      padding-left: 0.6em !important;
+      font-weight: inherit !important;
+      color: #e94560;
+      border-left: 3px solid #e94560;
     }
   }
 }
