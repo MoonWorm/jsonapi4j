@@ -42,7 +42,7 @@ In other words:
 
 The diagram below illustrates the full request processing pipeline for resource operations (e.g. read resource by ID, read multiple resources) and the stages where plugins can hook in using the Visitor pattern:
 
-![Request Processing Pipeline](/assets/images/request-processing-pipeline.png "Request Processing Pipeline"){: .align-center}
+![Request Processing Pipeline](/assets/images/request-processing-pipeline.svg "Request Processing Pipeline"){: .align-center}
 
 The pipeline consists of the following stages:
 

@@ -77,15 +77,8 @@ feature_row_dx:
 
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>
-  <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
-    <div style="flex: 1; min-width: 280px;">
-      <p>Every incoming API request flows through a well-defined <strong>processing pipeline</strong> — from data retrieval through relationship resolution to final document composition.</p>
-      <p>At each stage, registered <a href="/plugins/">plugins</a> can inspect, mutate, or short-circuit the request using the Visitor pattern. This gives you full control over cross-cutting concerns like access control, sparse fieldsets, and other features — without touching core logic.</p>
-    </div>
-    <div style="flex: 0 0 auto;">
-      <img src="/assets/images/request-processing-pipeline.png" alt="Request Processing Pipeline" style="max-height: 620px; width: auto;">
-    </div>
-  </div>
+  <p>Every incoming API request flows through a well-defined <strong>processing pipeline</strong> — from data retrieval through relationship resolution to final document composition. At each stage, registered <a href="/plugins/">plugins</a> can inspect, mutate, or short-circuit the request using the Visitor pattern.</p>
+  <img src="/assets/images/request-processing-pipeline.svg" alt="Request Processing Pipeline" style="width: 100%; margin-top: 1em;">
 </div>
 
 ## Quick Example
