@@ -146,15 +146,12 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 }
 ```
 
-[Read the full Getting Started guide](/getting-started/){: .btn .btn--primary .btn--large}
-{: .text-center}
-
 <div class="site-cta-footer" markdown="0">
   <div class="site-cta-footer__cta">
     <h2>Start Building Today</h2>
     <p>Add one dependency. Define your domain. Ship a spec-compliant API.</p>
     <div class="site-cta-footer__buttons">
-      <a href="/getting-started/" class="cta-btn cta-btn--primary">Get Started</a>
+      <a href="/getting-started/" class="cta-btn cta-btn--ghost">Get Started</a>
       <a href="/introduction/" class="cta-btn cta-btn--ghost">Documentation</a>
       <a href="https://github.com/MoonWorm/jsonapi4j/tree/main/examples" class="cta-btn cta-btn--ghost">Sample Apps</a>
       <a href="https://github.com/MoonWorm/jsonapi4j" class="cta-btn cta-btn--ghost">GitHub</a>
