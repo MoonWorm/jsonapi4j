@@ -134,6 +134,30 @@
   }
 }
 
+// Pipeline highlight band on landing page
+.pipeline-band {
+  background: linear-gradient(135deg, #f7f8fa 0%, #eef1f5 100%);
+  border-top: 1px solid #e1e4e8;
+  border-bottom: 1px solid #e1e4e8;
+  margin: 2em -1.5em;
+  padding: 2em 1.5em;
+
+  @include breakpoint($large) {
+    margin: 2.5em -2em;
+    padding: 2.5em 2em;
+  }
+
+  h3 {
+    margin-top: 0;
+    font-size: 1.3em;
+    color: #1a1a2e;
+  }
+
+  p {
+    color: #333;
+  }
+}
+
 // Tabs component
 .tabs {
   margin: 1em 0 1.5em;
