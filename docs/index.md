@@ -10,6 +10,8 @@ header:
       url: /getting-started/
     - label: "View on GitHub"
       url: "https://github.com/MoonWorm/jsonapi4j"
+    - label: "Maven Central"
+      url: "https://central.sonatype.com/namespace/pro.api4"
 excerpt: "A modern, lightweight Java framework for building production-ready REST APIs compliant with the JSON:API specification. Define your domain — the framework handles the rest."
 
 feature_row_main:
@@ -37,22 +39,6 @@ feature_row_dx:
     excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
 ---
 
-<div class="dark-band" markdown="0">
-  <h2>Why JsonApi4j</h2>
-  <p class="dark-band__subtitle">One standard. Every service. No more API design debates — just consistent, spec-compliant endpoints out of the box.</p>
-</div>
-
-{% include feature_row id="feature_row_main" %}
-
-<div class="dark-band" markdown="0">
-  <h2>Under the Hood</h2>
-  <p class="dark-band__subtitle">Built for engineers who care about what happens between the request and the response.</p>
-</div>
-
-{% include feature_row id="feature_row_advanced" %}
-
-{% include feature_row id="feature_row_dx" %}
-
 ## Choose Your Stack
 
 <div class="stack-grid" markdown="0">
@@ -72,6 +58,22 @@ feature_row_dx:
     <span>Direct integration — no framework required, just the Servlet API.</span>
   </a>
 </div>
+
+<div class="dark-band" markdown="0">
+  <h2>Why JsonApi4j</h2>
+  <p class="dark-band__subtitle">One standard. Every service. No more API design debates — just consistent, spec-compliant endpoints out of the box.</p>
+</div>
+
+{% include feature_row id="feature_row_main" %}
+
+<div class="dark-band" markdown="0">
+  <h2>Under the Hood</h2>
+  <p class="dark-band__subtitle">Built for engineers who care about what happens between the request and the response.</p>
+</div>
+
+{% include feature_row id="feature_row_advanced" %}
+
+{% include feature_row id="feature_row_dx" %}
 
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>
@@ -156,6 +158,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
       <a href="/introduction/" class="cta-btn cta-btn--ghost">Documentation</a>
       <a href="https://github.com/MoonWorm/jsonapi4j/tree/main/examples" class="cta-btn cta-btn--ghost">Sample Apps</a>
       <a href="https://github.com/MoonWorm/jsonapi4j" class="cta-btn cta-btn--ghost">GitHub</a>
+      <a href="https://central.sonatype.com/namespace/pro.api4" class="cta-btn cta-btn--ghost">Maven Central</a>
     </div>
   </div>
   <div class="site-cta-footer__bottom">
