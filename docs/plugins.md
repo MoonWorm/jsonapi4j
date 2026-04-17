@@ -64,7 +64,7 @@ The pipeline consists of the following stages:
 
 Relationship operations (e.g. read to-one/to-many relationships) follow a shorter pipeline. Since these operations target a specific relationship directly, there is no need for nested relationship resolution stages:
 
-![Relationship Operations Processing Pipeline](/assets/images/request-processing-pipeline-relationships.png "Relationship Operations Processing Pipeline"){: .align-center}
+![Relationship Operations Processing Pipeline](/assets/images/request-processing-pipeline-relationships.svg "Relationship Operations Processing Pipeline"){: .align-center}
 
 The pipeline consists of the following stages:
 
