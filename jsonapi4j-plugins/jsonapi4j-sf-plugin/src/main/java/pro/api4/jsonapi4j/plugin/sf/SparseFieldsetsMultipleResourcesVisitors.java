@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.sf;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
@@ -10,6 +11,7 @@ import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiConte
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
+@Slf4j
 class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisitors {
 
     private final SparseFieldsetsHelper helper;
@@ -31,6 +33,7 @@ class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisit
                 && MapUtils.isNotEmpty(jsonApiRequest.getFieldSets())
                 && doc != null
                 && doc.getData() != null) {
+            log.debug("Applying sparse fieldsets for {} resources, requested fields: {}", doc.getData().size(), jsonApiRequest.getFieldSets());
             for (ResourceObject<?, ?> resourceObject : doc.getData()) {
                 helper.sparseFieldsets(jsonApiRequest, resourceObject);
             }

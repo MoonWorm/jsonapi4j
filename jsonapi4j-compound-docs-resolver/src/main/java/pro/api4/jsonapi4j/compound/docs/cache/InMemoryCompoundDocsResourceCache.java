@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs.cache;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see CompoundDocsResourceCache
  * @see AbstractCompoundDocsResourceCache
  */
+@Slf4j
 public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResourceCache {
 
     private final ConcurrentHashMap<CacheKey, CacheEntry> store;
@@ -100,6 +102,7 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
         Instant expiresAt = now.plusSeconds(directives.getEffectiveTtlSeconds());
         CacheEntry entry = new CacheEntry(resourceJson, expiresAt, now);
         store.put(key, entry);
+        log.debug("Cache put: type='{}', id='{}', ttl={}s, store size={}", key.getResourceType(), key.getResourceId(), directives.getEffectiveTtlSeconds(), store.size());
 
         if (store.size() > maxSize) {
             evict(now);
@@ -116,6 +119,7 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
     private void evict(Instant now) {
         // Phase 1 — remove all expired entries
         store.entrySet().removeIf(e -> e.getValue().isExpired(now));
+        log.debug("Cache eviction: removed expired entries, store size={}", store.size());
 
         // Phase 2 — LRU eviction if still over limit
         if (store.size() > maxSize) {
@@ -132,6 +136,7 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
 
             if (lruKey != null) {
                 store.remove(lruKey);
+                log.debug("Cache LRU eviction: removed entry type='{}', id='{}'", lruKey.getResourceType(), lruKey.getResourceId());
             }
         }
     }

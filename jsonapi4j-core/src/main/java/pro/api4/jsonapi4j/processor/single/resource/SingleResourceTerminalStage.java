@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor.single.resource;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.model.document.LinksObject;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+@Slf4j
 public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
     private final REQUEST request;
@@ -145,6 +147,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 }
             }
         }
+        log.debug("Single resource pipeline: onDataPreRetrieval phase completed");
 
         // RETRIEVE DATA
         DATA_SOURCE_DTO dataSourceDto = retrieveData(effectiveRequest);
@@ -171,6 +174,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 }
             }
         }
+        log.debug("Single resource pipeline: onDataPostRetrieval phase completed");
 
         if (dataSourceDto == null) {
             // top-level links
@@ -231,6 +235,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 }
             }
         }
+        log.debug("Single resource pipeline: onRelationshipsPreRetrieval phase completed");
 
         data = doc.getData();
 
@@ -271,6 +276,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 }
             }
         }
+        log.debug("Single resource pipeline: onRelationshipsPostRetrieval phase completed");
 
         // return doc
         return doc;

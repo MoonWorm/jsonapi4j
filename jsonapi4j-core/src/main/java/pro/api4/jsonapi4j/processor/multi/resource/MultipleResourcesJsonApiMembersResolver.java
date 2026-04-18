@@ -68,6 +68,8 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
             return null;
         }
 
+        log.debug("Running Parallel resolving of resource relationships in pipeline for request {}", request);
+
         MultipleResourcesRelationshipFutures<DATA_SOURCE_DTO> futures
                 = supplyAsyncRelationshipFutures(request, dtos);
 
@@ -89,7 +91,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                 )
         );
 
-        return dtos.stream()
+        Map<IdAndType, RELATIONSHIPS> result = dtos.stream()
                 .collect(
                         CustomCollectors.toMapThatSupportsNullValues(
                                 this::resolveResourceIdAndType,
@@ -99,6 +101,14 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                 )
                         )
                 );
+
+        log.debug(
+                "Parallel resolving of resource relationships in pipeline for request {} is done. Returning 'relationships' objects for resources: {}",
+                request,
+                result.keySet().stream().sorted().map(IdAndType::toString).collect(Collectors.joining(", "))
+        );
+
+        return result;
     }
 
     private MultipleResourcesRelationshipFutures<DATA_SOURCE_DTO> supplyAsyncRelationshipFutures(

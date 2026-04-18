@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor.multi.resource;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
 
+@Slf4j
 public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
     private final REQUEST request;
@@ -99,8 +101,8 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
     ) {
 
         // validations
-        Validate.notNull(resourceSupplier);
-        Validate.notNull(docSupplier);
+        Validate.notNull(resourceSupplier, "resourceSupplier can't be null");
+        Validate.notNull(docSupplier, "docSupplier can't be null");
 
         REQUEST effectiveRequest = this.request;
 
@@ -127,6 +129,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 }
             }
         }
+        log.debug("Multiple resources pipeline: onDataPreRetrieval phase completed");
 
         PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse = retrieveData(effectiveRequest);
 
@@ -152,6 +155,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 }
             }
         }
+        log.debug("Multiple resources pipeline: onDataPostRetrieval phase completed");
 
         if (paginationAwareResponse == null) {
             // top-level links
@@ -222,6 +226,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 }
             }
         }
+        log.debug("Multiple resources pipeline: onRelationshipsPreRetrieval phase completed");
 
         // filter out dtos
         Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = emptyIfNull(paginationAwareResponse.getItems()).stream()
@@ -285,6 +290,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 }
             }
         }
+        log.debug("Multiple resources pipeline: onRelationshipsPostRetrieval phase completed");
 
         // return doc
         return doc;

@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.sf;
 
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties.RequestedFieldsDontExistMode;
@@ -8,6 +9,7 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
 
+@Slf4j
 class SparseFieldsetsHelper {
 
     private final SfProperties sfProperties;
@@ -25,6 +27,7 @@ class SparseFieldsetsHelper {
         String resourceType = resourceObject.getType();
         List<String> requestedPaths = jsonApiRequest.getFieldSets().get(resourceType);
         if (requestedPaths == null) {
+            log.debug("No sparse fieldsets requested for type '{}'", resourceType);
             // no 'fields' param for this resource type
             return;
         }
@@ -39,6 +42,7 @@ class SparseFieldsetsHelper {
     }
 
     private void sparseAllFields(ResourceObject<?, ?> resourceObject) {
+        log.debug("Sparse fieldsets: removing all attributes for resource type '{}'", resourceObject.getType());
         ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, null);
     }
 

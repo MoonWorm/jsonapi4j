@@ -58,6 +58,8 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
             return null;
         }
 
+        log.debug("Running Parallel resolving of resource relationships in pipeline for request {}", request);
+
         // supply async futures and execute everything in parallel
         SingleResourceRelationshipFutures futures = supplyAsyncRelationshipDataFutures(request, dataSourceDto);
 
@@ -80,7 +82,15 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
         );
 
         // instantiate RELATIONSHIPS object
-        return relationshipsSupplier.get(toManyRelationships, toOneRelationships);
+        RELATIONSHIPS relationships = relationshipsSupplier.get(toManyRelationships, toOneRelationships);
+
+        log.debug(
+                "Parallel resolving of resource relationships in pipeline for request {} is done. Returning 'relationships' objects for resource: {}",
+                request,
+                resolveResourceIdAndType(dataSourceDto)
+        );
+
+        return relationships;
     }
 
     private SingleResourceRelationshipFutures supplyAsyncRelationshipDataFutures(

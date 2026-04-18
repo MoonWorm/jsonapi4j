@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
  *
  * <p>When no cache is configured ({@code null}), acts as a pass-through to the HTTP client.
  */
+@Slf4j
 public class CachingCompoundDocsFetcher {
 
     private final JsonApi4jCompoundDocsApiHttpClient httpClient;
@@ -131,7 +133,10 @@ public class CachingCompoundDocsFetcher {
                 .map(Map.Entry::getValue)
                 .collect(Collectors.toSet());
 
+        log.debug("Cache lookup for type '{}': {} hits, {} misses", resourceType, cacheHits.size(), missIds.size());
+
         if (missIds.isEmpty()) {
+            log.debug("All resources for type '{}' served from cache", resourceType);
             return new BatchFetchResult(cacheHitJsons, computeDirectives(cacheHits, null));
         }
 
