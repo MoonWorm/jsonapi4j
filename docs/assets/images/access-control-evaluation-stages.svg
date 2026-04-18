@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 310" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 7" refX="9" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7" fill="#444"/>
+    </marker>
+    <marker id="arrow-left" viewBox="0 0 10 7" refX="1" refY="3.5" markerWidth="10" markerHeight="7" orient="auto">
+      <path d="M10,0 L0,3.5 L10,7" fill="#444"/>
+    </marker>
+<filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.08"/>
+    </filter>
+    <!-- Shield icon for AC -->
+    <symbol id="shield-icon" viewBox="0 0 24 24">
+      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" fill="#fff" opacity="0.5"/>
+    </symbol>
+  </defs>
+
+  <!-- ==================== TOP ROW: Request → Inbound → Data Source ==================== -->
+
+  <!-- JsonApiRequest (start node) -->
+  <g transform="translate(20, 55)">
+    <rect x="0" y="0" width="130" height="46" rx="23" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="65" y="28" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="600">JsonApiRequest</text>
+  </g>
+
+  <!-- Arrow: Request → Inbound -->
+  <line x1="150" y1="78" x2="190" y2="78" stroke="#444" stroke-width="2"/>
+  <polygon points="198,78 188,74.5 188,81.5" fill="#444"/>
+
+  <!-- Inbound AC Stage -->
+  <g transform="translate(200, 28)">
+    <rect x="0" y="0" width="180" height="100" rx="8" fill="#0f3460" filter="url(#shadow)"/>
+    <use href="#shield-icon" x="6" y="5" width="16" height="16"/>
+    <text x="90" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Inbound</text>
+    <line x1="12" y1="42" x2="168" y2="42" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <text x="90" y="62" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="8.5">Authentication, Scopes, Ownership</text>
+    <text x="90" y="82" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="7.5">Request: ALLOW · DENY</text>
+  </g>
+
+  <!-- Arrow: Inbound → Data Source -->
+  <line x1="380" y1="78" x2="440" y2="78" stroke="#444" stroke-width="2"/>
+  <polygon points="448,78 438,74.5 438,81.5" fill="#444"/>
+  <text x="414" y="70" text-anchor="middle" fill="#666" font-size="8" font-style="italic">allowed</text>
+
+  <!-- Data Source (full height spanning Inbound + Outbound) -->
+  <g transform="translate(450, 28)">
+    <rect x="0" y="0" width="160" height="262" rx="8" fill="#fff" stroke="#ccc" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="80" y="120" text-anchor="middle" fill="#1a1a2e" font-size="18" font-weight="700">Data</text>
+    <text x="80" y="144" text-anchor="middle" fill="#1a1a2e" font-size="18" font-weight="700">Source</text>
+    <text x="80" y="170" text-anchor="middle" fill="#999" font-size="8" font-style="italic">Downstream I/O</text>
+  </g>
+
+  <!-- Arrow: Data Source → Outbound -->
+  <line x1="450" y1="240" x2="388" y2="240" stroke="#444" stroke-width="2"/>
+  <polygon points="380,240 390,236.5 390,243.5" fill="#444"/>
+
+  <!-- ==================== BOTTOM ROW: Data Source → Outbound → Document ==================== -->
+
+  <!-- Outbound AC Stage (aligned with Inbound at x=200) -->
+  <g transform="translate(200, 190)">
+    <rect x="0" y="0" width="180" height="100" rx="8" fill="#0f3460" filter="url(#shadow)"/>
+    <use href="#shield-icon" x="6" y="5" width="16" height="16"/>
+    <text x="90" y="30" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">Outbound</text>
+    <line x1="12" y1="42" x2="168" y2="42" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+    <text x="90" y="62" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="8.5">Authentication, Scopes, Ownership</text>
+    <text x="90" y="82" text-anchor="middle" fill="rgba(255,255,255,0.35)" font-size="7.5">Doc: DO NOTHING · ANONYMIZE (per-field)</text>
+  </g>
+
+  <!-- Arrow: Outbound → Document -->
+  <line x1="200" y1="240" x2="163" y2="240" stroke="#444" stroke-width="2"/>
+  <polygon points="155,240 165,236.5 165,243.5" fill="#444"/>
+
+  <!-- JSON:API Document (end node) -->
+  <g transform="translate(20, 217)">
+    <rect x="0" y="0" width="135" height="46" rx="23" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="67" y="28" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">JSON:API Document</text>
+  </g>
+
+
+</svg>
