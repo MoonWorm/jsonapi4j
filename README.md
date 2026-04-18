@@ -13,22 +13,32 @@ A lightweight Java framework for building REST APIs compliant with the [JSON:API
 
 ## Features
 
-- **Full [JSON:API](https://jsonapi.org/) compliance** — resources, relationships, compound documents, pagination, filtering, sparse fieldsets, error handling, and more
-- **Spring Boot, Quarkus, and Servlet API** — integrates with popular Java web frameworks out of the box
-- **Declarative API design** — define resources, relationships, and operations with annotations; the framework handles routing, serialization, and response formatting
-- **Compound documents & includes** — multi-level `?include=` support (e.g., `include=comments.author.followers`) with parallel resolution
-- **Access control** — per-field authorization via annotations, with support for authentication checks, OAuth2 scopes, and resource ownership
-- **OpenAPI generation** — produces an OpenAPI/Swagger specification from your JSON:API domain model
-- **Sparse fieldsets** — clients request only the fields they need via `?fields[type]=field1,field2`
-- **Cursor-based pagination** — customizable page sizes with cursor-encoded navigation
-- **Pluggable architecture** — extend request processing with custom plugins without modifying core logic
-- **Parallel execution** — concurrent relationship resolution and compound document processing; supports any custom `Executor`, including virtual threads
+### 📋 Spec-Compliant by Default
+Full [JSON:API](https://jsonapi.org/) compliance out of the box — resources, relationships, compound documents, pagination, sparse fieldsets, error handling, and links. No shortcuts, no partial implementations.
 
-## Why JSON:API?
+### 🔌 Works With Your Stack
+First-class support for **Spring Boot**, **Quarkus**, and plain **Jakarta Servlet API**. One dependency, zero configuration — the framework auto-configures itself.
 
-The [JSON:API specification](https://jsonapi.org/) is a standard for building resource-oriented REST APIs. It defines conventions for pagination, relationships, compound documents, sparse fieldsets, and error formats — so you don't have to design them yourself.
+### 🗄️ Bring Your Own Data Source
+No JPA or ORM required. Use SQL, NoSQL, REST clients, in-memory stores — anything that returns data. The framework never touches your persistence layer.
 
-**JsonApi4j** implements this specification for Java, handling the request/response lifecycle so you can focus on your domain logic.
+### 🧩 Plugin System
+Extend the request processing pipeline without modifying core logic. Ships with:
+- **Access Control** — per-field authorization via annotations, OAuth2 scopes, resource ownership
+- **OpenAPI** — auto-generated spec from your domain model
+- **Sparse Fieldsets** — `fields[type]` filtering on the server
+- **Compound Documents** — multi-level `include` with parallel resolution
+
+### ⚡ Built for Performance
+Concurrent relationship resolution, parallel compound document fetching, and support for virtual threads (Project Loom). Designed for production throughput from day one.
+
+## Why JsonApi4j?
+
+### 🏛️ One Standard, Every Service
+Every service ships with the same request/response format, the same pagination model, the same error structure — enforced by the framework, not by design reviews. Whether you're building a new microservice or standardizing an existing API layer, JsonApi4j gives your team an enforceable shared contract across Spring Boot, Quarkus, or plain Servlet.
+
+### 🚀 Ship Faster
+Define your resources and operations — routing, serialization, pagination links, error handling, and documentation are generated automatically. Less plumbing, more domain logic.
 
 ## Documentation
 
@@ -1205,7 +1215,7 @@ And the response for the same request now looks like:
 
 It's worth noting that we can now see `attributes` sections for both requested users. But for user '5' (authenticated user) we can also see `creditCardNumber`. 
 
-For more configuration options like setting a custom principal resolver or other examples for setting access control rules for both inbound and outbound access please refer the official [documentation](https://api4.pro/).  
+For more configuration options like setting a custom principal resolver or other examples for setting access control rules for both inbound and outbound access please refer the [Access Control Plugin documentation](https://api4.pro/access-control-plugin/).  
 
 ## Sparse Fieldsets Plugin
 
@@ -1224,7 +1234,7 @@ Then, you can use `fields[TYPE]=field1,field2` query parameter to fetch only req
 
 For example in order to request `users` with `email` and `lastName` fields only - simply add `fields[users]=email,lastName` query parameter. 
 
-If a response consists of resources of different type - for example, if you requested users and some related resources of other types via relationships - you can control which fields to request for each resource type by adding multiple query parameters like that.   
+If a response consists of resources of different type - for example, if you requested users and some related resources of other types via relationships - you can control which fields to request for each resource type by adding multiple query parameters like that. For more details please refer the [Sparse Fieldsets Plugin documentation](https://api4.pro/sparse-fieldsets-plugin/).   
 
 ## OpenApi Plugin
 
@@ -1244,11 +1254,63 @@ You can get OpenAPI Specification in desired format (json or yaml) by accessing 
 
 Here is the Swagger UI you can generate based on the OpenAPI Specification by doing zero configuration: 
 
-![Swagger UI](/docs/swagger-ui-screenshot.png)
+![Swagger UI](/docs/assets/images/swagger-ui-screenshot.png)
 
 JsonApi4j generates JSON:API parameters and a full set of Schemas based on the declared domain.
 
-For more configuration options and details please refer the official [documentation](https://api4.pro/).
+For more configuration options and details please refer the [OpenAPI Plugin documentation](https://api4.pro/openapi-plugin/).
+
+## Compound Documents Plugin
+
+In order to enable JsonApi4j Compound Documents (CD) plugin - add the next dependency:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-cd-plugin</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+[Compound Documents](https://jsonapi.org/format/#document-compound-documents) allow clients to fetch related resources in a single request using the `include` query parameter. For example, to fetch users along with their relatives:
+
+Request: [/users?page[cursor]=DoJu&include=relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives)
+
+This resolves each user's `relatives` relationship and places the related user resources in the top-level `included` array — all in one HTTP call.
+
+### Multi-Level Includes
+
+Compound documents support chained relationships. For example, `include=relatives.relatives` resolves two levels deep — a user's relatives and their relatives:
+
+Request: [/users?page[cursor]=DoJu&include=relatives.relatives](http://localhost:8080/jsonapi/users?page[cursor]=DoJu&include=relatives.relatives)
+
+You can also request multiple relationships in a single call using commas, e.g. `include=relatives,placeOfBirth.currencies`.
+
+### How Resolution Works
+
+JsonApi4j resolves includes in stages. For example, `include=relatives,placeOfBirth.currencies` is parsed into:
+- **Stage 1**: resolve `relatives` and `placeOfBirth` for the requested users
+- **Stage 2**: resolve `currencies` for each country resolved in Stage 1
+
+Within each stage, resources are grouped by type and fetched in parallel batch requests (e.g. `filter[id]=1,2,3`). This minimizes the number of downstream calls.
+
+### Built-In Caching
+
+The resolver includes an in-memory cache keyed by resource type, id, includes, and sparse fieldsets. Cache entries respect `Cache-Control` headers from downstream responses — `max-age` determines TTL, while `no-store` and `no-cache` prevent caching. The final compound document response carries an aggregated `Cache-Control` header reflecting the most restrictive directive across all included resources.
+
+### Standalone Resolver
+
+The compound documents resolver can also be used independently of the JsonApi4j plugin system — for example, at an **API Gateway** level for centralized response composition across multiple downstream services:
+
+```xml
+<dependency>
+  <groupId>pro.api4</groupId>
+  <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
+  <version>${jsonapi4j.version}</version>
+</dependency>
+```
+
+For more configuration options and details please refer the [Compound Documents documentation](https://api4.pro/compound-docs/).
 
 # Contributing
 
