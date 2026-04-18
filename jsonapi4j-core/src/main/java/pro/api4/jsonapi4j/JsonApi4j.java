@@ -195,10 +195,22 @@ public class JsonApi4j {
                         .updateToOneRelationship(request);
                 return null;
             }
-            case UPDATE_TO_MANY_RELATIONSHIP -> {
+            case UPDATE_TO_MANY_RELATIONSHIPS -> {
                 forResourceType(request.getTargetResourceType())
                         .forToManyRelationship(request.getTargetRelationshipName())
                         .updateToManyRelationship(request);
+                return null;
+            }
+            case ADD_TO_MANY_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .addToManyRelationship(request);
+                return null;
+            }
+            case DELETE_TO_MANY_RELATIONSHIP -> {
+                forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .deleteFromToManyRelationship(request);
                 return null;
             }
             default -> throw new IllegalArgumentException(
@@ -1032,6 +1044,72 @@ public class JsonApi4j {
                     request -> {
                         try {
                             executable.update(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    pluginSettings
+            );
+        }
+
+        public void addToManyRelationship(JsonApiRequest relationshipRequest) {
+            RegisteredOperation<AddToManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredAddToManyRelationshipOperation(resourceType, relationshipName, true);
+
+            AddToManyRelationshipOperation executable
+                    = registeredOperation.getOperation();
+
+            executable.validate(relationshipRequest);
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
+            );
+
+            executeCastedNoResponse(
+                    relationshipRequest,
+                    request -> {
+                        try {
+                            executable.add(request);
+                        } catch (OperationNotFoundException onfe) {
+                            throw new OperationNotFoundException(
+                                    registeredOperation.getOperationMeta().getOperationType(),
+                                    registeredOperation.getOperationMeta().getResourceType(),
+                                    registeredOperation.getOperationMeta().getRelationshipName(),
+                                    onfe
+                            );
+                        }
+                    },
+                    pluginSettings
+            );
+        }
+
+        public void deleteFromToManyRelationship(JsonApiRequest relationshipRequest) {
+            RegisteredOperation<DeleteToManyRelationshipOperation> registeredOperation
+                    = operationsRegistry.getRegisteredDeleteToManyRelationshipOperation(resourceType, relationshipName, true);
+
+            DeleteToManyRelationshipOperation executable
+                    = registeredOperation.getOperation();
+
+            executable.validate(relationshipRequest);
+
+            List<PluginSettings> pluginSettings = getPluginSettings(
+                    registeredOperation,
+                    domainRegistry.getResource(resourceType),
+                    domainRegistry.getToManyRelationshipStrict(resourceType, relationshipName)
+            );
+
+            executeCastedNoResponse(
+                    relationshipRequest,
+                    request -> {
+                        try {
+                            executable.delete(request);
                         } catch (OperationNotFoundException onfe) {
                             throw new OperationNotFoundException(
                                     registeredOperation.getOperationMeta().getOperationType(),

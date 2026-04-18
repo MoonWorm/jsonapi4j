@@ -32,6 +32,8 @@ public class OperationsRegistry {
     private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations;
     private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations;
     private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<AddToManyRelationshipOperation>>> addToManyRelationshipOperations;
+    private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<DeleteToManyRelationshipOperation>>> deleteToManyRelationshipOperations;
     private final Set<ResourceType> resourceTypesWithAnyOperationConfigured;
     private final Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured;
 
@@ -44,6 +46,8 @@ public class OperationsRegistry {
                                Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations,
                                Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations,
                                Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<AddToManyRelationshipOperation>>> addToManyRelationshipOperations,
+                               Map<ResourceType, Map<RelationshipName, RegisteredOperation<DeleteToManyRelationshipOperation>>> deleteToManyRelationshipOperations,
                                Set<ResourceType> resourceTypesWithAnyOperationConfigured,
                                Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured) {
         this.readResourceByIdOperations = readResourceByIdOperations;
@@ -55,6 +59,8 @@ public class OperationsRegistry {
         this.readToManyRelationshipOperations = readToManyRelationshipOperations;
         this.updateToOneRelationshipOperations = updateToOneRelationshipOperations;
         this.updateToManyRelationshipOperations = updateToManyRelationshipOperations;
+        this.addToManyRelationshipOperations = addToManyRelationshipOperations;
+        this.deleteToManyRelationshipOperations = deleteToManyRelationshipOperations;
         this.resourceTypesWithAnyOperationConfigured = resourceTypesWithAnyOperationConfigured;
         this.relationshipNamesWithAnyOperationConfigured = relationshipNamesWithAnyOperationConfigured;
     }
@@ -128,8 +134,12 @@ public class OperationsRegistry {
         } else if (operationType.getSubType() == OperationType.SubType.TO_MANY_RELATIONSHIP) {
             if (operationType == READ_TO_MANY_RELATIONSHIP) {
                 return getRegisteredReadToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
-            } else {
+            } else if (operationType == UPDATE_TO_MANY_RELATIONSHIPS) {
                 return getRegisteredUpdateToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
+            } else if (operationType == ADD_TO_MANY_RELATIONSHIP) {
+                return getRegisteredAddToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
+            } else {
+                return getRegisteredDeleteToManyRelationshipOperation(resourceType, relationshipName, orElseThrow);
             }
         } else {
             if (orElseThrow) {
@@ -161,11 +171,10 @@ public class OperationsRegistry {
     }
 
     public boolean isAnyToManyRelationshipOperationConfigured(ResourceType resourceType) {
-        return OperationType.getToManyRelationshipOperationTypes()
-                .stream()
-                .anyMatch(operationType ->
-                        readToManyRelationshipOperations.containsKey(resourceType)
-                                || updateToManyRelationshipOperations.containsKey(resourceType));
+        return readToManyRelationshipOperations.containsKey(resourceType)
+                || updateToManyRelationshipOperations.containsKey(resourceType)
+                || addToManyRelationshipOperations.containsKey(resourceType)
+                || deleteToManyRelationshipOperations.containsKey(resourceType);
     }
 
     public boolean isToOneRelationshipOperationConfigured(ResourceType resourceType,
@@ -324,7 +333,7 @@ public class OperationsRegistry {
         if (!updateToManyRelationshipOperations.containsKey(resourceType)
                 || !updateToManyRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
             if (orElseThrow) {
-                throw new OperationNotFoundException(UPDATE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                throw new OperationNotFoundException(UPDATE_TO_MANY_RELATIONSHIPS, resourceType, relationshipName);
             }
             return null;
         }
@@ -338,6 +347,36 @@ public class OperationsRegistry {
                 .values()
                 .stream()
                 .toList();
+    }
+
+    public RegisteredOperation<AddToManyRelationshipOperation> getRegisteredAddToManyRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
+        if (!addToManyRelationshipOperations.containsKey(resourceType)
+                || !addToManyRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
+            if (orElseThrow) {
+                throw new OperationNotFoundException(ADD_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+            }
+            return null;
+        }
+        return addToManyRelationshipOperations.get(resourceType).get(relationshipName);
+    }
+
+    public RegisteredOperation<DeleteToManyRelationshipOperation> getRegisteredDeleteToManyRelationshipOperation(
+            ResourceType resourceType,
+            RelationshipName relationshipName,
+            boolean orElseThrow
+    ) {
+        if (!deleteToManyRelationshipOperations.containsKey(resourceType)
+                || !deleteToManyRelationshipOperations.get(resourceType).containsKey(relationshipName)) {
+            if (orElseThrow) {
+                throw new OperationNotFoundException(DELETE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+            }
+            return null;
+        }
+        return deleteToManyRelationshipOperations.get(resourceType).get(relationshipName);
     }
 
     public List<? extends Operation> getAllOperations() {
@@ -361,6 +400,12 @@ public class OperationsRegistry {
             result.addAll(relationshipOperations.values());
         });
         this.updateToManyRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
+        this.addToManyRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
+            result.addAll(relationshipOperations.values());
+        });
+        this.deleteToManyRelationshipOperations.forEach((resourceType, relationshipOperations) -> {
             result.addAll(relationshipOperations.values());
         });
         return Collections.unmodifiableList(result);
@@ -415,6 +460,8 @@ public class OperationsRegistry {
         private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<ReadToManyRelationshipOperation<?, ?>>>> readToManyRelationshipOperations;
         private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToOneRelationshipOperation>>> updateToOneRelationshipOperations;
         private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<UpdateToManyRelationshipOperation>>> updateToManyRelationshipOperations;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<AddToManyRelationshipOperation>>> addToManyRelationshipOperations;
+        private final Map<ResourceType, Map<RelationshipName, RegisteredOperation<DeleteToManyRelationshipOperation>>> deleteToManyRelationshipOperations;
         private final Set<ResourceType> resourceTypesWithAnyOperationConfigured;
         private final Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured;
 
@@ -431,6 +478,8 @@ public class OperationsRegistry {
             this.readToManyRelationshipOperations = new HashMap<>();
             this.updateToOneRelationshipOperations = new HashMap<>();
             this.updateToManyRelationshipOperations = new HashMap<>();
+            this.addToManyRelationshipOperations = new HashMap<>();
+            this.deleteToManyRelationshipOperations = new HashMap<>();
 
             this.resourceTypesWithAnyOperationConfigured = new HashSet<>();
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
@@ -512,10 +561,26 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateToManyRelationshipOperation o
-                    && isOperationImplemented(UPDATE_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(UPDATE_TO_MANY_RELATIONSHIPS, operation.getClass())) {
                 RegisteredOperation<UpdateToManyRelationshipOperation> ro
-                        = enrichWithMetaInfo(o, UPDATE_TO_MANY_RELATIONSHIP, UpdateToManyRelationshipOperation.class);
+                        = enrichWithMetaInfo(o, UPDATE_TO_MANY_RELATIONSHIPS, UpdateToManyRelationshipOperation.class);
                 updateToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
+                registeredAs.add(ro);
+            }
+            if (operation instanceof AddToManyRelationshipOperation o
+                    && isOperationImplemented(ADD_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                RegisteredOperation<AddToManyRelationshipOperation> ro
+                        = enrichWithMetaInfo(o, ADD_TO_MANY_RELATIONSHIP, AddToManyRelationshipOperation.class);
+                addToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
+                        .put(ro.getOperationMeta().getRelationshipName(), ro);
+                registeredAs.add(ro);
+            }
+            if (operation instanceof DeleteToManyRelationshipOperation o
+                    && isOperationImplemented(DELETE_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                RegisteredOperation<DeleteToManyRelationshipOperation> ro
+                        = enrichWithMetaInfo(o, DELETE_TO_MANY_RELATIONSHIP, DeleteToManyRelationshipOperation.class);
+                deleteToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
                         .put(ro.getOperationMeta().getRelationshipName(), ro);
                 registeredAs.add(ro);
             }
@@ -533,7 +598,9 @@ public class OperationsRegistry {
                                         ReadToOneRelationshipOperation.class,
                                         ReadToManyRelationshipOperation.class,
                                         UpdateToOneRelationshipOperation.class,
-                                        UpdateToManyRelationshipOperation.class
+                                        UpdateToManyRelationshipOperation.class,
+                                        AddToManyRelationshipOperation.class,
+                                        DeleteToManyRelationshipOperation.class
                                 ).map(Class::getSimpleName).collect(Collectors.joining(", "))
                         )
                 );
@@ -588,6 +655,8 @@ public class OperationsRegistry {
                     this.readToManyRelationshipOperations,
                     this.updateToOneRelationshipOperations,
                     this.updateToManyRelationshipOperations,
+                    this.addToManyRelationshipOperations,
+                    this.deleteToManyRelationshipOperations,
                     this.resourceTypesWithAnyOperationConfigured,
                     this.relationshipNamesWithAnyOperationConfigured
             );
@@ -681,10 +750,22 @@ public class OperationsRegistry {
                     UpdateToOneRelationshipOperation.UPDATE_ONE_METHOD_NAME,
                     JsonApiRequest.class
             );
-        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP) {
+        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIPS) {
             return ReflectionUtils.isMethodOverridden(
                     operationClass,
                     UpdateToManyRelationshipOperation.UPDATE_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.ADD_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    AddToManyRelationshipOperation.ADD_MANY_METHOD_NAME,
+                    JsonApiRequest.class
+            );
+        } else if (operationType == OperationType.DELETE_TO_MANY_RELATIONSHIP) {
+            return ReflectionUtils.isMethodOverridden(
+                    operationClass,
+                    DeleteToManyRelationshipOperation.DELETE_MANY_METHOD_NAME,
                     JsonApiRequest.class
             );
         }

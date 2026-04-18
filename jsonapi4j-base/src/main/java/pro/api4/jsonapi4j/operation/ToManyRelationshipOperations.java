@@ -5,7 +5,10 @@ import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 public interface ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> extends
-        UpdateToManyRelationshipOperation, ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> {
+        ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>,
+        UpdateToManyRelationshipOperation,
+        AddToManyRelationshipOperation,
+        DeleteToManyRelationshipOperation {
 
     @Override
     default PaginationAwareResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest request) {
@@ -19,7 +22,25 @@ public interface ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> ex
     @Override
     default void update(JsonApiRequest request) {
         throw new OperationNotFoundException(
-                OperationType.UPDATE_TO_MANY_RELATIONSHIP,
+                OperationType.UPDATE_TO_MANY_RELATIONSHIPS,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
+    }
+
+    @Override
+    default void add(JsonApiRequest request) {
+        throw new OperationNotFoundException(
+                OperationType.ADD_TO_MANY_RELATIONSHIP,
+                request.getTargetResourceType(),
+                request.getTargetRelationshipName()
+        );
+    }
+
+    @Override
+    default void delete(JsonApiRequest request) {
+        throw new OperationNotFoundException(
+                OperationType.DELETE_TO_MANY_RELATIONSHIP,
                 request.getTargetResourceType(),
                 request.getTargetRelationshipName()
         );
@@ -29,7 +50,9 @@ public interface ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> ex
     default void validate(JsonApiRequest request) {
         switch (request.getOperationType()) {
             case READ_TO_MANY_RELATIONSHIP -> validateReadToMany(request);
-            case UPDATE_TO_MANY_RELATIONSHIP -> validateUpdateToMany(request);
+            case UPDATE_TO_MANY_RELATIONSHIPS -> validateUpdateToMany(request);
+            case ADD_TO_MANY_RELATIONSHIP -> validateAddToMany(request);
+            case DELETE_TO_MANY_RELATIONSHIP -> validateDeleteFromToMany(request);
         }
     }
 
@@ -39,6 +62,14 @@ public interface ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO> ex
 
     default void validateUpdateToMany(JsonApiRequest request) {
         UpdateToManyRelationshipOperation.DEFAULT_VALIDATOR.accept(request);
+    }
+
+    default void validateAddToMany(JsonApiRequest request) {
+        AddToManyRelationshipOperation.DEFAULT_VALIDATOR.accept(request);
+    }
+
+    default void validateDeleteFromToMany(JsonApiRequest request) {
+        DeleteToManyRelationshipOperation.DEFAULT_VALIDATOR.accept(request);
     }
 
 }

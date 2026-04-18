@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.request.LimitOffsetAwareRequest.DEFAULT_LIMIT;
 
 /**
  * Represents a pageable response. Supports 'Limit-offset' and 'Cursor' pagination strategies (see {@link PaginationMode}).
@@ -161,7 +162,7 @@ public class PaginationAwareResponse<DATA_SOURCE_DTO> {
 
     /**
      * Variation of {@link #inMemoryCursorAware(List, String, long)} with default limit set to
-     * {@link LimitOffsetToCursorAdapter#DEFAULT_LIMIT}.
+     * {@link pro.api4.jsonapi4j.request.LimitOffsetAwareRequest#DEFAULT_LIMIT}.
      *
      * @param items         list of downstream dtos (relatively small amount)
      * @param cursorEncoded current cursor (encoded)
@@ -170,7 +171,7 @@ public class PaginationAwareResponse<DATA_SOURCE_DTO> {
      */
     public static <T> PaginationAwareResponse<T> inMemoryCursorAware(List<T> items,
                                                                      String cursorEncoded) {
-        return inMemoryCursorAware(items, cursorEncoded, LimitOffsetToCursorAdapter.DEFAULT_LIMIT);
+        return inMemoryCursorAware(items, cursorEncoded, DEFAULT_LIMIT);
     }
 
     /**
@@ -190,7 +191,7 @@ public class PaginationAwareResponse<DATA_SOURCE_DTO> {
 
     /**
      * Variation of {@link #inMemoryCursorAware(List, String, long)} with <code>null</code> cursor default limit set to
-     * {@link LimitOffsetToCursorAdapter#DEFAULT_LIMIT}.
+     * {@link pro.api4.jsonapi4j.request.LimitOffsetAwareRequest#DEFAULT_LIMIT}.
      * Can be used for creation of the first page only or when we want to expose only first N elements
      * for some reason (with default value).
      *
@@ -199,7 +200,7 @@ public class PaginationAwareResponse<DATA_SOURCE_DTO> {
      * @return an instance of {@link PaginationAwareResponse}
      */
     public static <T> PaginationAwareResponse<T> inMemoryCursorAware(List<T> items) {
-        return inMemoryCursorAware(items, LimitOffsetToCursorAdapter.DEFAULT_LIMIT);
+        return inMemoryCursorAware(items, DEFAULT_LIMIT);
     }
 
 }

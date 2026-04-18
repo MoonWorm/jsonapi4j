@@ -20,7 +20,9 @@ public enum OperationType {
     READ_TO_ONE_RELATIONSHIP("Read To-One Relationship", GET, TO_ONE_RELATIONSHIP),
     UPDATE_TO_ONE_RELATIONSHIP("Update/Delete To-One Relationship", PATCH, TO_ONE_RELATIONSHIP),
     READ_TO_MANY_RELATIONSHIP("Read To-Many Relationship", GET, TO_MANY_RELATIONSHIP),
-    UPDATE_TO_MANY_RELATIONSHIP("Update/Delete To-Many Relationship", PATCH, TO_MANY_RELATIONSHIP);
+    UPDATE_TO_MANY_RELATIONSHIPS("Update/Delete To-Many Relationships", PATCH, TO_MANY_RELATIONSHIP),
+    ADD_TO_MANY_RELATIONSHIP("Add To-Many Relationship Members", POST, TO_MANY_RELATIONSHIP),
+    DELETE_TO_MANY_RELATIONSHIP("Delete To-Many Relationship Members", DELETE, TO_MANY_RELATIONSHIP);
 
     private final String name;
     private final Method method;
@@ -61,20 +63,21 @@ public enum OperationType {
                                 || operationType == OperationType.READ_TO_ONE_RELATIONSHIP
                                 || operationType == OperationType.UPDATE_TO_ONE_RELATIONSHIP
                                 || operationType == OperationType.READ_TO_MANY_RELATIONSHIP
-                                || operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP)
+                                || operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIPS
+                                || operationType == OperationType.ADD_TO_MANY_RELATIONSHIP
+                                || operationType == OperationType.DELETE_TO_MANY_RELATIONSHIP)
                 .toList();
     }
 
     public int getHttpStatus() {
-        if (GET == getMethod()) {
-            return 200;
-        } else if (POST == getMethod()) {
-            return 201;
-        } else if (PATCH == getMethod() || DELETE == getMethod()) {
-            return 202;
-        } else {
-            throw new IllegalArgumentException("Unsupported operation method: " + getMethod());
-        }
+        return switch (this) {
+            case READ_RESOURCE_BY_ID, READ_MULTIPLE_RESOURCES,
+                 READ_TO_ONE_RELATIONSHIP, READ_TO_MANY_RELATIONSHIP -> 200;
+            case CREATE_RESOURCE -> 201;
+            case UPDATE_RESOURCE, DELETE_RESOURCE,
+                 UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS -> 202;
+            case ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP -> 204;
+        };
     }
 
     public enum Method {
@@ -109,7 +112,8 @@ public enum OperationType {
             case READ_RESOURCE_BY_ID, UPDATE_RESOURCE, DELETE_RESOURCE ->
                     String.format("%s /%s/{id} (%s)", method, resourceType, name);
             case READ_TO_ONE_RELATIONSHIP, UPDATE_TO_ONE_RELATIONSHIP,
-                 READ_TO_MANY_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIP ->
+                 READ_TO_MANY_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS,
+                 ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP ->
                     String.format("%s /%s/{id}/relationships/%s (%s)", method, resourceType, relationshipName, name);
         };
     }

@@ -33,11 +33,19 @@ public interface UserDb {
 
     void updateUserCitizenships(String userId, List<String> cca2s);
 
+    void addUserCitizenships(String userId, List<String> cca2s);
+
+    void removeUserCitizenships(String userId, List<String> cca2s);
+
     List<UserRelationshipInfo> getUserRelatives(String userId);
 
     Map<String, List<UserRelationshipInfo>> getUsersRelatives(Set<String> userIds);
 
     void updateUserRelatives(String userId, Map<String, RelationshipType> relations);
+
+    void addUserRelatives(String userId, Map<String, RelationshipType> relations);
+
+    void removeUserRelatives(String userId, Set<String> relativeIds);
 
     String getUserPlaceOfBirth(String userId);
 

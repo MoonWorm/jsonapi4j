@@ -6,9 +6,9 @@ import io.seruco.encoding.base62.Base62;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
-public class LimitOffsetToCursorAdapter {
+import static pro.api4.jsonapi4j.request.LimitOffsetAwareRequest.DEFAULT_LIMIT;
 
-    public static final long DEFAULT_LIMIT = 10;
+public class LimitOffsetToCursorAdapter {
 
     private final String cursor;
     private long defaultLimit = DEFAULT_LIMIT;
