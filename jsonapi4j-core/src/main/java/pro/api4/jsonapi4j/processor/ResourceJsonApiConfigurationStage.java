@@ -59,7 +59,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
 
     protected void toManyRelationshipResolverInternal(RelationshipName relationshipName,
                                                       ToManyRelationshipResolver<REQUEST, DATA_SOURCE_DTO> resolver) {
-        log.info("Configuring basic multi data relationship resolver for: {}", relationshipName);
+        log.debug("Configuring basic multi data relationship resolver for: {}", relationshipName);
         if (!defaultRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("Unknown relationship. Declare default relationship first.");
         }
@@ -74,7 +74,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
 
     protected void toOneRelationshipResolverInternal(RelationshipName relationshipName,
                                                      ToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO> resolver) {
-        log.info("Configuring basic to one relationship resolver for: {}", relationshipName);
+        log.debug("Configuring basic to one relationship resolver for: {}", relationshipName);
         if (!defaultRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("Unknown relationship. Declare default relationship first.");
         }
@@ -88,7 +88,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
     }
 
     protected void batchToManyRelationshipResolverInternal(RelationshipName relationshipName, BatchToManyRelationshipResolver<REQUEST, DATA_SOURCE_DTO> batchToManyRelationshipResolver) {
-        log.info("Configuring batch multi data relationship resolver for: {}", relationshipName);
+        log.debug("Configuring batch multi data relationship resolver for: {}", relationshipName);
         if (!defaultRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("Unknown relationship. Declare default relationship first.");
         }
@@ -106,7 +106,7 @@ public abstract class ResourceJsonApiConfigurationStage<REQUEST, DATA_SOURCE_DTO
 
     protected void batchToOneRelationshipResolverInternal(RelationshipName relationshipName,
                                                           BatchToOneRelationshipResolver<REQUEST, DATA_SOURCE_DTO> batchToOneRelationshipResolver) {
-        log.info("Configuring batch to one relationship resolver for: {}", relationshipName);
+        log.debug("Configuring batch to one relationship resolver for: {}", relationshipName);
         if (!defaultRelationshipResolvers.containsKey(relationshipName)) {
             throw new IllegalStateException("Unknown relationship. Declare default relationship first.");
         }

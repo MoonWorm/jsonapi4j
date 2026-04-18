@@ -37,17 +37,17 @@ public class QuarkusJsonApi4jCompoundDocsServletContextListener implements Servl
         ServletContext servletContext = e.getServletContext();
 
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jPropertiesProvider.get().rootPath());
-        log.info("JsonApi4j Root Path has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME);
+        log.debug("JsonApi4j Root Path has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME);
 
         QuarkusJsonApi4jCompoundDocsProperties quarkusCdProperties = quarkusCdPropertiesProvider.get();
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME, quarkusCdProperties.toCdProperties());
-        log.info("QuarkusJsonApi4jCompoundDocsProperties ('jsonapi4j.cd' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
+        log.debug("QuarkusJsonApi4jCompoundDocsProperties ('jsonapi4j.cd' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
 
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME, domainUrlResolverProvider.get());
-        log.info("DomainUrlResolver has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME);
+        log.debug("DomainUrlResolver has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME);
 
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cacheProvider.get());
-        log.info("CompoundDocsResourceCache has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME);
+        log.debug("CompoundDocsResourceCache has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME);
 
         log.info("Initializing CD Servlet Context has been done.");
     }

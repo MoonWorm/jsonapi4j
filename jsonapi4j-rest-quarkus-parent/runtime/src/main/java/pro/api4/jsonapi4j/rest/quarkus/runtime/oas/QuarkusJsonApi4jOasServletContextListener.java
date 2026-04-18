@@ -30,11 +30,11 @@ public class QuarkusJsonApi4jOasServletContextListener implements ServletContext
         ServletContext servletContext = e.getServletContext();
 
         servletContext.setAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jPropertiesProvider.get().rootPath());
-        log.info("JsonApi4j Root Path has been set as '{}' Servlet Context Attribute.", OAS_PLUGIN_ROOT_PATH_ATT_NAME);
+        log.debug("JsonApi4j Root Path has been set as '{}' Servlet Context Attribute.", OAS_PLUGIN_ROOT_PATH_ATT_NAME);
 
         QuarkusJsonApi4jOasProperties quarkusOasProperties = quarkusOasPropertiesProvider.get();
         servletContext.setAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME, quarkusOasProperties.toOasProperties());
-        log.info("QuarkusJsonApi4jOasProperties ('jsonapi4j.oas' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", OAS_PLUGIN_PROPERTIES_ATT_NAME);
+        log.debug("QuarkusJsonApi4jOasProperties ('jsonapi4j.oas' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", OAS_PLUGIN_PROPERTIES_ATT_NAME);
 
         log.info("Initializing OAS Servlet Context has been done.");
     }

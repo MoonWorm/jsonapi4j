@@ -61,7 +61,7 @@ public class CompoundDocsFilter implements Filter {
                 cdProperties.cache() != null ? cdProperties.cache().maxSize() : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE)
         );
 
-        log.info("Effective compound docs settings: {}", config);
+        log.debug("Effective compound docs settings: {}", config);
 
         if (config.isEnabled()) {
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
@@ -79,7 +79,7 @@ public class CompoundDocsFilter implements Filter {
                     cache
             );
 
-            log.info("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
+            log.debug("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
             log.info("{} has been initialized", CompoundDocsFilter.class.getSimpleName());
         } else {
             log.info("{} has been initialized, but the feature is disabled", CompoundDocsFilter.class.getSimpleName());

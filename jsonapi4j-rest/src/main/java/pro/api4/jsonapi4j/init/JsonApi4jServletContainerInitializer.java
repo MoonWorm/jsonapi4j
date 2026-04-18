@@ -142,7 +142,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             es = Executors.newCachedThreadPool();
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
         } else {
-            log.info("Applied {} from Servlet Context under {} attribute", ExecutorService.class.getSimpleName(), EXECUTOR_SERVICE_ATT_NAME);
+            log.debug("Applied {} from Servlet Context under {} attribute", ExecutorService.class.getSimpleName(), EXECUTOR_SERVICE_ATT_NAME);
         }
         return es;
     }
@@ -179,7 +179,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             om.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, om);
         } else {
-            log.info("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
+            log.debug("Applied {} from Servlet Context under {} attribute", ObjectMapper.class.getSimpleName(), OBJECT_MAPPER_ATT_NAME);
         }
         return om;
     }

@@ -165,7 +165,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                     return CompletableFuture.supplyAsync(
                                             () -> {
                                                 AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(principalCopy);
-                                                log.info("Batch processing of '{}' To-Many relationship", e.getKey());
+                                                log.debug("Batch processing of '{}' To-Many relationship", e.getKey());
                                                 Map<DATA_SOURCE_DTO, ToManyRelationshipObject> result
                                                         = new HashMap<>(e.getValue().resolveRequestedData(request, dtos));
                                                 return unmodifiableMap(result);
@@ -185,7 +185,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                     return CompletableFuture.supplyAsync(
                                             () -> {
                                                 AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(principalCopy);
-                                                log.info("Batch processing of '{}' To-One relationship", e.getKey());
+                                                log.debug("Batch processing of '{}' To-One relationship", e.getKey());
                                                 Map<DATA_SOURCE_DTO, ToOneRelationshipObject> resolvedResult
                                                         = e.getValue().resolveRequestedData(request, dtos);
                                                 Map<DATA_SOURCE_DTO, ToOneRelationshipObject> result
@@ -230,7 +230,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
             if (isToManyRelationship(relName)) {
                 if (getBatchToManyRelationshipResolvers().containsKey(relName)) {
                     // relationship was requested and Batch To Many Relationship Resolver is configured
-                    log.info("Processing '{}' relationship. Relationship was requested in 'include'. Batch To-many-relationship resolver is found. Executing.", relName);
+                    log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Batch To-many-relationship resolver is found. Executing.", relName);
                     Map<DATA_SOURCE_DTO, ToManyRelationshipObject> docsMap = batchFutures.get(relName).join();
                     for (DATA_SOURCE_DTO dto : dtos) {
                         ToManyRelationshipObject toManyRelationshipObject = docsMap.get(dto);
@@ -239,11 +239,11 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                 } else {
                     for (DATA_SOURCE_DTO dto : dtos) {
                         if (getToManyRelationshipResolvers().containsKey(relName)) {
-                            log.info("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-many-relationship resolver is found. Executing.", relName);
+                            log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-many-relationship resolver is found. Executing.", relName);
                             ToManyRelationshipObject toManyRelationshipObject = basicFutures.get(dto).get(relName).join();
                             toManyRelationshipObjectsMap.get(dto).put(relName, toManyRelationshipObject);
                         } else {
-                            log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-many-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
+                            log.debug("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-many-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
                             toManyRelationshipObjectsMap.get(dto).put(relName, createToManyRelationshipsWithNullData(relName, request, dto));
                         }
                     }
@@ -276,7 +276,7 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
             RelationshipName relName = e.getKey();
             if (isToOneRelationship(relName)) {
                 if (getBatchToOneRelationshipResolvers().containsKey(relName)) {
-                    log.info("Processing '{}' relationship. Relationship was requested in 'include'. Batch To-one-relationship resolver is found. Executing.", relName);
+                    log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Batch To-one-relationship resolver is found. Executing.", relName);
                     Map<DATA_SOURCE_DTO, ToOneRelationshipObject> docsMap = batchFutures.get(relName).join();
                     for (DATA_SOURCE_DTO dto : dtos) {
                         ToOneRelationshipObject toOneRelationshipObject = docsMap.get(dto);
@@ -286,11 +286,11 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                     // relationship wasn't requested
                     for (DATA_SOURCE_DTO dto : dtos) {
                         if (getToOneRelationshipResolvers().containsKey(relName)) {
-                            log.info("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-one-relationship resolver is found. Executing.", relName);
+                            log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-one-relationship resolver is found. Executing.", relName);
                             ToOneRelationshipObject toOneRelationshipObject = basicFutures.get(dto).get(relName).join();
                             toOneRelationshipObjectsMap.get(dto).put(relName, toOneRelationshipObject);
                         } else {
-                            log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-one-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
+                            log.debug("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-one-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
                             toOneRelationshipObjectsMap.get(dto).put(relName, createToOneRelationshipWithNullData(relName, request, dto));
                         }
                     }

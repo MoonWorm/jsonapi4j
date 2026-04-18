@@ -43,22 +43,22 @@ public class QuarkusJsonApi4jDispatcherServletContextListener implements Servlet
         ServletContext servletContext = e.getServletContext();
 
         servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, jsonApi4jPropertiesProvider.get());
-        log.info("JsonApi4jProperties ('jsonapi4j' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", JSONAPI4J_PROPERTIES_ATT_NAME);
+        log.debug("JsonApi4jProperties ('jsonapi4j' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", JSONAPI4J_PROPERTIES_ATT_NAME);
 
         servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4jProvider.get());
-        log.info("JsonApi4j instance has been set as '{}' Servlet Context Attribute.", JSONAPI4J_ATT_NAME);
+        log.debug("JsonApi4j instance has been set as '{}' Servlet Context Attribute.", JSONAPI4J_ATT_NAME);
 
         servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapperProvider.get());
-        log.info("Common ObjectMapper instance has been set as '{}' Servlet Context Attribute.", OBJECT_MAPPER_ATT_NAME);
+        log.debug("Common ObjectMapper instance has been set as '{}' Servlet Context Attribute.", OBJECT_MAPPER_ATT_NAME);
 
         servletContext.setAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME, errorHandlerFactoriesRegistryProvider.get());
-        log.info("ErrorHandlerFactoriesRegistry instance has been set as '{}' Servlet Context Attribute.", ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
+        log.debug("ErrorHandlerFactoriesRegistry instance has been set as '{}' Servlet Context Attribute.", ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
 
         servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorServiceProvider.get());
-        log.info("Common ExecutorService instance has been set as '{}' Servlet Context Attribute.", EXECUTOR_SERVICE_ATT_NAME);
+        log.debug("Common ExecutorService instance has been set as '{}' Servlet Context Attribute.", EXECUTOR_SERVICE_ATT_NAME);
 
         servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, principalResolverProvider.get());
-        log.info("PrincipalResolver instance has been set as '{}' Servlet Context Attribute.", PRINCIPAL_RESOLVER_ATT_NAME);
+        log.debug("PrincipalResolver instance has been set as '{}' Servlet Context Attribute.", PRINCIPAL_RESOLVER_ATT_NAME);
 
         log.info("Initializing JsonApi4j Dispatcher Servlet Context has been done.");
     }

@@ -166,10 +166,10 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                         relName -> relName,
                         relName -> {
                             if (futures.containsKey(relName)) {
-                                log.info("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-one-relationship resolver is found. Executing.", relName);
+                                log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-one-relationship resolver is found. Executing.", relName);
                                 return futures.get(relName).join();
                             } else {
-                                log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-one-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
+                                log.debug("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-one-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
                                 return createToOneRelationshipWithNullData(relName, request, dto);
                             }
                         }
@@ -188,10 +188,10 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                         relName -> relName,
                         relName -> {
                             if (futures.containsKey(relName)) {
-                                log.info("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-many-relationship resolver is found. Executing.", relName);
+                                log.debug("Processing '{}' relationship. Relationship was requested in 'include'. Simple To-many-relationship resolver is found. Executing.", relName);
                                 return futures.get(relName).join();
                             } else {
-                                log.info("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-many-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
+                                log.debug("Processing '{}' relationship. Relationship wasn't requested in 'include'. To-many-relationship resolvers is not invoking. Relying on the default relationship resolver.", relName);
                                 return createToManyRelationshipsWithNullData(relName, request, dto);
                             }
                         }

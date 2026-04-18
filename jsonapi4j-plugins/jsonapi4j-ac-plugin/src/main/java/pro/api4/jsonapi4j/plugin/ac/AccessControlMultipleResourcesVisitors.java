@@ -48,11 +48,11 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
             return DataPreRetrievalPhase.doNothing();
         }
         if (accessControlEvaluator.evaluateInboundRequirements(request, inboundAccessControlSettings)) {
-            log.info("Inbound Access is allowed for a request {}. Proceeding...", request);
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
             return DataPreRetrievalPhase.doNothing();
         } else {
             if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
-                log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
+                log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
                 MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
                         null,
                         context.getTopLevelLinksResolver().resolve(request, null, null),
@@ -60,7 +60,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
-                log.info("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
                 throw new JsonApi4jException(403, DefaultErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
             }
         }
