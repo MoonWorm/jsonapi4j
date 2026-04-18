@@ -67,8 +67,8 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         }
 
         String path = getPath(servletRequest);
-        log.info("Received JSON:API request for the path {} and method {}", path, method);
-        log.info("Converting HttpServletRequest to JsonApiRequest...");
+        log.debug("Received JSON:API request for the path {} and method {}", path, method);
+        log.debug("Converting HttpServletRequest to JsonApiRequest...");
         String resourceId = parseResourceIdFromThePath(path);
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
@@ -133,7 +133,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         jsonApiRequest.setPayload(payload);
         jsonApiRequest.setExtension(ext);
         jsonApiRequest.setProfile(profile);
-        log.info("Composed JsonApiRequest: {}", jsonApiRequest);
+        log.debug("Composed JsonApiRequest: {}", jsonApiRequest);
         return jsonApiRequest;
     }
 
@@ -143,7 +143,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
 
     private String getPath(HttpServletRequest request) {
         String path = request.getPathInfo();
-        log.info("Request path: {}", path);
+        log.debug("Request path: {}", path);
         if(path == null) {
             return "/";
         }

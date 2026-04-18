@@ -49,16 +49,16 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         Validate.notNull(jsonApi4j, "JsonApi4j can't be null");
-        log.info("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
+        log.debug("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
         // print state
         log.info(jsonApi4j.printState());
 
         errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         if (errorHandlerFactory == null) {
-            log.info("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
+            log.debug("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
             errorHandlerFactory = initDefaultErrorHandlerFactory();
         } else {
-            log.info("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
+            log.debug("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         }
 
         objectMapper = initObjectMapper(config.getServletContext());
@@ -71,7 +71,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 objectMapper,
                 operationDetailsResolver
         );
-        log.info("{} has been successfully composed", OperationDetailsResolver.class.getSimpleName());
+        log.debug("{} has been successfully composed", OperationDetailsResolver.class.getSimpleName());
         log.info("{} has been initialized", JsonApi4jDispatcherServlet.class.getSimpleName());
     }
 
@@ -98,14 +98,14 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             status = ResponseStatus.getOverriddenStatus().orElse(status);
 
             resp.setStatus(status);
-            log.info("Setting response status code: {}", status);
+            log.debug("Setting response status code: {}", status);
 
             if (targetOperationType == OperationType.CREATE_RESOURCE) {
                 SingleResourceDoc<?> singleResourceDoc = (SingleResourceDoc<?>) dataDoc;
                 if (singleResourceDoc != null) {
                     String location = URI.create("/" + targetResourceType.getType() + "/" + singleResourceDoc.getData().getId()).toString();
                     resp.setHeader(HttpHeaders.LOCATION.getName(), location);
-                    log.info("Setting HTTP Location header: {}", location);
+                    log.debug("Setting HTTP Location header: {}", location);
                 }
             }
 
@@ -137,9 +137,9 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         try {
             if (body != null) {
                 resp.setContentType(JsonApiMediaType.MEDIA_TYPE);
-                log.info("Setting response Content-Type to: {}", JsonApiMediaType.MEDIA_TYPE);
+                log.debug("Setting response Content-Type to: {}", JsonApiMediaType.MEDIA_TYPE);
                 resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                log.info("Writing response body: {}", body);
+                log.debug("Writing response body: {}", body);
                 objectMapper.writeValue(resp.getOutputStream(), body);
             }
         } catch (IOException e) {

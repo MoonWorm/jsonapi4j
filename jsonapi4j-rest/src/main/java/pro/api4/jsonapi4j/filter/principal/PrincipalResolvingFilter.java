@@ -47,7 +47,7 @@ public class PrincipalResolvingFilter implements Filter {
     private PrincipalResolver initJsonApi4jPrincipalResolver(ServletContext servletContext) {
         PrincipalResolver pr = (PrincipalResolver) servletContext.getAttribute(PRINCIPAL_RESOLVER_ATT_NAME);
         if (pr == null) {
-            log.info(
+            log.debug(
                     "{} not found in servlet context. Setting the default implementation {}.",
                     PrincipalResolver.class.getSimpleName(),
                     DefaultPrincipalResolver.class.getSimpleName()
@@ -55,7 +55,7 @@ public class PrincipalResolvingFilter implements Filter {
             pr = new DefaultPrincipalResolver();
             servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, pr);
         } else {
-            log.info(
+            log.debug(
                     "{} has been found in the Servlet Context under {} attribute. Applying it.",
                     PrincipalResolver.class.getSimpleName(),
                     PRINCIPAL_RESOLVER_ATT_NAME

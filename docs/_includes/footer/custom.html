@@ -1,5 +1,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Tab component
   document.querySelectorAll('.tab-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       var tabs = this.closest('.tabs');
@@ -9,5 +10,20 @@ document.addEventListener('DOMContentLoaded', function() {
       tabs.querySelector('#' + this.dataset.tab).classList.add('active');
     });
   });
+
+  // Styled hero title: JSON:API 4j
+  var title = document.getElementById('page-title');
+  if (title && title.textContent.trim() === 'JsonApi4j') {
+    title.innerHTML = '<span class="hero-title__json">JSON</span><span class="hero-title__colon">:</span><span class="hero-title__api">API</span><span class="hero-title__4j">4j</span>';
+  }
+
+  // Inject hero body text after the lead/tagline
+  var lead = document.querySelector('.page__hero--overlay .page__lead');
+  if (lead && lead.textContent.trim().indexOf('Define your domain') !== -1) {
+    var body = document.createElement('p');
+    body.className = 'hero-body';
+    body.textContent = 'A modern, lightweight Java framework for building production-ready REST APIs compliant with the JSON:API specification.';
+    lead.parentNode.insertBefore(body, lead.nextSibling);
+  }
 });
 </script>

@@ -68,10 +68,10 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         if (inboundAccessControlRequirements == null
                 || evaluateInboundRequirements(request, inboundAccessControlRequirements)
         ) {
-            log.info("Inbound Access is allowed for a request {}. Proceeding...", request);
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
             return dataSupplier.get();
         } else {
-            log.info("Inbound Access is not allowed for a request {}, returning empty response", request);
+            log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
             return null;
         }
     }
@@ -91,7 +91,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
             OutboundAccessControlForCustomClass outboundAccessControlSettings
     ) {
         if (targetObject == null || outboundAccessControlSettings == null) {
-            log.info("Target object is either null or outbound access control settings are not specified. Access to the entire target object is allowed.");
+            log.debug("Target object is either null or outbound access control settings are not specified. Access to the entire target object is allowed.");
             return new AnonymizationResult<>(
                     targetObject,
                     false,
@@ -103,17 +103,17 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                 outboundAccessControlSettings.getClassLevel()
         );
         if (isFullyAnonymized) {
-            log.info("Access to the entire {} is not allowed, anonymizing...", targetObject);
+            log.debug("Access to the entire {} is not allowed, anonymizing...", targetObject);
             return new AnonymizationResult<>(null, true, Collections.emptySet());
         }
 
-        log.info("Access to the entire {} is allowed, proceeding...", targetObject);
+        log.debug("Access to the entire {} is allowed, proceeding...", targetObject);
         Set<String> targetObjectAnonymizedFields = anonymizeFields(
                 targetObject,
                 resourceObject,
                 outboundAccessControlSettings.getFieldLevel()
         );
-        log.info(
+        log.debug(
                 "Anonymizing fields of the {}. {}",
                 targetObject,
                 targetObjectAnonymizedFields.isEmpty() ? "None fields have been anonymized." : "Fields anonymized: " + String.join(", ", targetObjectAnonymizedFields)

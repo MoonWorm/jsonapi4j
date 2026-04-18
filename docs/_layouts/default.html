@@ -1,0 +1,51 @@
+---
+---
+
+<!doctype html>
+{% include copyright.html %}
+<html lang="{{ site.locale | replace: "_", "-" | default: "en" }}" class="no-js">
+  <head>
+    {% include head.html %}
+    {% include head/custom.html %}
+  </head>
+
+  <body class="layout--{{ page.layout | default: layout.layout }}{% if page.classes or layout.classes %}{{ page.classes | default: layout.classes | join: ' ' | prepend: ' ' }}{% endif %}">
+    {% include_cached skip-links.html %}
+    {% include_cached masthead.html %}
+
+    <div class="initial-content">
+      {{ content }}
+      {% include after-content.html %}
+    </div>
+
+    {% if site.search == true %}
+      <div class="search-content">
+        {% include_cached search/search_form.html %}
+      </div>
+    {% endif %}
+
+    <div class="site-cta-footer">
+      <div class="site-cta-footer__cta">
+        <h2>Start Building Today</h2>
+        <p>Add one dependency. Define your domain. Ship a spec-compliant API.</p>
+        <div class="site-cta-footer__buttons">
+          <a href="/getting-started/" class="cta-btn cta-btn--ghost">Get Started</a>
+          <a href="/introduction/" class="cta-btn cta-btn--ghost">Documentation</a>
+          <a href="https://github.com/MoonWorm/jsonapi4j/tree/main/examples" class="cta-btn cta-btn--ghost">Sample Apps</a>
+          <a href="https://github.com/MoonWorm/jsonapi4j" class="cta-btn cta-btn--ghost">GitHub</a>
+          <a href="https://central.sonatype.com/namespace/pro.api4" class="cta-btn cta-btn--ghost">Maven Central</a>
+        </div>
+      </div>
+      <div class="site-cta-footer__bottom">
+        <span>JsonApi4j</span>
+        <span class="site-cta-footer__sep">&middot;</span>
+        <span>JSON:API framework for Java</span>
+        <span class="site-cta-footer__sep">&middot;</span>
+        <a href="https://github.com/MoonWorm/jsonapi4j">GitHub</a>
+      </div>
+    </div>
+
+    {% include footer/custom.html %}
+    {% include scripts.html %}
+  </body>
+</html>

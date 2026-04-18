@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.compound.docs.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 public class JsonApi4jCompoundDocsApiHttpClient {
 
     private static final Set<String> DISALLOWED_HEADERS = Set.of(
@@ -60,6 +62,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             }
 
             String uri = urlBuilder.build();
+            log.debug("Compound docs HTTP request: GET {}", uri);
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
@@ -83,16 +86,19 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 if (errorStrategy == ErrorStrategy.IGNORE) {
+                    log.warn("Non-200 response ({}) from GET {}, ignoring per error strategy", response.statusCode(), uri);
                     return new HttpFetchResult(Collections.emptyList(), null);
                 } else {
                     throw new ErrorJsonApiResponseException("Got error response from a downstream service on GET " + uri + " url");
                 }
             }
             List<ParsedResource> resources = parseResponse(response);
+            log.debug("Compound docs HTTP response: status={}, resources={}", response.statusCode(), resources.size());
             String cacheControlHeader = response.headers()
                     .firstValue("Cache-Control").orElse(null);
             return new HttpFetchResult(resources, cacheControlHeader);
         } catch (Exception e) {
+            log.error("HTTP request failed for compound docs resolution: {}", e.getMessage());
             throw new ErrorJsonApiResponseException("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
         }
     }

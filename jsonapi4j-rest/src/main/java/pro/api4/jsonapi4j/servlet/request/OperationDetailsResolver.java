@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.servlet.request;
 
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipDetails;
 import pro.api4.jsonapi4j.domain.RelationshipName;
@@ -22,6 +23,7 @@ import static pro.api4.jsonapi4j.operation.OperationType.Method.PATCH;
 import static pro.api4.jsonapi4j.operation.OperationType.Method.POST;
 import static pro.api4.jsonapi4j.operation.OperationType.Method.fromString;
 
+@Slf4j
 public class OperationDetailsResolver {
 
     private final DomainRegistry domainRegistry;
@@ -32,6 +34,7 @@ public class OperationDetailsResolver {
 
     public OperationDetails fromUrlAndMethod(String appRelativePath,
                                              String methodString) {
+        log.debug("Resolving operation for path '{}', method '{}'", appRelativePath, methodString);
         String path = appRelativePath;
         if (path.startsWith("/")) {
             path = path.substring(1);
@@ -48,9 +51,9 @@ public class OperationDetailsResolver {
         }
         if (pathFragments.size() == 1) {
             if (methodEnum == GET) {
-                return new OperationDetails(OperationType.READ_MULTIPLE_RESOURCES, resourceType, null);
+                return resolved(OperationType.READ_MULTIPLE_RESOURCES, resourceType, null);
             } else if (methodEnum == POST) {
-                return new OperationDetails(OperationType.CREATE_RESOURCE, resourceType, null);
+                return resolved(OperationType.CREATE_RESOURCE, resourceType, null);
             } else {
                 throw new MethodNotSupportedException(
                         methodString,
@@ -61,11 +64,11 @@ public class OperationDetailsResolver {
             String secondFragment = pathFragments.get(1);
             if (!secondFragment.isBlank()) {
                 if (methodEnum == GET) {
-                    return new OperationDetails(OperationType.READ_RESOURCE_BY_ID, resourceType, null);
+                    return resolved(OperationType.READ_RESOURCE_BY_ID, resourceType, null);
                 } else if (methodEnum == PATCH) {
-                    return new OperationDetails(OperationType.UPDATE_RESOURCE, resourceType, null);
+                    return resolved(OperationType.UPDATE_RESOURCE, resourceType, null);
                 } else if (methodEnum == DELETE) {
-                    return new OperationDetails(OperationType.DELETE_RESOURCE, resourceType, null);
+                    return resolved(OperationType.DELETE_RESOURCE, resourceType, null);
                 } else {
                     throw new MethodNotSupportedException(
                             methodString,
@@ -83,19 +86,19 @@ public class OperationDetailsResolver {
             RelationshipType relationshipType = relationshipDetails.getRelationshipType();
             if (methodEnum == GET) {
                 if (relationshipType == RelationshipType.TO_ONE) {
-                    return new OperationDetails(OperationType.READ_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.READ_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
                 } else if (relationshipType == RelationshipType.TO_MANY) {
-                    return new OperationDetails(OperationType.READ_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.READ_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 }
             } else if (methodEnum == PATCH) {
                 if (relationshipType == RelationshipType.TO_ONE) {
-                    return new OperationDetails(OperationType.UPDATE_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.UPDATE_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
                 } else if (relationshipType == RelationshipType.TO_MANY) {
-                    return new OperationDetails(OperationType.UPDATE_TO_MANY_RELATIONSHIPS, resourceType, relationshipName);
+                    return resolved(OperationType.UPDATE_TO_MANY_RELATIONSHIPS, resourceType, relationshipName);
                 }
             } else if (methodEnum == POST) {
                 if (relationshipType == RelationshipType.TO_MANY) {
-                    return new OperationDetails(OperationType.ADD_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.ADD_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 } else {
                     throw new MethodNotSupportedException(
                             methodString,
@@ -104,7 +107,7 @@ public class OperationDetailsResolver {
                 }
             } else if (methodEnum == DELETE) {
                 if (relationshipType == RelationshipType.TO_MANY) {
-                    return new OperationDetails(OperationType.DELETE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.DELETE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
                 } else {
                     throw new MethodNotSupportedException(
                             methodString,
@@ -119,6 +122,12 @@ public class OperationDetailsResolver {
             }
         }
         throw new OperationNotFoundException(appRelativePath, methodString);
+    }
+
+    private OperationDetails resolved(OperationType operationType, ResourceType resourceType, RelationshipName relationshipName) {
+        OperationDetails details = new OperationDetails(operationType, resourceType, relationshipName);
+        log.debug("Resolved operation: {}", details);
+        return details;
     }
 
     @Data

@@ -85,4 +85,4 @@ This method forwards cache headers so that the Compound Documents Resolver can a
 ### Sequence Overview
 
 Here's a high-level sequence diagram for the Compound Documents resolution process:
-![Compound Docs Sequence Diagram](/compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")
+![Compound Docs Sequence Diagram](/assets/images/compound-docs-sequence-diagram.png "Compound Docs Sequence Diagram")

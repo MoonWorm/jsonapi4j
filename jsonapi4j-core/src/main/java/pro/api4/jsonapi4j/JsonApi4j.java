@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.*;
@@ -53,6 +54,7 @@ import static java.util.stream.Collectors.toMap;
  * </ol>
  * </p>
  */
+@Slf4j
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public class JsonApi4j {
@@ -136,6 +138,7 @@ public class JsonApi4j {
     }
 
     public Object execute(JsonApiRequest request) {
+        log.info("Executing JSON:API request: type={}, operation={}, relationship={}", request.getTargetResourceType(), request.getOperationType(), request.getTargetRelationshipName());
         if (request.getTargetRelationshipName() == null) {
             return executeResourceOperation(request);
         } else {

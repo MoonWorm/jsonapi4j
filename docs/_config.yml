@@ -15,25 +15,25 @@ baseurl: ""
 
 minimal_mistakes_skin: "default"
 
-logo: "/jsonapi4j-logo-square-small.png"
+logo: "/assets/images/jsonapi4j-logo-square-small.png"
 
 show_downloads: false
 
 # SEO
 locale: "en-US"
-og_image: "/jsonapi4j-logo-square-small.png"
+og_image: "/assets/images/jsonapi4j-logo-square-small.png"
 
-# Google Analytics (replace with your tracking ID)
-# analytics:
-#   provider: "google-gtag"
-#   google:
-#     tracking_id: "G-XXXXXXXXXX"
-#     anonymize_ip: true
+# Google Analytics
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-PPXZJ7J78G"
+    anonymize_ip: true
 
 # Site author (shown in sidebar on blog posts)
 author:
   name: "JsonApi4j"
-  avatar: "/jsonapi4j-logo-square-small.png"
+  avatar: "/assets/images/jsonapi4j-logo-square-small.png"
   bio: "JSON:API Specification Framework for Java"
   links:
     - label: "GitHub"

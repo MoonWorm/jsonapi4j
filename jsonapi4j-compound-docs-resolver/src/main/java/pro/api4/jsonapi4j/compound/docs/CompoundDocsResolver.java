@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.compound.docs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
+@Slf4j
 public class CompoundDocsResolver {
 
     private final CompoundDocsResolverConfig config;
@@ -169,6 +171,7 @@ public class CompoundDocsResolver {
         while (hasNextHops
                 && currentLevel <= config.getMaxHops()
                 && allResources.size() <= config.getMaxIncludedResources()) {
+            log.debug("Compound docs resolution hop {}, included resources so far: {}", currentLevel, allResources.size());
             Map<String, Set<String>> resourceIdsByType = getResourceIdsByType(currentLevelParseResults);
             Map<String, Set<String>> typeToRelationshipsName = getTypeToRelationships(currentLevelParseResults);
 
@@ -195,6 +198,7 @@ public class CompoundDocsResolver {
                                     Map.of(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true))
                             )
                     );
+                    log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, requestIncludes);
                 }
 
             }
@@ -217,6 +221,8 @@ public class CompoundDocsResolver {
             hasNextHops = !nextLevelIncludes.isEmpty();
         }
 
+        log.debug("Compound docs resolution completed. Total hops: {}, total included resources: {}", currentLevel - 1, allResources.size());
+
         if (!allResources.isEmpty()) {
             String responseBody = jsonApiResponseWriter.composeWithIncludedMember(
                     (ObjectNode) originalParseResult.rootNode(),
@@ -236,6 +242,7 @@ public class CompoundDocsResolver {
             }
             return domainUri;
         } catch (Exception e) {
+            log.warn("Failed to resolve domain URL for resource type '{}': {}", resourceType, e.getMessage());
             throw new DomainResolutionException("Error resolving domain url", e);
         }
     }

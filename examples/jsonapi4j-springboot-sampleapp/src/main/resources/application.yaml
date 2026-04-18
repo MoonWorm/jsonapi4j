@@ -108,3 +108,4 @@ jsonapi4j:
 logging:
   level:
     root: INFO
+    pro.api4: DEBUG

@@ -40,17 +40,17 @@ public final class JsonApi4jPropertiesLoader {
             if (path == null) {
                 path = System.getenv("JSONAPI4J_CONFIG");
                 if (path != null) {
-                    log.info("Got configuration path in a {} System Property.", "jsonapi4j.config");
+                    log.debug("Got configuration path in a {} System Property.", "jsonapi4j.config");
                 }
             }
             if (path == null) {
                 path = servletContext.getInitParameter("jsonapi4j.config");
                 if (path != null) {
-                    log.info("Got configuration path in a {} Servlet Context Init Parameter.", "jsonapi4j.config");
+                    log.debug("Got configuration path in a {} Servlet Context Init Parameter.", "jsonapi4j.config");
                 }
             }
             if (path != null) {
-                log.info("Loading configuration from {}", path);
+                log.debug("Loading configuration from {}", path);
                 return JsonApi4jConfigReader.readConfig(path);
             }
             return JsonApi4jConfigReader.readConfigFromClasspath(
@@ -93,7 +93,7 @@ public final class JsonApi4jPropertiesLoader {
             if (path == null) {
                 path = servletContext.getInitParameter("jsonapi4j.config");
             }
-            log.info("Loading configuration from {}", path);
+            log.debug("Loading configuration from {}", path);
             if (path != null) {
                 return JsonApi4jConfigReader.readConfigAsMap(path);
             }

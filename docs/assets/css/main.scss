@@ -29,20 +29,153 @@
   }
 }
 
+// Sidebar navigation
+.nav__list {
+  .nav__items {
+    font-size: 0.85em;
+
+    // Section group headers
+    .nav__sub-title {
+      color: #1a1a2e;
+      font-size: 0.8em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding-bottom: 0.3em;
+      margin-bottom: 0.2em;
+      border-bottom: 1px solid #e1e4e8;
+    }
+
+    // Individual nav links
+    li > a {
+      color: #555;
+      padding: 0.3em 0.6em;
+      display: block;
+      text-decoration: none;
+      transition: color 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover {
+        color: #1a1a2e;
+        box-shadow: inset 3px 0 0 #0f3460;
+      }
+    }
+
+    // Active / current page link — override theme's margin shift + bold
+    .active {
+      margin-left: 0 !important;
+      padding-left: 0.6em !important;
+      font-weight: inherit !important;
+      color: #e94560;
+      border-left: 3px solid #e94560;
+    }
+  }
+}
+
+// Site masthead / navigation bar
+.masthead {
+  background: linear-gradient(135deg, #111227 0%, #141a32 50%, #0c2a50 100%);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+
+  .greedy-nav {
+    background: transparent;
+
+    a {
+      color: rgba(255, 255, 255, 0.85);
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    .site-title {
+      color: #fff;
+    }
+
+    // Hamburger menu button
+    .greedy-nav__toggle {
+      color: rgba(255, 255, 255, 0.85);
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    // Hidden links dropdown
+    .hidden-links {
+      background: #16213e;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+
+      a {
+        color: rgba(255, 255, 255, 0.8);
+
+        &:hover {
+          color: #fff;
+          background: rgba(255, 255, 255, 0.05);
+        }
+      }
+    }
+  }
+}
+
 // Landing page hero styling
 .page__hero--overlay {
   padding: 6em 0 4em;
   min-height: 400px;
   position: relative;
+  // Geometric dot grid overlay layered on top of the gradient
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.15) 1.2px, transparent 1.2px) repeat 0 0 / 24px 24px,
+    linear-gradient(135deg, #0e0f20 0%, #12192e 40%, #0f3460 100%) no-repeat 0 0 / 100% 100% !important;
 
   .page__title {
     font-size: 2.8em;
     font-weight: 700;
+    text-shadow: none;
+  }
+
+  // Styled hero title parts
+  .hero-title__json {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .hero-title__colon {
+    color: #e94560;
+    font-weight: 700;
+  }
+
+  .hero-title__api {
+    color: #fff;
+    font-weight: 700;
+  }
+
+  .hero-title__4j {
+    color: #e94560;
+    font-weight: 300;
+    font-style: italic;
+    margin-left: 0.05em;
   }
 
   .page__lead {
-    font-size: 1.2em;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5em;
+    font-weight: 400;
     max-width: 700px;
+    line-height: 1.4;
+    border-left: 3px solid #e94560;
+    padding-left: 0.8em;
+    text-shadow: none;
+    margin-bottom: 0.5em;
+  }
+
+  .hero-body {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95em;
+    font-weight: 400;
+    max-width: 700px;
+    line-height: 1.6;
+    text-shadow: none;
+    margin-bottom: 1em;
   }
 
   .btn--primary {
@@ -59,7 +192,7 @@
   // Logo positioned in the empty right side of the hero
   &::after {
     content: "";
-    background-image: url("/jsonapi4j-logo-square-small.png");
+    background-image: url("/assets/images/jsonapi4j-logo-square-small.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -69,8 +202,9 @@
     transform: translateY(-50%);
     width: 220px;
     height: 220px;
-    opacity: 0.85;
+    opacity: 0.9;
     display: none;
+    z-index: 2;
 
     @include breakpoint($large) {
       display: block;
@@ -87,50 +221,255 @@
   .archive__item-excerpt {
     font-size: 0.85em;
   }
+
+  // Accent top border on feature cards
+  .archive__item {
+    border-top: 3px solid #0f3460;
+    padding-top: 0.8em;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+      border-top-color: #e94560;
+    }
+  }
 }
 
 // Landing page section headings
 .splash .page__content h2 {
   margin-top: 2em;
   padding-bottom: 0.4em;
-  border-bottom: 2px solid #f0f0f0;
+  letter-spacing: -0.01em;
 }
 
-// "Works With" pill grid
-.works-with-grid {
+// Dark divider band between sections
+.dark-band {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  margin: 2.5em -1.5em 1.5em;
+  padding: 2em 1.5em;
+  text-align: center;
+
+  @include breakpoint($large) {
+    margin: 3em -2em 2em;
+    padding: 2.5em 2em;
+  }
+
+  h2 {
+    color: #fff;
+    margin: 0 0 0.3em;
+    padding: 0;
+    border: none;
+    font-size: 1.6em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  &__subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95em;
+    margin: 0;
+    font-weight: 400;
+  }
+}
+
+// Framework stack cards
+.stack-grid {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.2em;
-  margin: 1.5em 0 2em;
+  gap: 1.5em;
+  margin: 1.5em 0 2.5em;
 }
 
-.works-with-item {
-  background: #f7f8fa;
+.stack-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
   border: 1px solid #e1e4e8;
+  border-top: 4px solid #ccc;
   border-radius: 10px;
-  padding: 1.2em 2em;
+  padding: 2em 1.8em 1.5em;
   text-align: center;
-  min-width: 180px;
-  flex: 0 1 auto;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  text-decoration: none;
+  min-width: 200px;
+  flex: 1 1 200px;
+  max-width: 280px;
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1em;
+    object-fit: contain;
   }
 
   strong {
     display: block;
-    font-size: 1.1em;
+    font-size: 1.15em;
     color: #1a1a2e;
-    margin-bottom: 0.3em;
+    margin-bottom: 0.4em;
   }
 
   span {
     display: block;
     font-size: 0.82em;
     color: #666;
+    line-height: 1.5;
+  }
+
+  // Framework-specific accent colors
+  &--spring {
+    border-top-color: #6DB33F;
+
+    &:hover {
+      border-top-color: #5a9a32;
+      box-shadow: 0 8px 24px rgba(109, 179, 63, 0.15);
+    }
+  }
+
+  &--quarkus {
+    border-top-color: #4695EB;
+
+    &:hover {
+      border-top-color: #3578c4;
+      box-shadow: 0 8px 24px rgba(70, 149, 235, 0.15);
+    }
+  }
+
+  &--jakarta {
+    border-top-color: #F98200;
+
+    &:hover {
+      border-top-color: #d97000;
+      box-shadow: 0 8px 24px rgba(249, 130, 0, 0.15);
+    }
+  }
+}
+
+// Pipeline highlight band on landing page
+.pipeline-band {
+  background: linear-gradient(135deg, #f0f2f6 0%, #e8ecf2 100%);
+  border-left: 4px solid #0f3460;
+  border-radius: 4px;
+  margin: 2em -1.5em;
+  padding: 2em 1.5em;
+
+  @include breakpoint($large) {
+    margin: 2.5em -2em;
+    padding: 2.5em 2em;
+  }
+
+  h3 {
+    margin-top: 0;
+    font-size: 1.3em;
+    color: #1a1a2e;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    color: #333;
+    line-height: 1.6;
+  }
+}
+
+// CTA footer band
+.site-cta-footer {
+  font-size: 0.75em;
+  margin-top: 2em;
+
+  // Top: dark CTA area
+  &__cta {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 3em 2em;
+    text-align: center;
+
+    h2 {
+      color: #fff;
+      font-size: 1.6em;
+      font-weight: 700;
+      margin: 0 0 0.3em;
+      border: none;
+      letter-spacing: -0.02em;
+      padding: 0 0 0.4em;
+      border-bottom: 2px solid #e1e4e8;
+    }
+
+    p {
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 0.95em;
+      margin: 0 0 1.5em;
+    }
+  }
+
+  // Button row
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8em;
+  }
+
+  // Bottom: slim credit strip
+  &__bottom {
+    background: #12152a;
+    padding: 1em 2em;
+    text-align: center;
+    font-size: 0.78em;
+    color: rgba(255, 255, 255, 0.4);
+
+    a {
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+
+  &__sep {
+    margin: 0 0.5em;
+  }
+}
+
+// CTA buttons
+.cta-btn {
+  display: inline-block;
+  padding: 0.65em 1.6em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+
+  &--primary {
+    background: #e94560;
+    color: #fff;
+    border: 2px solid #e94560;
+
+    &:hover {
+      background: #c73a52;
+      border-color: #c73a52;
+      color: #fff;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      border-color: #fff;
+      color: #fff;
+    }
   }
 }
 
