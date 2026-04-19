@@ -9,6 +9,7 @@ tags:
   - rest-api
   - spring-boot
   - json-api
+  - jsonapi4j
 excerpt: "Learn how to build a REST API in Java step by step. Includes a Spring Boot example and a simpler way to reduce boilerplate code."
 ---
 
@@ -97,8 +98,8 @@ And let the framework handle routing, JSON responses, and API structure.
 public class UserResource implements Resource<UserDto> {
 
     @Override
-    public AttributesResolver<UserDto, UserAttributes> attributesResolver() {
-        return (request, dto) -> new UserAttributes(dto.getFullName(), dto.getEmail());
+    public UserAttributes resolveAttributes(UserDto dto) {
+        return new UserAttributes(dto.getFullName(), dto.getEmail());
     }
 }
 ```
@@ -112,19 +113,16 @@ public class UserOperations implements ResourceOperations<UserDto> {
     public UserDto readById(JsonApiRequest request) {
         return userDb.getUser(request.getResourceId());
     }
-
-    @Override
-    public CursorPageableResponse<UserDto> readPage(JsonApiRequest request) {
-        return userDb.getUsers(request);
-    }
+    
 }
 ```
 
 That's it. JsonApi4j automatically:
-- Exposes `GET /users` and `GET /users/{id}` endpoints
+- Exposes `GET /users/{id}` endpoint
 - Formats responses as standard [JSON:API](https://jsonapi.org/) documents
 - Handles pagination, links, and error responses
 - Keeps the API consistent across all your resources
+- Provides extra features e.g. [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) or [Compound Documents](https://jsonapi.org/format/#document-compound-documents) out from the box
 
 No controllers. No DTO mappers. No manual response builders.
 
