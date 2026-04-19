@@ -41,7 +41,7 @@ public abstract class UpdateUserRelativesOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -56,7 +56,7 @@ public abstract class UpdateUserRelativesOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test

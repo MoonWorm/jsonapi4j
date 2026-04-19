@@ -30,7 +30,7 @@ public abstract class UpdateUserPlaceOfBirthOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -45,7 +45,7 @@ public abstract class UpdateUserPlaceOfBirthOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test

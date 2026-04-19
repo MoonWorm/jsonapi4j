@@ -29,13 +29,13 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateResource_returns202() {
-        assertThat(UPDATE_RESOURCE.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateResource_returns204() {
+        assertThat(UPDATE_RESOURCE.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
-    public void getHttpStatus_deleteResource_returns202() {
-        assertThat(DELETE_RESOURCE.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_deleteResource_returns204() {
+        assertThat(DELETE_RESOURCE.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
@@ -44,8 +44,8 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateToOneRelationship_returns202() {
-        assertThat(UPDATE_TO_ONE_RELATIONSHIP.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateToOneRelationship_returns204() {
+        assertThat(UPDATE_TO_ONE_RELATIONSHIP.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
@@ -54,8 +54,8 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateToManyRelationship_returns202() {
-        assertThat(UPDATE_TO_MANY_RELATIONSHIPS.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateToManyRelationship_returns204() {
+        assertThat(UPDATE_TO_MANY_RELATIONSHIPS.getHttpStatus()).isEqualTo(204);
     }
 
     // --- Method.fromString ---

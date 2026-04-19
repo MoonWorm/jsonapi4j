@@ -37,7 +37,7 @@ public abstract class UpdateUserOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -58,7 +58,7 @@ public abstract class UpdateUserOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -90,7 +90,7 @@ public abstract class UpdateUserOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -124,7 +124,7 @@ public abstract class UpdateUserOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test

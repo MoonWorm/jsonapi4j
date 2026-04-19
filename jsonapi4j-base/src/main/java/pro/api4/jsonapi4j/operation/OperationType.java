@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.operation;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
 
 import java.util.Arrays;
 import java.util.List;
@@ -72,11 +73,11 @@ public enum OperationType {
     public int getHttpStatus() {
         return switch (this) {
             case READ_RESOURCE_BY_ID, READ_MULTIPLE_RESOURCES,
-                 READ_TO_ONE_RELATIONSHIP, READ_TO_MANY_RELATIONSHIP -> 200;
-            case CREATE_RESOURCE -> 201;
+                 READ_TO_ONE_RELATIONSHIP, READ_TO_MANY_RELATIONSHIP -> HttpStatusCodes.SC_200_OK.getCode();
+            case CREATE_RESOURCE -> HttpStatusCodes.SC_201_CREATED.getCode();
             case UPDATE_RESOURCE, DELETE_RESOURCE,
-                 UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS -> 202;
-            case ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP -> 204;
+                 UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS,
+                 ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP -> HttpStatusCodes.SC_204_NO_CONTENT.getCode();
         };
     }
 
