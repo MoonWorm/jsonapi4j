@@ -1,6 +1,6 @@
 ---
 title: "Build a REST API in Java (Step-by-Step Guide with Examples)"
-date: 2026-04-19
+date: 2026-03-03
 permalink: /build-rest-api-java-step-by-step/
 categories:
   - tutorials
@@ -96,6 +96,11 @@ And let the framework handle routing, JSON responses, and API structure.
 ```java
 @JsonApiResource(resourceType = "users")
 public class UserResource implements Resource<UserDto> {
+
+    @Override
+    public String resolveResourceId(UserDto dto) {
+        return dto.getId();
+    }
 
     @Override
     public UserAttributes resolveAttributes(UserDto dto) {
