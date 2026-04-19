@@ -520,3 +520,57 @@
     border-top-right-radius: 0;
   }
 }
+
+// Documentation prev/next pagination
+.docs-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 1.5em;
+  margin-top: 3em;
+  padding-top: 1.5em;
+  border-top: 1px solid #e1e4e8;
+
+  &__link {
+    display: flex;
+    flex-direction: column;
+    padding: 0.8em 1.2em;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    flex: 0 1 45%;
+
+    &:hover {
+      border-color: #0f3460;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    &--prev {
+      align-items: flex-start;
+    }
+
+    &--next {
+      align-items: flex-end;
+      margin-left: auto;
+    }
+
+    &--disabled {
+      visibility: hidden;
+    }
+  }
+
+  &__label {
+    font-size: 0.75em;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3em;
+  }
+
+  &__title {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+}
