@@ -47,16 +47,16 @@
   </g>
 
   <!-- ==================== LIFELINES ==================== -->
-  <line x1="65" y1="90" x2="65" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
-  <line x1="240" y1="90" x2="240" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
-  <line x1="467" y1="90" x2="467" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
-  <line x1="710" y1="90" x2="710" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
-  <line x1="922" y1="90" x2="922" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="65" y1="90" x2="65" y2="570" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="240" y1="90" x2="240" y2="570" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="467" y1="90" x2="467" y2="570" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="710" y1="90" x2="710" y2="570" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="922" y1="90" x2="922" y2="570" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
 
   <!-- ==================== SEQUENCE MESSAGES ==================== -->
 
   <!-- Client activation block: sends request -->
-  <rect x="59" y="108" width="12" height="20" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="59" y="108" width="12" height="20" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- 1. Client → UserService: sends request -->
   <line x1="65" y1="115" x2="232" y2="115" stroke="#444" stroke-width="1.5"/>
@@ -78,7 +78,7 @@
   <line x1="390" y1="124" x2="300" y2="135" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
 
   <!-- 2. UserService activates: resolves users -->
-  <rect x="234" y="115" width="12" height="300" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="234" y="115" width="12" height="300" rx="2" fill="#aaa" opacity="0.5"/>
   <!-- Self-referencing arrow (left side): resolves user resources -->
   <path d="M234,155 L180,155 L180,175 L234,175" stroke="#444" stroke-width="1.5" fill="none"/>
   <polygon points="234,175 226,171.5 226,178.5" fill="#444"/>
@@ -107,7 +107,7 @@
   </g>
 
   <!-- 4. CompoundDocsResolver activates -->
-  <rect x="461" y="220" width="12" height="325" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="461" y="220" width="12" height="325" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- 5. Self-arrow: parses include param -->
   <path d="M473,228 L530,228 L530,248 L473,248" stroke="#444" stroke-width="1.5" fill="none"/>
@@ -137,9 +137,9 @@
   </g>
 
   <!-- ==================== LOOP FRAME: for each stage ==================== -->
-  <rect x="300" y="260" width="695" height="260" rx="6" fill="none" stroke="#0f3460" stroke-width="1.5" stroke-dasharray="6,3"/>
-  <rect x="300" y="260" width="110" height="20" rx="4" fill="#0f3460"/>
-  <text x="355" y="274" text-anchor="middle" fill="#fff" font-size="8" font-weight="600">for each stage</text>
+  <rect x="220" y="260" width="775" height="260" rx="6" fill="none" stroke="#0f3460" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="220" y="260" width="110" height="20" rx="4" fill="#0f3460"/>
+  <text x="275" y="274" text-anchor="middle" fill="#fff" font-size="8" font-weight="600">for each stage</text>
 
   <!-- Self-arrow: groups resource linkages -->
   <path d="M473,279 L530,279 L530,299 L473,299" stroke="#444" stroke-width="1.5" fill="none"/>
@@ -182,7 +182,7 @@
   <text x="584" y="380" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'placeOfBirth': /countries?filter[id]=x,y,z&amp;include=currencies</text>
 
   <!-- CountriesService processes -->
-  <rect x="704" y="382" width="12" height="30" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="704" y="382" width="12" height="30" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- CountriesService → CompoundDocsResolver: response -->
   <line x1="710" y1="412" x2="475" y2="412" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
@@ -201,7 +201,7 @@
   <text x="690" y="438" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'currencies': /currencies?filter[id]=x,y,z</text>
 
   <!-- CurrenciesService processes -->
-  <rect x="916" y="440" width="12" height="30" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="916" y="440" width="12" height="30" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- CurrenciesService → CompoundDocsResolver: response -->
   <line x1="922" y1="470" x2="475" y2="470" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
@@ -216,7 +216,7 @@
   <!-- ==================== FINAL RESPONSE ==================== -->
 
   <!-- Client activation block: receives response -->
-  <rect x="59" y="538" width="12" height="20" rx="2" fill="#ccc" opacity="0.4"/>
+  <rect x="59" y="538" width="12" height="20" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- CompoundDocsResolver → Client: final response -->
   <line x1="467" y1="545" x2="73" y2="545" stroke="#444" stroke-width="1.5"/>
