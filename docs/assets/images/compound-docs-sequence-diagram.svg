@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="525" y="25" text-anchor="middle" fill="#1a1a2e" font-size="11" font-weight="400">Execution sequence of</text>
+  <text x="525" y="42" text-anchor="middle" fill="#1a1a2e" font-size="12" font-weight="700">GET /users?page[cursor]=xxx&amp;include=placeOfBirth.currencies,relatives</text>
+
+  <!-- ==================== PARTICIPANTS ==================== -->
+  <!-- Client (with human icon) -->
+  <g transform="translate(30, 58)">
+    <!-- Human stick figure -->
+    <circle cx="35" cy="-20" r="8" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="-12" x2="35" y2="0" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="22" y1="-6" x2="48" y2="-6" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="0" x2="24" y2="14" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="0" x2="46" y2="14" stroke="#1a1a2e" stroke-width="1.5"/>
+    <!-- Label -->
+    <text x="35" y="28" text-anchor="middle" fill="#1a1a2e" font-size="10" font-weight="600">Client</text>
+  </g>
+
+  <!-- UserService -->
+  <g transform="translate(185, 58)">
+    <rect x="0" y="0" width="110" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="55" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">UserService</text>
+  </g>
+
+  <!-- CompoundDocsResolver -->
+  <g transform="translate(390, 58)">
+    <rect x="0" y="0" width="155" height="32" rx="6" fill="#0f3460" filter="url(#shadow)"/>
+    <text x="77" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CompoundDocsResolver</text>
+  </g>
+
+  <!-- CountriesService -->
+  <g transform="translate(650, 58)">
+    <rect x="0" y="0" width="120" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="60" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CountriesService</text>
+  </g>
+
+  <!-- CurrenciesService -->
+  <g transform="translate(860, 58)">
+    <rect x="0" y="0" width="125" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="62" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CurrenciesService</text>
+  </g>
+
+  <!-- ==================== LIFELINES ==================== -->
+  <line x1="65" y1="90" x2="65" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="240" y1="90" x2="240" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="467" y1="90" x2="467" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="710" y1="90" x2="710" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="922" y1="90" x2="922" y2="570" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ==================== SEQUENCE MESSAGES ==================== -->
+
+  <!-- Client activation block: sends request -->
+  <rect x="59" y="108" width="12" height="20" rx="2" fill="#ccc" opacity="0.4"/>
+
+  <!-- 1. Client → UserService: sends request -->
+  <line x1="65" y1="115" x2="232" y2="115" stroke="#444" stroke-width="1.5"/>
+  <polygon points="232,115 224,111.5 224,118.5" fill="#444"/>
+  <text x="148" y="110" text-anchor="middle" fill="#444" font-size="8.5">sends request</text>
+
+  <!-- Self-referencing arrow: UserService extracts includes -->
+  <path d="M246,125 L300,125 L300,145 L246,145" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="246,145 254,141.5 254,148.5" fill="#444"/>
+  <text x="305" y="138" fill="#444" font-size="7.5">extracts 1st level of 'includes'</text>
+
+  <!-- Yellow sticker: include extraction -->
+  <g transform="translate(390, 100)">
+    <rect x="0" y="0" width="130" height="32" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
+    <text x="65" y="13" text-anchor="middle" fill="#555" font-size="7.5">'placeOfBirth.currencies'</text>
+    <text x="65" y="25" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="600">-&gt; 'placeOfBirth'</text>
+  </g>
+  <!-- Dotted line connecting sticker to self-arrow -->
+  <line x1="390" y1="124" x2="300" y2="135" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- 2. UserService activates: resolves users -->
+  <rect x="234" y="115" width="12" height="300" rx="2" fill="#ccc" opacity="0.4"/>
+  <!-- Self-referencing arrow (left side): resolves user resources -->
+  <path d="M234,155 L180,155 L180,175 L234,175" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="234,175 226,171.5 226,178.5" fill="#444"/>
+  <text x="175" y="150" text-anchor="end" fill="#444" font-size="7.5">Resolves User resources with</text>
+  <text x="175" y="160" text-anchor="end" fill="#444" font-size="7.5">'placeOfBirth' and 'relatives' linkages</text>
+
+  <!-- Self-referencing arrow (right side): generates JSON:API response -->
+  <path d="M246,185 L300,185 L300,205 L246,205" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="246,205 254,201.5 254,208.5" fill="#444"/>
+  <text x="305" y="198" fill="#444" font-size="7.5">generates JSON:API response (without compound docs)</text>
+
+  <!-- 3. UserService → CompoundDocsResolver: sends JSON:API response -->
+  <line x1="240" y1="220" x2="459" y2="220" stroke="#444" stroke-width="1.5"/>
+  <polygon points="459,220 451,216.5 451,223.5" fill="#444"/>
+  <text x="350" y="215" text-anchor="middle" fill="#444" font-size="8">sends JSON:API response and original request</text>
+
+  <!-- Note: 1st stage dictionary -->
+  <g transform="translate(560, 100)">
+    <rect x="0" y="0" width="170" height="50" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
+    <text x="85" y="14" text-anchor="middle" fill="#0f3460" font-size="8" font-weight="700">1st stage</text>
+    <text x="85" y="26" text-anchor="middle" fill="#666" font-size="7">builds 2 dictionaries:</text>
+    <text x="85" y="37" text-anchor="middle" fill="#555" font-size="7">1. "placeOfBirth" / "country ids"</text>
+    <text x="85" y="47" text-anchor="middle" fill="#555" font-size="7">2. "relatives" / "user ids"</text>
+    <!-- Dotted line to groups arrow -->
+    <line x1="0" y1="50" x2="-30" y2="189" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+  </g>
+
+  <!-- 4. CompoundDocsResolver activates -->
+  <rect x="461" y="220" width="12" height="325" rx="2" fill="#ccc" opacity="0.4"/>
+
+  <!-- 5. Self-arrow: parses include param -->
+  <path d="M473,228 L530,228 L530,248 L473,248" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="473,248 481,244.5 481,251.5" fill="#444"/>
+  <text x="535" y="241" fill="#444" font-size="7.5">parses original 'include' param, builds processing graph (execution stages)</text>
+
+  <!-- Yellow sticker: execution stages breakdown -->
+  <g transform="translate(760, 100)">
+    <rect x="0" y="0" width="180" height="60" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
+    <text x="90" y="13" text-anchor="middle" fill="#555" font-size="7.5">include=</text>
+    <text x="90" y="25" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="600">'placeOfBirth.currencies,relatives'</text>
+    <text x="90" y="37" text-anchor="middle" fill="#555" font-size="7">-&gt;</text>
+    <text x="90" y="47" text-anchor="middle" fill="#555" font-size="7">1st stage: 'placeOfBirth, relatives'</text>
+    <text x="90" y="57" text-anchor="middle" fill="#555" font-size="7">2nd stage: 'currencies'</text>
+  </g>
+  <!-- Dotted line connecting sticker to self-arrow -->
+  <line x1="760" y1="160" x2="530" y2="241" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- Note: 2nd stage dictionary -->
+  <g transform="translate(560, 160)">
+    <rect x="0" y="0" width="170" height="38" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
+    <text x="85" y="14" text-anchor="middle" fill="#0f3460" font-size="8" font-weight="700">2nd stage</text>
+    <text x="85" y="27" text-anchor="middle" fill="#666" font-size="7">builds 1 dictionary:</text>
+    <text x="85" y="37" text-anchor="middle" fill="#555" font-size="7">"currencies" / "currency ids"</text>
+    <!-- Dotted line to groups arrow -->
+    <line x1="0" y1="19" x2="-30" y2="129" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+  </g>
+
+  <!-- ==================== LOOP FRAME: for each stage ==================== -->
+  <rect x="300" y="260" width="695" height="260" rx="6" fill="none" stroke="#0f3460" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="300" y="260" width="110" height="20" rx="4" fill="#0f3460"/>
+  <text x="355" y="274" text-anchor="middle" fill="#fff" font-size="8" font-weight="600">for each stage</text>
+
+  <!-- Self-arrow: groups resource linkages -->
+  <path d="M473,279 L530,279 L530,299 L473,299" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="473,299 481,295.5 481,302.5" fill="#444"/>
+  <text x="535" y="292" fill="#444" font-size="7.5">groups resource linkages by type / ids</text>
+
+  <!-- Self-arrow: calculates include param -->
+  <path d="M473,308 L530,308 L530,328 L473,328" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="473,328 481,324.5 481,331.5" fill="#444"/>
+  <text x="535" y="321" fill="#444" font-size="7.5">calculates 'include' param for nested requests</text>
+
+  <!-- Note: parallel requests -->
+  <g transform="translate(800, 330)">
+    <rect x="0" y="0" width="190" height="28" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
+    <text x="95" y="12" text-anchor="middle" fill="#666" font-size="7">Generates 2 parallel requests</text>
+    <text x="95" y="23" text-anchor="middle" fill="#666" font-size="7">for the 1st stage</text>
+  </g>
+  <!-- Dotted line from sticker to CompoundDocsResolver line at y=382 -->
+  <line x1="800" y1="350" x2="475" y2="382" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- ==================== 1ST STAGE ==================== -->
+
+  <!-- 6. CompoundDocsResolver → UserService: resolve relatives -->
+  <line x1="467" y1="382" x2="248" y2="382" stroke="#444" stroke-width="1.5"/>
+  <polygon points="248,382 256,378.5 256,385.5" fill="#444"/>
+  <text x="357" y="370" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
+  <text x="357" y="380" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'relatives': /users?filter[id]=x,y,z</text>
+
+
+
+
+  <!-- UserService → CompoundDocsResolver: response -->
+  <line x1="240" y1="412" x2="459" y2="412" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="459,412 451,408.5 451,415.5" fill="#888"/>
+
+  <!-- 7. CompoundDocsResolver → CountriesService: resolve placeOfBirth -->
+  <line x1="467" y1="382" x2="702" y2="382" stroke="#444" stroke-width="1.5"/>
+  <polygon points="702,382 694,378.5 694,385.5" fill="#444"/>
+  <text x="584" y="370" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
+  <text x="584" y="380" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'placeOfBirth': /countries?filter[id]=x,y,z&amp;include=currencies</text>
+
+  <!-- CountriesService processes -->
+  <rect x="704" y="382" width="12" height="30" rx="2" fill="#ccc" opacity="0.4"/>
+
+  <!-- CountriesService → CompoundDocsResolver: response -->
+  <line x1="710" y1="412" x2="475" y2="412" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="475,412 483,408.5 483,415.5" fill="#888"/>
+
+  <!-- Composes and sends note -->
+
+  <!-- Add to included -->
+
+  <!-- ==================== 2ND STAGE ==================== -->
+
+  <!-- 8. CompoundDocsResolver → CurrenciesService: resolve currencies -->
+  <line x1="467" y1="440" x2="914" y2="440" stroke="#444" stroke-width="1.5"/>
+  <polygon points="914,440 906,436.5 906,443.5" fill="#444"/>
+  <text x="690" y="428" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">2nd stage</text>
+  <text x="690" y="438" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'currencies': /currencies?filter[id]=x,y,z</text>
+
+  <!-- CurrenciesService processes -->
+  <rect x="916" y="440" width="12" height="30" rx="2" fill="#ccc" opacity="0.4"/>
+
+  <!-- CurrenciesService → CompoundDocsResolver: response -->
+  <line x1="922" y1="470" x2="475" y2="470" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="475,470 483,466.5 483,473.5" fill="#888"/>
+
+  <!-- Add to included -->
+  <!-- Self-arrow: adds resources to included -->
+  <path d="M473,485 L530,485 L530,505 L473,505" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="473,505 481,501.5 481,508.5" fill="#444"/>
+  <text x="535" y="498" fill="#444" font-size="7.5">adds all resources from responses into "included" section</text>
+
+  <!-- ==================== FINAL RESPONSE ==================== -->
+
+  <!-- Client activation block: receives response -->
+  <rect x="59" y="538" width="12" height="20" rx="2" fill="#ccc" opacity="0.4"/>
+
+  <!-- CompoundDocsResolver → Client: final response -->
+  <line x1="467" y1="545" x2="73" y2="545" stroke="#444" stroke-width="1.5"/>
+  <polygon points="73,545 81,541.5 81,548.5" fill="#444"/>
+  <text x="270" y="539" text-anchor="middle" fill="#444" font-size="8.5" font-weight="600">sends the response with resolved Compound Documents</text>
+
+</svg>
