@@ -1,8 +1,7 @@
 package pro.api4.jsonapi4j.processor.util;
 
+import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
-import pro.api4.jsonapi4j.processor.exception.InvalidCursorException;
-import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,7 @@ public final class DataRetrievalUtil {
         RESULT result;
         try {
             result = supplier.get();
-        } catch (DataRetrievalException | InvalidCursorException | InvalidPayloadException e) {
+        } catch (DataRetrievalException | JsonApi4jException e) {
             throw e;
         } catch (RuntimeException re) {
             String errMsg = "Unknown error sending/retrieving data from the data source";

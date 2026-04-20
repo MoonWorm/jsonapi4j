@@ -5,10 +5,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
-import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.net.URI;
@@ -62,10 +63,10 @@ public final class JsonApiRequestParsingUtil {
                 .sorted()
                 .toList();
         if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
-            throw new BadJsonApiRequestException(
+            throw new ConstraintViolationException(
                     DefaultErrorCodes.VALUE_TOO_HIGH,
-                    IncludeAwareRequest.INCLUDE_PARAM,
-                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP)
+                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
+                    IncludeAwareRequest.INCLUDE_PARAM
             );
         }
         return result;
@@ -76,10 +77,10 @@ public final class JsonApiRequestParsingUtil {
                 .sorted()
                 .toList();
         if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
-            throw new BadJsonApiRequestException(
+            throw new ConstraintViolationException(
                     DefaultErrorCodes.VALUE_TOO_HIGH,
-                    IncludeAwareRequest.INCLUDE_PARAM,
-                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP)
+                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
+                    IncludeAwareRequest.INCLUDE_PARAM
             );
         }
         return result;
@@ -93,10 +94,10 @@ public final class JsonApiRequestParsingUtil {
                         SortAwareRequest::extractSortOrder
                 ));
         if (sortBy.size() > SortAwareRequest.NUMBER_OF_SORT_BY_GLOBAL_CAP) {
-            throw new BadJsonApiRequestException(
+            throw new ConstraintViolationException(
                     DefaultErrorCodes.VALUE_TOO_HIGH,
-                    SortAwareRequest.SORT_PARAM,
-                    String.format("Sort value shouldn't have more than %d elements", NUMBER_OF_SORT_BY_GLOBAL_CAP)
+                    String.format("Sort value shouldn't have more than %d elements", NUMBER_OF_SORT_BY_GLOBAL_CAP),
+                    SortAwareRequest.SORT_PARAM
             );
         }
         return sortBy;
@@ -113,7 +114,10 @@ public final class JsonApiRequestParsingUtil {
         if (CollectionUtils.isEmpty(limitParamValue)) {
             return null;
         }
-        return limitParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+        return limitParamValue.stream().findFirst().map(v -> {
+            new JsonApi4jDefaultValidator().validateLimit(v);
+            return Long.parseLong(v);
+        }).orElse(null);
     }
 
     public static Long parseOffset(List<String> offsetParamValue) {

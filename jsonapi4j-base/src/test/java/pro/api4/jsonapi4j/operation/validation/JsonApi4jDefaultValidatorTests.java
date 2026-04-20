@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -20,7 +21,7 @@ public class JsonApi4jDefaultValidatorTests {
     public void validateNonNull_objectIsNull_throwsException() {
         // when / then
         assertThatThrownBy(() -> validator.validateNonNull(null, PARAMETER_NAME))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail", "parameter")
                 .containsExactly("value can't be null", PARAMETER_NAME);
     }
@@ -40,7 +41,7 @@ public class JsonApi4jDefaultValidatorTests {
     public void validateResourceId_blankId_throwsException() {
         // when / then
         assertThatThrownBy(() -> validator.validateResourceId(""))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail")
                 .isEqualTo("resource id can't be blank");
     }
@@ -49,7 +50,7 @@ public class JsonApi4jDefaultValidatorTests {
     public void validateResourceId_nullId_throwsException() {
         // when / then
         assertThatThrownBy(() -> validator.validateResourceId(null))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail")
                 .isEqualTo("resource id can't be blank");
     }
@@ -61,7 +62,7 @@ public class JsonApi4jDefaultValidatorTests {
 
         // when / then
         assertThatThrownBy(() -> validator.validateResourceId(tooLongId))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail")
                 .isEqualTo("resource id length can't be more than " + JsonApi4jDefaultValidator.RESOURCE_ID_MAX_LENGTH);
     }
@@ -104,7 +105,7 @@ public class JsonApi4jDefaultValidatorTests {
 
         // when / then
         assertThatThrownBy(() -> validator.validateFilterByIds(oversizedList))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail")
                 .isEqualTo("max elements number exceeded: " + JsonApi4jDefaultValidator.MAX_ELEMENTS_IN_FILTER_PARAM);
     }
@@ -116,7 +117,7 @@ public class JsonApi4jDefaultValidatorTests {
 
         // when / then
         assertThatThrownBy(() -> validator.validateFilterByIds(listWithBlank))
-                .isInstanceOf(JsonApi4jConstraintViolationException.class)
+                .isInstanceOf(ConstraintViolationException.class)
                 .extracting("detail")
                 .isEqualTo("resource id can't be blank");
     }

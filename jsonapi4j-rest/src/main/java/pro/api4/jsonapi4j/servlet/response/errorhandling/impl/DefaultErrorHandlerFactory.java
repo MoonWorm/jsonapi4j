@@ -1,13 +1,10 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
-import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -23,21 +20,6 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
 
     public DefaultErrorHandlerFactory() {
         this.errorResponseMappers = new HashMap<>();
-        this.errorResponseMappers.put(JsonApi4jException.class, new ErrorsDocSupplier<JsonApi4jException>() {
-            @Override
-            public ErrorsDoc getErrorResponse(JsonApi4jException e) {
-                return ErrorsDocFactory.genericErrorsDoc(
-                        e.getHttpStatus(),
-                        e.getErrorCode(),
-                        e.getDetail()
-                );
-            }
-
-            @Override
-            public int getHttpStatus(JsonApi4jException e) {
-                return e.getHttpStatus();
-            }
-        });
         this.errorResponseMappers.put(DataRetrievalException.class, new ErrorsDocSupplier<DataRetrievalException>() {
             @Override
             public ErrorsDoc getErrorResponse(DataRetrievalException e) {
@@ -60,17 +42,6 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
                 return HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR.getCode();
             }
         });
-        this.errorResponseMappers.put(ResourceNotFoundException.class, new ErrorsDocSupplier<ResourceNotFoundException>() {
-            @Override
-            public ErrorsDoc getErrorResponse(ResourceNotFoundException e) {
-                return ErrorsDocFactory.resourceNotFoundErrorsDoc(e.getMessage());
-            }
-
-            @Override
-            public int getHttpStatus(ResourceNotFoundException e) {
-                return HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode();
-            }
-        });
         this.errorResponseMappers.put(OperationNotFoundException.class, new ErrorsDocSupplier<OperationNotFoundException>() {
             @Override
             public ErrorsDoc getErrorResponse(OperationNotFoundException e) {
@@ -82,30 +53,30 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
                 return HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode();
             }
         });
-        this.errorResponseMappers.put(BadJsonApiRequestException.class, new ErrorsDocSupplier<BadJsonApiRequestException>() {
+        this.errorResponseMappers.put(ConstraintViolationException.class, new ErrorsDocSupplier<ConstraintViolationException>() {
             @Override
-            public ErrorsDoc getErrorResponse(BadJsonApiRequestException e) {
-                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getMessage(), e.getParameter());
+            public ErrorsDoc getErrorResponse(ConstraintViolationException e) {
+                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getParameter());
             }
 
             @Override
-            public int getHttpStatus(BadJsonApiRequestException e) {
+            public int getHttpStatus(ConstraintViolationException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });
-        this.errorResponseMappers.put(JsonApi4jConstraintViolationException.class, new ErrorsDocSupplier<JsonApi4jConstraintViolationException>() {
+        this.errorResponseMappers.put(JsonApi4jException.class, new ErrorsDocSupplier<JsonApi4jException>() {
             @Override
-            public ErrorsDoc getErrorResponse(JsonApi4jConstraintViolationException e) {
-                return ErrorsDocFactory.badRequestErrorsDoc(
-                        DefaultErrorCodes.GENERIC_REQUEST_ERROR,
-                        e.getDetail(),
-                        e.getParameter()
+            public ErrorsDoc getErrorResponse(JsonApi4jException e) {
+                return ErrorsDocFactory.genericErrorsDoc(
+                        e.getHttpStatus(),
+                        e.getErrorCode(),
+                        e.getDetail()
                 );
             }
 
             @Override
-            public int getHttpStatus(JsonApi4jConstraintViolationException e) {
-                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            public int getHttpStatus(JsonApi4jException e) {
+                return e.getHttpStatus();
             }
         });
     }

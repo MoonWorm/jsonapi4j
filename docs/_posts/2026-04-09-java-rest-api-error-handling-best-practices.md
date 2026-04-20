@@ -99,7 +99,7 @@ JsonApi4j also provides a hierarchy of built-in exceptions:
 - `JsonApi4jException` -- the root exception with `httpStatus`, `errorCode`, and `detail` fields
 - `ResourceNotFoundException` -- for missing resources (404)
 - `InvalidPayloadException` -- for bad request bodies (400)
-- `BadJsonApiRequestException` -- for invalid request parameters
+- `ConstraintViolationException` -- for validation failures (400)
 
 When any of these exceptions are thrown, JsonApi4j automatically formats the response as a JSON:API error document with the correct HTTP status code.
 

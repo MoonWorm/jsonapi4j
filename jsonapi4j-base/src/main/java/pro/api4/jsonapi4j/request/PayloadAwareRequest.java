@@ -4,7 +4,7 @@ import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.processor.exception.InvalidPayloadException;
+import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 
 import java.util.LinkedHashMap;
 

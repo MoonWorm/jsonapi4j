@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
+import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 /**

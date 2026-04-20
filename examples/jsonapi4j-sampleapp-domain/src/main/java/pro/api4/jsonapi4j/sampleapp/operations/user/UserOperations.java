@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jConstraintViolationException;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
@@ -19,7 +19,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Param
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.principal.tier.TierAdmin;
-import pro.api4.jsonapi4j.processor.exception.ResourceNotFoundException;
+import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -78,10 +78,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 try {
                     RelationshipType.valueOf(relationshipType.toUpperCase());
                 } catch (Exception ex) {
-                    throw new JsonApi4jConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
+                    throw new ConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
                 }
             } else {
-                throw new JsonApi4jConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
+                throw new ConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
             }
         }
     }
@@ -253,10 +253,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         jsonApiValidator.validateSingleResourceDoc(singleResourceDoc);
         UserAttributes att = singleResourceDoc.getData().getAttributes();
         if (att == null) {
-            throw new JsonApi4jConstraintViolationException("'attributes' is null", "attributes");
+            throw new ConstraintViolationException("'attributes' is null", "attributes");
         }
         if (att.getFullName() == null) {
-            throw new JsonApi4jConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
+            throw new ConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
         }
         userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
         userValidator.validateLastName(att.getFullName().split("\\s+")[1]);

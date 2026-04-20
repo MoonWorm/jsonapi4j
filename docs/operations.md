@@ -55,21 +55,22 @@ Here is the list of To-Many-Relationship-related operations supported by the fra
 
 The same as for other two operation types - all these operations are also assembled into a single interface - `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`. This is the preferred way to implement operations for To-Many relationships.
 
-### Validation
-* Every operation has an optional `validate(JsonApiRequest request)` method sometimes with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method.
-* There is more validation-specific methods you can override when implementing `ResourceOperations<RESOURCE_DTO>`, `ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>` or `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`.
-* If a resource is not found in the backend system, throw `ResourceNotFoundException` or use `throwResourceNotFoundException(...)` method. This will generate a JSON:API compliant error response.
-* For other scenarios, throw `JsonApi4jException` and specify `httpStatus`, `errorCode`, and `detail`. This will generate a JSON:API compliant error response.
-* See **Register custom error handlers** chapter for additional ways to handle errors, for example, integration with custom validation frameworks.
+### Validation and Error Handling
 
-### Register custom error handlers
+Every operation has an optional `validate(JsonApiRequest request)` method with a default generic implementation. It is recommended to place all input validation logic here, keeping the main business logic in the corresponding operation method. There are more validation-specific methods you can override when implementing `ResourceOperations`, `ToOneRelationshipOperations`, or `ToManyRelationshipOperations`.
 
-It's also possible to declare a custom `ErrorHandlerFactory` and register it in the `JsonApi4jErrorHandlerFactoriesRegistry`. This allows you to extend the default error-handling behavior.
+For validation failures, throw `ConstraintViolationException` with an error code, detail message, and the offending parameter name:
 
-Two error handler factories are registered by default:
+```java
+throw new ConstraintViolationException(
+    DefaultErrorCodes.VALUE_INVALID_FORMAT,
+    "Invalid email format", "email"
+);
+```
 
-* `DefaultErrorHandlerFactory` - encapsulates the logic for mapping framework-specific exceptions (such as `JsonApi4jException`, `ResourceNotFoundException`, and other technical exceptions) into JSON:API-compliant error documents
-* `Jsr380ErrorHandlers` - encapsulates the logic for mapping `jakarta.validation.ConstraintViolationException` exception (JSR-380) into JSON:API error documents.
+If a resource is not found, throw `ResourceNotFoundException`. For other scenarios, throw `JsonApi4jException` with `httpStatus`, `errorCode`, and `detail`.
+
+All exceptions are automatically converted into JSON:API-compliant error responses. See the [Error Handling](/error-handling/) page for the full exception hierarchy, built-in error mappings, JSR-380 integration, and how to register custom error handler factories.
 
 ### Override HTTP response status and headers
 

@@ -1,20 +1,18 @@
 package pro.api4.jsonapi4j.request.exception;
 
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
-import lombok.Getter;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 
-@Getter
-public class BadJsonApiRequestException extends RuntimeException{
-
-    private final ErrorCode errorCode;
-    private final String parameter;
+/**
+ * @deprecated Use {@link ConstraintViolationException} instead.
+ */
+@Deprecated(forRemoval = true)
+public class BadJsonApiRequestException extends ConstraintViolationException {
 
     public BadJsonApiRequestException(ErrorCode errorCode,
                                       String parameter,
                                       String message) {
-        super(message);
-        this.errorCode = errorCode;
-        this.parameter = parameter;
+        super(errorCode, message, parameter);
     }
 
 }

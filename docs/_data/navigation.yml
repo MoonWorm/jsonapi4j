@@ -27,6 +27,8 @@ docs:
         url: /operations/
       - title: "Request Processing Pipeline"
         url: /request-processing-pipeline/
+      - title: "Error Handling"
+        url: /error-handling/
       - title: "Configuration"
         url: /configuration/
   - title: "Plugins"

@@ -11,4 +11,5 @@ public class ResourceType implements Comparable<ResourceType> {
     public int compareTo(ResourceType o) {
         return this.type.compareTo(o.getType());
     }
+
 }

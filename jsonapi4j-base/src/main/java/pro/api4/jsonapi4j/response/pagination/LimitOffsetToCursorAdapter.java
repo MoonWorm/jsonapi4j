@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.response.pagination;
 
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
-import pro.api4.jsonapi4j.processor.exception.InvalidCursorException;
+import pro.api4.jsonapi4j.exception.InvalidCursorException;
 import io.seruco.encoding.base62.Base62;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;

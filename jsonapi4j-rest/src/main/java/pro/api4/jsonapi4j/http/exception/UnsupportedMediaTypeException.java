@@ -1,9 +1,11 @@
 package pro.api4.jsonapi4j.http.exception;
 
+import lombok.Getter;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 
+@Getter
 public class UnsupportedMediaTypeException extends JsonApi4jException {
 
     private String actualMediaType;

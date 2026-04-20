@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.processor.util;
 
+import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public final class MappingUtil {
                 }
             }
             return resultCollection;
-        } catch (MappingException e) {
+        } catch (MappingException | JsonApi4jException e) {
             throw e;
         } catch (RuntimeException e) {
             String errMsg = "Error mapping source objects into collection";

@@ -87,7 +87,7 @@ public abstract class ReadUserByIdOperationTests {
                 .statusCode(404)
                 .body("errors[0].code", equalTo("NOT_FOUND"))
                 .body("errors[0].status", equalTo("404"))
-                .body("errors[0].detail", equalTo("'ResourceType(type=users)' resource of a given id (100) is not found"))
+                .body("errors[0].detail", equalTo("'users' resource of a given id (100) is not found"))
                 .body("errors[0].id", notNullValue());
     }
 

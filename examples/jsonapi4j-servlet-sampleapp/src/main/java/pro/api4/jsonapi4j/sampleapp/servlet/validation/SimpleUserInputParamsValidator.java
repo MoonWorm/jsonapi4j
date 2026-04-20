@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.servlet.validation;
 
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.request.exception.BadJsonApiRequestException;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
 
 /**
@@ -28,14 +28,14 @@ public class SimpleUserInputParamsValidator implements UserInputParamsValidator 
     public void validateEmail(String email) {
         validateNotBlank(email, "email");
         if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new BadJsonApiRequestException(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "email", "Invalid email format");
+            throw new ConstraintViolationException(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "Invalid email format", "email");
         }
     }
 
     private void validateNotBlank(String value, String paramName) {
         if (StringUtils.isBlank(value)) {
-            throw new BadJsonApiRequestException(
-                    DefaultErrorCodes.VALUE_IS_ABSENT, paramName, paramName + " must not be blank");
+            throw new ConstraintViolationException(
+                    DefaultErrorCodes.VALUE_IS_ABSENT, paramName + " must not be blank", paramName);
         }
     }
 
@@ -43,10 +43,10 @@ public class SimpleUserInputParamsValidator implements UserInputParamsValidator 
                                    int maxLength,
                                    String paramName) {
         if (value != null && value.length() > maxLength) {
-            throw new BadJsonApiRequestException(
+            throw new ConstraintViolationException(
                     DefaultErrorCodes.VALUE_TOO_LONG,
-                    paramName,
-                    paramName + " must not exceed " + maxLength + " characters"
+                    paramName + " must not exceed " + maxLength + " characters",
+                    paramName
             );
         }
     }

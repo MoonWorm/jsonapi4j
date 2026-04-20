@@ -1,6 +1,8 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.InvalidLimitException;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
@@ -16,23 +18,24 @@ public class JsonApi4jDefaultValidator {
 
     public static final int MAX_ELEMENTS_IN_FILTER_PARAM = 20;
     public static final int RESOURCE_ID_MAX_LENGTH = 64;
+    public static final long LIMIT_MAX_VALUE = 100L;
 
     public void validateNonNull(Object object, String parameter) {
         if (object == null) {
-            throw new JsonApi4jConstraintViolationException("value can't be null", parameter);
+            throw new ConstraintViolationException("value can't be null", parameter);
         }
     }
 
     public void validateNonBlank(String value, String parameter) {
         if (StringUtils.isBlank(value)) {
-            throw new JsonApi4jConstraintViolationException(String.format("'%s' can't be blank", parameter), parameter);
+            throw new ConstraintViolationException(String.format("'%s' can't be blank", parameter), parameter);
         }
     }
 
     public void validateFilterByIds(List<String> resourceIds) {
         if (resourceIds != null) {
             if (resourceIds.size() > MAX_ELEMENTS_IN_FILTER_PARAM) {
-                throw new JsonApi4jConstraintViolationException(
+                throw new ConstraintViolationException(
                         "max elements number exceeded: " + MAX_ELEMENTS_IN_FILTER_PARAM,
                         FiltersAwareRequest.getFilterParam(ID_FILTER_NAME)
                 );
@@ -45,13 +48,13 @@ public class JsonApi4jDefaultValidator {
 
     public void validateResourceId(String resourceId, String parameterName) {
         if (StringUtils.isBlank(resourceId)) {
-            throw new JsonApi4jConstraintViolationException(
+            throw new ConstraintViolationException(
                     "resource id can't be blank",
                     parameterName
             );
         }
         if (resourceId.length() > RESOURCE_ID_MAX_LENGTH) {
-            throw new JsonApi4jConstraintViolationException(
+            throw new ConstraintViolationException(
                     "resource id length can't be more than " + RESOURCE_ID_MAX_LENGTH,
                     parameterName
             );
@@ -62,6 +65,20 @@ public class JsonApi4jDefaultValidator {
         validateResourceId(resourceId, "resourceId");
     }
 
+    public void validateLimit(String limit) {
+        if (StringUtils.isBlank(limit)) {
+            throw new InvalidLimitException(limit, "limit value shouldn't be null");
+        }
+        try {
+            long value = Long.parseLong(limit);
+            if (value > LIMIT_MAX_VALUE) {
+                throw new InvalidLimitException(limit, "max allowed limit is " + LIMIT_MAX_VALUE);
+            }
+        } catch (NumberFormatException nfe) {
+            throw new InvalidLimitException(limit, "limit value must be a number");
+        }
+    }
+
     public void validateResourceTypeAnyOf(String resourceTypeToEvaluate,
                                           Set<String> validResourceTypes) {
         for (String validResourceType : validResourceTypes) {
@@ -69,7 +86,7 @@ public class JsonApi4jDefaultValidator {
                 return;
             }
         }
-        throw new JsonApi4jConstraintViolationException(
+        throw new ConstraintViolationException(
                 String.format("resource type '%s' not supported, available resource types: [%s]", resourceTypeToEvaluate, String.join(", ", validResourceTypes)),
                 "resourceType"
         );
@@ -77,7 +94,7 @@ public class JsonApi4jDefaultValidator {
 
     public void validateSingleResourceDoc(SingleResourceDoc<?> singleResourceDoc) {
         if (singleResourceDoc.getData() == null) {
-            throw new JsonApi4jConstraintViolationException("'data' is null", "data");
+            throw new ConstraintViolationException("'data' is null", "data");
         }
         if (singleResourceDoc.getData().getId() != null) {
             validateResourceId(singleResourceDoc.getData().getId());
@@ -126,7 +143,7 @@ public class JsonApi4jDefaultValidator {
 
     public void validateToManyRelationshipDoc(ToManyRelationshipsDoc toManyRelationshipDoc) {
         if (toManyRelationshipDoc.getData() == null) {
-            throw new JsonApi4jConstraintViolationException("'data' is null", "data");
+            throw new ConstraintViolationException("'data' is null", "data");
         }
         toManyRelationshipDoc.getData().forEach(ri -> {
             validateResourceId(ri.getId());
