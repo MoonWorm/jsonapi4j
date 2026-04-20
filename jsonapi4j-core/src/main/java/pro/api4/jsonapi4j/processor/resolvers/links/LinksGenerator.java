@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.request.LimitOffsetAwareRequest.DEFAULT_LIMIT;
+import static pro.api4.jsonapi4j.request.LimitOffsetAwareRequest.DEFAULT_OFFSET;
+
 public final class LinksGenerator {
 
     private final Object request;
@@ -90,11 +93,8 @@ public final class LinksGenerator {
         return paginationContext.getMode() == PaginationMode.CURSOR && StringUtils.isNotBlank(paginationContext.getNextCursor());
     }
 
-    private boolean isLimitOffsetAwareRequest() {
-        if (request instanceof LimitOffsetAwareRequest r) {
-            return r.getLimit() != null && r.getOffset() != null;
-        }
-        return false;
+    private boolean isLimitOffsetAwareRequest(PaginationContext paginationContext) {
+        return paginationContext.getMode() == PaginationMode.LIMIT_OFFSET;
     }
 
     public String generateNextLink(String basePath,
@@ -111,7 +111,7 @@ public final class LinksGenerator {
             }
             if (isCursorAwareRequest(paginationContext)) {
                 populateCursor(nextLinkParams, paginationContext.getNextCursor());
-            } else if (isLimitOffsetAwareRequest()) {
+            } else if (isLimitOffsetAwareRequest(paginationContext)) {
                 populateLimitOffset(nextLinkParams, paginationContext.getTotalItems());
             } else {
                 return null;
@@ -137,12 +137,16 @@ public final class LinksGenerator {
                                      Long totalItems) {
         if (request instanceof LimitOffsetAwareRequest r) {
             Long limit = r.getLimit();
-            Long offset = r.getOffset();
-            if (limit != null && offset != null) {
-                long nextOffset = Math.min(offset + limit, totalItems != null ? totalItems : Long.MAX_VALUE);
-                linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
-                linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(nextOffset));
+            if (limit == null) {
+                limit = DEFAULT_LIMIT;
             }
+            Long offset = r.getOffset();
+            if (offset == null) {
+                offset = DEFAULT_OFFSET;
+            }
+            long nextOffset = Math.min(offset + limit, totalItems != null ? totalItems : Long.MAX_VALUE);
+            linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+            linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(nextOffset));
         }
     }
 

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter.DEFAULT_LIMIT;
+import static pro.api4.jsonapi4j.request.LimitOffsetAwareRequest.DEFAULT_LIMIT;
 
 public class PaginationAwareResponseTests {
 

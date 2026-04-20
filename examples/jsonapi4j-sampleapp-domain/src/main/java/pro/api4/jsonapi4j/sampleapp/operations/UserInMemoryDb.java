@@ -161,6 +161,22 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
+    public void addUserCitizenships(String userId, List<String> cca2s) {
+        List<String> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+        cca2s.stream()
+                .filter(cca2 -> !existing.contains(cca2))
+                .forEach(existing::add);
+        userCitizenships.put(userId, existing);
+    }
+
+    @Override
+    public void removeUserCitizenships(String userId, List<String> cca2s) {
+        List<String> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+        existing.removeAll(cca2s);
+        userCitizenships.put(userId, existing);
+    }
+
+    @Override
     public Map<String, List<String>> getUsersCitizenships(Set<String> userIds) {
         return userIds.stream().collect(
                 Collectors.toMap(
@@ -189,6 +205,25 @@ public class UserInMemoryDb implements UserDb {
                 .map(e -> new UserRelationshipInfo(e.getKey(), e.getValue()))
                 .toList();
         userRalatives.put(userId, relations);
+    }
+
+    @Override
+    public void addUserRelatives(String userId, Map<String, RelationshipType> relationsMap) {
+        List<UserRelationshipInfo> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
+        Set<String> existingIds = existing.stream().map(UserRelationshipInfo::getRelativeUserId).collect(Collectors.toSet());
+        relationsMap.entrySet().stream()
+                .filter(e -> StringUtils.isNotBlank(e.getKey()) && e.getValue() != null)
+                .filter(e -> !existingIds.contains(e.getKey()))
+                .map(e -> new UserRelationshipInfo(e.getKey(), e.getValue()))
+                .forEach(existing::add);
+        userRalatives.put(userId, existing);
+    }
+
+    @Override
+    public void removeUserRelatives(String userId, Set<String> relativeIds) {
+        List<UserRelationshipInfo> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
+        existing.removeIf(info -> relativeIds.contains(info.getRelativeUserId()));
+        userRalatives.put(userId, existing);
     }
 
     @Override

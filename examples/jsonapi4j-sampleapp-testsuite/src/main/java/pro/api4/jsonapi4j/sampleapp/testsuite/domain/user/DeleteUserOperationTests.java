@@ -26,7 +26,7 @@ public abstract class DeleteUserOperationTests {
                 .pathParam("userId", "5")
                 .delete("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
 
         // verify user no longer exists
         given()

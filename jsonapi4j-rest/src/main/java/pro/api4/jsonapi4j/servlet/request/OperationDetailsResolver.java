@@ -94,12 +94,30 @@ public class OperationDetailsResolver {
                 if (relationshipType == RelationshipType.TO_ONE) {
                     return resolved(OperationType.UPDATE_TO_ONE_RELATIONSHIP, resourceType, relationshipName);
                 } else if (relationshipType == RelationshipType.TO_MANY) {
-                    return resolved(OperationType.UPDATE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                    return resolved(OperationType.UPDATE_TO_MANY_RELATIONSHIPS, resourceType, relationshipName);
+                }
+            } else if (methodEnum == POST) {
+                if (relationshipType == RelationshipType.TO_MANY) {
+                    return resolved(OperationType.ADD_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                } else {
+                    throw new MethodNotSupportedException(
+                            methodString,
+                            Stream.of(GET, PATCH).map(Enum::name).collect(Collectors.joining(", "))
+                    );
+                }
+            } else if (methodEnum == DELETE) {
+                if (relationshipType == RelationshipType.TO_MANY) {
+                    return resolved(OperationType.DELETE_TO_MANY_RELATIONSHIP, resourceType, relationshipName);
+                } else {
+                    throw new MethodNotSupportedException(
+                            methodString,
+                            Stream.of(GET, PATCH).map(Enum::name).collect(Collectors.joining(", "))
+                    );
                 }
             } else {
                 throw new MethodNotSupportedException(
                         methodString,
-                        Stream.of(GET, PATCH).map(Enum::name).collect(Collectors.joining(", "))
+                        Stream.of(GET, POST, PATCH, DELETE).map(Enum::name).collect(Collectors.joining(", "))
                 );
             }
         }

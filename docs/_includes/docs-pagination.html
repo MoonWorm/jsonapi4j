@@ -1,0 +1,61 @@
+{% comment %}
+  Generates Previous/Next navigation links for documentation pages
+  based on the order defined in _data/navigation.yml (docs sidebar).
+{% endcomment %}
+
+{% assign docs_nav = site.data.navigation.docs %}
+{% assign all_urls = "" | split: "" %}
+
+{% for group in docs_nav %}
+  {% for child in group.children %}
+    {% assign all_urls = all_urls | push: child.url %}
+  {% endfor %}
+{% endfor %}
+
+{% assign current_index = nil %}
+{% for url in all_urls %}
+  {% if url == page.permalink or url == page.url %}
+    {% assign current_index = forloop.index0 %}
+  {% endif %}
+{% endfor %}
+
+{% if current_index != nil %}
+  {% assign prev_index = current_index | minus: 1 %}
+  {% assign next_index = current_index | plus: 1 %}
+
+  <nav class="docs-pagination">
+    {% if prev_index >= 0 %}
+      {% assign prev_url = all_urls[prev_index] %}
+      {% for group in docs_nav %}
+        {% for child in group.children %}
+          {% if child.url == prev_url %}
+            {% assign prev_title = child.title %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+      <a href="{{ prev_url }}" class="docs-pagination__link docs-pagination__link--prev">
+        <span class="docs-pagination__label">&larr; Previous</span>
+        <span class="docs-pagination__title">{{ prev_title }}</span>
+      </a>
+    {% else %}
+      <span class="docs-pagination__link docs-pagination__link--disabled"></span>
+    {% endif %}
+
+    {% if next_index < all_urls.size %}
+      {% assign next_url = all_urls[next_index] %}
+      {% for group in docs_nav %}
+        {% for child in group.children %}
+          {% if child.url == next_url %}
+            {% assign next_title = child.title %}
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+      <a href="{{ next_url }}" class="docs-pagination__link docs-pagination__link--next">
+        <span class="docs-pagination__label">Next &rarr;</span>
+        <span class="docs-pagination__title">{{ next_title }}</span>
+      </a>
+    {% else %}
+      <span class="docs-pagination__link docs-pagination__link--disabled"></span>
+    {% endif %}
+  </nav>
+{% endif %}

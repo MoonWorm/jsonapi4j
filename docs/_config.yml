@@ -57,7 +57,7 @@ defaults:
       path: ""
       type: "pages"
     values:
-      layout: single
+      layout: docs
       toc: false
       sidebar:
         nav: "docs"

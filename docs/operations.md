@@ -16,15 +16,15 @@ Let's dig deeper into supported operations.
 ### Resource-related operations
 
 Here is the list of resource-related operations supported by the framework:
-* `ReadResourceByIdOperation<RESOURCE_DTO>` - available under `GET /{resource-type}/{resource-id}`, supports compound documents JSON:API feature
+* `ReadResourceByIdOperation<RESOURCE_DTO>` - available under `GET /{resource-type}/{resource-id}`, supports compound documents JSON:API feature. Returns `200 OK`.
   * `RESOURCE_DTO readById(JsonApiRequest request)` - reads a single internal object representing a JSON:API resource of the specified type.
-* `ReadMultipleResourcesOperation<RESOURCE_DTO>` - available under `GET /{resource-type}`, supports compound documents, filtering, and ordering JSON:API features
+* `ReadMultipleResourcesOperation<RESOURCE_DTO>` - available under `GET /{resource-type}`, supports compound documents, filtering, and ordering JSON:API features. Returns `200 OK`.
   * `CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request)` - reads multiple internal objects representing JSON:API resources of the specified type.
-* `CreateResourceOperation<RESOURCE_DTO>` - available under `POST /{resource-type}`, accepts valid JSON:API Document as a payload.
+* `CreateResourceOperation<RESOURCE_DTO>` - available under `POST /{resource-type}`, accepts valid JSON:API Document as a payload. Returns `201 Created`.
   * `RESOURCE_DTO create(JsonApiRequest request)` - creates a single object in the backend system and returns its internal representation.
-* `UpdateResourceOperation` - available under `PATCH /{resource-type}/{resource-id}`, accepts valid JSON:API Document as a payload.
+* `UpdateResourceOperation` - available under `PATCH /{resource-type}/{resource-id}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
   * `void update(JsonApiRequest request)` - updates a single object in the backend system.
-* `DeleteResourceOperation` - available under `DELETE /{resource-type}/{resource-id}`.
+* `DeleteResourceOperation` - available under `DELETE /{resource-type}/{resource-id}`. Returns `204 No Content`.
   * `void delete(JsonApiRequest request)` - deletes a single object in the backend system.
 
 All these operations are assembled into a single interface - `ResourceOperations<RESOURCE_DTO>` - for simplicity. This way, the developer does not need to remember which operation to implement, as everything is defined in one place. You only need to override the methods you actually need. Although the framework supports multiple approaches, this is the recommended way to implement resource-related operations.
@@ -32,10 +32,10 @@ All these operations are assembled into a single interface - `ResourceOperations
 ### To-One-Relationship-related operations
 
 Here is the list of To-One-Relationship-related operations supported by the framework:
-* `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents JSON:API feature
+* `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents JSON:API feature. Returns `200 OK`.
   * `readOne(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
   * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation.
-* `UpdateToOneRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
+* `UpdateToOneRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
     * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend.
 
 The same as for resource - all these operations are also assembled into a single interface - `ToOneRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`. This is the preferred way to implement operations for To-One relationships.
@@ -43,11 +43,15 @@ The same as for resource - all these operations are also assembled into a single
 ### To-Many-Relationship-related operations
 
 Here is the list of To-Many-Relationship-related operations supported by the framework:
-* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features
+* `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features. Returns `200 OK`.
   * `CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
   * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
-* `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload.
-  * `void update(JsonApiRequest request)` - updates or deletes all resource linkages representing a To-Many JSON:API relationship in the backend.
+* `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
+  * `void update(JsonApiRequest request)` - performs a complete replacement of all resource linkages for a To-Many JSON:API relationship in the backend. Sending an empty array removes all members.
+* `AddToManyRelationshipOperation` - available under `POST /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
+  * `void add(JsonApiRequest request)` - adds the specified members to the to-many relationship. Members that already exist in the relationship are not added again (idempotent).
+* `DeleteToManyRelationshipOperation` - available under `DELETE /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
+  * `void delete(JsonApiRequest request)` - removes the specified members from the to-many relationship.
 
 The same as for other two operation types - all these operations are also assembled into a single interface - `ToManyRelationshipOperations<RESOURCE_DTO, RELATIONSHIP_DTO>`. This is the preferred way to implement operations for To-Many relationships.
 
@@ -69,17 +73,17 @@ Two error handler factories are registered by default:
 
 ### Override HTTP response status and headers
 
-JsonApi4j automatically determines the HTTP response status code based on the operation type (e.g. `200` for reads, `201` for creates, `202` for updates and deletes). However, there are cases where you may need to override the default status code or add custom headers to the response from within your operation logic.
+JsonApi4j automatically determines the HTTP response status code based on the operation type (e.g. `200` for reads, `201` for creates, `204` for updates and deletes). However, there are cases where you may need to override the default status code or add custom headers to the response from within your operation logic.
 
 #### Override response status
 
-Use `ResponseStatus.overrideResponseStatus(HttpStatusCodes)` to override the HTTP status code for the current request. This is useful when the default status code doesn't match your business logic — for example, returning `204 No Content` instead of `202 Accepted` for a delete operation.
+Use `ResponseStatus.overrideResponseStatus(HttpStatusCodes)` to override the HTTP status code for the current request. This is useful when the default status code doesn't match your business logic — for example, returning `202 Accepted` instead of the default `204 No Content` for an asynchronous delete operation.
 
 ```java
 @Override
 public void delete(JsonApiRequest request) {
-    myService.delete(request.getResourceId());
-    ResponseStatus.overrideResponseStatus(HttpStatusCodes.SC_204_NO_CONTENT);
+    myService.deleteAsync(request.getResourceId());
+    ResponseStatus.overrideResponseStatus(HttpStatusCodes.SC_202_ACCEPTED);
 }
 ```
 

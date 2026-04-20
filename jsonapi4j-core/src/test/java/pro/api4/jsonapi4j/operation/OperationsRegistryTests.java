@@ -64,7 +64,7 @@ public class OperationsRegistryTests {
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toOneRelationship, OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIPS)).isTrue();
         assertThat(sut.isRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 
         assertThat(sut.isAnyResourceOperationConfigured(fooResource)).isTrue();
@@ -84,7 +84,7 @@ public class OperationsRegistryTests {
         assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource, toManyRelationship)).isTrue();
         assertThat(sut.isAnyToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"))).isFalse();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_TO_MANY_RELATIONSHIP)).isTrue();
-        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIP)).isTrue();
+        assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.UPDATE_TO_MANY_RELATIONSHIPS)).isTrue();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, new RelationshipName("non-existing"), OperationType.READ_TO_MANY_RELATIONSHIP)).isFalse();
         assertThat(sut.isToManyRelationshipOperationConfigured(fooResource, toManyRelationship, OperationType.READ_RESOURCE_BY_ID)).isFalse();
 

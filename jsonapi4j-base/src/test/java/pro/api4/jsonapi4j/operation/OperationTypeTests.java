@@ -29,13 +29,13 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateResource_returns202() {
-        assertThat(UPDATE_RESOURCE.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateResource_returns204() {
+        assertThat(UPDATE_RESOURCE.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
-    public void getHttpStatus_deleteResource_returns202() {
-        assertThat(DELETE_RESOURCE.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_deleteResource_returns204() {
+        assertThat(DELETE_RESOURCE.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
@@ -44,8 +44,8 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateToOneRelationship_returns202() {
-        assertThat(UPDATE_TO_ONE_RELATIONSHIP.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateToOneRelationship_returns204() {
+        assertThat(UPDATE_TO_ONE_RELATIONSHIP.getHttpStatus()).isEqualTo(204);
     }
 
     @Test
@@ -54,8 +54,8 @@ public class OperationTypeTests {
     }
 
     @Test
-    public void getHttpStatus_updateToManyRelationship_returns202() {
-        assertThat(UPDATE_TO_MANY_RELATIONSHIP.getHttpStatus()).isEqualTo(202);
+    public void getHttpStatus_updateToManyRelationship_returns204() {
+        assertThat(UPDATE_TO_MANY_RELATIONSHIPS.getHttpStatus()).isEqualTo(204);
     }
 
     // --- Method.fromString ---
@@ -133,33 +133,46 @@ public class OperationTypeTests {
         List<OperationType> result = getToManyRelationshipOperationTypes();
 
         // then
-        assertThat(result).hasSize(2)
-                .containsExactly(READ_TO_MANY_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIP);
+        assertThat(result).hasSize(4)
+                .containsExactly(READ_TO_MANY_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS,
+                        ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP);
     }
 
     @Test
-    public void getAllRelationshipOperationTypes_returnsFourOps() {
+    public void getAllRelationshipOperationTypes_returnsSixOps() {
         // when
         List<OperationType> result = getAllRelationshipOperationTypes();
 
         // then
-        assertThat(result).hasSize(4)
+        assertThat(result).hasSize(6)
                 .containsExactly(
                         READ_TO_ONE_RELATIONSHIP,
                         UPDATE_TO_ONE_RELATIONSHIP,
                         READ_TO_MANY_RELATIONSHIP,
-                        UPDATE_TO_MANY_RELATIONSHIP
+                        UPDATE_TO_MANY_RELATIONSHIPS,
+                        ADD_TO_MANY_RELATIONSHIP,
+                        DELETE_TO_MANY_RELATIONSHIP
                 );
     }
 
     @Test
-    public void getExistingResourceAwareOperations_returnsSevenOps() {
+    public void getExistingResourceAwareOperations_returnsNineOps() {
         // when
         List<OperationType> result = getExistingResourceAwareOperations();
 
         // then
-        assertThat(result).hasSize(7)
+        assertThat(result).hasSize(9)
                 .doesNotContain(READ_MULTIPLE_RESOURCES, CREATE_RESOURCE);
+    }
+
+    @Test
+    public void getHttpStatus_addToManyRelationship_returns204() {
+        assertThat(ADD_TO_MANY_RELATIONSHIP.getHttpStatus()).isEqualTo(204);
+    }
+
+    @Test
+    public void getHttpStatus_deleteToManyRelationship_returns204() {
+        assertThat(DELETE_TO_MANY_RELATIONSHIP.getHttpStatus()).isEqualTo(204);
     }
 
 }

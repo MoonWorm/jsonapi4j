@@ -95,8 +95,12 @@ public final class OasOperationInfoUtil {
             return "Manages " + relationshipName.getName() + " to-one relationship details of the related " + resourceNameSingular(resourceType, customResourceNameSingle) + " resource. Use this operation if you need to create, update or delete relationship's linkage.";
         } else if (OperationType.READ_TO_MANY_RELATIONSHIP == operationType) {
             return "Retrieves " + relationshipName.getName() + " to-many relationship details of the related " + resourceNameSingular(resourceType, customResourceNameSingle) + " resource.";
-        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIP == operationType) {
+        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIPS == operationType) {
             return "Manages " + relationshipName.getName() + " to-many relationship details of the related " + resourceNameSingular(resourceType, customResourceNameSingle) + " resource. Use this operation if you need to create, update or delete relationship's linkage.";
+        } else if (OperationType.ADD_TO_MANY_RELATIONSHIP == operationType) {
+            return "Adds members to " + relationshipName.getName() + " to-many relationship of the related " + resourceNameSingular(resourceType, customResourceNameSingle) + " resource. Members that already exist will not be added again.";
+        } else if (OperationType.DELETE_TO_MANY_RELATIONSHIP == operationType) {
+            return "Removes members from " + relationshipName.getName() + " to-many relationship of the related " + resourceNameSingular(resourceType, customResourceNameSingle) + " resource.";
         } else {
             throw new IllegalArgumentException("Unsupported operation type: " + operationType);
         }
@@ -123,8 +127,12 @@ public final class OasOperationInfoUtil {
             return "update-" + resourceNameSingular(resourceType, customResourceNameSingle) + "-" + relationshipName.getName().toLowerCase() + "-relationship";
         } else if (OperationType.READ_TO_MANY_RELATIONSHIP == operationType) {
             return "get-" + resourceNameSingular(resourceType, customResourceNameSingle) + "-" + relationshipName.getName().toLowerCase() + "-relationship";
-        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIP == operationType) {
+        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIPS == operationType) {
             return "update-" + resourceNameSingular(resourceType, customResourceNameSingle) + "-" + relationshipName.getName().toLowerCase() + "-relationship";
+        } else if (OperationType.ADD_TO_MANY_RELATIONSHIP == operationType) {
+            return "add-" + resourceNameSingular(resourceType, customResourceNameSingle) + "-" + relationshipName.getName().toLowerCase() + "-relationship";
+        } else if (OperationType.DELETE_TO_MANY_RELATIONSHIP == operationType) {
+            return "delete-" + resourceNameSingular(resourceType, customResourceNameSingle) + "-" + relationshipName.getName().toLowerCase() + "-relationship";
         } else {
             throw new IllegalArgumentException("Unsupported operation type: " + operationType);
         }
@@ -151,8 +159,12 @@ public final class OasOperationInfoUtil {
             return "Relationship: " + relationshipName.getName() + " (create/update/delete)";
         } else if (OperationType.READ_TO_MANY_RELATIONSHIP == operationType) {
             return "Relationship: " + relationshipName.getName();
-        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIP == operationType) {
+        } else if (OperationType.UPDATE_TO_MANY_RELATIONSHIPS == operationType) {
             return "Relationship: " + relationshipName.getName() + " (create/update/delete)";
+        } else if (OperationType.ADD_TO_MANY_RELATIONSHIP == operationType) {
+            return "Relationship: " + relationshipName.getName() + " (add)";
+        } else if (OperationType.DELETE_TO_MANY_RELATIONSHIP == operationType) {
+            return "Relationship: " + relationshipName.getName() + " (delete)";
         } else {
             throw new IllegalArgumentException("Unsupported operation type: " + operationType);
         }
@@ -198,7 +210,11 @@ public final class OasOperationInfoUtil {
             return String.format("%s/%s/{id}/relationships/%s", effectiveRootPath, resourceType.getType(), relationshipName.getName());
         } else if (operationType == OperationType.READ_TO_MANY_RELATIONSHIP) {
             return String.format("%s/%s/{id}/relationships/%s", effectiveRootPath, resourceType.getType(), relationshipName.getName());
-        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIP) {
+        } else if (operationType == OperationType.UPDATE_TO_MANY_RELATIONSHIPS) {
+            return String.format("%s/%s/{id}/relationships/%s", effectiveRootPath, resourceType.getType(), relationshipName.getName());
+        } else if (operationType == OperationType.ADD_TO_MANY_RELATIONSHIP) {
+            return String.format("%s/%s/{id}/relationships/%s", effectiveRootPath, resourceType.getType(), relationshipName.getName());
+        } else if (operationType == OperationType.DELETE_TO_MANY_RELATIONSHIP) {
             return String.format("%s/%s/{id}/relationships/%s", effectiveRootPath, resourceType.getType(), relationshipName.getName());
         } else {
             throw new IllegalArgumentException("Unsupported operation type: " + operationType);
@@ -232,7 +248,8 @@ public final class OasOperationInfoUtil {
 
     public static ResponseType resolveOperationResponseType(OperationType operationType) {
         return switch (operationType) {
-            case UPDATE_RESOURCE, DELETE_RESOURCE, UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIP ->
+            case UPDATE_RESOURCE, DELETE_RESOURCE, UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS,
+                 ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP ->
                     ResponseType.VOID;
             case READ_RESOURCE_BY_ID, CREATE_RESOURCE, READ_TO_ONE_RELATIONSHIP -> ResponseType.SINGLE_DATA;
             case READ_MULTIPLE_RESOURCES, READ_TO_MANY_RELATIONSHIP -> ResponseType.MULTI_DATA;
@@ -266,7 +283,9 @@ public final class OasOperationInfoUtil {
             case CREATE_RESOURCE,
                  UPDATE_RESOURCE,
                  UPDATE_TO_ONE_RELATIONSHIP,
-                 UPDATE_TO_MANY_RELATIONSHIP:
+                 UPDATE_TO_MANY_RELATIONSHIPS,
+                 ADD_TO_MANY_RELATIONSHIP,
+                 DELETE_TO_MANY_RELATIONSHIP:
                 return Set.of(
                         SC_400_BAD_REQUEST,
                         SC_404_RESOURCE_NOT_FOUND,

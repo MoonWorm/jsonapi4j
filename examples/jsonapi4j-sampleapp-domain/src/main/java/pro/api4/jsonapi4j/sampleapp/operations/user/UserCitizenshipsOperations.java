@@ -127,6 +127,54 @@ public class UserCitizenshipsOperations implements
     }
 
     @Override
+    public void add(JsonApiRequest request) {
+        ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
+
+        List<String> countryIdsToAdd = ListUtils.emptyIfNull(payload.getData())
+                .stream()
+                .map(ResourceIdentifierObject::getId)
+                .map(String::toUpperCase)
+                .distinct()
+                .toList();
+
+        userDb.addUserCitizenships(request.getResourceId(), countryIdsToAdd);
+    }
+
+    @Override
+    public void delete(JsonApiRequest request) {
+        ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
+
+        List<String> countryIdsToRemove = ListUtils.emptyIfNull(payload.getData())
+                .stream()
+                .map(ResourceIdentifierObject::getId)
+                .map(String::toUpperCase)
+                .distinct()
+                .toList();
+
+        userDb.removeUserCitizenships(request.getResourceId(), countryIdsToRemove);
+    }
+
+    @Override
+    public void validateAddToMany(JsonApiRequest request) {
+        ToManyRelationshipOperations.super.validateAddToMany(request);
+        jsonApiValidator.validateToManyRelationshipDoc(
+                request.getToManyRelationshipDocPayload(),
+                countryValidator::validateCountryId,
+                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+        );
+    }
+
+    @Override
+    public void validateDeleteFromToMany(JsonApiRequest request) {
+        ToManyRelationshipOperations.super.validateDeleteFromToMany(request);
+        jsonApiValidator.validateToManyRelationshipDoc(
+                request.getToManyRelationshipDocPayload(),
+                countryValidator::validateCountryId,
+                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+        );
+    }
+
+    @Override
     public void validateUpdateToMany(JsonApiRequest request) {
         ToManyRelationshipOperations.super.validateUpdateToMany(request);
         jsonApiValidator.validateToManyRelationshipDoc(

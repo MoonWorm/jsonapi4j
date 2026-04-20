@@ -33,7 +33,7 @@ public abstract class UpdateUserCitizenshipsOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
@@ -48,7 +48,7 @@ public abstract class UpdateUserCitizenshipsOperationTests {
                         """)
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
                 .then()
-                .statusCode(202);
+                .statusCode(204);
     }
 
     @Test
