@@ -3,7 +3,7 @@ title: "Performance Tuning"
 permalink: /performance/
 ---
 
-JsonApi4j's performance is dominated by relationship resolution — the number of downstream calls made when building responses, especially for [compound documents](/compound-docs/). All optimizations below target reducing or parallelizing these calls.
+JsonApi4j's performance is dominated by [relationship resolution](/request-processing-pipeline/#6-fetch-relationship-data-parallel) — the number of downstream calls made when building responses, especially for [compound documents](/compound-docs/). All optimizations below target reducing or parallelizing these calls.
 
 ## Implement Bulk Resource Reads
 

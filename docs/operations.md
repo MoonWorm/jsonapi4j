@@ -34,7 +34,7 @@ All these operations are assembled into a single interface - `ResourceOperations
 Here is the list of To-One-Relationship-related operations supported by the framework:
 * `ReadToOneRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents JSON:API feature. Returns `200 OK`.
   * `readOne(JsonApiRequest relationshipRequest)` - reads a single internal object representing a JSON:API resource identifier for the given to-one resource relationship.
-  * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used when the `include` query parameter is specified for any resource-related read operation.
+  * `readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - optional. Resolves an internal relationship's object directly from the parent resource's internal object if it's possible. This avoids an external request. Used during the [relationship resolution stage](/request-processing-pipeline/#6-fetch-relationship-data-parallel) when the `include` query parameter is specified for any resource-related read operation.
 * `UpdateToOneRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
     * `void update(JsonApiRequest request)` - updates or deletes a single resource linkage representing a To-One JSON:API relationship in the backend.
 
@@ -45,7 +45,7 @@ The same as for resource - all these operations are also assembled into a single
 Here is the list of To-Many-Relationship-related operations supported by the framework:
 * `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features. Returns `200 OK`.
   * `CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
-  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects. Invoked during the [relationship resolution stage](/request-processing-pipeline/#6-fetch-relationship-data-parallel).
 * `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
   * `void update(JsonApiRequest request)` - performs a complete replacement of all resource linkages for a To-Many JSON:API relationship in the backend. Sending an empty array removes all members.
 * `AddToManyRelationshipOperation` - available under `POST /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.

@@ -7,13 +7,13 @@ main:
     url: /contact/
 
 docs:
-  - title: "Documentation"
+  - title: "Introduction"
     children:
       - title: "Introduction"
         url: /introduction/
-      - title: "Configuration"
-        url: /configuration/
-      - title: "Getting Started"
+  - title: "Getting Started"
+    children:
+      - title: "Quick Start Guide"
         url: /getting-started/
       - title: "Request/Response Examples"
         url: /request-response-examples/
@@ -25,6 +25,10 @@ docs:
         url: /domain/
       - title: "Operations"
         url: /operations/
+      - title: "Request Processing Pipeline"
+        url: /request-processing-pipeline/
+      - title: "Configuration"
+        url: /configuration/
   - title: "Plugins"
     children:
       - title: "Plugin System"

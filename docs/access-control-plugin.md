@@ -20,9 +20,9 @@ In order to enable JsonApi4j Access Control Plugin (AC) - add the next dependenc
 
 If you're using JsonApi4j in the scope of Spring Boot or Quarkus App - everything will be autoconfigured using default values.
 
-Access control is applied in two phases:
-* Inbound evaluation – before any data is fetched. Rules are evaluated against the incoming `JsonApiRequest`. If access is denied, downstream execution is skipped and the response is safely anonymized.
-* Outbound evaluation – after data has been fetched and the JSON:API document has been composed. Rules are evaluated per resource and relationship element, allowing fine-grained control over visibility of attributes, meta, links, and relationship identifiers.
+Access control is applied at two points of the [request processing pipeline](/request-processing-pipeline/):
+* Inbound evaluation – before any data is fetched (pre-retrieval stage). Rules are evaluated against the incoming `JsonApiRequest`. If access is denied, downstream execution is skipped and the response is safely anonymized.
+* Outbound evaluation – after data has been fetched and the JSON:API document has been composed (post-retrieval stage). Rules are evaluated per resource and relationship element, allowing fine-grained control over visibility of attributes, meta, links, and relationship identifiers.
 
 The plugin derives its rules from `@AccessControl` annotations placed on operations, resources, relationships, attributes, or individual fields.
 During execution, it traverses JSON:API structures using explicit visitor points and applies access decisions consistently across resource objects and resource identifier objects.

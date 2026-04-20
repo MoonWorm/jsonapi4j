@@ -5,7 +5,7 @@ permalink: /compound-docs-plugin/
 
 ### Overview
 
-The [Compound Documents](https://jsonapi.org/format/#document-compound-documents) Plugin integrates the compound documents resolver into the JsonApi4j request processing pipeline, automatically enriching responses with the `included` section when the `include` query parameter is present.
+The [Compound Documents](https://jsonapi.org/format/#document-compound-documents) Plugin integrates the compound documents resolver into the JsonApi4j [request processing pipeline](/request-processing-pipeline/), automatically enriching responses with the `included` section when the `include` query parameter is present.
 
 There are two distinct components involved in compound document support, and it's important to understand the difference:
 
