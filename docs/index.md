@@ -105,7 +105,7 @@ public class UserResource implements Resource<UserDbEntity> {
 public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
         return PaginationAwareResponse.limitOffsetAware(
                 userDb.readAll(request.getLimit(), request.getOffset()),
                 userDb.total()

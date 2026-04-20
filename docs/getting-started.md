@@ -132,9 +132,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
         UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
-        return CursorPageableResponse.fromItemsAndCursor(
+        return PaginationAwareResponse.cursorAware(
                 pagedResult.getEntities(),
                 pagedResult.getCursor()
         );
@@ -346,8 +346,8 @@ public class UserCitizenshipsOperations implements ToManyRelationshipOperations<
 
 
     @Override
-    public CursorPageableResponse<DownstreamCountry> readMany(JsonApiRequest request) {
-        return CursorPageableResponse.fromItemsPageable(
+    public PaginationAwareResponse<DownstreamCountry> readMany(JsonApiRequest request) {
+        return PaginationAwareResponse.inMemoryCursorAware(
                 client.readCountriesByIds(userDb.getUserCitizenships(request.getResourceId())),
                 request.getCursor(),
                 2 // set limit to 2
@@ -422,8 +422,8 @@ public class CountryOperations implements ResourceOperations<DownstreamCountry> 
     }
 
     @Override
-    public CursorPageableResponse<UserDbEntity> readPage(JsonApiRequest request) {
-            return CursorPageableResponse.byItems(client.readCountriesByIds(request.getFilters().get(ID_FILTER_NAME)));
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
+            return PaginationAwareResponse.fromItemsNotPageable(client.readCountriesByIds(request.getFilters().get(ID_FILTER_NAME)));
     }
 
 }

@@ -19,7 +19,7 @@ Here is the list of resource-related operations supported by the framework:
 * `ReadResourceByIdOperation<RESOURCE_DTO>` - available under `GET /{resource-type}/{resource-id}`, supports compound documents JSON:API feature. Returns `200 OK`.
   * `RESOURCE_DTO readById(JsonApiRequest request)` - reads a single internal object representing a JSON:API resource of the specified type.
 * `ReadMultipleResourcesOperation<RESOURCE_DTO>` - available under `GET /{resource-type}`, supports compound documents, filtering, and ordering JSON:API features. Returns `200 OK`.
-  * `CursorPageableResponse<RESOURCE_DTO> readPage(JsonApiRequest request)` - reads multiple internal objects representing JSON:API resources of the specified type.
+  * `PaginationAwareResponse<RESOURCE_DTO> readPage(JsonApiRequest request)` - reads multiple internal objects representing JSON:API resources of the specified type.
 * `CreateResourceOperation<RESOURCE_DTO>` - available under `POST /{resource-type}`, accepts valid JSON:API Document as a payload. Returns `201 Created`.
   * `RESOURCE_DTO create(JsonApiRequest request)` - creates a single object in the backend system and returns its internal representation.
 * `UpdateResourceOperation` - available under `PATCH /{resource-type}/{resource-id}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
@@ -44,8 +44,8 @@ The same as for resource - all these operations are also assembled into a single
 
 Here is the list of To-Many-Relationship-related operations supported by the framework:
 * `ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>` - available under `GET /{resource-type}/{resource-id}/relationships/{relationship-name}`, supports compound documents, filtering, and ordering JSON:API features. Returns `200 OK`.
-  * `CursorPageableResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
-  * `CursorPageableResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects. Invoked during the [relationship resolution stage](/request-processing-pipeline/#6-fetch-relationship-data-parallel).
+  * `PaginationAwareResponse<RELATIONSHIP_DTO> readMany(JsonApiRequest relationshipRequest)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects.
+  * `PaginationAwareResponse<RELATIONSHIP_DTO> readForResource(JsonApiRequest relationshipRequest, RESOURCE_DTO resourceDto)` - similar to `ReadToOneRelationshipOperation` but returns a pageable collection of objects. Invoked during the [relationship resolution stage](/request-processing-pipeline/#6-fetch-relationship-data-parallel).
 * `UpdateToManyRelationshipOperation` - available under `PATCH /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
   * `void update(JsonApiRequest request)` - performs a complete replacement of all resource linkages for a To-Many JSON:API relationship in the backend. Sending an empty array removes all members.
 * `AddToManyRelationshipOperation` - available under `POST /{resource-type}/{resource-id}/relationships/{relationship-name}`, accepts valid JSON:API Document as a payload. Returns `204 No Content`.
