@@ -43,6 +43,8 @@ docs:
         url: /openapi-plugin/
       - title: "Compound Documents Plugin"
         url: /compound-docs-plugin/
+      - title: "Writing a Custom Plugin"
+        url: /writing-a-custom-plugin/
   - title: "Advanced"
     children:
       - title: "Compound Documents"
