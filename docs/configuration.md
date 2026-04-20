@@ -156,7 +156,23 @@ public class CustomConfig {
 }
 ```
 
-**Servlet** — pass custom objects directly when building the `JsonApi4j` instance programmatically. See the [servlet sample app](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) for a complete example.
+**Servlet** — set custom instances as `ServletContext` attributes before the framework initializes. JsonApi4j checks the servlet context for known attributes (e.g. `JsonApi4j`, `PrincipalResolver`, `ErrorHandlerFactoriesRegistry`, `ExecutorService`, `ObjectMapper`) and uses them if present; otherwise it falls back to defaults.
+
+```java
+// Build and register a custom JsonApi4j instance
+JsonApi4j jsonApi4j = JsonApi4j.builder()
+        .domainRegistry(domainRegistry)
+        .operationsRegistry(operationsRegistry)
+        .plugins(plugins)
+        .executor(Executors.newVirtualThreadPerTaskExecutor())
+        .build();
+servletContext.setAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME, jsonApi4j);
+
+// Override PrincipalResolver
+servletContext.setAttribute(JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME, myCustomPrincipalResolver);
+```
+
+See the [servlet sample app](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) for a complete example.
 
 For a complete configuration example with all plugins enabled, see the sample application configs:
 - [Spring Boot application.yaml](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml)
