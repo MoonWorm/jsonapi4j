@@ -30,7 +30,7 @@ The `resource` attribute references the `@JsonApiResource`-annotated class this 
 | `PATCH` | `/{type}/{id}` | `update(request)` | `void` / `204 No Content` | `UpdateResourceOperation` |
 | `DELETE` | `/{type}/{id}` | `delete(request)` | `void` / `204 No Content` | `DeleteResourceOperation` |
 
-`readById` and `readPage` support compound documents (`include` query parameter). `readPage` also supports filtering and ordering.
+`readById` and `readPage` support compound documents (`include` query parameter). `readPage` also supports [pagination](/pagination/), [filtering and sorting](/filtering-and-sorting/).
 
 All five operations are assembled into a single interface — `ResourceOperations<RESOURCE_DTO>`. You only need to override the methods you actually need; unimplemented operations throw `OperationNotFoundException` (404) by default.
 

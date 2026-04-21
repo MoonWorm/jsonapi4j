@@ -5,7 +5,7 @@ permalink: /sparse-fieldsets-plugin/
 
 The Sparse Fieldsets plugin implements [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets), allowing clients to request only the fields they need using the `fields[TYPE]=field1,field2` query parameter. This reduces payload size and improves response efficiency.
 
-The plugin works automatically — no code changes are needed. Once enabled, the framework filters attributes on the server before serialization.
+The plugin works automatically — no code changes are needed. Once enabled, the framework filters attributes on the server before serialization. This applies to both primary resources and included resources resolved via [Compound Documents](/compound-docs/) — each resource type can have its own set of requested fields.
 
 To enable the plugin, add the following dependency:
 
@@ -19,9 +19,40 @@ To enable the plugin, add the following dependency:
 
 ### Usage
 
-Request `users` with only `email` and `lastName` fields, and related `countries` with only `name`:
+Use `fields[TYPE]=field1,field2` to request only specific fields for a given resource type. When a response contains multiple resource types — for example, primary `users` and included `countries` via a relationship — you can control fields independently for each type:
 
 `GET /users?include=citizenships&fields[users]=email,lastName&fields[countries]=name`
+
+This returns `users` with only `email` and `lastName` in their attributes, and included `countries` with only `name` — all other fields are excluded on the server:
+
+```json
+{
+  "data": [
+    {
+      "id": "1",
+      "type": "users",
+      "attributes": {
+        "email": "john@doe.com",
+        "lastName": "Doe"
+      },
+      "relationships": {
+        "citizenships": {
+          "data": [{ "id": "NO", "type": "countries" }]
+        }
+      }
+    }
+  ],
+  "included": [
+    {
+      "id": "NO",
+      "type": "countries",
+      "attributes": {
+        "name": "Norway"
+      }
+    }
+  ]
+}
+```
 
 ### Edge Cases
 

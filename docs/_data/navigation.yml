@@ -25,6 +25,10 @@ docs:
         url: /domain/
       - title: "Operations"
         url: /operations/
+      - title: "Pagination"
+        url: /pagination/
+      - title: "Filtering and Sorting"
+        url: /filtering-and-sorting/
       - title: "Request Processing Pipeline"
         url: /request-processing-pipeline/
       - title: "Error Handling"

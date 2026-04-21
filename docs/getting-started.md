@@ -145,6 +145,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
 * `@JsonApiResourceOperation(resource = UserResource.class)` - identify which resource this operation belongs to (`users`).
 
+`PaginationAwareResponse.cursorAware()` wraps the result with cursor-based pagination metadata. The framework uses this to generate pagination links in the response. For more on pagination strategies (cursor vs limit-offset), see the [Pagination](/pagination/) page.
+
 The `UserDb` class doesn't depend on any **JsonApi4j**-specific interfaces or components — it simply represents your data source.
 In a real application, this could be an ORM entity manager, a JOOQ repository, a REST client, or any other persistence mechanism.
 For the sake of this demo, here's a simple in-memory implementation to support the operation above:

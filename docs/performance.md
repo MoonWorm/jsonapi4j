@@ -7,7 +7,7 @@ JsonApi4j's performance is dominated by [relationship resolution](/request-proce
 
 ## Implement Bulk Resource Reads
 
-When compound documents are enabled, the resolver fetches included resources by their IDs. If your `ReadMultipleResourcesOperation` supports the `filter[id]` parameter, the resolver batches these into a single request:
+When compound documents are enabled, the resolver fetches included resources by their IDs. If your `ReadMultipleResourcesOperation` supports the `filter[id]` parameter (see [Filtering and Sorting](/filtering-and-sorting/#the-filterid-convention)), the resolver batches these into a single request:
 
 ```
 GET /countries?filter[id]=US,DE,FR
