@@ -16,7 +16,7 @@ In short: the **plugin** is for JsonApi4j apps, the **resolver** is for anything
 
 ### Getting Started
 
-Add the plugin dependency:
+To enable the plugin, add the following dependency:
 
 ```xml
 <dependency>

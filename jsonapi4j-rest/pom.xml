@@ -56,11 +56,6 @@
             <artifactId>jsonapi4j-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>pro.api4</groupId>
-            <artifactId>jsonapi4j-compound-docs-resolver</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <!-- JSR-380 validation -->
         <dependency>

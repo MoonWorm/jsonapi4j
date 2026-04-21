@@ -7,7 +7,7 @@ The OpenAPI Specification Plugin (OAS) builds on top of the JsonApi4j plugin sys
 It observes registered resources, relationships, and operations and translates them into an OpenAPI-compliant model.
 Because the specification is derived directly from the same metadata used at runtime, it accurately reflects the actual behavior of your JSON:API endpoints without requiring manual maintenance.
 
-In order to enable JsonApi4j OpenAPI Specification (OAS) plugin - add the next dependency:
+To enable the plugin, add the following dependency:
 
 ```xml
 <dependency>
@@ -17,21 +17,53 @@ In order to enable JsonApi4j OpenAPI Specification (OAS) plugin - add the next d
 </dependency>
 ```
 
-If you're using JsonApi4j in the scope of Spring Boot or Quarkus App - everything will be autoconfigured using default values.
+If you're using Spring Boot or Quarkus, the plugin is auto-configured with default values.
 
-**JsonApi4j** can generate an instance of the `io.swagger.v3.oas.models.OpenAPI` model and expose it through a dedicated endpoint.
+### Accessing the Specification
 
-By default, you can access both the JSON and YAML versions of the generated specification via the [/jsonapi/oas](http://localhost:8080/jsonapi/oas) endpoint.
-It supports an optional `format` query parameter (`json` or `yaml`) - defaulting to `json` if not provided.
+**JsonApi4j** generates an `io.swagger.v3.oas.models.OpenAPI` model and exposes it through a dedicated endpoint.
 
-Out of the box, **JsonApi4j** generates all schemas and operations automatically.
+By default, the specification is available at `/jsonapi/oas`. It supports an optional `format` query parameter (`json` or `yaml`) — defaulting to `json` if not provided.
 
-However, if you want to enrich the document with additional metadata (e.g., `info`, `components.securitySchemes`, custom HTTP headers, etc.), you can do so via your `application.yaml`/`application.properties` configuration files. Please refer [application.properties](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties#L12) or [application.yaml](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml#L21) from Spring Boot / Quarkus Sample apps as a reference for available OAS settings.
+![Swagger UI](/assets/images/swagger-ui-screenshot.png)
 
-There are more tunings available by placing the next annotations:
-* `@OasResourceInfo` annotation on top of JSON:API resource declaration
-* `@OasRelationshipInfo` annotation on top of JSON:API To-One or To-Many Relationship declaration
-* `@OasOperationInfo` annotation on top of operation class or any of its methods that represents some particular operation
+Out of the box, **JsonApi4j** generates all schemas and operations automatically. JSON:API parameters, request/response schemas, and error models are all included.
+
+### Enriching the Specification
+
+To add metadata beyond what the framework generates automatically (e.g., `info`, `securitySchemes`, custom headers), you have two options:
+
+**Via configuration properties** — set OpenAPI metadata in `application.yaml` / `application.properties`. See the [Spring Boot sample config](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml#L21) or [Quarkus sample config](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties#L12) for reference.
+
+**Via annotations** — place these on your domain and operation classes for fine-grained control:
+
+| Annotation | Placement | Purpose |
+|-----------|-----------|---------|
+| `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
+| `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Customizes the relationship's OpenAPI schema |
+| `@OasOperationInfo` | On operation class or individual operation methods | Customizes OpenAPI operation metadata (summary, description, tags) |
+
+Example:
+
+```java
+@OasResourceInfo(description = "Represents a registered user in the system")
+@JsonApiResource(resourceType = "users")
+public class UserResource implements Resource<UserDbEntity> {
+    // ...
+}
+```
+
+```java
+@JsonApiResourceOperation(resource = UserResource.class)
+public class UserOperations implements ResourceOperations<UserDbEntity> {
+
+    @OasOperationInfo(summary = "List all users", description = "Returns a paginated list of users")
+    @Override
+    public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
+        // ...
+    }
+}
+```
 
 ### Available Properties
 

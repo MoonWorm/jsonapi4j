@@ -23,8 +23,8 @@ The following features and design principles will help you determine whether **J
 Modern systems often consist of multiple services that need to expose and consume consistent data structures.
 **JsonApi4j** helps achieve this by:
 
-- Implements the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format - eliminating the need for custom, company-wide API guidelines.
-- Generates [OpenAPI specifications](https://swagger.io/specification/) out of the box, enabling clear and transparent API documentation across the organization.
+- Implementing the [JSON:API specification](https://jsonapi.org), providing a predictable, efficient, and scalable data exchange format - eliminating the need for custom, company-wide API guidelines.
+- Generating [OpenAPI specifications](https://swagger.io/specification/) out of the box, enabling clear and transparent API documentation across the organization.
 
 ### Engineering Motivation
 
@@ -35,9 +35,9 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - **JSON:API-compliant request and response processing.** Includes automatic error handling fully aligned with the JSON:API specification.
 
-- **Pluggable architecture.** The [Plugin System](/plugins/) provides an extension mechanism for **JsonApi4j** that allows developers to hook into the [request processing pipeline](/request-processing-pipeline/) and enrich JSON:API behavior without modifying core logic. Out from the box provides the next plugins: [Access Control](/access-control-plugin/), [OpenAPI](/openapi-plugin/), [Sparse Fieldsets](/sparse-fieldsets-plugin/), and [Compound Documents](/compound-docs-plugin/).
+- **Pluggable architecture.** The [Plugin System](/plugins/) provides an extension mechanism for **JsonApi4j** that allows developers to hook into the [request processing pipeline](/request-processing-pipeline/) and enrich JSON:API behavior without modifying core logic. Out of the box, it provides the following plugins: [Access Control](/access-control-plugin/), [OpenAPI](/openapi-plugin/), [Sparse Fieldsets](/sparse-fieldsets-plugin/), and [Compound Documents](/compound-docs-plugin/). You can also [build your own](/custom-plugin/).
 
-- **Flexible authentication and authorization model.** Supports fine-grained access control, including per-field data anonymization based on access tier, user scopes, and resource ownership. Implemented as a separate plugin.
+- **Flexible authentication and authorization model.** Supports fine-grained access control — including per-field data anonymization based on access tier, user scopes, and resource ownership — via the [Access Control plugin](/access-control-plugin/).
 
 - **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently — from [relationship resolution](/request-processing-pipeline/#6-fetch-relationship-data-parallel) to compound document processing — and supports advanced concurrency optimizations, including virtual threads.
 
@@ -50,4 +50,8 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 ## Sample Apps
 
-Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory — check them out for practical guidance on using the framework.
+Example applications are available in the [examples](https://github.com/MoonWorm/jsonapi4j/tree/main/examples) directory:
+
+- **[Spring Boot](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-springboot-sampleapp)** — Users, Countries, and Currencies domain with relationships, pagination, and compound documents
+- **[Quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-quarkus-sampleapp)** — Same domain, demonstrating CDI-based integration
+- **[Servlet API](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp)** — Plain servlet integration with a Cookbook domain (recipes and ingredients)

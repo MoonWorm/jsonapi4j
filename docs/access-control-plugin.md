@@ -8,7 +8,7 @@ permalink: /access-control-plugin/
 The Access Control Plugin is a plugin that enforces security rules during JSON:API request processing without altering the core execution flow.
 It evaluates access requirements at well-defined stages of the request lifecycle and conditionally allows, anonymizes, or short-circuits parts of the request or response based on the resolved principal context.
 
-In order to enable JsonApi4j Access Control Plugin (AC) - add the next dependency:
+To enable the Access Control plugin, add the following dependency:
 
 ```xml
 <dependency>
@@ -18,7 +18,7 @@ In order to enable JsonApi4j Access Control Plugin (AC) - add the next dependenc
 </dependency>
 ```
 
-If you're using JsonApi4j in the scope of Spring Boot or Quarkus App - everything will be autoconfigured using default values.
+If you're using Spring Boot or Quarkus, the plugin is auto-configured with default values.
 
 Access control is applied at two points of the [request processing pipeline](/request-processing-pipeline/):
 * Inbound evaluation – before any data is fetched (pre-retrieval stage). Rules are evaluated against the incoming `JsonApiRequest`. If access is denied, downstream execution is skipped and the response is safely anonymized.
@@ -91,12 +91,32 @@ The resolved principal context is then used by the framework during both **inbou
 
 ### Setting Access Requirements
 
-How and where should you declare your access control requirements?
+There is one annotation that defines all access control requirements in one place — `@AccessControl`.
+It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `tier`, and `ownership`.
 
-There is one annotation that defines all access control requirement in one place - `@AccessControl`.
-It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `tier`, and `ownership`. Just populate you requirements there.
+#### Where to Place `@AccessControl`
 
-Please review the list of examples down below to getter a better grasp how and where to declare your access requirements.
+| Target | Placement | Effect when requirements are not met |
+|--------|-----------|--------------------------------------|
+| **Operation** (inbound) | On the operation method (e.g. `create()`, `readById()`) | Data fetching is skipped; response `data` is anonymized |
+| **Entire Resource Object** | On the class implementing `Resource<T>` | The whole resource object is anonymized |
+| **Resource attributes** | On `resolveAttributes()` method or on the attributes class | Attributes section is anonymized |
+| **Resource links** | On `resolveResourceLinks()` method | Links section is anonymized |
+| **Resource meta** | On `resolveResourceMeta()` method | Meta section is anonymized |
+| **Individual attribute field** | On the field in the attributes class | Only the affected field is anonymized |
+| **Entire Relationship** | On the class implementing `ToOneRelationship<T>` or `ToManyRelationship<T>` | The entire resource identifier is anonymized |
+| **Relationship meta** | On `resolveResourceIdentifierMeta()` method | Meta section of the resource identifier is anonymized |
+
+#### Ownership: Inbound vs. Outbound
+
+The `ownership` setting works differently depending on the evaluation stage:
+
+| Stage | Property | How it works |
+|-------|----------|--------------|
+| **Inbound** (pre-retrieval) | `ownerIdExtractor` | A class that extracts the owner ID from the incoming request (e.g. from the URL path) |
+| **Outbound** (post-retrieval) | `ownerIdFieldPath` | A field path pointing to the owner ID in the JSON:API response (e.g. `"id"`) |
+
+Review the examples below to get a better grasp of how and where to declare your access requirements.
 
 ### Examples
 
@@ -205,8 +225,8 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<Downstre
 ```
 
 #### Notes
-1. If you're using `@AccessControl` annotation please note that `ownership` setting is different for **inbound** and **outbound** stages. If you want to configure these rules for the **inbound** stage - please use `AccessControlOwnership#ownerIdExtractor` property that allows you to tell the framework how to extract the owner id from the incoming request. For the **outbound** stage - use `AccessControlOwnership#ownerIdFieldPath` to point the framework to the field in the response that holds the owner id value.
-2. If you're working with `jsonapi4j-core` module you can place `@AccessControl` annotation on either a custom `ResourceObject`, or an `Attributes` object and their fields for the **outbound** evaluations. For the **inbound** evaluations the annotation can be also placed on the class-level of the `Request` class.
+
+If you're working with the `jsonapi4j-core` module directly (without the REST layer), you can place `@AccessControl` on a custom `ResourceObject`, `Attributes` object, or their fields for outbound evaluations. For inbound evaluations, the annotation can also be placed at the class level of the `Request` class.
 
 ### Available Properties
 

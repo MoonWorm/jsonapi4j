@@ -33,8 +33,7 @@ jsonapi4j-core
 jsonapi4j-compound-docs-resolver
     │
 jsonapi4j-rest
-    ├── depends on → jsonapi4j-core
-    └── depends on → jsonapi4j-compound-docs-resolver
+    └── depends on → jsonapi4j-core
         │
         ├── jsonapi4j-rest-springboot
         │    └── depends on → jsonapi4j-rest

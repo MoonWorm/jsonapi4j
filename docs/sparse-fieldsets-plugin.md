@@ -3,7 +3,11 @@ title: "Sparse Fieldsets Plugin"
 permalink: /sparse-fieldsets-plugin/
 ---
 
-In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next dependency:
+The Sparse Fieldsets plugin implements [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets), allowing clients to request only the fields they need using the `fields[TYPE]=field1,field2` query parameter. This reduces payload size and improves response efficiency.
+
+The plugin works automatically — no code changes are needed. Once enabled, the framework filters attributes on the server before serialization.
+
+To enable the plugin, add the following dependency:
 
 ```xml
 <dependency>
@@ -12,26 +16,28 @@ In order to enable JsonApi4j Sparse Fieldsets (SF) plugin - add the next depende
   <version>${jsonapi4j.version}</version>
 </dependency>
 ```
-Please refer [JSON:API Sparse Fieldsets](https://jsonapi.org/format/#fetching-sparse-fieldsets) for more details.
 
-Then, you can use `fields[TYPE]=field1,field2` query parameter to fetch only requested fields from the attributes object.
+### Usage
 
-Even though the functionality looks straightforward at first glance, there are a number of specific edge cases to consider:
-* If a response consists of resources of different type - for example, if you requested `users` and some other related resources of other types via Compound Docs - you can control which fields to request for each resource type by adding multiple query parameters like that.
-* If none fields requested - all fields are returned by default for a particular resource type.
-* If empty fields is explicitly requested, e.g. `fields[users]=` - no fields are returned for this resource type.
-* If empty/non-existing type or field is requested - it's just ignored.
-* If `fields[TYPE]=a.b.c` field is requested, and `a.b` segment exists, but `a.b.c` doesn't exist - entire path will be ignored.
-* If all requested fields don't exist - this scenario is treated as empty fields (`fields[users]=`) by default - no fields are returned for this resource type. This behavior can be changed by using `jsonapi4j.sf.requestedFieldsDontExistMode` application property.
-* Sparse fieldsets can only be applied to object types. For example, if `users` has a field `ageYears` of type `java.lang.Integer`, it can be excluded (if not explicitly requested) by setting its value to `null`. However, primitive types cannot be excluded if other fields at the same level are requested. Therefore, if you want full support for sparse fieldsets across all fields, it is recommended to use object types instead of primitives.
+Request `users` with only `email` and `lastName` fields, and related `countries` with only `name`:
 
-**Example**:
-In order to request `users` with `email` and `lastName` fields and related `countries` resources with a `name` field only (via `citizenships` relationship):
-[/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name](http://localhost:8080/jsonapi/users?include=citizenships&fields[users]=email,lastName&fields[countries]=name)
+`GET /users?include=citizenships&fields[users]=email,lastName&fields[countries]=name`
+
+### Edge Cases
+
+| Scenario | Behavior |
+|----------|----------|
+| No `fields[TYPE]` parameter | All fields are returned for that resource type |
+| Empty value: `fields[users]=` | No fields are returned for that resource type |
+| Non-existing type or field | Ignored |
+| Nested path where parent exists but leaf doesn't (e.g. `a.b.c` where `a.b` exists but `c` doesn't) | Entire path is ignored |
+| All requested fields don't exist | Treated as empty fields (no fields returned) by default. Configurable via `requestedFieldsDontExistMode`. |
+| Primitive-typed fields (e.g. `int`) | Cannot be excluded if other fields at the same level are requested, because primitives can't be set to `null`. Use object types (e.g. `Integer`) for full sparse fieldsets support. |
+| Multi-type responses (e.g. users + included countries) | Use separate `fields[TYPE]` parameters per resource type |
 
 ### Available Properties
 
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
-| `jsonapi4j.sf.enabled`                      | `true`          | Enables/Disables Sparse Fieldsets plugin                                                                                |
-| `jsonapi4j.sf.requestedFieldsDontExistMode` | `SPARSE_ALL_FIELDS`  | Defines the behavior when all requested fields don't exist. Available options: `SPARSE_ALL_FIELDS`, `RETURN_ALL_FIELDS` |
+| `jsonapi4j.sf.enabled`                      | `true`          | Enables/disables Sparse Fieldsets plugin                                                                                |
+| `jsonapi4j.sf.requestedFieldsDontExistMode` | `SPARSE_ALL_FIELDS`  | Behavior when all requested fields don't exist. Options: `SPARSE_ALL_FIELDS` (return no fields), `RETURN_ALL_FIELDS` (return all fields) |
