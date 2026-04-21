@@ -42,7 +42,13 @@ public class PaginationAwareResponse<DATA_SOURCE_DTO> {
     }
 
     /**
-     * Creates an empty response with an empty {@link #items} and <code>null</code> pagination context
+     * Creates an empty response with an empty {@link #items} list and <code>null</code> pagination context.
+     * <p>
+     * This represents "zero results" — the query executed successfully but returned no items.
+     * The processor pipeline runs all phases normally (including relationship plugin visitors)
+     * with an empty data array. This is distinct from an operation returning <code>null</code>,
+     * which signals "no data available" and causes the pipeline to short-circuit before
+     * relationship resolution.
      *
      * @param <T> type of downstream dto
      * @return an instance of {@link PaginationAwareResponse}

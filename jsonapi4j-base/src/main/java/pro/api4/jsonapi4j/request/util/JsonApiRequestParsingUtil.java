@@ -64,8 +64,8 @@ public final class JsonApiRequestParsingUtil {
                 .toList();
         if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
             throw new ConstraintViolationException(
-                    DefaultErrorCodes.VALUE_TOO_HIGH,
-                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
+                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
+                    String.format("Include value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
                     IncludeAwareRequest.INCLUDE_PARAM
             );
         }
@@ -78,8 +78,8 @@ public final class JsonApiRequestParsingUtil {
                 .toList();
         if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
             throw new ConstraintViolationException(
-                    DefaultErrorCodes.VALUE_TOO_HIGH,
-                    String.format("Filter value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
+                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
+                    String.format("Include value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
                     IncludeAwareRequest.INCLUDE_PARAM
             );
         }
@@ -95,7 +95,7 @@ public final class JsonApiRequestParsingUtil {
                 ));
         if (sortBy.size() > SortAwareRequest.NUMBER_OF_SORT_BY_GLOBAL_CAP) {
             throw new ConstraintViolationException(
-                    DefaultErrorCodes.VALUE_TOO_HIGH,
+                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
                     String.format("Sort value shouldn't have more than %d elements", NUMBER_OF_SORT_BY_GLOBAL_CAP),
                     SortAwareRequest.SORT_PARAM
             );
