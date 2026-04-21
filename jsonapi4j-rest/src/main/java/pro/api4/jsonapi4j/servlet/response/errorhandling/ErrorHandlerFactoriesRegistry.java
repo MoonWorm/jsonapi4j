@@ -30,7 +30,11 @@ public interface ErrorHandlerFactoriesRegistry {
             return getErrorResponseMappers().keySet()
                     .stream()
                     .filter(clazz -> clazz.isAssignableFrom(exceptionClass))
-                    .findFirst()
+                    .min((a, b) -> {
+                        if (a.isAssignableFrom(b)) return 1;
+                        if (b.isAssignableFrom(a)) return -1;
+                        return 0;
+                    })
                     .map(clazz -> (ErrorsDocSupplier<T>) getErrorResponseMappers().get(clazz))
                     .orElse((ErrorsDocSupplier<T>) INTERNAL_SERVER_ERROR_MAPPER);
         }

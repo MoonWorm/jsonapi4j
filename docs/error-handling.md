@@ -14,7 +14,7 @@ When an exception is thrown during request processing:
 3. The supplier converts the exception into an `ErrorsDoc` (containing one or more `ErrorObject`s) and an HTTP status code
 4. The servlet writes the JSON:API error response
 
-If no handler matches the exact exception class, the registry walks up the class hierarchy until it finds a registered parent class. If nothing matches, a generic 500 Internal Server Error is returned.
+If no handler matches the exact exception class, the registry searches all registered exception classes and selects the **most specific** ancestor (closest parent in the class hierarchy). If nothing matches, a generic 500 Internal Server Error is returned.
 
 ```
 Exception thrown
@@ -24,7 +24,7 @@ ErrorHandlerFactoriesRegistry.getErrorResponseMapper(exception)
     │
     ├── Exact class match found? → Use that handler
     │
-    ├── Parent class match found? → Use that handler
+    ├── Ancestor match found? → Use the most specific ancestor handler
     │
     └── No match → 500 Internal Server Error
     │
@@ -262,7 +262,7 @@ public class MyErrorHandlerFactory implements ErrorHandlerFactory {
   </div>
 </div>
 
-Custom factories are registered **after** the built-in ones. If you register a handler for an exception class that already has a built-in handler, your handler replaces it.
+Custom factories are registered **after** the built-in ones. If you register a handler for an exception class that already has a built-in handler, your handler replaces it. When no exact match exists, the registry selects the most specific registered ancestor — so a custom handler for a parent exception class won't shadow a more specific built-in handler (or vice versa).
 
 ## Throwing Errors from Operations
 
