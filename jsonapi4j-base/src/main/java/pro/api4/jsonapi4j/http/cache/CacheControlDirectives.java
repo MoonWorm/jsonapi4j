@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.http.cache;
 
 import lombok.*;
 
+import java.time.Duration;
+
 /**
  * Immutable value object representing parsed Cache-Control HTTP header directives.
  * Used to drive caching decisions for compound document resource fetching.
@@ -33,6 +35,18 @@ public class CacheControlDirectives {
      */
     public static CacheControlDirectives ofMaxAge(long maxAgeSeconds) {
         return new CacheControlDirectives(maxAgeSeconds, null, false, false, false);
+    }
+
+    /**
+     * Creates directives with only a {@code max-age} value set, expressed as a {@link Duration}.
+     *
+     * <p>Example: {@code CacheControlDirectives.ofMaxAge(Duration.ofDays(1).plusHours(2))}
+     *
+     * @param duration the max-age duration
+     * @return directives with only max-age set
+     */
+    public static CacheControlDirectives ofMaxAge(Duration duration) {
+        return ofMaxAge(duration.toSeconds());
     }
 
     private final Long maxAge;
