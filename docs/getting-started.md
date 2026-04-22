@@ -446,3 +446,5 @@ jsonapi4j:
 ```
 
 Now we can finally start exploring some more exciting HTTP requests. Check out the [Request/Response Examples](/request-response-examples/) for hands-on examples!
+
+Ready to add create, update, and delete? Continue to [Write Operations](/write-operations/).

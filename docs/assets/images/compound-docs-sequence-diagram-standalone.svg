@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 620" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="525" y="25" text-anchor="middle" fill="#1a1a2e" font-size="11" font-weight="400">Execution sequence of</text>
+  <text x="525" y="42" text-anchor="middle" fill="#1a1a2e" font-size="12" font-weight="700">GET /users?page[cursor]=xxx&amp;include=placeOfBirth.currencies,relatives</text>
+
+  <!-- ==================== PARTICIPANTS ==================== -->
+  <!-- Client (with human icon) -->
+  <g transform="translate(30, 58)">
+    <!-- Human stick figure -->
+    <circle cx="35" cy="-20" r="8" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="-12" x2="35" y2="0" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="22" y1="-6" x2="48" y2="-6" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="0" x2="24" y2="14" stroke="#1a1a2e" stroke-width="1.5"/>
+    <line x1="35" y1="0" x2="46" y2="14" stroke="#1a1a2e" stroke-width="1.5"/>
+    <!-- Label -->
+    <text x="35" y="28" text-anchor="middle" fill="#1a1a2e" font-size="10" font-weight="600">Client</text>
+  </g>
+
+  <!-- Same process bracket around API Gateway + CompoundDocsFilter -->
+  <rect x="145" y="44" width="420" height="54" rx="8" fill="none" stroke="#999" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="355" y="104" text-anchor="middle" fill="#999" font-size="8" font-style="italic">same process</text>
+
+  <!-- API Gateway -->
+  <g transform="translate(160, 58)">
+    <rect x="0" y="0" width="110" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="55" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">API Gateway</text>
+  </g>
+
+  <!-- CompoundDocsResolver -->
+  <g transform="translate(370, 58)">
+    <rect x="-20" y="0" width="195" height="32" rx="6" fill="#0f3460" filter="url(#shadow)"/>
+    <text x="77" y="21" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">CompoundDocsResolver</text>
+  </g>
+
+  <!-- UserService -->
+  <g transform="translate(650, 58)">
+    <rect x="0" y="0" width="110" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="55" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">UserService</text>
+  </g>
+
+  <!-- CountriesService -->
+  <g transform="translate(810, 58)">
+    <rect x="0" y="0" width="120" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="60" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CountriesService</text>
+  </g>
+
+  <!-- CurrenciesService -->
+  <g transform="translate(960, 58)">
+    <rect x="0" y="0" width="125" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
+    <text x="62" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CurrenciesService</text>
+  </g>
+
+  <!-- ==================== LIFELINES ==================== -->
+  <line x1="65" y1="90" x2="65" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="215" y1="90" x2="215" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="447" y1="90" x2="447" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="705" y1="90" x2="705" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="870" y1="90" x2="870" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <line x1="1022" y1="90" x2="1022" y2="610" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <!-- ==================== SEQUENCE MESSAGES ==================== -->
+
+  <!-- Client activation block: waiting for response -->
+  <rect x="59" y="118" width="12" height="469" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- 1. Client → API Gateway: sends request -->
+  <line x1="65" y1="125" x2="207" y2="125" stroke="#444" stroke-width="1.5"/>
+  <polygon points="207,125 199,121.5 199,128.5" fill="#444"/>
+  <text x="136" y="120" text-anchor="middle" fill="#444" font-size="8.5">sends request</text>
+
+  <!-- API Gateway activation block -->
+  <rect x="209" y="125" width="12" height="470" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- 2. API Gateway → UserService: proxies request -->
+  <line x1="215" y1="145" x2="697" y2="145" stroke="#444" stroke-width="1.5"/>
+  <polygon points="697,145 689,141.5 689,148.5" fill="#444"/>
+  <text x="456" y="140" text-anchor="middle" fill="#444" font-size="8">proxies request</text>
+
+  <!-- UserService activation block -->
+  <rect x="699" y="145" width="12" height="45" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- UserService self-arrow: resolves users -->
+  <path d="M711,155 L770,155 L770,175 L711,175" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="711,175 719,171.5 719,178.5" fill="#444"/>
+  <text x="775" y="162" fill="#444" font-size="7.5">Resolves User resources with</text>
+  <text x="775" y="172" fill="#444" font-size="7.5">'placeOfBirth' and 'relatives' linkages</text>
+
+  <!-- UserService → API Gateway: JSON:API response -->
+  <line x1="705" y1="190" x2="223" y2="190" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="223,190 231,186.5 231,193.5" fill="#888"/>
+  <text x="464" y="185" text-anchor="middle" fill="#444" font-size="8">JSON:API response (without compound docs)</text>
+
+  <!-- 3. API Gateway → CompoundDocsResolver: sends response -->
+  <line x1="215" y1="210" x2="439" y2="210" stroke="#444" stroke-width="1.5"/>
+  <polygon points="439,210 431,206.5 431,213.5" fill="#444"/>
+  <text x="327" y="205" text-anchor="middle" fill="#444" font-size="8">sends JSON:API response and original request</text>
+
+  <!-- CompoundDocsResolver activation block -->
+  <rect x="441" y="210" width="12" height="350" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- Self-arrow: parses include param -->
+  <path d="M453,218 L510,218 L510,238 L453,238" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="453,238 461,234.5 461,248.5" fill="#444"/>
+  <text x="515" y="231" fill="#444" font-size="7.5">parses original 'include' param, builds processing graph (execution stages)</text>
+
+
+  <!-- ==================== LOOP FRAME: for each stage ==================== -->
+  <rect x="195" y="300" width="860" height="240" rx="6" fill="none" stroke="#0f3460" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <rect x="195" y="300" width="110" height="20" rx="4" fill="#0f3460"/>
+  <text x="250" y="314" text-anchor="middle" fill="#fff" font-size="8" font-weight="600">for each stage</text>
+
+  <!-- Self-arrow: groups resource linkages -->
+  <path d="M453,318 L510,318 L510,338 L453,338" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="453,338 461,334.5 461,341.5" fill="#444"/>
+  <text x="515" y="331" fill="#444" font-size="7.5">groups resource linkages by type / ids</text>
+
+  <!-- Self-arrow: calculates include param -->
+  <path d="M453,347 L510,347 L510,367 L453,367" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="453,367 461,363.5 461,370.5" fill="#444"/>
+  <text x="515" y="360" fill="#444" font-size="7.5">calculates 'include' param for nested requests</text>
+
+  <!-- ==================== 1ST STAGE ==================== -->
+
+  <!-- CompoundDocsResolver → UserService: resolve relatives -->
+  <line x1="447" y1="395" x2="697" y2="395" stroke="#444" stroke-width="1.5"/>
+  <polygon points="697,395 689,391.5 689,398.5" fill="#444"/>
+  <text x="572" y="383" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
+  <text x="572" y="393" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'relatives': /users?filter[id]=x,y,z</text>
+
+  <!-- UserService activation for relatives -->
+  <rect x="699" y="395" width="12" height="25" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- UserService → CompoundDocsResolver: response -->
+  <line x1="705" y1="420" x2="455" y2="420" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="455,420 463,416.5 463,423.5" fill="#888"/>
+
+  <!-- CompoundDocsResolver → CountriesService: resolve placeOfBirth -->
+  <line x1="447" y1="395" x2="862" y2="395" stroke="#444" stroke-width="1.5"/>
+  <polygon points="862,395 854,391.5 854,398.5" fill="#444"/>
+  <text x="780" y="383" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
+  <text x="780" y="393" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'placeOfBirth': /countries?filter[id]=x,y,z</text>
+
+  <!-- CountriesService activation -->
+  <rect x="864" y="395" width="12" height="25" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- CountriesService → CompoundDocsResolver: response -->
+  <line x1="870" y1="420" x2="455" y2="420" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="455,420 463,416.5 463,423.5" fill="#888"/>
+
+
+  <!-- ==================== 2ND STAGE ==================== -->
+
+  <!-- CompoundDocsResolver → CurrenciesService: resolve currencies -->
+  <line x1="447" y1="455" x2="1014" y2="455" stroke="#444" stroke-width="1.5"/>
+  <polygon points="1014,455 1006,451.5 1006,458.5" fill="#444"/>
+  <text x="730" y="443" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">2nd stage</text>
+  <text x="730" y="453" text-anchor="middle" fill="#444" font-size="7.5">Resolve 'currencies': /currencies?filter[id]=x,y,z</text>
+
+  <!-- CurrenciesService activation -->
+  <rect x="1016" y="455" width="12" height="25" rx="2" fill="#aaa" opacity="0.5"/>
+
+  <!-- CurrenciesService → CompoundDocsResolver: response -->
+  <line x1="1022" y1="480" x2="455" y2="480" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="455,480 463,476.5 463,483.5" fill="#888"/>
+
+  <!-- Self-arrow: adds resources to included -->
+  <path d="M453,500 L510,500 L510,520 L453,520" stroke="#444" stroke-width="1.5" fill="none"/>
+  <polygon points="453,520 461,516.5 461,523.5" fill="#444"/>
+  <text x="515" y="513" fill="#444" font-size="7.5">adds all resources from responses into "included" section</text>
+
+  <!-- ==================== FINAL RESPONSE ==================== -->
+
+  <!-- CompoundDocsResolver → API Gateway: returns enriched response -->
+  <line x1="447" y1="550" x2="223" y2="550" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="223,550 231,546.5 231,553.5" fill="#888"/>
+  <text x="335" y="544" text-anchor="middle" fill="#444" font-size="7.5">returns response with resolved Compound Documents</text>
+
+  <!-- API Gateway → Client: final response -->
+  <line x1="215" y1="582" x2="73" y2="582" stroke="#444" stroke-width="1.5"/>
+  <polygon points="73,582 81,578.5 81,585.5" fill="#444"/>
+  <text x="144" y="576" text-anchor="middle" fill="#444" font-size="8.5" font-weight="600">sends the final response</text>
+
+</svg>

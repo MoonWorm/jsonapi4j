@@ -84,5 +84,10 @@ This method forwards cache headers so that the Compound Documents Resolver can a
 
 ### Sequence Overview
 
-Here's a high-level sequence diagram for the Compound Documents resolution process:
-![Compound Docs Sequence Diagram](/assets/images/compound-docs-sequence-diagram.svg "Compound Docs Sequence Diagram")
+The **Compound Documents Resolver**, when incorporated into a JsonApi4j application as a plugin, functions as a post-processing filter. The sequence diagram is shown below.
+
+![Compound Docs Sequence Diagram](/assets/images/compound-docs-sequence-diagram-embedded.svg "Compound Docs Sequence Diagram")
+
+As mentioned earlier, the **Compound Documents Resolver** can also be used as a standalone module. A common approach is to integrate it into an existing API Gateway that orchestrates the entire process. Below is a high-level sequence diagram illustrating this scenario:
+
+![Compound Docs Sequence Diagram](/assets/images/compound-docs-sequence-diagram-standalone.svg "Compound Docs Sequence Diagram")

@@ -22,16 +22,20 @@
     <text x="35" y="28" text-anchor="middle" fill="#1a1a2e" font-size="10" font-weight="600">Client</text>
   </g>
 
+  <!-- Same process bracket around UserService + CompoundDocsFilter -->
+  <rect x="170" y="44" width="410" height="54" rx="8" fill="none" stroke="#999" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="375" y="104" text-anchor="middle" fill="#999" font-size="8" font-style="italic">same process</text>
+
   <!-- UserService -->
   <g transform="translate(185, 58)">
     <rect x="0" y="0" width="110" height="32" rx="6" fill="#1a1a2e" filter="url(#shadow)"/>
     <text x="55" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">UserService</text>
   </g>
 
-  <!-- CompoundDocsResolver -->
+  <!-- CompoundDocsFilter - post processing -->
   <g transform="translate(390, 58)">
-    <rect x="0" y="0" width="155" height="32" rx="6" fill="#0f3460" filter="url(#shadow)"/>
-    <text x="77" y="21" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">CompoundDocsResolver</text>
+    <rect x="-20" y="0" width="195" height="32" rx="6" fill="#0f3460" filter="url(#shadow)"/>
+    <text x="77" y="21" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">CompoundDocsFilter - post processing</text>
   </g>
 
   <!-- CountriesService -->
@@ -55,8 +59,8 @@
 
   <!-- ==================== SEQUENCE MESSAGES ==================== -->
 
-  <!-- Client activation block: sends request -->
-  <rect x="59" y="108" width="12" height="20" rx="2" fill="#aaa" opacity="0.5"/>
+  <!-- Client activation block: waiting for response -->
+  <rect x="59" y="108" width="12" height="449" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- 1. Client → UserService: sends request -->
   <line x1="65" y1="115" x2="232" y2="115" stroke="#444" stroke-width="1.5"/>
@@ -66,19 +70,11 @@
   <!-- Self-referencing arrow: UserService extracts includes -->
   <path d="M246,125 L300,125 L300,145 L246,145" stroke="#444" stroke-width="1.5" fill="none"/>
   <polygon points="246,145 254,141.5 254,148.5" fill="#444"/>
-  <text x="305" y="138" fill="#444" font-size="7.5">extracts 1st level of 'includes'</text>
+  <text x="305" y="138" fill="#444" font-size="7.5">extracts 1st level of 'includes': placeOfBirth, relatives</text>
 
-  <!-- Yellow sticker: include extraction -->
-  <g transform="translate(390, 100)">
-    <rect x="0" y="0" width="130" height="32" rx="4" fill="#FFF8DC" fill-opacity="0.75" stroke="#e6c84c" stroke-width="1" filter="url(#shadow)"/>
-    <text x="65" y="13" text-anchor="middle" fill="#555" font-size="7.5">'placeOfBirth.currencies'</text>
-    <text x="65" y="25" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="600">-&gt; 'placeOfBirth'</text>
-  </g>
-  <!-- Dotted line connecting sticker to self-arrow -->
-  <line x1="390" y1="124" x2="300" y2="135" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
 
   <!-- 2. UserService activates: resolves users -->
-  <rect x="234" y="115" width="12" height="300" rx="2" fill="#aaa" opacity="0.5"/>
+  <rect x="234" y="115" width="12" height="440" rx="2" fill="#aaa" opacity="0.5"/>
   <!-- Self-referencing arrow (left side): resolves user resources -->
   <path d="M234,155 L180,155 L180,175 L234,175" stroke="#444" stroke-width="1.5" fill="none"/>
   <polygon points="234,175 226,171.5 226,178.5" fill="#444"/>
@@ -90,7 +86,7 @@
   <polygon points="246,205 254,201.5 254,208.5" fill="#444"/>
   <text x="305" y="198" fill="#444" font-size="7.5">generates JSON:API response (without compound docs)</text>
 
-  <!-- 3. UserService → CompoundDocsResolver: sends JSON:API response -->
+  <!-- 3. UserService → CompoundDocsFilter - post processing: sends JSON:API response -->
   <line x1="240" y1="220" x2="459" y2="220" stroke="#444" stroke-width="1.5"/>
   <polygon points="459,220 451,216.5 451,223.5" fill="#444"/>
   <text x="350" y="215" text-anchor="middle" fill="#444" font-size="8">sends JSON:API response and original request</text>
@@ -106,7 +102,7 @@
     <line x1="0" y1="50" x2="-30" y2="189" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
   </g>
 
-  <!-- 4. CompoundDocsResolver activates -->
+  <!-- 4. CompoundDocsFilter - post processing activates -->
   <rect x="461" y="220" width="12" height="325" rx="2" fill="#aaa" opacity="0.5"/>
 
   <!-- 5. Self-arrow: parses include param -->
@@ -157,12 +153,12 @@
     <text x="95" y="12" text-anchor="middle" fill="#666" font-size="7">Generates 2 parallel requests</text>
     <text x="95" y="23" text-anchor="middle" fill="#666" font-size="7">for the 1st stage</text>
   </g>
-  <!-- Dotted line from sticker to CompoundDocsResolver line at y=382 -->
+  <!-- Dotted line from sticker to CompoundDocsFilter - post processing line at y=382 -->
   <line x1="800" y1="350" x2="475" y2="382" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
 
   <!-- ==================== 1ST STAGE ==================== -->
 
-  <!-- 6. CompoundDocsResolver → UserService: resolve relatives -->
+  <!-- 6. CompoundDocsFilter - post processing → UserService: resolve relatives -->
   <line x1="467" y1="382" x2="248" y2="382" stroke="#444" stroke-width="1.5"/>
   <polygon points="248,382 256,378.5 256,385.5" fill="#444"/>
   <text x="357" y="370" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
@@ -171,11 +167,11 @@
 
 
 
-  <!-- UserService → CompoundDocsResolver: response -->
+  <!-- UserService → CompoundDocsFilter - post processing: response -->
   <line x1="240" y1="412" x2="459" y2="412" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
   <polygon points="459,412 451,408.5 451,415.5" fill="#888"/>
 
-  <!-- 7. CompoundDocsResolver → CountriesService: resolve placeOfBirth -->
+  <!-- 7. CompoundDocsFilter - post processing → CountriesService: resolve placeOfBirth -->
   <line x1="467" y1="382" x2="702" y2="382" stroke="#444" stroke-width="1.5"/>
   <polygon points="702,382 694,378.5 694,385.5" fill="#444"/>
   <text x="584" y="370" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">1st stage</text>
@@ -184,7 +180,7 @@
   <!-- CountriesService processes -->
   <rect x="704" y="382" width="12" height="30" rx="2" fill="#aaa" opacity="0.5"/>
 
-  <!-- CountriesService → CompoundDocsResolver: response -->
+  <!-- CountriesService → CompoundDocsFilter - post processing: response -->
   <line x1="710" y1="412" x2="475" y2="412" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
   <polygon points="475,412 483,408.5 483,415.5" fill="#888"/>
 
@@ -194,7 +190,7 @@
 
   <!-- ==================== 2ND STAGE ==================== -->
 
-  <!-- 8. CompoundDocsResolver → CurrenciesService: resolve currencies -->
+  <!-- 8. CompoundDocsFilter - post processing → CurrenciesService: resolve currencies -->
   <line x1="467" y1="440" x2="914" y2="440" stroke="#444" stroke-width="1.5"/>
   <polygon points="914,440 906,436.5 906,443.5" fill="#444"/>
   <text x="690" y="428" text-anchor="middle" fill="#0f3460" font-size="7.5" font-weight="700">2nd stage</text>
@@ -203,7 +199,7 @@
   <!-- CurrenciesService processes -->
   <rect x="916" y="440" width="12" height="30" rx="2" fill="#aaa" opacity="0.5"/>
 
-  <!-- CurrenciesService → CompoundDocsResolver: response -->
+  <!-- CurrenciesService → CompoundDocsFilter - post processing: response -->
   <line x1="922" y1="470" x2="475" y2="470" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
   <polygon points="475,470 483,466.5 483,473.5" fill="#888"/>
 
@@ -215,12 +211,14 @@
 
   <!-- ==================== FINAL RESPONSE ==================== -->
 
-  <!-- Client activation block: receives response -->
-  <rect x="59" y="538" width="12" height="20" rx="2" fill="#aaa" opacity="0.5"/>
+  <!-- CompoundDocsFilter - post processing → UserService: returns enriched response -->
+  <line x1="467" y1="535" x2="248" y2="535" stroke="#888" stroke-width="1" stroke-dasharray="4,3"/>
+  <polygon points="248,535 256,531.5 256,538.5" fill="#888"/>
+  <text x="357" y="529" text-anchor="middle" fill="#444" font-size="7.5">returns response with resolved Compound Documents</text>
 
-  <!-- CompoundDocsResolver → Client: final response -->
-  <line x1="467" y1="545" x2="73" y2="545" stroke="#444" stroke-width="1.5"/>
-  <polygon points="73,545 81,541.5 81,548.5" fill="#444"/>
-  <text x="270" y="539" text-anchor="middle" fill="#444" font-size="8.5" font-weight="600">sends the response with resolved Compound Documents</text>
+  <!-- UserService → Client: final response -->
+  <line x1="240" y1="550" x2="73" y2="550" stroke="#444" stroke-width="1.5"/>
+  <polygon points="73,550 81,546.5 81,553.5" fill="#444"/>
+  <text x="152" y="544" text-anchor="middle" fill="#444" font-size="8.5" font-weight="600">sends the final response</text>
 
 </svg>
