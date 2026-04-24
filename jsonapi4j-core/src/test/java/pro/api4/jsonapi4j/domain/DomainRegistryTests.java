@@ -56,7 +56,7 @@ public class DomainRegistryTests {
         assertThat(sut.getResourceTypes()).isNotNull().hasSize(1);
         assertThat(sut.getResource(new ResourceType("foo")).getResource()).isEqualTo(testResource);
 
-        assertThat(sut.getAvailableRelationshipNames(new ResourceType("foo"))).isNotNull().hasSize(2);
+        assertThat(sut.getRelationshipNames(new ResourceType("foo"))).isNotNull().hasSize(2);
 
         assertThat(sut.getToOneRelationshipNames(new ResourceType("foo"))).isEqualTo(Set.of(new RelationshipName("to1")));
         assertThat(sut.getToOneRelationships(new ResourceType("foo")).stream().map(RegisteredRelationship::getRelationship).toList()).isEqualTo(List.of(testToOneRelationship));

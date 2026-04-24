@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.JsonApi4jReportGenerator;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
@@ -51,7 +52,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         Validate.notNull(jsonApi4j, "JsonApi4j can't be null");
         log.debug("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
         // print state
-        log.info(jsonApi4j.printState());
+        log.info(new JsonApi4jReportGenerator(jsonApi4j).generateStateReport());
 
         errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         if (errorHandlerFactory == null) {

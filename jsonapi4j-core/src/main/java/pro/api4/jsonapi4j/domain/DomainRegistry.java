@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -165,7 +166,7 @@ public class DomainRegistry {
         return result;
     }
 
-    public Set<RelationshipName> getAvailableRelationshipNames(ResourceType resourceType) {
+    public Set<RelationshipName> getRelationshipNames(ResourceType resourceType) {
         return MapUtils.emptyIfNull(allRelationships.get(resourceType))
                 .values()
                 .stream()
@@ -173,31 +174,11 @@ public class DomainRegistry {
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    /**
-     * Prints a human-readable summary of all registered resources and their relationships.
-     *
-     * @return formatted domain registry summary
-     */
-    public String printState() {
-        StringBuilder sb = new StringBuilder();
-        Collection<RegisteredResource<Resource<?>>> allResources = getResources();
-        sb.append("--- Resources (").append(allResources.size()).append(") ---\n");
-        allResources.stream()
-                .sorted()
-                .forEach(rr -> {
-                    ResourceType rt = rr.getResourceType();
-                    sb.append("  ").append(rt.getType())
-                            .append(" (").append(rr.getRegisteredAs().getSimpleName()).append(")\n");
-
-                    getToOneRelationships(rt).forEach(rel ->
-                            sb.append("    -> ").append(rel.getRelationshipName().getName())
-                                    .append(" [TO_ONE]\n"));
-
-                    getToManyRelationships(rt).forEach(rel ->
-                            sb.append("    -> ").append(rel.getRelationshipName().getName())
-                                    .append(" [TO_MANY]\n"));
-                });
-        return sb.toString();
+    public Set<RelationshipName> getRelationshipNames() {
+        return allRelationships.values()
+                .stream()
+                .flatMap(m -> m.keySet().stream())
+                .collect(Collectors.toSet());
     }
 
     @Slf4j
@@ -282,8 +263,13 @@ public class DomainRegistry {
             RelationshipName relationshipName = rr.getRelationshipName();
             if (this.allRelationships.containsKey(resourceType)
                     && this.allRelationships.get(resourceType).containsKey(relationshipName)) {
-                throw new DomainMisconfigurationException("Multiple relationship declarations found for : "
-                        + resourceType + " resource type, for relationship: " + relationshipName);
+                throw new DomainMisconfigurationException(
+                        MessageFormat.format(
+                                "Multiple relationship declarations found for : {0} resource type, for relationship: {1}",
+                                resourceType,
+                                relationshipName
+                        )
+                );
             }
             registerRelationshipConsumer.accept(rr);
             this.allRelationships.computeIfAbsent(
@@ -303,6 +289,7 @@ public class DomainRegistry {
         }
 
         public DomainRegistry build() {
+            validateIntegrity();
             return new DomainRegistry(
                     Collections.unmodifiableMap(this.resources),
                     Collections.unmodifiableMap(this.allRelationships),
@@ -311,6 +298,25 @@ public class DomainRegistry {
                     Collections.unmodifiableMap(this.resourcesByClass),
                     Collections.unmodifiableMap(this.relationshipsByClass)
             );
+        }
+
+        private void validateIntegrity() {
+            // check if relationships are pointing to the existing resources
+            allRelationships.forEach((parentResourceType, rels) -> {
+                rels.forEach((relationshipName, rel) -> {
+                    if (!resources.containsKey(parentResourceType)) {
+                        throw new DomainMisconfigurationException(
+                                String.format(
+                                        "(%s) Relationship belongs to an unregistered (%s) resource. " +
+                                                "Please register (%s) resource or double-check if parent resource has been correctly specified.",
+                                        rel.getRelationship().getClass().getSimpleName(),
+                                        parentResourceType.getType(),
+                                        parentResourceType.getType()
+                                )
+                        );
+                    }
+                });
+            });
         }
 
         private RegisteredResource<Resource<?>> enrichWithMetaInfo(Resource<?> resource) {
