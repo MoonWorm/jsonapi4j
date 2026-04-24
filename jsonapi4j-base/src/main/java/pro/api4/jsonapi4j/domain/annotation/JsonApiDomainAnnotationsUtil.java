@@ -16,7 +16,7 @@ public final class JsonApiDomainAnnotationsUtil {
     public static ResourceType resolveResourceType(Class<?> resourceClass) {
         JsonApiResource jsonApiResource = ReflectionUtils.findAnnotationForClass(resourceClass, JsonApiResource.class);
         if (jsonApiResource == null) {
-            throw new DomainMisconfigurationException("Each resource implementation must has " + JsonApiResource.class.getSimpleName() + " annotation placed on the type level.");
+            throw new DomainMisconfigurationException("Each resource implementation must has @" + JsonApiResource.class.getSimpleName() + " annotation placed on the type level.");
         }
         if (StringUtils.isBlank(jsonApiResource.resourceType())) {
             throw new DomainMisconfigurationException(JsonApiResource.class.getSimpleName() + " annotation 'resourceType()' parameter declaration must not be blank");

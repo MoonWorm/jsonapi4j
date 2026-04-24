@@ -14,6 +14,7 @@ import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -100,8 +101,7 @@ public class OperationsRegistry {
             }
         } else {
             if (orElseThrow) {
-                throw new IllegalArgumentException("Unsupported operation type: " + operationType
-                        + ". This operation type doesn't represent a resource operation");
+                throw new IllegalArgumentException(MessageFormat.format("Unsupported operation type: {0}. This operation type doesn''t represent a resource operation", operationType));
             } else {
                 return null;
             }
@@ -143,7 +143,7 @@ public class OperationsRegistry {
             }
         } else {
             if (orElseThrow) {
-                throw new IllegalArgumentException("Unsupported operation type: " + operationType + ". This operation type doesn't represent a relationship operation");
+                throw new IllegalArgumentException(MessageFormat.format("Unsupported operation type: {0}. This operation type doesn''t represent a relationship operation", operationType));
             } else {
                 return null;
             }
@@ -551,24 +551,20 @@ public class OperationsRegistry {
             }
             if (registeredAs.isEmpty()) {
                 log.warn("Failed to register an Operation, unknown operation {}", operation);
-                throw new OperationsMisconfigurationException(
-                        "Unsupported operation type: %s. The operation must implement one of the supported operations: %s".formatted(
-                                operation.getClass().getName(),
-                                Stream.of(
-                                        ReadResourceByIdOperation.class,
-                                        ReadMultipleResourcesOperation.class,
-                                        CreateResourceOperation.class,
-                                        UpdateResourceOperation.class,
-                                        DeleteResourceOperation.class,
-                                        ReadToOneRelationshipOperation.class,
-                                        ReadToManyRelationshipOperation.class,
-                                        UpdateToOneRelationshipOperation.class,
-                                        UpdateToManyRelationshipOperation.class,
-                                        AddToManyRelationshipOperation.class,
-                                        DeleteToManyRelationshipOperation.class
-                                ).map(Class::getSimpleName).collect(Collectors.joining(", "))
-                        )
-                );
+                String supportedOperationsString = Stream.of(
+                        ReadResourceByIdOperation.class,
+                        ReadMultipleResourcesOperation.class,
+                        CreateResourceOperation.class,
+                        UpdateResourceOperation.class,
+                        DeleteResourceOperation.class,
+                        ReadToOneRelationshipOperation.class,
+                        ReadToManyRelationshipOperation.class,
+                        UpdateToOneRelationshipOperation.class,
+                        UpdateToManyRelationshipOperation.class,
+                        AddToManyRelationshipOperation.class,
+                        DeleteToManyRelationshipOperation.class
+                ).map(Class::getSimpleName).collect(Collectors.joining(", "));
+                throw new OperationsMisconfigurationException(MessageFormat.format("Unsupported operation type: ({0}). The operation must implement one of the supported operations: {1}", operation.getClass().getName(), supportedOperationsString));
             }
             registeredAs.forEach(this::logOperationRegistered);
             registeredAs.forEach(o -> {
@@ -637,14 +633,14 @@ public class OperationsRegistry {
                 JsonApiResourceOperation jsonApiResourceOperation
                         = ReflectionUtils.findAnnotationForClass(operation.getClass(), JsonApiResourceOperation.class);
                 if (jsonApiResourceOperation == null) {
-                    throw new OperationsMisconfigurationException(String.format("(%s) operation must be annotated with @JsonApiResourceOperation", operation.getClass().getSimpleName()));
+                    throw new OperationsMisconfigurationException(MessageFormat.format("({0}) operation must be annotated with @JsonApiResourceOperation", operation.getClass().getSimpleName()));
                 }
                 resourceType = resolveResourceType(jsonApiResourceOperation.resource());
             } else {
                 JsonApiRelationshipOperation jsonApiRelationshipOperation
                         = ReflectionUtils.findAnnotationForClass(operation.getClass(), JsonApiRelationshipOperation.class);
                 if (jsonApiRelationshipOperation == null) {
-                    throw new OperationsMisconfigurationException(String.format("(%s) operation must be annotated with @JsonApiRelationshipOperation", operation.getClass().getSimpleName()));
+                    throw new OperationsMisconfigurationException(MessageFormat.format("({0}) operation must be annotated with @JsonApiRelationshipOperation", operation.getClass().getSimpleName()));
                 }
                 resourceType = resolveParentResourceType(jsonApiRelationshipOperation.relationship());
                 relationshipName = resolveRelationshipName(jsonApiRelationshipOperation.relationship());

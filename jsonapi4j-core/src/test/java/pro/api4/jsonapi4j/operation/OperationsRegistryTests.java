@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
+import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
@@ -18,6 +19,54 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class OperationsRegistryTests {
+
+    @Test
+    public void resource_noneImplemented_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestResourceOperationNoneImplemented()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestResourceOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
+    }
+
+    @Test
+    public void relationship_toOneNoneImplemented_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestToOneRelationshipOperationNoneImplemented()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestToOneRelationshipOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
+    }
+
+    @Test
+    public void relationship_toManyNoneImplemented_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestToManyRelationshipOperationNoneImplemented()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestToManyRelationshipOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
+    }
+
+    @Test
+    public void resource_missingAnnotation_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestResourceOperationWithoutAnnotation()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("(TestResourceOperationWithoutAnnotation) operation must be annotated with @JsonApiResourceOperation");
+    }
+
+    @Test
+    public void relationship_toOneMissingAnnotation_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestToOneRelationshipOperationWithoutAnnotation()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("(TestToOneRelationshipOperationWithoutAnnotation) operation must be annotated with @JsonApiRelationshipOperation");
+    }
+
+    @Test
+    public void relationship_toManyMissingAnnotation_throwsException() {
+        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestToManyRelationshipOperationWithoutAnnotation()))
+                .isInstanceOf(OperationsMisconfigurationException.class)
+                .hasMessage("(TestToManyRelationshipOperationWithoutAnnotation) operation must be annotated with @JsonApiRelationshipOperation");
+    }
 
     @Test
     public void empty_checkAllMethodsWorksAsExpected() {
@@ -40,6 +89,8 @@ public class OperationsRegistryTests {
         TestReadToManyRelationshipOperation readToManyRelationshipOperation = new TestReadToManyRelationshipOperation();
         TestUpdateToOneRelationshipOperation updateToOneRelationshipOperation = new TestUpdateToOneRelationshipOperation();
         TestUpdateToManyRelationshipOperation updateToManyRelationshipOperation = new TestUpdateToManyRelationshipOperation();
+        TestAddToManyRelationshipOperation addToManyRelationshipOperation = new TestAddToManyRelationshipOperation();
+        TestDeleteToManyRelationshipOperation deleteToManyRelationshipOperation = new TestDeleteToManyRelationshipOperation();
         OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
                 .operation(readByIdOperation)
                 .operation(readMultipleResourcesOperation)
@@ -50,13 +101,15 @@ public class OperationsRegistryTests {
                 .operation(readToManyRelationshipOperation)
                 .operation(updateToOneRelationshipOperation)
                 .operation(updateToManyRelationshipOperation)
+                .operation(addToManyRelationshipOperation)
+                .operation(deleteToManyRelationshipOperation)
                 .build();
 
         // then
         ResourceType fooResource = new ResourceType("foo");
         RelationshipName toOneRelationship = new RelationshipName("to1");
         RelationshipName toManyRelationship = new RelationshipName("to2");
-        assertThat(sut.getAllOperations()).isNotNull().hasSize(9);
+        assertThat(sut.getAllOperations()).isNotNull().hasSize(11);
         assertThat(sut.getResourceTypesWithAnyOperationConfigured()).isNotNull().isEqualTo(Set.of(fooResource));
         assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(fooResource)).isEqualTo(Set.of(toOneRelationship, toManyRelationship));
         assertThat(sut.getRelationshipNamesWithAnyOperationConfigured(new ResourceType("non-existing"))).isEmpty();
@@ -140,6 +193,20 @@ public class OperationsRegistryTests {
         assertThat(sut.getRegisteredUpdateToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
         assertThatThrownBy(() -> sut.getRegisteredUpdateToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
         assertThatThrownBy(() -> sut.getRegisteredUpdateToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(addToManyRelationshipOperation);
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(addToManyRelationshipOperation);
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,false)).isNull();
+        assertThat(sut.getRegisteredAddToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getRegisteredAddToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getRegisteredAddToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+
+        assertThat(sut.getRegisteredDeleteToManyRelationshipOperation(fooResource, toManyRelationship, false)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(deleteToManyRelationshipOperation);
+        assertThat(sut.getRegisteredDeleteToManyRelationshipOperation(fooResource, toManyRelationship, true)).isNotNull().extracting(RegisteredOperation::getOperation).isEqualTo(deleteToManyRelationshipOperation);
+        assertThat(sut.getRegisteredDeleteToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,false)).isNull();
+        assertThat(sut.getRegisteredDeleteToManyRelationshipOperation(fooResource, toOneRelationship,false)).isNull();
+        assertThatThrownBy(() -> sut.getRegisteredDeleteToManyRelationshipOperation(new ResourceType("non-existing"), toManyRelationship,true)).isInstanceOf(OperationNotFoundException.class);
+        assertThatThrownBy(() -> sut.getRegisteredDeleteToManyRelationshipOperation(fooResource, toOneRelationship,true)).isInstanceOf(OperationNotFoundException.class);
     }
     
     @JsonApiResource(resourceType = "foo")
@@ -176,6 +243,42 @@ public class OperationsRegistryTests {
         @Override
         public String resolveResourceIdentifierId(String s) {
             return s;
+        }
+    }
+
+    private static class TestResourceOperationNoneImplemented implements ResourceOperations<String> {
+
+    }
+
+    private static class TestResourceOperationWithoutAnnotation implements ResourceOperations<String> {
+
+        @Override
+        public String readById(JsonApiRequest request) {
+            return "xxx";
+        }
+
+    }
+
+    private static class TestToOneRelationshipOperationNoneImplemented implements ToOneRelationshipOperations<String, String> {
+
+    }
+
+    private static class TestToOneRelationshipOperationWithoutAnnotation implements ToOneRelationshipOperations<String, String> {
+
+        @Override
+        public String readOne(JsonApiRequest request) {
+            return "xxx";
+        }
+    }
+
+    private static class TestToManyRelationshipOperationNoneImplemented implements ToManyRelationshipOperations<String, String> {
+
+    }
+
+    private static class TestToManyRelationshipOperationWithoutAnnotation implements ToManyRelationshipOperations<String, String> {
+        @Override
+        public PaginationAwareResponse<String> readMany(JsonApiRequest request) {
+            return PaginationAwareResponse.empty();
         }
     }
 
@@ -259,6 +362,24 @@ public class OperationsRegistryTests {
 
         @Override
         public void update(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestAddToManyRelationshipOperation implements AddToManyRelationshipOperation {
+
+        @Override
+        public void add(JsonApiRequest request) {
+
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestDeleteToManyRelationshipOperation implements DeleteToManyRelationshipOperation {
+
+        @Override
+        public void delete(JsonApiRequest request) {
 
         }
     }

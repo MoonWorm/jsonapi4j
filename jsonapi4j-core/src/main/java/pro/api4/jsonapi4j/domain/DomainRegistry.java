@@ -10,7 +10,12 @@ import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -136,14 +141,11 @@ public class DomainRegistry {
     ) {
         Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>> resourceRelationships = this.toManyRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
-            throw new DomainMisconfigurationException("No To Many relationships found for the Resource ("
-                    + resourceType.getType() + ").");
+            throw new DomainMisconfigurationException(MessageFormat.format("No To-Many relationships found for the Resource ({0}).", resourceType.getType()));
         }
         RegisteredRelationship<ToManyRelationship<?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
-            throw new DomainMisconfigurationException("Implementation of the '"
-                    + relationshipName.getName() + "' To Many Relationship is not found for the Resource ("
-                    + resourceType.getType() + "). Please implement the relationship.");
+            throw new DomainMisconfigurationException(MessageFormat.format("Implementation of the ({0}) To Many Relationship is not found for the Resource ({1}). Please implement the relationship.", relationshipName.getName(), resourceType.getType()));
         }
         return result;
     }
@@ -154,14 +156,11 @@ public class DomainRegistry {
     ) {
         Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>> resourceRelationships = this.toOneRelationships.get(resourceType);
         if (MapUtils.isEmpty(resourceRelationships)) {
-            throw new DomainMisconfigurationException("No To One relationships found for the Resource ("
-                    + resourceType.getType() + ").");
+            throw new DomainMisconfigurationException(MessageFormat.format("No To-One relationships found for the Resource ({0}).", resourceType.getType()));
         }
         RegisteredRelationship<ToOneRelationship<?>> result = resourceRelationships.get(relationshipName);
         if (result == null) {
-            throw new DomainMisconfigurationException("Implementation of the '"
-                    + relationshipName.getName() + "' To One Relationship is not found for the Resource ("
-                    + resourceType.getType() + "). Please implement the relationship.");
+            throw new DomainMisconfigurationException(MessageFormat.format("Implementation of the ({0}) To One Relationship is not found for the Resource ({1}). Please implement the relationship.", relationshipName.getName(), resourceType.getType()));
         }
         return result;
     }
@@ -217,8 +216,7 @@ public class DomainRegistry {
             RegisteredResource<Resource<?>> registeredResource = enrichWithMetaInfo(resource);
             ResourceType resourceType = registeredResource.getResourceType();
             if (this.resources.containsKey(resourceType)) {
-                throw new DomainMisconfigurationException("Multiple resource declarations found for : "
-                        + resourceType + " resource type");
+                throw new DomainMisconfigurationException(MessageFormat.format("Multiple resource declarations found for ({0}) resource type", resourceType));
             }
             this.resources.put(resourceType, registeredResource);
             this.resourcesByClass.put(registeredResource.getRegisteredAs(), registeredResource);
@@ -258,16 +256,16 @@ public class DomainRegistry {
         }
 
         private <T extends Relationship<?>> void registerRelationship(RegisteredRelationship<T> rr,
-                                                                         Consumer<RegisteredRelationship<T>> registerRelationshipConsumer) {
+                                                                      Consumer<RegisteredRelationship<T>> registerRelationshipConsumer) {
             ResourceType resourceType = rr.getParentResourceType();
             RelationshipName relationshipName = rr.getRelationshipName();
             if (this.allRelationships.containsKey(resourceType)
                     && this.allRelationships.get(resourceType).containsKey(relationshipName)) {
                 throw new DomainMisconfigurationException(
                         MessageFormat.format(
-                                "Multiple relationship declarations found for : {0} resource type, for relationship: {1}",
-                                resourceType,
-                                relationshipName
+                                "Multiple similar ({0}) relationship declarations found for ({1}) resource type",
+                                relationshipName.getName(),
+                                resourceType.getType()
                         )
                 );
             }
@@ -306,11 +304,10 @@ public class DomainRegistry {
                 rels.forEach((relationshipName, rel) -> {
                     if (!resources.containsKey(parentResourceType)) {
                         throw new DomainMisconfigurationException(
-                                String.format(
-                                        "(%s) Relationship belongs to an unregistered (%s) resource. " +
-                                                "Please register (%s) resource or double-check if parent resource has been correctly specified.",
+                                MessageFormat.format(
+                                        "({0}) relationship belongs to an unregistered ({1}) resource. " +
+                                                "Please register ({1}) resource or double-check if parent resource has been correctly specified.",
                                         rel.getRelationship().getClass().getSimpleName(),
-                                        parentResourceType.getType(),
                                         parentResourceType.getType()
                                 )
                         );
@@ -340,7 +337,7 @@ public class DomainRegistry {
         private <T extends Relationship<?>> RegisteredRelationship<T> enrichWithMetaInfo(T relationship) {
             JsonApiRelationship jsonApiRelationship = ReflectionUtils.findAnnotationForClass(relationship.getClass(), JsonApiRelationship.class);
             if (jsonApiRelationship == null) {
-                throw new DomainMisconfigurationException("Each relationship implementation must has " + JsonApiRelationship.class.getSimpleName() + " annotation placed on the type level.");
+                throw new DomainMisconfigurationException(MessageFormat.format("Each relationship implementation must has @{0} annotation placed on the type level.", JsonApiRelationship.class.getSimpleName()));
             }
             ResourceType parentResourceType = resolveResourceType(jsonApiRelationship.parentResource());
             RelationshipType relationshipType = relationship instanceof ToOneRelationship<?>
