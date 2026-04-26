@@ -16,6 +16,76 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class DomainRegistryTests {
 
     @Test
+    public void build_validateIntegrityForToOneRelationship_throwsException() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToOneRelationship()).build())
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("(TestToOneRelationship) relationship belongs to an unregistered (foo) resource. Please register (foo) resource or double-check if parent resource has been correctly specified.");
+    }
+
+    @Test
+    public void build_validateIntegrityForToManyRelationship_throwsException() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToManyRelationship()).build())
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("(TestToManyRelationship) relationship belongs to an unregistered (foo) resource. Please register (foo) resource or double-check if parent resource has been correctly specified.");
+    }
+
+    @Test
+    public void resource_missingAnnotation_throwsException() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .resource(new TestResourceWithoutAnnotation()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Each resource implementation must has @JsonApiResource annotation placed on the type level.");
+    }
+
+    @Test
+    public void relationship_toOneMissingAnnotation_throwsException() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToManyRelationshipWithoutAnnotation()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Each relationship implementation must has @JsonApiRelationship annotation placed on the type level.");
+    }
+
+    @Test
+    public void relationship_toManyMissingAnnotation_throwsException() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToManyRelationshipWithoutAnnotation()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Each relationship implementation must has @JsonApiRelationship annotation placed on the type level.");
+    }
+
+    @Test
+    public void resource_multipleWithTheSameName_throwsException() {
+        // given - when
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .resource(new TestResourceFoo())
+                .resource(new TestResourceSimilarFoo()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Multiple resource declarations found for (foO) resource type");
+    }
+
+    @Test
+    public void relationship_multipleToOneWithTheSameName_throwsException() {
+        // given - when
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToOneRelationship())
+                .relationship(new TestToOneRelationshipSimilar()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Multiple similar (tO1) relationship declarations found for (foo) resource type");
+    }
+
+    @Test
+    public void relationship_multipleToManyWithTheSameName_throwsException() {
+        // given - when
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .relationship(new TestToManyRelationship())
+                .relationship(new TestToManyRelationshipSimilar()))
+                .isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Multiple similar (tO2) relationship declarations found for (foo) resource type");
+    }
+
+    @Test
     public void empty_checkAllMethodsWorksAsExpected() {
         // given - when
         DomainRegistry sut = DomainRegistry.empty();
@@ -28,7 +98,7 @@ public class DomainRegistryTests {
     @Test
     public void resourceAndNoRelationships_checkAllMethodsWorksAsExpected() {
         // given - when
-        TestResource testResource = new TestResource();
+        TestResourceFoo testResource = new TestResourceFoo();
         DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
                 .resource(testResource)
                 .build();
@@ -42,7 +112,7 @@ public class DomainRegistryTests {
     @Test
     public void resourceAndRelationships_checkAllMethodsWorksAsExpected() {
         // given - when
-        TestResource testResource = new TestResource();
+        TestResourceFoo testResource = new TestResourceFoo();
         TestToOneRelationship testToOneRelationship = new TestToOneRelationship();
         TestToManyRelationship testToManyRelationship = new TestToManyRelationship();
         DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
@@ -56,7 +126,7 @@ public class DomainRegistryTests {
         assertThat(sut.getResourceTypes()).isNotNull().hasSize(1);
         assertThat(sut.getResource(new ResourceType("foo")).getResource()).isEqualTo(testResource);
 
-        assertThat(sut.getAvailableRelationshipNames(new ResourceType("foo"))).isNotNull().hasSize(2);
+        assertThat(sut.getRelationshipNames(new ResourceType("foo"))).isNotNull().hasSize(2);
 
         assertThat(sut.getToOneRelationshipNames(new ResourceType("foo"))).isEqualTo(Set.of(new RelationshipName("to1")));
         assertThat(sut.getToOneRelationships(new ResourceType("foo")).stream().map(RegisteredRelationship::getRelationship).toList()).isEqualTo(List.of(testToOneRelationship));
@@ -73,8 +143,7 @@ public class DomainRegistryTests {
         assertThatThrownBy(() -> sut.getToManyRelationshipStrict(new ResourceType("bar"), new RelationshipName("smth_else"))).isInstanceOf(DomainMisconfigurationException.class);
     }
 
-    @JsonApiResource(resourceType = "foo")
-    private static class TestResource implements Resource<String> {
+    private static class TestResourceWithoutAnnotation implements Resource<String> {
 
         @Override
         public String resolveResourceId(String dataSourceDto) {
@@ -83,7 +152,40 @@ public class DomainRegistryTests {
 
     }
 
-    @JsonApiRelationship(relationshipName = "to1", parentResource = TestResource.class)
+    @JsonApiResource(resourceType = "foo")
+    private static class TestResourceFoo implements Resource<String> {
+
+        @Override
+        public String resolveResourceId(String dataSourceDto) {
+            return UUID.randomUUID().toString();
+        }
+
+    }
+
+    @JsonApiResource(resourceType = "foO")
+    private static class TestResourceSimilarFoo implements Resource<String> {
+
+        @Override
+        public String resolveResourceId(String dataSourceDto) {
+            return UUID.randomUUID().toString();
+        }
+
+    }
+
+    private static class TestToOneRelationshipWithoutAnnotation implements ToOneRelationship<String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return UUID.randomUUID().toString();
+        }
+    }
+
+    @JsonApiRelationship(relationshipName = "to1", parentResource = TestResourceFoo.class)
     private static class TestToOneRelationship implements ToOneRelationship<String> {
 
         @Override
@@ -97,8 +199,49 @@ public class DomainRegistryTests {
         }
     }
 
-    @JsonApiRelationship(relationshipName = "to2", parentResource = TestResource.class)
+    @JsonApiRelationship(relationshipName = "tO1", parentResource = TestResourceFoo.class)
+    private static class TestToOneRelationshipSimilar implements ToOneRelationship<String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return UUID.randomUUID().toString();
+        }
+    }
+
+    private static class TestToManyRelationshipWithoutAnnotation implements ToManyRelationship<String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return UUID.randomUUID().toString();
+        }
+    }
+
+    @JsonApiRelationship(relationshipName = "to2", parentResource = TestResourceFoo.class)
     private static class TestToManyRelationship implements ToManyRelationship<String> {
+
+        @Override
+        public String resolveResourceIdentifierType(String s) {
+            return "foo";
+        }
+
+        @Override
+        public String resolveResourceIdentifierId(String s) {
+            return UUID.randomUUID().toString();
+        }
+    }
+
+    @JsonApiRelationship(relationshipName = "tO2", parentResource = TestResourceFoo.class)
+    private static class TestToManyRelationshipSimilar implements ToManyRelationship<String> {
 
         @Override
         public String resolveResourceIdentifierType(String s) {

@@ -15,6 +15,8 @@ docs:
     children:
       - title: "Quick Start Guide"
         url: /getting-started/
+      - title: "Write Operations"
+        url: /write-operations/
       - title: "Request/Response Examples"
         url: /request-response-examples/
   - title: "Framework Internals"

@@ -4,11 +4,41 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.domain.RegisteredRelationship;
+import pro.api4.jsonapi4j.domain.RegisteredResource;
+import pro.api4.jsonapi4j.domain.Relationship;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.domain.ToManyRelationship;
+import pro.api4.jsonapi4j.domain.ToOneRelationship;
 import pro.api4.jsonapi4j.model.document.LinksObject;
-import pro.api4.jsonapi4j.model.document.data.*;
-import pro.api4.jsonapi4j.operation.*;
+import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
+import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
+import pro.api4.jsonapi4j.operation.AddToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.CreateResourceOperation;
+import pro.api4.jsonapi4j.operation.DeleteResourceOperation;
+import pro.api4.jsonapi4j.operation.DeleteToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.OperationMeta;
+import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
+import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
+import pro.api4.jsonapi4j.operation.ReadToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.ReadToOneRelationshipOperation;
+import pro.api4.jsonapi4j.operation.RegisteredOperation;
+import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
+import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
+import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
+import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
@@ -18,7 +48,15 @@ import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
-import pro.api4.jsonapi4j.processor.resolvers.*;
+import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocLinksResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ResourceLinksResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
+import pro.api4.jsonapi4j.processor.resolvers.SingleDataItemDocLinksResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
+import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
@@ -32,7 +70,12 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
@@ -64,77 +107,8 @@ public class JsonApi4j {
     private final OperationsRegistry operationsRegistry;
     private final Executor executor;
 
-    public static class JsonApi4jBuilder {
-
-        private List<JsonApi4jPlugin> plugins = Collections.emptyList();
-        private DomainRegistry domainRegistry = DomainRegistry.empty();
-        private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
-        private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
-
-        private JsonApi4jBuilder() {
-
-        }
-
-        public JsonApi4jBuilder plugins(List<JsonApi4jPlugin> plugins) {
-            this.plugins = plugins;
-            return this;
-        }
-
-        public JsonApi4jBuilder domainRegistry(DomainRegistry domainRegistry) {
-            this.domainRegistry = domainRegistry;
-            return this;
-        }
-
-        public JsonApi4jBuilder operationsRegistry(OperationsRegistry operationsRegistry) {
-            this.operationsRegistry = operationsRegistry;
-            return this;
-        }
-
-        public JsonApi4jBuilder executor(Executor executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        public JsonApi4j build() {
-            return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor);
-        }
-
-    }
-
     public static JsonApi4jBuilder builder() {
         return new JsonApi4jBuilder();
-    }
-
-    /**
-     * Prints a human-readable summary of the current JsonApi4j state including:
-     * <ul>
-     *     <li>All registered resources and their relationships</li>
-     *     <li>All registered operations grouped by resource type</li>
-     *     <li>Active plugins</li>
-     * </ul>
-     *
-     * @return formatted state summary
-     */
-    public String printState() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== JsonApi4j State ===\n");
-
-        // Plugins
-        List<String> enabledPlugins = plugins.stream()
-                .filter(JsonApi4jPlugin::enabled)
-                .map(JsonApi4jPlugin::pluginName)
-                .toList();
-        sb.append("\n--- Plugins (").append(enabledPlugins.size()).append(") ---\n");
-        if (enabledPlugins.isEmpty()) {
-            sb.append("  (none)\n");
-        } else {
-            enabledPlugins.forEach(name -> sb.append("  - ").append(name).append("\n"));
-        }
-
-        sb.append("\n").append(domainRegistry.printState());
-        sb.append("\n").append(operationsRegistry.printState());
-
-        return sb.toString();
     }
 
     public Object execute(JsonApiRequest request) {
@@ -339,7 +313,6 @@ public class JsonApi4j {
         return getPluginSettings(registeredOperation, registeredResource, null);
     }
 
-
     private List<PluginSettings> getPluginSettings(
             RegisteredOperation<?> registeredOperation,
             RegisteredResource<?> registeredResource,
@@ -355,6 +328,59 @@ public class JsonApi4j {
             result.add(PluginSettings.builder().operationMeta(operationMeta).plugin(plugin).info(info).build());
         }
         return result.stream().sorted(Comparator.comparingInt(p -> p.getPlugin().precedence())).toList();
+    }
+
+    public static class JsonApi4jBuilder {
+
+        private List<JsonApi4jPlugin> plugins = Collections.emptyList();
+        private DomainRegistry domainRegistry = DomainRegistry.empty();
+        private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
+        private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
+
+        private JsonApi4jBuilder() {
+
+        }
+
+        public JsonApi4jBuilder plugins(List<JsonApi4jPlugin> plugins) {
+            this.plugins = plugins;
+            return this;
+        }
+
+        public JsonApi4jBuilder domainRegistry(DomainRegistry domainRegistry) {
+            this.domainRegistry = domainRegistry;
+            return this;
+        }
+
+        public JsonApi4jBuilder operationsRegistry(OperationsRegistry operationsRegistry) {
+            this.operationsRegistry = operationsRegistry;
+            return this;
+        }
+
+        public JsonApi4jBuilder executor(Executor executor) {
+            this.executor = executor;
+            return this;
+        }
+
+        public JsonApi4j build() {
+            validateIntegrity();
+            return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor);
+        }
+
+        private void validateIntegrity() {
+            // check if operations are pointing to the registered resources
+            operationsRegistry.getAllRegisteredOperations().forEach(o -> {
+                if (!domainRegistry.getResourceTypes().contains(o.getOperationMeta().getResourceType())) {
+                    throw new OperationsMisconfigurationException(
+                            MessageFormat.format(
+                                    "Operation ({0}) is added for the resource that is not registered in the domain. " +
+                                            "Ensure target resource is registered in the Domain Registry.",
+                                    o.getOperation().getClass().getSimpleName()
+                            )
+                    );
+                }
+            });
+        }
+
     }
 
     public class ResourceTypeStepSelected {
@@ -660,7 +686,7 @@ public class JsonApi4j {
         private <REQUEST, DATA_SOURCE_DTO> Map<RelationshipName, DefaultRelationshipResolver<REQUEST, DATA_SOURCE_DTO>> getDefaultRelationshipResolvers(
                 IdSupplier<DATA_SOURCE_DTO> resourceIdSupplier
         ) {
-            return domainRegistry.getAvailableRelationshipNames(resourceType).stream()
+            return domainRegistry.getRelationshipNames(resourceType).stream()
                     .collect(
                             toMap(
                                     r -> r,
