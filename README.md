@@ -189,11 +189,11 @@ Resolves `include` queries with multi-level relationship chaining (e.g., `includ
 
 ### Sample Apps
 
-| App | Stack | Description |
-|-----|-------|-------------|
+| App | Stack | Description                                                            |
+|-----|-------|------------------------------------------------------------------------|
 | [Spring Boot](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-springboot-sampleapp) | Spring Boot | Users, Countries, Currencies with relationships and compound documents |
-| [Quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-quarkus-sampleapp) | Quarkus | Same domain, CDI-based integration |
-| [Servlet](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) | Servlet API | Cookbook domain — recipes and ingredients |
+| [Quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-quarkus-sampleapp) | Quarkus | Same domain, CDI-based integration                                     |
+| [Servlet](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) | Servlet API | Same domain, objects registration in Servlet Context                   |
 
 ## Alternatives
 
