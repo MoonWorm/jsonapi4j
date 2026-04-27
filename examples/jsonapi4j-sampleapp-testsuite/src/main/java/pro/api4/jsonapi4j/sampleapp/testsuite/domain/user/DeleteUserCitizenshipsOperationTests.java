@@ -73,8 +73,12 @@ public abstract class DeleteUserCitizenshipsOperationTests {
                 .statusCode(400)
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("resource id can't be blank"))
-                .body("errors[0].id", notNullValue());
+                .body("errors[0].detail", equalTo("Not valid CCA2 country code"))
+                .body("errors[0].id", notNullValue())
+                .body("errors[1].code", equalTo("VALUE_EMPTY"))
+                .body("errors[1].status", equalTo("400"))
+                .body("errors[1].detail", equalTo("must not be blank"))
+                .body("errors[1].id", notNullValue());
     }
 
 }

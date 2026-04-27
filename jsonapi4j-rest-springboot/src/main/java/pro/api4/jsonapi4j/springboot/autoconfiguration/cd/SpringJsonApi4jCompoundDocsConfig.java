@@ -50,7 +50,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
     public CompoundDocsResourceCache jsonApi4jCompoundDocsResourceCache(CompoundDocsProperties cdProperties) {
         int maxSize = cdProperties.cache() != null
                 ? cdProperties.cache().maxSize()
-                : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE);
+                : Integer.parseInt(CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE);
         return new InMemoryCompoundDocsResourceCache(maxSize);
     }
 

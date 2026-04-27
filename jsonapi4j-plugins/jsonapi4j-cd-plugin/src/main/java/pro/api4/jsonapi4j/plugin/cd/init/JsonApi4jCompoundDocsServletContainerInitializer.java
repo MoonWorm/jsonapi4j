@@ -46,7 +46,7 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
     private void initCache(ServletContext servletContext, CompoundDocsProperties cdProperties) {
         boolean cacheEnabled = cdProperties.cache() != null
                 ? cdProperties.cache().enabled()
-                : Boolean.parseBoolean(CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE);
+                : Boolean.parseBoolean(CompoundDocsProperties.Cache.DEFAULT_CACHE_ENABLED);
         if (!cacheEnabled) {
             log.info("CD Cache is disabled via configuration.");
             return;
@@ -55,7 +55,7 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
             log.warn("CD Cache is not found in servlet context. Composing a default InMemoryCompoundDocsResourceCache...");
             int maxSize = cdProperties.cache() != null
                     ? cdProperties.cache().maxSize()
-                    : Integer.parseInt(CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE);
+                    : Integer.parseInt(CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE);
             CompoundDocsResourceCache cache = new InMemoryCompoundDocsResourceCache(maxSize);
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cache);
         }

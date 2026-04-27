@@ -147,16 +147,15 @@ Every operation has a `validate(JsonApiRequest request)` method that runs before
 | `validateAddToMany(request)` | `add` |
 | `validateDeleteFromToMany(request)` | `delete` |
 
-Each validator has a default implementation that runs the operation's built-in validation. Override only the ones where you need custom logic:
+Each validator has a default implementation that runs the operation's built-in validation. Override only the ones where you need custom logic.
+
+Every operation also provides a `getValidator()` method that returns a pre-configured `JsonApi4jDefaultValidator` instance. This validator offers common checks — resource ID length, payload structure, filter/include/sort limits — all driven by the [validation properties](/configuration/#validation-properties). Use it in your custom validators to avoid re-implementing standard checks:
 
 ```java
 @Override
 public void validateCreate(JsonApiRequest request) {
-    // Run built-in validation first
-    CreateResourceOperation.DEFAULT_VALIDATOR.accept(request);
-
-    // Then add custom checks
     var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+    getValidator().validateSingleResourceDoc(payload);
     String email = payload.getData().getAttributes().getEmail();
     if (email == null || !email.contains("@")) {
         throw new ConstraintViolationException(

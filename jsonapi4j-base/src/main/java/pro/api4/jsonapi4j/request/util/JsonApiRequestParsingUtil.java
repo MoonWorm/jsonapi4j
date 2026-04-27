@@ -4,9 +4,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
@@ -19,9 +17,7 @@ import java.util.stream.Stream;
 
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.extractFilterName;
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.isJsonApiFilterParam;
-import static pro.api4.jsonapi4j.request.IncludeAwareRequest.NUMBER_OF_INCLUDES_GLOBAL_CAP;
 import static pro.api4.jsonapi4j.request.PaginationAwareRequest.isJsonApiPaginationParam;
-import static pro.api4.jsonapi4j.request.SortAwareRequest.NUMBER_OF_SORT_BY_GLOBAL_CAP;
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.extractResourceType;
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.isJsonApiFieldsParam;
 
@@ -31,18 +27,6 @@ public final class JsonApiRequestParsingUtil {
 
     private JsonApiRequestParsingUtil() {
 
-    }
-
-    public static Map<String, List<String>> parseCustomQueryParams(Map<String, List<String>> params) {
-        return params.entrySet()
-                .stream()
-                .filter(e -> isNotJsonApiParam(e.getKey()))
-                .filter(e -> !e.getValue().isEmpty())
-                .filter(e -> e.getValue().stream().anyMatch(StringUtils::isNotBlank))
-                .collect(CustomCollectors.toOrderedMap(
-                        Map.Entry::getKey,
-                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList())
-                );
     }
 
     public static String parseResourceIdFromThePath(String requestUri) {
@@ -58,31 +42,19 @@ public final class JsonApiRequestParsingUtil {
     }
 
     public static List<String> parseEffectiveIncludes(List<String> paramValue) {
-        List<String> result = parseCommaSeparatedParam(paramValue)
+        List<String> includes = parseCommaSeparatedParam(paramValue)
                 .map(include -> include.split("\\.")[0])
                 .sorted()
                 .toList();
-        if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
-            throw new ConstraintViolationException(
-                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
-                    String.format("Include value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
-                    IncludeAwareRequest.INCLUDE_PARAM
-            );
-        }
-        return result;
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIncludes(includes);
+        return includes;
     }
 
     public static List<String> parseOriginalIncludes(List<String> paramValue) {
         List<String> result = parseCommaSeparatedParam(paramValue)
                 .sorted()
                 .toList();
-        if (result.size() > NUMBER_OF_INCLUDES_GLOBAL_CAP) {
-            throw new ConstraintViolationException(
-                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
-                    String.format("Include value shouldn't have more than %d elements", NUMBER_OF_INCLUDES_GLOBAL_CAP),
-                    IncludeAwareRequest.INCLUDE_PARAM
-            );
-        }
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIncludes(result);
         return result;
     }
 
@@ -93,13 +65,7 @@ public final class JsonApiRequestParsingUtil {
                         SortAwareRequest::extractSortBy,
                         SortAwareRequest::extractSortOrder
                 ));
-        if (sortBy.size() > SortAwareRequest.NUMBER_OF_SORT_BY_GLOBAL_CAP) {
-            throw new ConstraintViolationException(
-                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
-                    String.format("Sort value shouldn't have more than %d elements", NUMBER_OF_SORT_BY_GLOBAL_CAP),
-                    SortAwareRequest.SORT_PARAM
-            );
-        }
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateSortBy(sortBy);
         return sortBy;
     }
 
@@ -115,7 +81,7 @@ public final class JsonApiRequestParsingUtil {
             return null;
         }
         return limitParamValue.stream().findFirst().map(v -> {
-            new JsonApi4jDefaultValidator().validateLimit(v);
+            JsonApi4jDefaultValidatorHolder.INSTANCE.validateLimit(v);
             return Long.parseLong(v);
         }).orElse(null);
     }
@@ -125,6 +91,42 @@ public final class JsonApiRequestParsingUtil {
             return null;
         }
         return offsetParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+    }
+
+    public static Map<String, List<String>> parseFilter(Map<String, List<String>> params) {
+        Map<String, List<String>> filterParams = params.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .filter(e -> isJsonApiFilterParam(e.getKey()))
+                .collect(CustomCollectors.toOrderedMap(
+                        e -> extractFilterName(e.getKey()),
+                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList()
+                ));
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateFilterParams(filterParams);
+        return filterParams;
+    }
+
+    public static Map<String, List<String>> parseFieldSets(Map<String, List<String>> params) {
+        return params.entrySet()
+                .stream()
+                .filter(e -> isJsonApiFieldsParam(e.getKey()))
+                .sorted(Map.Entry.comparingByKey())
+                .collect(CustomCollectors.toOrderedMap(
+                        e -> extractResourceType(e.getKey()),
+                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList()
+                ));
+    }
+
+    public static Map<String, List<String>> parseCustomQueryParams(Map<String, List<String>> params) {
+        return params.entrySet()
+                .stream()
+                .filter(e -> isNotJsonApiParam(e.getKey()))
+                .filter(e -> !e.getValue().isEmpty())
+                .filter(e -> e.getValue().stream().anyMatch(StringUtils::isNotBlank))
+                .collect(CustomCollectors.toOrderedMap(
+                        Map.Entry::getKey,
+                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList())
+                );
     }
 
     public static URI parseExt(String contentType) {
@@ -158,28 +160,6 @@ public final class JsonApiRequestParsingUtil {
             end -= 1;
         }
         return input.substring(start, end);
-    }
-
-    public static Map<String, List<String>> parseFilter(Map<String, List<String>> params) {
-        return params.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .filter(e -> isJsonApiFilterParam(e.getKey()))
-                .collect(CustomCollectors.toOrderedMap(
-                        e -> extractFilterName(e.getKey()),
-                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList()
-                ));
-    }
-
-    public static Map<String, List<String>> parseFieldSets(Map<String, List<String>> params) {
-        return params.entrySet()
-                .stream()
-                .filter(e -> isJsonApiFieldsParam(e.getKey()))
-                .sorted(Map.Entry.comparingByKey())
-                .collect(CustomCollectors.toOrderedMap(
-                        e -> extractResourceType(e.getKey()),
-                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList()
-                ));
     }
 
     private static Stream<String> parseCommaSeparatedParam(List<String> paramValue) {

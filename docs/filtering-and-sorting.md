@@ -71,8 +71,6 @@ The framework does not validate filter names or values — any `filter[...]` par
 ```java
 @Override
 public void validateReadMultiple(JsonApiRequest request) {
-    ReadMultipleResourcesOperation.DEFAULT_VALIDATOR.accept(request);
-
     Set<String> allowedFilters = Set.of("id", "region", "status");
     for (String filterName : request.getFilters().keySet()) {
         if (!allowedFilters.contains(filterName)) {

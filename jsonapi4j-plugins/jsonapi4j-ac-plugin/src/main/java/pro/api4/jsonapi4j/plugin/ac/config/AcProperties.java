@@ -4,10 +4,10 @@ public interface AcProperties {
 
     String AC_PROPERTY_NAME = "ac";
 
-    String DEFAULT_AC_ENABLED = "true";
+    String DEFAULT_ENABLED = "true";
 
     default boolean enabled() {
-        return Boolean.parseBoolean(DEFAULT_AC_ENABLED);
+        return Boolean.parseBoolean(DEFAULT_ENABLED);
     }
 
 }

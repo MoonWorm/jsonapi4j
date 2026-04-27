@@ -7,7 +7,6 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
@@ -48,7 +47,6 @@ public class UserCitizenshipsOperations implements
     private final CountriesClient client;
     private final UserDb userDb;
     private final CountryInputParamsValidator countryValidator;
-    private final JsonApi4jDefaultValidator jsonApiValidator = new JsonApi4jDefaultValidator();
 
     @OasOperationInfo(
             securityConfig = @OasOperationInfo.SecurityConfig(
@@ -156,31 +154,28 @@ public class UserCitizenshipsOperations implements
 
     @Override
     public void validateAddToMany(JsonApiRequest request) {
-        ToManyRelationshipOperations.super.validateAddToMany(request);
-        jsonApiValidator.validateToManyRelationshipDoc(
+        getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
         );
     }
 
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
-        ToManyRelationshipOperations.super.validateDeleteFromToMany(request);
-        jsonApiValidator.validateToManyRelationshipDoc(
+        getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
         );
     }
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        ToManyRelationshipOperations.super.validateUpdateToMany(request);
-        jsonApiValidator.validateToManyRelationshipDoc(
+        getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
         );
     }
 

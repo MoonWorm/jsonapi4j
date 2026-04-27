@@ -19,10 +19,14 @@
     </modules>
 
     <properties>
-        <jsonapi4j.version>1.5.4-SNAPSHOT</jsonapi4j.version>
+        <jsonapi4j.version>1.6.2-SNAPSHOT</jsonapi4j.version>
 
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
+
         <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
+        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
+        <jakarta.el.version>4.0.2</jakarta.el.version>
+
         <swagger.model.version>2.2.31</swagger.model.version>
         <lombok.version>1.18.44</lombok.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>

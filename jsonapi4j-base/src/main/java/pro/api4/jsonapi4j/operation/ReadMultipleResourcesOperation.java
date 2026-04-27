@@ -1,12 +1,8 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
-import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
-
-import java.util.List;
-import java.util.function.Consumer;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to read multiple resources. This implies both
@@ -65,13 +61,6 @@ public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOp
     String READ_PAGE_METHOD_NAME = "readPage";
     String ID_FILTER_NAME = "id";
 
-    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
-        List<String> ids = request.getFilters().get(ID_FILTER_NAME);
-        if (ids != null && !ids.isEmpty()) {
-            new JsonApi4jDefaultValidator().validateFilterByIds(ids);
-        }
-    };
-
     /**
      * Reads multiple resources. Implies 'read all' by default, but can be limited by filters. In some situations only
      * 'read by id' filter flow might exist.
@@ -83,28 +72,5 @@ public interface ReadMultipleResourcesOperation<RESOURCE_DTO> extends ResourceOp
      * @return {@link PaginationAwareResponse} of downstream {@link RESOURCE_DTO}
      */
     PaginationAwareResponse<RESOURCE_DTO> readPage(JsonApiRequest request);
-
-    /**
-     * Overrides NO-OP implementation by {@link ReadMultipleResourcesOperation}-specific default validations, namely it
-     * applies some basic checks for 'filter[id]' flow if this is the current flow (e.g. max number of ids,
-     * max length of each id, etc.).
-     * <p>
-     * Thus, it's recommended to call
-     * <pre>
-     *     {@code
-     *     ReadMultipleResourcesOperation.super.validate(request);
-     *     }
-     * </pre>
-     * at the beginning of the custom method implementation.
-     * <p>
-     * Must throw an exception if validation failed. Check DefaultErrorHandlerFactory, Jsr380ErrorHandlers,
-     * etc. for more details.
-     *
-     * @param request incoming {@link JsonApiRequest}
-     */
-    @Override
-    default void validate(JsonApiRequest request) {
-        DEFAULT_VALIDATOR.accept(request);
-    }
 
 }

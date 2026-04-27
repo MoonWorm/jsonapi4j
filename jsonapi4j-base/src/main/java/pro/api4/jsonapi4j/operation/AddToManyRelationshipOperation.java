@@ -1,10 +1,7 @@
 package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-
-import java.util.function.Consumer;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to add members to this to-many relationship
@@ -28,9 +25,6 @@ import java.util.function.Consumer;
 public interface AddToManyRelationshipOperation extends RelationshipOperation {
 
     String ADD_MANY_METHOD_NAME = "add";
-    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
-        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
-    };
 
     /**
      * Adds members to the to-many relationship for the given resource.

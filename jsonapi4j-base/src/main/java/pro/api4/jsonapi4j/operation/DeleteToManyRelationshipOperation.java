@@ -1,10 +1,7 @@
 package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-
-import java.util.function.Consumer;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to remove members from this to-many relationship
@@ -28,9 +25,6 @@ import java.util.function.Consumer;
 public interface DeleteToManyRelationshipOperation extends RelationshipOperation {
 
     String DELETE_MANY_METHOD_NAME = "delete";
-    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
-        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
-    };
 
     /**
      * Removes members from the to-many relationship for the given resource.

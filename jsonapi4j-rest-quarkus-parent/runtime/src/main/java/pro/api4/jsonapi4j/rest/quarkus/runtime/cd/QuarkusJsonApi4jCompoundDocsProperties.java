@@ -16,8 +16,8 @@ import java.util.Optional;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.*;
-import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.CD_CACHE_ENABLED_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE;
+import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.DEFAULT_CACHE_ENABLED;
+import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE;
 
 @Singleton
 @ConfigMapping(prefix = "jsonapi4j.cd", namingStrategy = VERBATIM)
@@ -27,25 +27,25 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     /**
      * Enables compound documents filter.
      */
-    @WithDefault(CD_ENABLED_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_ENABLED)
     boolean enabled();
 
     /**
      * Maximum include traversal depth.
      */
-    @WithDefault(CD_MAX_HOPS_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_MAX_HOPS)
     int maxHops();
 
     /**
      * Maximum amount of included resources.
      */
-    @WithDefault(CD_MAX_INCLUDED_RESOURCES)
+    @WithDefault(DEFAULT_MAX_INCLUDED_RESOURCES)
     int maxIncludedResources();
 
     /**
      * Error strategy.
      */
-    @WithDefault(CD_ERROR_STRATEGY_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_ERROR_STRATEGY)
     ErrorStrategy errorStrategy();
 
     /**
@@ -56,13 +56,13 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     /**
      * Defines which JsonApiRequest parts to propagate during Compound Docs resolution loop.
      */
-    @WithDefault(CD_PROPAGATION_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_PROPAGATION)
     List<Propagation> propagation();
 
     /**
      * Defines if Compound Docs plugin should deduplicate resources in 'included' section (by 'type' / 'id')
      */
-    @WithDefault(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_DEDUPLICATE_RESOURCES)
     boolean deduplicateResources();
 
     /**
@@ -79,7 +79,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
      *     <li>reading body</li>
      * </ul>
      */
-    @WithDefault(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_HTTP_CONNECT_TIMEOUT_MS)
     long httpConnectTimeoutMs();
 
     /**
@@ -92,7 +92,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
      *     <li>reading response body</li>
      * </ul>
      */
-    @WithDefault(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE)
+    @WithDefault(DEFAULT_HTTP_TOTAL_TIMEOUT_MS)
     long httpTotalTimeoutMs();
 
     /**
@@ -107,13 +107,13 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         /**
          * Enables compound docs resource cache.
          */
-        @WithDefault(CD_CACHE_ENABLED_DEFAULT_VALUE)
+        @WithDefault(DEFAULT_CACHE_ENABLED)
         boolean enabled();
 
         /**
          * Maximum number of entries in the in-memory cache.
          */
-        @WithDefault(CD_CACHE_MAX_SIZE_DEFAULT_VALUE)
+        @WithDefault(DEFAULT_CACHE_MAX_SIZE)
         int maxSize();
     }
 

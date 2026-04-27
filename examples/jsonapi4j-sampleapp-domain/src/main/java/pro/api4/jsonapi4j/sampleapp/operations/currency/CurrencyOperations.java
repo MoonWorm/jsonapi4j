@@ -7,15 +7,14 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyResource;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,8 +78,7 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
 
     @Override
     public void validateReadMultiple(JsonApiRequest request) {
-        ResourceOperations.super.validateReadMultiple(request);
-        new JsonApi4jDefaultValidator().validateNonNull(
+        getValidator().validateNonNull(
                 request.getFilters().get(ID_FILTER_NAME),
                 FiltersAwareRequest.getFilterParam(ID_FILTER_NAME)
         );

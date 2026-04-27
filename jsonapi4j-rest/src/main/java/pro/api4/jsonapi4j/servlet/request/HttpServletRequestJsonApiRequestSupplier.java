@@ -3,6 +3,9 @@ package pro.api4.jsonapi4j.servlet.request;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
@@ -12,10 +15,16 @@ import pro.api4.jsonapi4j.http.exception.UnsupportedMediaTypeException;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.request.*;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
+import pro.api4.jsonapi4j.request.CursorAwareRequest;
+import pro.api4.jsonapi4j.request.DefaultJsonApiRequest;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
+import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
+import pro.api4.jsonapi4j.request.SortAwareRequest;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,12 +32,22 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.operation.OperationType.Method.isSupportedMethod;
 import static java.util.stream.Collectors.toMap;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.*;
+import static pro.api4.jsonapi4j.operation.OperationType.Method.isSupportedMethod;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCursor;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCustomQueryParams;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEffectiveIncludes;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseExt;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFieldSets;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFilter;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseLimit;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOffset;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOriginalIncludes;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseProfile;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseResourceIdFromThePath;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseSortBy;
 
 @Data
 @Slf4j
@@ -69,7 +88,17 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         String path = getPath(servletRequest);
         log.debug("Received JSON:API request for the path {} and method {}", path, method);
         log.debug("Converting HttpServletRequest to JsonApiRequest...");
+
+        OperationDetailsResolver.OperationDetails operationDetails = operationDetailsResolver.fromUrlAndMethod(
+                path,
+                method
+        );
         String resourceId = parseResourceIdFromThePath(path);
+        if (operationDetails.getOperationType() != OperationType.READ_MULTIPLE_RESOURCES
+                && operationDetails.getOperationType() != OperationType.CREATE_RESOURCE) {
+            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceId, "resource id");
+            JsonApi4jDefaultValidatorHolder.INSTANCE.validateResourceId(resourceId);
+        }
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
         List<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
@@ -83,10 +112,6 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         URI ext = parseExt(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
         URI profile = parseProfile(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
 
-        OperationDetailsResolver.OperationDetails operationDetails = operationDetailsResolver.fromUrlAndMethod(
-                path,
-                method
-        );
         ResourceType targetResourceType = operationDetails.getResourceType();
         RelationshipName targetRelationshipName = operationDetails.getRelationshipName();
         OperationType targetOperationType = operationDetails.getOperationType();
@@ -144,7 +169,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
     private String getPath(HttpServletRequest request) {
         String path = request.getPathInfo();
         log.debug("Request path: {}", path);
-        if(path == null) {
+        if (path == null) {
             return "/";
         }
         return Paths.get(path).normalize().toString();

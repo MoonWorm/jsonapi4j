@@ -26,6 +26,7 @@ import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;

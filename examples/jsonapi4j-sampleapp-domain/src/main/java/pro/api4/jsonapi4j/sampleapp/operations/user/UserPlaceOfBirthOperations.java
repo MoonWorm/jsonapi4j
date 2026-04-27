@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.operation.BatchReadToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
@@ -37,7 +36,6 @@ public class UserPlaceOfBirthOperations implements
 
     private final CountriesClient client;
     private final UserDb userDb;
-    private final JsonApi4jDefaultValidator jsonApiValidator = new JsonApi4jDefaultValidator();
     private final CountryInputParamsValidator countryValidator;
 
     @OasOperationInfo(
@@ -110,11 +108,10 @@ public class UserPlaceOfBirthOperations implements
 
     @Override
     public void validateUpdateToOne(JsonApiRequest request) {
-        ToOneRelationshipOperations.super.validateUpdateToOne(request);
-        jsonApiValidator.validateToOneRelationshipDoc(
+        getValidator().validateToOneRelationshipDoc(
                 request.getToOneRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
         );
     }
 

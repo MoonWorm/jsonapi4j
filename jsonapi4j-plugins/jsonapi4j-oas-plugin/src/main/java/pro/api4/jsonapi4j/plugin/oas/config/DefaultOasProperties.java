@@ -18,7 +18,7 @@ import java.util.Map;
 @Setter
 public class DefaultOasProperties implements OasProperties {
 
-    private boolean enabled = Boolean.parseBoolean(DEFAULT_OAS_ENABLED);
+    private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
     private String oasRootPath = DEFAULT_OAS_ROOT_PATH;
     private DefaultInfo info;
     private DefaultExternalDocumentation externalDocumentation;
@@ -64,10 +64,10 @@ public class DefaultOasProperties implements OasProperties {
     @Getter
     @Setter
     public static class DefaultInfo implements Info {
-        private String title = OAS_INFO_TITLE_DEFAULT_VALUE;
+        private String title = DEFAULT_INFO_TITLE;
         private String description;
         private DefaultContact contact;
-        private String version = OAS_INFO_VERSION_DEFAULT_VALUE;
+        private String version = DEFAULT_INFO_VERSION;
         private String termsOfService;
         private DefaultLicense license;
         private Map<String, Object> extensions;
@@ -260,7 +260,7 @@ public class DefaultOasProperties implements OasProperties {
     public static class DefaultServer implements Server {
         private String name;
         private String url;
-        private boolean enabled = Boolean.parseBoolean(DEFAULT_OAS_SERVER_ENABLED);
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_SERVER_ENABLED);
 
         @Override
         public String name() {
@@ -306,8 +306,8 @@ public class DefaultOasProperties implements OasProperties {
     public static class DefaultResponseHeader implements ResponseHeader {
         private String name;
         private String description;
-        private boolean required = Boolean.parseBoolean(DEFAULT_OAS_RESPONSE_HEADER_REQUIRED);
-        private String schema = DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
+        private boolean required = Boolean.parseBoolean(DEFAULT_RESPONSE_HEADER_REQUIRED);
+        private String schema = DEFAULT_RESPONSE_HEADER_SCHEMA;
         private String example;
 
         @Override

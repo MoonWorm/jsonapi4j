@@ -1,6 +1,8 @@
 package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 /**
@@ -23,5 +25,9 @@ public interface Operation {
      * @param request incoming {@link JsonApiRequest}
      */
     void validate(JsonApiRequest request);
+
+    default JsonApi4jDefaultValidator getValidator() {
+        return JsonApi4jDefaultValidatorHolder.INSTANCE;
+    }
 
 }

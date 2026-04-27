@@ -105,6 +105,16 @@ jsonapi4j:
             schema: integer
             example: 5
 
+  # Validation
+  validation:
+    maxNumberFilterParams: 5
+    maxElementsInFilterParam: 20
+    resourceIdMaxLength: 64
+    limitMaxValue: 100
+    maxElementsInIncludeParam: 10
+    maxElementsInSortByParam: 5
+
+
 logging:
   level:
     root: INFO

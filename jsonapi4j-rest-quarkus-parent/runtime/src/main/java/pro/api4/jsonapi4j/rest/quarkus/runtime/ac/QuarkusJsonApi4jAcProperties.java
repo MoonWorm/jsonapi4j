@@ -20,7 +20,7 @@ public interface QuarkusJsonApi4jAcProperties {
      * Enabled by default.
      * Example: `true`, `false`.
      */
-    @WithDefault(AcProperties.DEFAULT_AC_ENABLED)
+    @WithDefault(AcProperties.DEFAULT_ENABLED)
     boolean enabled();
 
     default AcProperties toJsonapi4jAcProperties() {

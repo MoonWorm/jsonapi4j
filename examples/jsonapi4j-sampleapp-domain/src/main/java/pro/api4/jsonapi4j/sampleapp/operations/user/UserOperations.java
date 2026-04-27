@@ -8,7 +8,6 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.exception.ConstraintViolationException;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
@@ -47,7 +46,6 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     private final UserDb userDb;
     private final UserInputParamsValidator userValidator;
     private final CountryInputParamsValidator countryValidator;
-    private final JsonApi4jDefaultValidator jsonApiValidator = new JsonApi4jDefaultValidator();
 
     public static Map<String, RelationshipType> parseRelations(List<ResourceIdentifierObject> data) {
         Map<String, RelationshipType> relations = new LinkedHashMap<>();
@@ -248,9 +246,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateCreate(JsonApiRequest request) {
-        ResourceOperations.super.validateCreate(request);
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        jsonApiValidator.validateSingleResourceDoc(singleResourceDoc);
+        getValidator().validateSingleResourceDoc(singleResourceDoc);
         UserAttributes att = singleResourceDoc.getData().getAttributes();
         if (att == null) {
             throw new ConstraintViolationException("'attributes' is null", "attributes");
@@ -266,9 +263,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateUpdate(JsonApiRequest request) {
-        ResourceOperations.super.validateUpdate(request);
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        jsonApiValidator.validateSingleResourceDoc(singleResourceDoc);
+        getValidator().validateSingleResourceDoc(singleResourceDoc);
         UserAttributes att = singleResourceDoc.getData().getAttributes();
         if (att != null) {
             if (att.getFullName() != null) {
@@ -286,29 +282,30 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     private void validateRelationships(UserRelationships rel) {
         if (rel != null) {
             if (rel.getCitizenships() != null) {
-                jsonApiValidator.validateToManyRelationshipDoc(
+                getValidator().validateToManyRelationshipDoc(
                         rel.getCitizenships(),
                         countryValidator::validateCountryId,
-                        resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
                 );
             }
             if (rel.getPlaceOfBirth() != null && rel.getPlaceOfBirth().getData() != null) {
-                jsonApiValidator.validateToOneRelationshipDoc(
+                getValidator().validateToOneRelationshipDoc(
                         rel.getPlaceOfBirth(),
                         countryValidator::validateCountryId,
-                        resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
                 );
             }
             if (rel.getRelatives() != null) {
-                jsonApiValidator.validateToManyRelationshipDoc(
+                getValidator().validateToManyRelationshipDoc(
                         rel.getRelatives(),
                         resourceId -> {
-                            jsonApiValidator.validateResourceId(resourceId);
+                            getValidator().validateNonBlank(resourceId, "resourceId");
+                            getValidator().validateResourceId(resourceId);
                             if (userDb.readById(resourceId) == null) {
                                 throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
                             }
                         },
-                        resourceType -> jsonApiValidator.validateResourceTypeAnyOf(resourceType, Set.of("users")),
+                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("users")),
                         UserOperations::validateRelationsMeta
                 );
             }
@@ -317,7 +314,6 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateDelete(JsonApiRequest request) {
-        ResourceOperations.super.validateDelete(request);
         if (userDb.readById(request.getResourceId()) == null) {
             throwResourceNotFoundException(request);
         }

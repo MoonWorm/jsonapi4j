@@ -12,7 +12,7 @@ import java.util.Map;
 @Setter
 public class DefaultAcProperties implements AcProperties {
 
-    private boolean enabled = Boolean.parseBoolean(AcProperties.DEFAULT_AC_ENABLED);
+    private boolean enabled = Boolean.parseBoolean(AcProperties.DEFAULT_ENABLED);
 
     @Override
     public boolean enabled() {

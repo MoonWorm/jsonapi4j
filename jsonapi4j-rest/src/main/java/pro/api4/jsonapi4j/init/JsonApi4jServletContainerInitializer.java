@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static pro.api4.jsonapi4j.config.JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH;
+import static pro.api4.jsonapi4j.config.JsonApi4jProperties.DEFAULT_ROOT_PATH;
 import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenient;
 
 @Slf4j
@@ -72,8 +72,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         // ------------------
         // dispatcher servlet
         // ------------------
-        String rootPath = properties == null ? JSONAPI4J_DEFAULT_ROOT_PATH : properties.rootPath();
-        String dispatcherServletMapping = rootPath + "/*";
+        String dispatcherServletMapping = properties.rootPath() + "/*";
         registerDispatcherServlet(
                 servletContext,
                 dispatcherServletMapping

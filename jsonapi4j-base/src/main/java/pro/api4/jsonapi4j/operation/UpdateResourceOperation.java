@@ -2,10 +2,7 @@ package pro.api4.jsonapi4j.operation;
 
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-
-import java.util.function.Consumer;
 
 /**
  * Implement this interface to let jsonapi4j framework to know how to update the given resource.
@@ -29,40 +26,11 @@ public interface UpdateResourceOperation extends ResourceOperation {
 
     String UPDATE_METHOD_NAME = "update";
 
-    Consumer<JsonApiRequest> DEFAULT_VALIDATOR = request -> {
-        new JsonApi4jDefaultValidator().validateResourceId(request.getResourceId());
-    };
-
     /**
      * Updates the given resource: attributes section, relationships, or both.
      *
      * @param request incoming {@link JsonApiRequest}
      */
     void update(JsonApiRequest request);
-
-    /**
-     * Overrides NO-OP implementation by {@link UpdateResourceOperation}-specific default validations, namely it
-     * checks that the request has the corresponding resource id in the URL (for example, /users/{userId}) and checks
-     * that it's a valid string.
-     * <p>
-     * Thus, it's recommended to call
-     * <pre>
-     *     {@code
-     *     UpdateResourceOperation.super.validate(request);
-     *     }
-     * </pre>
-     * at the beginning of the custom method implementation.
-     * <p>
-     * Custom implementation usually should focus mostly on the payload validation.
-     * <p>
-     * Must throw an exception if validation failed. Check DefaultErrorHandlerFactory, Jsr380ErrorHandlers,
-     * etc. for more details.
-     *
-     * @param request incoming {@link JsonApiRequest}
-     */
-    @Override
-    default void validate(JsonApiRequest request) {
-        DEFAULT_VALIDATOR.accept(request);
-    }
 
 }

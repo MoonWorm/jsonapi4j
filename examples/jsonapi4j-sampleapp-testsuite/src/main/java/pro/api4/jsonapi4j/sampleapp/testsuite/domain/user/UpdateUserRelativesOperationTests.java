@@ -97,7 +97,7 @@ public abstract class UpdateUserRelativesOperationTests {
                 .statusCode(400)
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("resource id can't be blank"))
+                .body("errors[0].detail", equalTo("value can't be blank"))
                 .body("errors[0].id", notNullValue());
     }
 

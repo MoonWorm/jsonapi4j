@@ -13,7 +13,7 @@ import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.cd.QuarkusJsonApi4jCompoundDocsProperties.CacheConfig;
 
-import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.CD_CACHE_MAX_SIZE_DEFAULT_VALUE;
+import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE;
 
 /**
  * Optional beans that are only registered when jsonapi4j-oas-plugin is available in the app classpath.
@@ -50,7 +50,7 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
         return new InMemoryCompoundDocsResourceCache(
                 cdProperties.cache()
                         .map(CacheConfig::maxSize)
-                        .orElse(Integer.parseInt(CD_CACHE_MAX_SIZE_DEFAULT_VALUE))
+                        .orElse(Integer.parseInt(DEFAULT_CACHE_MAX_SIZE))
         );
     }
 

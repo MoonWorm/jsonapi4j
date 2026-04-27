@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Optional;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.OAS_INFO_TITLE_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.OAS_INFO_VERSION_DEFAULT_VALUE;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_OAS_RESPONSE_HEADER_REQUIRED;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Server.DEFAULT_OAS_SERVER_ENABLED;
+import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.DEFAULT_INFO_TITLE;
+import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.DEFAULT_INFO_VERSION;
+import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_RESPONSE_HEADER_REQUIRED;
+import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_RESPONSE_HEADER_SCHEMA;
+import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Server.DEFAULT_SERVER_ENABLED;
 
 @Singleton
 @ConfigMapping(prefix = "jsonapi4j.oas", namingStrategy = VERBATIM)
@@ -29,7 +29,7 @@ public interface QuarkusJsonApi4jOasProperties {
      * Enabled by default.
      * Example: `true`, `false`.
      */
-    @WithDefault(OasProperties.DEFAULT_OAS_ENABLED)
+    @WithDefault(OasProperties.DEFAULT_ENABLED)
     boolean enabled();
 
     /**
@@ -71,7 +71,7 @@ public interface QuarkusJsonApi4jOasProperties {
          * The title of the API. Required.
          * Example: `My Countries API`.
          */
-        @WithDefault(OAS_INFO_TITLE_DEFAULT_VALUE)
+        @WithDefault(DEFAULT_INFO_TITLE)
         String title();
 
         /**
@@ -90,7 +90,7 @@ public interface QuarkusJsonApi4jOasProperties {
          * Required.
          * Example: `1.0.0`.
          */
-        @WithDefault(OAS_INFO_VERSION_DEFAULT_VALUE)
+        @WithDefault(DEFAULT_INFO_VERSION)
         String version();
 
         /**
@@ -244,7 +244,7 @@ public interface QuarkusJsonApi4jOasProperties {
         /**
          * Whether this server is enabled or disabled. If disabled - the server will not be added into the resulting spec. Optional. Disable by default.
          */
-        @WithDefault(DEFAULT_OAS_SERVER_ENABLED)
+        @WithDefault(DEFAULT_SERVER_ENABLED)
         boolean enabled();
 
     }
@@ -277,13 +277,13 @@ public interface QuarkusJsonApi4jOasProperties {
         /**
          * If header required or not. Optional. False by default.
          */
-        @WithDefault(DEFAULT_OAS_RESPONSE_HEADER_REQUIRED)
+        @WithDefault(DEFAULT_RESPONSE_HEADER_REQUIRED)
         boolean required();
 
         /**
          * The schema defining the type used for the header. Required. 'string' by default.
          */
-        @WithDefault(DEFAULT_OAS_RESPONSE_HEADER_SCHEMA)
+        @WithDefault(DEFAULT_RESPONSE_HEADER_SCHEMA)
         String schema();
 
         /**

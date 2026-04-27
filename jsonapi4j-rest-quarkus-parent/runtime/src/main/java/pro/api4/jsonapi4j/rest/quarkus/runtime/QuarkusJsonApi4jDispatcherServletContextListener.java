@@ -42,7 +42,7 @@ public class QuarkusJsonApi4jDispatcherServletContextListener implements Servlet
         log.info("Initializing JsonApi4j Dispatcher Servlet Context for JsonApi4j Quarkus extension...");
         ServletContext servletContext = e.getServletContext();
 
-        servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, jsonApi4jPropertiesProvider.get());
+        servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, jsonApi4jPropertiesProvider.get().toJsonApi4jProperties());
         log.debug("JsonApi4jProperties ('jsonapi4j' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", JSONAPI4J_PROPERTIES_ATT_NAME);
 
         servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4jProvider.get());

@@ -1,24 +1,53 @@
 package pro.api4.jsonapi4j.operation.validation;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.exception.InvalidLimitException;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.SortAwareRequest;
 
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_LIMIT_MAX_VALUE;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_MAX_ELEMENTS_IN_FILTER_PARAM;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_MAX_ELEMENTS_IN_INCLUDE_PARAM;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_MAX_ELEMENTS_IN_SORT_BY_PARAM;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_MAX_NUMBER_FILTER_PARAMS;
+import static pro.api4.jsonapi4j.operation.validation.ValidationProperties.DEFAULT_RESOURCE_ID_MAX_LENGTH;
 
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 public class JsonApi4jDefaultValidator {
 
-    public static final int MAX_ELEMENTS_IN_FILTER_PARAM = 20;
-    public static final int RESOURCE_ID_MAX_LENGTH = 64;
-    public static final long LIMIT_MAX_VALUE = 100L;
+    private int maxNumberFilterParams = Integer.parseInt(DEFAULT_MAX_NUMBER_FILTER_PARAMS);
+    private int maxElementsInFilterParam = Integer.parseInt(DEFAULT_MAX_ELEMENTS_IN_FILTER_PARAM);
+    private int resourceIdMaxLength = Integer.parseInt(DEFAULT_RESOURCE_ID_MAX_LENGTH);
+    private long limitMaxValue = Long.parseLong(DEFAULT_LIMIT_MAX_VALUE);
+    private int maxElementsInIncludeParam = Integer.parseInt(DEFAULT_MAX_ELEMENTS_IN_INCLUDE_PARAM);
+    private int maxElementsInSortByParam = Integer.parseInt(DEFAULT_MAX_ELEMENTS_IN_SORT_BY_PARAM);
+
+    public JsonApi4jDefaultValidator(ValidationProperties properties) {
+        this.maxNumberFilterParams = properties.maxNumberFilterParams();
+        this.maxElementsInFilterParam = properties.maxElementsInFilterParam();
+        this.resourceIdMaxLength = properties.resourceIdMaxLength();
+        this.limitMaxValue = properties.limitMaxValue();
+        this.maxElementsInIncludeParam = properties.maxElementsInIncludeParam();
+        this.maxElementsInSortByParam = properties.maxElementsInSortByParam();
+    }
 
     public void validateNonNull(Object object, String parameter) {
         if (object == null) {
@@ -28,54 +57,23 @@ public class JsonApi4jDefaultValidator {
 
     public void validateNonBlank(String value, String parameter) {
         if (StringUtils.isBlank(value)) {
-            throw new ConstraintViolationException(String.format("'%s' can't be blank", parameter), parameter);
-        }
-    }
-
-    public void validateFilterByIds(List<String> resourceIds) {
-        if (resourceIds != null) {
-            if (resourceIds.size() > MAX_ELEMENTS_IN_FILTER_PARAM) {
-                throw new ConstraintViolationException(
-                        "max elements number exceeded: " + MAX_ELEMENTS_IN_FILTER_PARAM,
-                        FiltersAwareRequest.getFilterParam(ID_FILTER_NAME)
-                );
-            }
-            for (String resourceId : resourceIds) {
-                validateResourceId(resourceId);
-            }
-        }
-    }
-
-    public void validateResourceId(String resourceId, String parameterName) {
-        if (StringUtils.isBlank(resourceId)) {
-            throw new ConstraintViolationException(
-                    "resource id can't be blank",
-                    parameterName
-            );
-        }
-        if (resourceId.length() > RESOURCE_ID_MAX_LENGTH) {
-            throw new ConstraintViolationException(
-                    "resource id length can't be more than " + RESOURCE_ID_MAX_LENGTH,
-                    parameterName
-            );
+            throw new ConstraintViolationException("value can't be blank", parameter);
         }
     }
 
     public void validateResourceId(String resourceId) {
-        validateResourceId(resourceId, "resourceId");
+        validateResourceId(resourceId, "resource id");
     }
 
-    public void validateLimit(String limit) {
-        if (StringUtils.isBlank(limit)) {
-            throw new InvalidLimitException(limit, "limit value shouldn't be null");
+    public void validateResourceId(String resourceId, String parameterName) {
+        if (StringUtils.isBlank(resourceId)) {
+            return;
         }
-        try {
-            long value = Long.parseLong(limit);
-            if (value > LIMIT_MAX_VALUE) {
-                throw new InvalidLimitException(limit, "max allowed limit is " + LIMIT_MAX_VALUE);
-            }
-        } catch (NumberFormatException nfe) {
-            throw new InvalidLimitException(limit, "limit value must be a number");
+        if (resourceId.length() > resourceIdMaxLength) {
+            throw new ConstraintViolationException(
+                    MessageFormat.format("resource id length can''t be more than {0}", resourceIdMaxLength),
+                    parameterName
+            );
         }
     }
 
@@ -87,9 +85,65 @@ public class JsonApi4jDefaultValidator {
             }
         }
         throw new ConstraintViolationException(
-                String.format("resource type '%s' not supported, available resource types: [%s]", resourceTypeToEvaluate, String.join(", ", validResourceTypes)),
+                MessageFormat.format("resource type ''{0}'' not supported, available resource types: [{1}]", resourceTypeToEvaluate, String.join(", ", validResourceTypes)),
                 "resourceType"
         );
+    }
+
+    public void validateFilterParams(Map<String, List<String>> filterParams) {
+        if (filterParams.size() > maxNumberFilterParams) {
+            throw new ConstraintViolationException(
+                    MessageFormat.format("max number of filter params exceeded: {0}", maxNumberFilterParams),
+                    "filter[*]"
+            );
+        }
+        filterParams.forEach((filterName, filterValues) -> {
+            if (filterValues.size() > maxElementsInFilterParam) {
+                throw new ConstraintViolationException(
+                        MessageFormat.format("max number of filter param elements exceeded: {0}", maxElementsInFilterParam),
+                        FiltersAwareRequest.getFilterParam(filterName)
+                );
+            }
+            if (ID_FILTER_NAME.equals(filterName)) {
+                if (!filterValues.isEmpty()) {
+                    filterValues.forEach(this::validateResourceId);
+                }
+            }
+        });
+    }
+
+    public void validateIncludes(List<String> includes) {
+        if (includes.size() > maxElementsInIncludeParam) {
+            throw new ConstraintViolationException(
+                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
+                    MessageFormat.format("Include value shouldn''t have more than {0} elements", maxElementsInIncludeParam),
+                    IncludeAwareRequest.INCLUDE_PARAM
+            );
+        }
+    }
+
+    public void validateSortBy(Map<String, SortAwareRequest.SortOrder> sortBy) {
+        if (sortBy.size() > maxElementsInSortByParam) {
+            throw new ConstraintViolationException(
+                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
+                    MessageFormat.format("Sort value shouldn''t have more than {0} elements", maxElementsInSortByParam),
+                    SortAwareRequest.SORT_PARAM
+            );
+        }
+    }
+
+    public void validateLimit(String limit) {
+        if (StringUtils.isBlank(limit)) {
+            return;
+        }
+        try {
+            long value = Long.parseLong(limit);
+            if (value > limitMaxValue) {
+                throw new InvalidLimitException(limit, MessageFormat.format("max allowed limit is {0}", limitMaxValue));
+            }
+        } catch (NumberFormatException nfe) {
+            throw new InvalidLimitException(limit, "limit value must be a number");
+        }
     }
 
     public void validateSingleResourceDoc(SingleResourceDoc<?> singleResourceDoc) {

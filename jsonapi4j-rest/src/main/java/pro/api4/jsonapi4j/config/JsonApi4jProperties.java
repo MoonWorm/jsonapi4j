@@ -1,11 +1,15 @@
 package pro.api4.jsonapi4j.config;
 
+import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
+
 public interface JsonApi4jProperties {
 
-    String JSONAPI4J_DEFAULT_ROOT_PATH = "/jsonapi";
+    String DEFAULT_ROOT_PATH = "/jsonapi";
 
     default String rootPath() {
-        return JSONAPI4J_DEFAULT_ROOT_PATH;
+        return DEFAULT_ROOT_PATH;
     }
+
+    ValidationProperties validation();
 
 }

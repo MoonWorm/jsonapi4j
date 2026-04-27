@@ -10,11 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.JsonApi4jReportGenerator;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
@@ -47,6 +49,14 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         log.info("Initializing {} ...", JsonApi4jDispatcherServlet.class.getSimpleName());
         super.init(config);
+
+        JsonApi4jProperties properties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+        Validate.notNull(properties, "JsonApi4jProperties can't be null");
+
+        if (properties.validation() != null) {
+            // configure default validator
+            JsonApi4jDefaultValidatorHolder.configure(properties.validation());
+        }
 
         jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         Validate.notNull(jsonApi4j, "JsonApi4j can't be null");

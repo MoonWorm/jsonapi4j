@@ -16,23 +16,23 @@ import java.util.Map;
 @Setter
 public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
 
-    private boolean enabled = Boolean.parseBoolean(CD_ENABLED_DEFAULT_VALUE);
-    private int maxHops = Integer.parseInt(CD_MAX_HOPS_DEFAULT_VALUE);
-    private int maxIncludedResources = Integer.parseInt(CD_MAX_INCLUDED_RESOURCES);
-    private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(CD_ERROR_STRATEGY_DEFAULT_VALUE);
+    private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
+    private int maxHops = Integer.parseInt(DEFAULT_MAX_HOPS);
+    private int maxIncludedResources = Integer.parseInt(DEFAULT_MAX_INCLUDED_RESOURCES);
+    private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
     private Map<String, String> mapping = Collections.emptyMap();
-    private List<Propagation> propagation = parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
-    private boolean deduplicateResources = Boolean.parseBoolean(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE);
-    private long httpConnectTimeoutMs = Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
-    private long httpTotalTimeoutMs = Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
+    private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
+    private boolean deduplicateResources = Boolean.parseBoolean(DEFAULT_DEDUPLICATE_RESOURCES);
+    private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
+    private long httpTotalTimeoutMs = Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
     private DefaultCache cache;
 
     @Getter
     @Setter
     public static class DefaultCache implements Cache {
 
-        private boolean enabled = Boolean.parseBoolean(CD_CACHE_ENABLED_DEFAULT_VALUE);
-        private int maxSize = Integer.parseInt(CD_CACHE_MAX_SIZE_DEFAULT_VALUE);
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_CACHE_ENABLED);
+        private int maxSize = Integer.parseInt(DEFAULT_CACHE_MAX_SIZE);
 
         @Override
         public boolean enabled() {

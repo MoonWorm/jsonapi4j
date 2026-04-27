@@ -1,53 +1,60 @@
 package pro.api4.jsonapi4j.sampleapp.servlet.validation;
 
-import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import jakarta.validation.executable.ExecutableValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
 
-/**
- * Manual implementation of {@link UserInputParamsValidator} without JSR-380/Hibernate Validator dependency.
- */
+import java.lang.reflect.Method;
+import java.util.Set;
+
 public class SimpleUserInputParamsValidator implements UserInputParamsValidator {
 
-    private static final int MAX_NAME_LENGTH = 64;
+    private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();
+    private static final Validator VALIDATOR = FACTORY.getValidator();
+    private static final ExecutableValidator EXEC_VALIDATOR = VALIDATOR.forExecutables();
+
+    private static final Method VALIDATE_FIRST_NAME_METHOD;
+    private static final Method VALIDATE_LAST_NAME_METHOD;
+    private static final Method VALIDATE_EMAIL_METHOD;
+
+    static {
+        try {
+            VALIDATE_FIRST_NAME_METHOD = UserInputParamsValidator.class.getMethod("validateFirstName", String.class);
+            VALIDATE_LAST_NAME_METHOD = UserInputParamsValidator.class.getMethod("validateLastName", String.class);
+            VALIDATE_EMAIL_METHOD = UserInputParamsValidator.class.getMethod("validateEmail", String.class);
+        } catch (NoSuchMethodException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     @Override
     public void validateFirstName(String firstName) {
-        validateNotBlank(firstName, "firstName");
-        validateMaxLength(firstName, MAX_NAME_LENGTH, "firstName");
+        validate(VALIDATE_FIRST_NAME_METHOD, firstName);
     }
 
     @Override
     public void validateLastName(String lastName) {
-        validateNotBlank(lastName, "lastName");
-        validateMaxLength(lastName, MAX_NAME_LENGTH, "lastName");
+        validate(VALIDATE_LAST_NAME_METHOD, lastName);
     }
 
     @Override
     public void validateEmail(String email) {
-        validateNotBlank(email, "email");
-        if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            throw new ConstraintViolationException(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "Invalid email format", "email");
-        }
+        validate(VALIDATE_EMAIL_METHOD, email);
     }
 
-    private void validateNotBlank(String value, String paramName) {
-        if (StringUtils.isBlank(value)) {
-            throw new ConstraintViolationException(
-                    DefaultErrorCodes.VALUE_IS_ABSENT, paramName + " must not be blank", paramName);
-        }
-    }
+    private void validate(Method method, Object arg) {
+        Set<ConstraintViolation<Object>> violations =
+                EXEC_VALIDATOR.validateParameters(
+                        this,
+                        method,
+                        new Object[]{arg}
+                );
 
-    private void validateMaxLength(String value,
-                                   int maxLength,
-                                   String paramName) {
-        if (value != null && value.length() > maxLength) {
-            throw new ConstraintViolationException(
-                    DefaultErrorCodes.VALUE_TOO_LONG,
-                    paramName + " must not exceed " + maxLength + " characters",
-                    paramName
-            );
+        if (!violations.isEmpty()) {
+            throw new jakarta.validation.ConstraintViolationException(violations);
         }
     }
 

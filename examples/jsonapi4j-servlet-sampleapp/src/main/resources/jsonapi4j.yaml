@@ -1,6 +1,15 @@
 # JsonApi4j core settings
 rootPath: /jsonapi
 
+# Validation
+validation:
+  maxNumberFilterParams: 5
+  maxElementsInFilterParam: 20
+  resourceIdMaxLength: 64
+  limitMaxValue: 100
+  maxElementsInIncludeParam: 10
+  maxElementsInSortByParam: 5
+
 # CD Plugin
 cd:
   enabled: true

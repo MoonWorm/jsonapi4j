@@ -9,29 +9,29 @@ public interface CompoundDocsProperties {
 
     String CD_PROPERTY_NAME = "cd";
 
-    String CD_ENABLED_DEFAULT_VALUE = "false";
-    String CD_MAX_HOPS_DEFAULT_VALUE = "2";
-    String CD_MAX_INCLUDED_RESOURCES = "100";
-    String CD_ERROR_STRATEGY_DEFAULT_VALUE = "IGNORE";
-    String CD_PROPAGATION_DEFAULT_VALUE = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
-    String CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE = "true";
-    String CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE = "5000";
-    String CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE = "10000";
+    String DEFAULT_ENABLED = "false";
+    String DEFAULT_MAX_HOPS = "2";
+    String DEFAULT_MAX_INCLUDED_RESOURCES = "100";
+    String DEFAULT_ERROR_STRATEGY = "IGNORE";
+    String DEFAULT_PROPAGATION = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
+    String DEFAULT_DEDUPLICATE_RESOURCES = "true";
+    String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
+    String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
 
     default boolean enabled() {
-        return Boolean.parseBoolean(CD_ENABLED_DEFAULT_VALUE);
+        return Boolean.parseBoolean(DEFAULT_ENABLED);
     }
 
     default int maxHops() {
-        return Integer.parseInt(CD_MAX_HOPS_DEFAULT_VALUE);
+        return Integer.parseInt(DEFAULT_MAX_HOPS);
     }
 
     default int maxIncludedResources() {
-        return Integer.parseInt(CD_MAX_INCLUDED_RESOURCES);
+        return Integer.parseInt(DEFAULT_MAX_INCLUDED_RESOURCES);
     }
 
     default ErrorStrategy errorStrategy() {
-        return ErrorStrategy.valueOf(CD_ERROR_STRATEGY_DEFAULT_VALUE);
+        return ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
     }
 
     default Map<String, String> mapping() {
@@ -39,7 +39,7 @@ public interface CompoundDocsProperties {
     }
 
     default List<Propagation> propagation() {
-        return parsePropagationString(CD_PROPAGATION_DEFAULT_VALUE);
+        return parsePropagationString(DEFAULT_PROPAGATION);
     }
 
     default List<Propagation> parsePropagationString(String propagationString) {
@@ -50,23 +50,23 @@ public interface CompoundDocsProperties {
     }
 
     default boolean deduplicateResources() {
-        return Boolean.parseBoolean(CD_DEDUPLICATE_RESOURCES_DEFAULT_VALUE);
+        return Boolean.parseBoolean(DEFAULT_DEDUPLICATE_RESOURCES);
     }
 
     default long httpConnectTimeoutMs() {
-        return Long.parseLong(CD_HTTP_CONNECT_TIMEOUT_MS_DEFAULT_VALUE);
+        return Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     }
 
     default long httpTotalTimeoutMs() {
-        return Long.parseLong(CD_HTTP_TOTAL_TIMEOUT_MS_DEFAULT_VALUE);
+        return Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
     }
 
     Cache cache();
 
     interface Cache {
 
-        String CD_CACHE_ENABLED_DEFAULT_VALUE = "true";
-        String CD_CACHE_MAX_SIZE_DEFAULT_VALUE = "1000";
+        String DEFAULT_CACHE_ENABLED = "true";
+        String DEFAULT_CACHE_MAX_SIZE = "1000";
 
         boolean enabled();
 

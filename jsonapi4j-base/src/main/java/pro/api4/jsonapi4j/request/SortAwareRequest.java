@@ -4,7 +4,6 @@ import java.util.Map;
 
 public interface SortAwareRequest {
 
-    int NUMBER_OF_SORT_BY_GLOBAL_CAP = 5;
     String SORT_PARAM = "sort";
 
     static String extractSortBy(String sortByParam) {

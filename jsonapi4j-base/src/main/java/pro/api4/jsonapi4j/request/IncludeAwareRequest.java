@@ -4,8 +4,6 @@ import java.util.List;
 
 public interface IncludeAwareRequest {
 
-    int NUMBER_OF_INCLUDES_GLOBAL_CAP = 10;
-
     String INCLUDE_PARAM = "include";
 
     /**

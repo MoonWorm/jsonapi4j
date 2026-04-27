@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -382,6 +383,82 @@ class JsonApiRequestParsingUtilTests {
 
         // then
         assertThat(result).isEqualTo("123");
+    }
+
+    // --- parseExt ---
+
+    @Test
+    void parseExt_validUri_returnsUri() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseExt("application/vnd.api+json; ext=\"https://example.com/ext\"");
+
+        // then
+        assertThat(result).isEqualTo(URI.create("https://example.com/ext"));
+    }
+
+    @Test
+    void parseExt_noExtParam_returnsNull() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseExt("application/vnd.api+json");
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void parseExt_nullContentType_returnsNull() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseExt(null);
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void parseExt_invalidUri_returnsNull() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseExt("application/vnd.api+json; ext=\"not a valid uri\"");
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    // --- parseProfile ---
+
+    @Test
+    void parseProfile_validUri_returnsUri() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseProfile("application/vnd.api+json; profile=\"https://example.com/profile\"");
+
+        // then
+        assertThat(result).isEqualTo(URI.create("https://example.com/profile"));
+    }
+
+    @Test
+    void parseProfile_noProfileParam_returnsNull() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseProfile("application/vnd.api+json");
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void parseProfile_nullContentType_returnsNull() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseProfile(null);
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void parseProfile_withoutQuotes_returnsUri() {
+        // when
+        URI result = JsonApiRequestParsingUtil.parseProfile("application/vnd.api+json; profile=https://example.com/profile");
+
+        // then
+        assertThat(result).isEqualTo(URI.create("https://example.com/profile"));
     }
 
 }

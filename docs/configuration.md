@@ -20,6 +20,14 @@ JsonApi4j is configured differently depending on your web framework. All three i
     <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jsonapi4j</span><span class="pi">:</span>
   <span class="na">rootPath</span><span class="pi">:</span> <span class="s">/jsonapi</span>
 
+  <span class="na">validation</span><span class="pi">:</span>
+    <span class="na">maxNumberFilterParams</span><span class="pi">:</span> <span class="m">5</span>
+    <span class="na">maxElementsInFilterParam</span><span class="pi">:</span> <span class="m">20</span>
+    <span class="na">resourceIdMaxLength</span><span class="pi">:</span> <span class="m">64</span>
+    <span class="na">limitMaxValue</span><span class="pi">:</span> <span class="m">100</span>
+    <span class="na">maxElementsInIncludeParam</span><span class="pi">:</span> <span class="m">10</span>
+    <span class="na">maxElementsInSortByParam</span><span class="pi">:</span> <span class="m">5</span>
+
   <span class="na">ac</span><span class="pi">:</span>
     <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
 
@@ -49,6 +57,13 @@ JsonApi4j is configured differently depending on your web framework. All three i
     <p><strong>application.properties:</strong></p>
     <div class="language-properties highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="py">jsonapi4j.rootPath</span>=<span class="s">/jsonapi</span>
 
+<span class="py">jsonapi4j.validation.maxNumberFilterParams</span>=<span class="s">5</span>
+<span class="py">jsonapi4j.validation.maxElementsInFilterParam</span>=<span class="s">20</span>
+<span class="py">jsonapi4j.validation.resourceIdMaxLength</span>=<span class="s">64</span>
+<span class="py">jsonapi4j.validation.limitMaxValue</span>=<span class="s">100</span>
+<span class="py">jsonapi4j.validation.maxElementsInIncludeParam</span>=<span class="s">10</span>
+<span class="py">jsonapi4j.validation.maxElementsInSortByParam</span>=<span class="s">5</span>
+
 <span class="py">jsonapi4j.ac.enabled</span>=<span class="s">true</span>
 
 <span class="py">jsonapi4j.sf.enabled</span>=<span class="s">true</span>
@@ -70,6 +85,14 @@ JsonApi4j is configured differently depending on your web framework. All three i
     <p>For plain Servlet applications, JsonApi4j loads configuration from a YAML or JSON file. No framework-specific property binding is used.</p>
     <p><strong>jsonapi4j.yaml</strong> (on the classpath):</p>
     <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">rootPath</span><span class="pi">:</span> <span class="s">/jsonapi</span>
+
+<span class="na">validation</span><span class="pi">:</span>
+  <span class="na">maxNumberFilterParams</span><span class="pi">:</span> <span class="m">5</span>
+  <span class="na">maxElementsInFilterParam</span><span class="pi">:</span> <span class="m">20</span>
+  <span class="na">resourceIdMaxLength</span><span class="pi">:</span> <span class="m">64</span>
+  <span class="na">limitMaxValue</span><span class="pi">:</span> <span class="m">100</span>
+  <span class="na">maxElementsInIncludeParam</span><span class="pi">:</span> <span class="m">10</span>
+  <span class="na">maxElementsInSortByParam</span><span class="pi">:</span> <span class="m">5</span>
 
 <span class="na">ac</span><span class="pi">:</span>
   <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
@@ -114,6 +137,19 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 | Property | Default | Description |
 |----------|---------|-------------|
 | `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. |
+
+## Validation Properties
+
+JsonApi4j includes a built-in default validator (`JsonApi4jDefaultValidator`) that enforces limits on common request parameters. These properties configure the thresholds used by the default validator.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `jsonapi4j.validation.maxNumberFilterParams` | `5` | Maximum number of distinct `filter[*]` query parameters allowed in a single request. |
+| `jsonapi4j.validation.maxElementsInFilterParam` | `20` | Maximum number of comma-separated values within a single `filter[name]` parameter. |
+| `jsonapi4j.validation.resourceIdMaxLength` | `64` | Maximum allowed length of a resource ID string. |
+| `jsonapi4j.validation.limitMaxValue` | `100` | Maximum allowed value for the `page[limit]` pagination parameter. |
+| `jsonapi4j.validation.maxElementsInIncludeParam` | `10` | Maximum number of relationship paths in the `include` query parameter. |
+| `jsonapi4j.validation.maxElementsInSortByParam` | `5` | Maximum number of fields in the `sort` query parameter. |
 
 ## Plugin Properties
 

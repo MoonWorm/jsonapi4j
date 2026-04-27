@@ -210,9 +210,8 @@ Each operation has a dedicated validation method that runs before the main logic
 ```java
 @Override
 public void validateCreate(JsonApiRequest request) {
-    CreateResourceOperation.DEFAULT_VALIDATOR.accept(request);
     var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
-    new JsonApi4jDefaultValidator().validateSingleResourceDoc(payload);
+    getValidator().validateSingleResourceDoc(payload);
     UserAttributes attributes = payload.getData().getAttributes();
     if (attributes.getEmail() == null || !attributes.getEmail().contains("@")) {
         throw new ConstraintViolationException(

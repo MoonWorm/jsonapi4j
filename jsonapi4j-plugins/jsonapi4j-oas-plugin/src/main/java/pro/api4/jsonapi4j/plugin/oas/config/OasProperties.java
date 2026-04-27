@@ -8,13 +8,13 @@ import java.util.Map;
 
 public interface OasProperties {
 
-    String DEFAULT_OAS_ENABLED = "true";
-
     String OAS_PROPERTY_NAME = "oas";
-    String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.JSONAPI4J_DEFAULT_ROOT_PATH + "/oas";
+
+    String DEFAULT_ENABLED = "true";
+    String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.DEFAULT_ROOT_PATH + "/oas";
 
     default boolean enabled() {
-        return Boolean.parseBoolean(DEFAULT_OAS_ENABLED);
+        return Boolean.parseBoolean(DEFAULT_ENABLED);
     }
 
     default String oasRootPath() {
@@ -33,11 +33,11 @@ public interface OasProperties {
 
     interface Info {
 
-        String OAS_INFO_TITLE_DEFAULT_VALUE = "JsonApi4j API Sample Title";
-        String OAS_INFO_VERSION_DEFAULT_VALUE = "1.0.0";
+        String DEFAULT_INFO_TITLE = "JsonApi4j API Sample Title";
+        String DEFAULT_INFO_VERSION = "1.0.0";
 
         default String title() {
-            return OAS_INFO_TITLE_DEFAULT_VALUE;
+            return DEFAULT_INFO_TITLE;
         }
 
         String description();
@@ -45,7 +45,7 @@ public interface OasProperties {
         Contact contact();
 
         default String version() {
-            return OAS_INFO_VERSION_DEFAULT_VALUE;
+            return DEFAULT_INFO_VERSION;
         }
 
         String termsOfService();
@@ -119,14 +119,14 @@ public interface OasProperties {
 
     interface Server {
 
-        String DEFAULT_OAS_SERVER_ENABLED = "false";
+        String DEFAULT_SERVER_ENABLED = "false";
 
         String name();
 
         String url();
 
         default boolean enabled() {
-            return Boolean.parseBoolean(DEFAULT_OAS_SERVER_ENABLED);
+            return Boolean.parseBoolean(DEFAULT_SERVER_ENABLED);
         }
 
     }
@@ -141,19 +141,19 @@ public interface OasProperties {
 
     interface ResponseHeader {
 
-        String DEFAULT_OAS_RESPONSE_HEADER_REQUIRED = "false";
-        String DEFAULT_OAS_RESPONSE_HEADER_SCHEMA = "string";
+        String DEFAULT_RESPONSE_HEADER_REQUIRED = "false";
+        String DEFAULT_RESPONSE_HEADER_SCHEMA = "string";
 
         String name();
 
         String description();
 
         default boolean required() {
-            return Boolean.parseBoolean(DEFAULT_OAS_RESPONSE_HEADER_REQUIRED);
+            return Boolean.parseBoolean(DEFAULT_RESPONSE_HEADER_REQUIRED);
         }
 
         default String schema() {
-            return DEFAULT_OAS_RESPONSE_HEADER_SCHEMA;
+            return DEFAULT_RESPONSE_HEADER_SCHEMA;
         }
 
         String example();
