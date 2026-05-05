@@ -8,7 +8,7 @@ import lombok.Getter;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.JsonApi4jValidator;
+import pro.api4.jsonapi4j.JsonApiRequestValidator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -43,7 +43,7 @@ import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FIL
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class DefaultJsonApiValidator implements JsonApi4jValidator {
+public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     private final DomainRegistry domainRegistry;
     private final ObjectMapper objectMapper;
@@ -182,6 +182,7 @@ public class DefaultJsonApiValidator implements JsonApi4jValidator {
         JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,"body -> data -> id");
     }
 
+    // TODO: Introduce Parameter builder API and use it across the framework, fix all the tests
     // TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
     private void validateSingleResourceDocPayloadStructure(JsonApiRequest request) {
         ResourceType resourceType = request.getTargetResourceType();

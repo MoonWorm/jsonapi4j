@@ -17,7 +17,7 @@ public class JsonApi4jBuilder {
     private DomainRegistry domainRegistry = DomainRegistry.empty();
     private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
-    private JsonApi4jValidator validator = JsonApi4jValidator.NO_OP;
+    private JsonApiRequestValidator validator = JsonApiRequestValidator.NO_OP;
 
     JsonApi4jBuilder() {}
 
@@ -41,7 +41,7 @@ public class JsonApi4jBuilder {
         return this;
     }
 
-    public JsonApi4jBuilder validator(JsonApi4jValidator validator) {
+    public JsonApi4jBuilder validator(JsonApiRequestValidator validator) {
         this.validator = validator;
         return this;
     }

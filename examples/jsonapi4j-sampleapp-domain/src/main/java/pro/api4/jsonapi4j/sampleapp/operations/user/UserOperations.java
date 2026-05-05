@@ -250,42 +250,40 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (singleResourceDoc.getData().getAttributes() == null) {
             throw new ConstraintViolationException("'attributes' is null", "attributes");
         }
-        getValidator().validateSingleResourceDoc(
-                singleResourceDoc,
-                resourceId -> getValidator().validateIsNull(resourceId, "body -> data -> id"),
-                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
-                att -> {
+        getValidator().validateSingleResourceDoc(singleResourceDoc)
+                .withResourceIdValidator(resourceId -> getValidator().validateIsNull(resourceId, "body -> data -> id"))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"))
+                .withAttributesValidator(att -> {
                     if (att.getFullName() == null) {
                         throw new ConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
                     }
                     userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
                     userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
                     userValidator.validateEmail(att.getEmail());
-                },
-                this::validateRelationships
-        );
+                })
+                .withRelationshipsValidator(this::validateRelationships)
+                .validate();
     }
 
     @Override
     public void validateUpdate(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        getValidator().validateSingleResourceDoc(
-                singleResourceDoc,
-                resourceId -> {
+        getValidator().validateSingleResourceDoc(singleResourceDoc)
+                .withResourceIdValidator(resourceId -> {
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
-                },
-                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
-                att -> {
+                })
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"))
+                .withAttributesValidator(att -> {
                     if (att.getFullName() != null) {
                         userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
                         userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
                     }
                     userValidator.validateEmail(att.getEmail());
-                },
-                this::validateRelationships
-        );
+                })
+                .withRelationshipsValidator(this::validateRelationships)
+                .validate();
     }
 
     @Override

@@ -52,27 +52,57 @@ public class JsonApi4jDefaultValidator {
                 parameterName
         );
     }
+    public static class SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> {
 
-    //
-    // TODO: reimplement these method in a builder-like style
-    //
-    public <ATTRIBUTES, RELATIONSHIPS> void validateSingleResourceDoc(
-            SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, RELATIONSHIPS>> singleResourceDoc,
-            Consumer<String> resourceIdValidator,
-            Consumer<String> resourceTypeValidator,
-            Consumer<ATTRIBUTES> attributesValidator,
-            Consumer<RELATIONSHIPS> relationshipsValidator
-    ) {
-        if (singleResourceDoc.getData().getId() != null) {
-            resourceIdValidator.accept(singleResourceDoc.getData().getId());
+        private final SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, RELATIONSHIPS>> singleResourceDoc;
+        private Consumer<String> resourceIdValidator;
+        private Consumer<String> resourceTypeValidator;
+        private Consumer<ATTRIBUTES> attributesValidator;
+        private Consumer<RELATIONSHIPS> relationshipsValidator;
+
+        public SingleResourceDocValidationState(SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, RELATIONSHIPS>> singleResourceDoc) {
+            this.singleResourceDoc = singleResourceDoc;
         }
-        resourceTypeValidator.accept(singleResourceDoc.getData().getType());
-        if (singleResourceDoc.getData().getAttributes() != null) {
-            attributesValidator.accept(singleResourceDoc.getData().getAttributes());
+
+        public SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> withResourceIdValidator(Consumer<String> resourceIdValidator) {
+            this.resourceIdValidator = resourceIdValidator;
+            return this;
         }
-        if (singleResourceDoc.getData().getRelationships() != null) {
-            relationshipsValidator.accept(singleResourceDoc.getData().getRelationships());
+
+        public SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> withResourceTypeValidator(Consumer<String> resourceTypeValidator) {
+            this.resourceTypeValidator = resourceTypeValidator;
+            return this;
         }
+
+        public SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> withAttributesValidator(Consumer<ATTRIBUTES> attributesValidator) {
+            this.attributesValidator = attributesValidator;
+            return this;
+        }
+
+        public SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> withRelationshipsValidator(Consumer<RELATIONSHIPS> relationshipsValidator) {
+            this.relationshipsValidator = relationshipsValidator;
+            return this;
+        }
+
+        public void validate() {
+            if (resourceIdValidator != null && singleResourceDoc.getData().getId() != null) {
+                resourceIdValidator.accept(singleResourceDoc.getData().getId());
+            }
+            if (relationshipsValidator != null) {
+                resourceTypeValidator.accept(singleResourceDoc.getData().getType());
+            }
+            if (attributesValidator != null && singleResourceDoc.getData().getAttributes() != null) {
+                attributesValidator.accept(singleResourceDoc.getData().getAttributes());
+            }
+            if (relationshipsValidator != null && singleResourceDoc.getData().getRelationships() != null) {
+                relationshipsValidator.accept(singleResourceDoc.getData().getRelationships());
+            }
+        }
+
+    }
+
+    public <ATTRIBUTES, RELATIONSHIPS> SingleResourceDocValidationState<ATTRIBUTES, RELATIONSHIPS> validateSingleResourceDoc(SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, RELATIONSHIPS>> singleResourceDoc) {
+       return new SingleResourceDocValidationState<>(singleResourceDoc);
     }
 
     public void validateToOneRelationshipDoc(ToOneRelationshipDoc toOneRelationshipDoc,

@@ -103,7 +103,7 @@ public class JsonApi4j {
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final Executor executor;
-    private final JsonApi4jValidator validator;
+    private final JsonApiRequestValidator validator;
 
     public static JsonApi4jBuilder builder() {
         return new JsonApi4jBuilder();

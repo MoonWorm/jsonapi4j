@@ -2,9 +2,9 @@ package pro.api4.jsonapi4j;
 
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
-public interface JsonApi4jValidator {
+public interface JsonApiRequestValidator {
 
-    JsonApi4jValidator NO_OP = new JsonApi4jValidator() {
+    JsonApiRequestValidator NO_OP = new JsonApiRequestValidator() {
 
         @Override
         public void validateReadResourceById(JsonApiRequest request) {
