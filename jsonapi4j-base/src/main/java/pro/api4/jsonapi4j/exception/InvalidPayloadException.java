@@ -12,8 +12,12 @@ public class InvalidPayloadException extends ConstraintViolationException {
 
     private final Object payload;
 
-    public InvalidPayloadException(String message, Object payload) {
-        super(DefaultErrorCodes.INVALID_PAYLOAD, message, "payload");
+    public InvalidPayloadException(String detail, Object payload) {
+        this(detail, "payload", payload);
+    }
+
+    public InvalidPayloadException(String detail, String parameter, Object payload) {
+        super(DefaultErrorCodes.INVALID_PAYLOAD, detail, parameter);
         this.payload = payload;
     }
 

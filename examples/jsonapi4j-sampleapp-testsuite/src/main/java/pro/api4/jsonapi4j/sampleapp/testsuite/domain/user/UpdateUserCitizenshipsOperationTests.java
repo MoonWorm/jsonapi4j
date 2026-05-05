@@ -68,7 +68,8 @@ public abstract class UpdateUserCitizenshipsOperationTests {
                 .statusCode(400)
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("resource type 'wrong-type' not supported, available resource types: [countries]"))
+                .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [countries]"))
+                .body("errors[0].source.parameter", equalTo("body -> data -> type"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -89,12 +90,11 @@ public abstract class UpdateUserCitizenshipsOperationTests {
                 .statusCode(400)
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("Not valid CCA2 country code"))
-                .body("errors[0].id", notNullValue())
-                .body("errors[1].code", equalTo("VALUE_EMPTY"))
-                .body("errors[1].status", equalTo("400"))
-                .body("errors[1].detail", equalTo("must not be blank"))
-                .body("errors[1].id", notNullValue());
+                .body("errors[0].detail", equalTo("value can't be blank"))
+                .body("errors[0].source.parameter", equalTo("body -> data[0] -> id"))
+                .body("errors[0].id", notNullValue());
     }
+
+    // TODO: same here
 
 }

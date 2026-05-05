@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j.sampleapp.servlet;
 import jakarta.servlet.ServletContext;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
@@ -35,18 +34,24 @@ import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.*;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
 import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleCountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleUserInputParamsValidator;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
+
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME;
 
 public class ServletJsonapi4jSampleApp {
 
     static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
-        // load props
+        // get full config as raw map
         Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
 
         // init Compound Docs plugin
@@ -58,7 +63,7 @@ public class ServletJsonapi4jSampleApp {
         oasPluginInitializer.onStartup(null, servletContext);
 
         // build plugins
-        return List.of(
+        List<JsonApi4jPlugin> plugins = List.of(
                 new JsonApiAccessControlPlugin(
                         new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry()),
                         DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
@@ -67,21 +72,15 @@ public class ServletJsonapi4jSampleApp {
                 new JsonApiOasPlugin(DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw)),
                 new JsonApiCompoundDocsPlugin()
         );
+
+        // set to the context
+        servletContext.setAttribute(JsonApi4jServletContainerInitializer.PLUGINS_ATT_NAME, plugins);
+
+        return plugins;
     }
 
-    static JsonApi4j createJsonApi4j(List<JsonApi4jPlugin> plugins) {
-        DomainRegistry domainRegistry = createDomainRegistry(plugins);
-        OperationsRegistry operationsRegistry = createOperationRegistry(plugins);
-        return JsonApi4j.builder()
-                .domainRegistry(domainRegistry)
-                .operationsRegistry(operationsRegistry)
-                .plugins(plugins)
-                .executor(Executors.newCachedThreadPool())
-                .build();
-    }
-
-    private static DomainRegistry createDomainRegistry(List<JsonApi4jPlugin> plugins) {
-        return DomainRegistry.builder(plugins)
+    static void initDomainRegistry(List<JsonApi4jPlugin> plugins, ServletContext servletContext) {
+        DomainRegistry domainRegistry = DomainRegistry.builder(plugins)
                 .resource(new UserResource())
                 .resource(new CountryResource())
                 .resource(new CurrencyResource())
@@ -90,15 +89,16 @@ public class ServletJsonapi4jSampleApp {
                 .relationship(new UserRelativesRelationship())
                 .relationship(new CountryCurrenciesRelationship())
                 .build();
+        servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
     }
 
-    private static OperationsRegistry createOperationRegistry(List<JsonApi4jPlugin> plugins) {
+    static void initOperationRegistry(List<JsonApi4jPlugin> plugins, ServletContext servletContext) {
         UserDb userDb = new UserInMemoryDb();
         CountriesClient countriesClient = new CountriesInMemoryClient();
         UserInputParamsValidator userInputParamsValidator = new SimpleUserInputParamsValidator();
         SimpleCountryInputParamsValidator countryInputParamsValidator = new SimpleCountryInputParamsValidator();
 
-        return OperationsRegistry.builder(plugins)
+        OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
                 .operation(new UserOperations(userDb, userInputParamsValidator, countryInputParamsValidator))
                 .operation(new UserCitizenshipsOperations(countriesClient, userDb, countryInputParamsValidator))
                 .operation(new UserPlaceOfBirthOperations(countriesClient, userDb, countryInputParamsValidator))
@@ -108,6 +108,8 @@ public class ServletJsonapi4jSampleApp {
                 .operation(new ReadCountryCurrenciesRelationshipOperation(countriesClient, countryInputParamsValidator))
                 .operation(new CurrencyOperations(countriesClient))
                 .build();
+
+        servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
     }
 
     public static void main(String[] args) throws Exception {
@@ -117,20 +119,19 @@ public class ServletJsonapi4jSampleApp {
         context.setContextPath("/");
         context.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
 
-        // init dispatcher servlet
         JsonApi4jServletContainerInitializer jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
-        jsonApi4jInitializer.onStartup(null, context.getServletContext());
 
-        // init plugins
         List<JsonApi4jPlugin> plugins = initPlugins(context.getServletContext());
+        initDomainRegistry(plugins, context.getServletContext());
+        initOperationRegistry(plugins, context.getServletContext());
 
-        // compose and register JsonApi4j
-        JsonApi4j jsonApi4j = createJsonApi4j(plugins);
-        context.setAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME, jsonApi4j);
+        jsonApi4jInitializer.onStartup(null, context.getServletContext());
 
         // start server
         server.setHandler(context);
         server.start();
         server.join();
     }
+
+
 }

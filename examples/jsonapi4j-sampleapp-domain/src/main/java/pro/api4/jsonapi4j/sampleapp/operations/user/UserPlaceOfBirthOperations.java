@@ -111,7 +111,7 @@ public class UserPlaceOfBirthOperations implements
         getValidator().validateToOneRelationshipDoc(
                 request.getToOneRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
         );
     }
 

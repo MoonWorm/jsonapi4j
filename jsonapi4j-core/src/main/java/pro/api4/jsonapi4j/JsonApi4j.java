@@ -38,13 +38,11 @@ import pro.api4.jsonapi4j.operation.UpdateResourceOperation;
 import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.IdSupplier;
-import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
 import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsProcessor;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
@@ -70,7 +68,6 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -98,7 +95,7 @@ import static java.util.stream.Collectors.toMap;
  * </p>
  */
 @Slf4j
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
 @Getter
 public class JsonApi4j {
 
@@ -106,6 +103,7 @@ public class JsonApi4j {
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final Executor executor;
+    private final JsonApi4jValidator validator;
 
     public static JsonApi4jBuilder builder() {
         return new JsonApi4jBuilder();
@@ -127,23 +125,28 @@ public class JsonApi4j {
     private Object executeResourceOperation(JsonApiRequest request) {
         switch (request.getOperationType()) {
             case READ_RESOURCE_BY_ID -> {
+                validator.validateReadResourceById(request);
                 return forResourceType(request.getTargetResourceType())
                         .readResourceById(request);
             }
             case READ_MULTIPLE_RESOURCES -> {
+                validator.validateReadMultipleResources(request);
                 return forResourceType(request.getTargetResourceType())
                         .readMultipleResources(request);
             }
             case CREATE_RESOURCE -> {
+                validator.validateCreateResource(request);
                 return forResourceType(request.getTargetResourceType())
                         .createResource(request);
             }
             case UPDATE_RESOURCE -> {
+                validator.validateUpdateResource(request);
                 forResourceType(request.getTargetResourceType())
                         .updateResource(request);
                 return null;
             }
             case DELETE_RESOURCE -> {
+                validator.validateDeleteResource(request);
                 forResourceType(request.getTargetResourceType())
                         .deleteResource(request);
                 return null;
@@ -157,34 +160,40 @@ public class JsonApi4j {
     private Object executeRelationshipOperations(JsonApiRequest request) {
         switch (request.getOperationType()) {
             case READ_TO_ONE_RELATIONSHIP -> {
+                validator.validateReadToOneRelationship(request);
                 return forResourceType(request.getTargetResourceType())
                         .forToOneRelationship(request.getTargetRelationshipName())
                         .readToOneRelationship(request);
             }
-            case READ_TO_MANY_RELATIONSHIP -> {
-                return forResourceType(request.getTargetResourceType())
-                        .forToManyRelationship(request.getTargetRelationshipName())
-                        .readToManyRelationship(request);
-            }
             case UPDATE_TO_ONE_RELATIONSHIP -> {
+                validator.validateUpdateToOneRelationship(request);
                 forResourceType(request.getTargetResourceType())
                         .forToOneRelationship(request.getTargetRelationshipName())
                         .updateToOneRelationship(request);
                 return null;
             }
+            case READ_TO_MANY_RELATIONSHIP -> {
+                validator.validateReadToManyRelationship(request);
+                return forResourceType(request.getTargetResourceType())
+                        .forToManyRelationship(request.getTargetRelationshipName())
+                        .readToManyRelationship(request);
+            }
             case UPDATE_TO_MANY_RELATIONSHIPS -> {
+                validator.validateUpdateToManyRelationship(request);
                 forResourceType(request.getTargetResourceType())
                         .forToManyRelationship(request.getTargetRelationshipName())
                         .updateToManyRelationship(request);
                 return null;
             }
             case ADD_TO_MANY_RELATIONSHIP -> {
+                validator.validateAddToManyRelationship(request);
                 forResourceType(request.getTargetResourceType())
                         .forToManyRelationship(request.getTargetRelationshipName())
                         .addToManyRelationship(request);
                 return null;
             }
             case DELETE_TO_MANY_RELATIONSHIP -> {
+                validator.validateDeleteToManyRelationship(request);
                 forResourceType(request.getTargetResourceType())
                         .forToManyRelationship(request.getTargetRelationshipName())
                         .deleteFromToManyRelationship(request);
@@ -328,59 +337,6 @@ public class JsonApi4j {
             result.add(PluginSettings.builder().operationMeta(operationMeta).plugin(plugin).info(info).build());
         }
         return result.stream().sorted(Comparator.comparingInt(p -> p.getPlugin().precedence())).toList();
-    }
-
-    public static class JsonApi4jBuilder {
-
-        private List<JsonApi4jPlugin> plugins = Collections.emptyList();
-        private DomainRegistry domainRegistry = DomainRegistry.empty();
-        private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
-        private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
-
-        private JsonApi4jBuilder() {
-
-        }
-
-        public JsonApi4jBuilder plugins(List<JsonApi4jPlugin> plugins) {
-            this.plugins = plugins;
-            return this;
-        }
-
-        public JsonApi4jBuilder domainRegistry(DomainRegistry domainRegistry) {
-            this.domainRegistry = domainRegistry;
-            return this;
-        }
-
-        public JsonApi4jBuilder operationsRegistry(OperationsRegistry operationsRegistry) {
-            this.operationsRegistry = operationsRegistry;
-            return this;
-        }
-
-        public JsonApi4jBuilder executor(Executor executor) {
-            this.executor = executor;
-            return this;
-        }
-
-        public JsonApi4j build() {
-            validateIntegrity();
-            return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor);
-        }
-
-        private void validateIntegrity() {
-            // check if operations are pointing to the registered resources
-            operationsRegistry.getAllRegisteredOperations().forEach(o -> {
-                if (!domainRegistry.getResourceTypes().contains(o.getOperationMeta().getResourceType())) {
-                    throw new OperationsMisconfigurationException(
-                            MessageFormat.format(
-                                    "Operation ({0}) is added for the resource that is not registered in the domain. " +
-                                            "Ensure target resource is registered in the Domain Registry.",
-                                    o.getOperation().getClass().getSimpleName()
-                            )
-                    );
-                }
-            });
-        }
-
     }
 
     public class ResourceTypeStepSelected {

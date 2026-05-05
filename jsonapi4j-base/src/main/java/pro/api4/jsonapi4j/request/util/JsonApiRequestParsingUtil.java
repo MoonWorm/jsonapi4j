@@ -4,7 +4,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
@@ -13,6 +12,7 @@ import pro.api4.jsonapi4j.util.CustomCollectors;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static pro.api4.jsonapi4j.request.FiltersAwareRequest.extractFilterName;
@@ -42,31 +42,25 @@ public final class JsonApiRequestParsingUtil {
     }
 
     public static List<String> parseEffectiveIncludes(List<String> paramValue) {
-        List<String> includes = parseCommaSeparatedParam(paramValue)
+        return parseCommaSeparatedParam(paramValue)
                 .map(include -> include.split("\\.")[0])
                 .sorted()
                 .toList();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIncludes(includes);
-        return includes;
     }
 
     public static List<String> parseOriginalIncludes(List<String> paramValue) {
-        List<String> result = parseCommaSeparatedParam(paramValue)
+        return parseCommaSeparatedParam(paramValue)
                 .sorted()
                 .toList();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIncludes(result);
-        return result;
     }
 
     public static Map<String, SortAwareRequest.SortOrder> parseSortBy(List<String> paramValue) {
-        Map<String, SortAwareRequest.SortOrder> sortBy = parseCommaSeparatedParam(paramValue)
+        return parseCommaSeparatedParam(paramValue)
                 .sorted()
                 .collect(CustomCollectors.toOrderedMap(
                         SortAwareRequest::extractSortBy,
                         SortAwareRequest::extractSortOrder
                 ));
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateSortBy(sortBy);
-        return sortBy;
     }
 
     public static String parseCursor(List<String> cursorParamValue) {
@@ -81,8 +75,12 @@ public final class JsonApiRequestParsingUtil {
             return null;
         }
         return limitParamValue.stream().findFirst().map(v -> {
-            JsonApi4jDefaultValidatorHolder.INSTANCE.validateLimit(v);
-            return Long.parseLong(v);
+            try {
+                return Long.parseLong(v);
+            } catch (NumberFormatException e) {
+                log.warn("Unable to parse page[limit] query param value '{}'. Use numeric data type. Setting 'null'...", v, e);
+                return null;
+            }
         }).orElse(null);
     }
 
@@ -90,20 +88,30 @@ public final class JsonApiRequestParsingUtil {
         if (CollectionUtils.isEmpty(offsetParamValue)) {
             return null;
         }
-        return offsetParamValue.stream().findFirst().map(Long::parseLong).orElse(null);
+        return offsetParamValue.stream().findFirst().map(v -> {
+            try {
+                return Long.parseLong(v);
+            } catch (NumberFormatException e) {
+                log.warn("Unable to parse page[offset] query param value '{}'. Use numeric data type. Setting 'null'...", v, e);
+                return null;
+            }
+        }).orElse(null);
     }
 
     public static Map<String, List<String>> parseFilter(Map<String, List<String>> params) {
-        Map<String, List<String>> filterParams = params.entrySet()
+        return params.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
                 .filter(e -> isJsonApiFilterParam(e.getKey()))
-                .collect(CustomCollectors.toOrderedMap(
+                .collect(Collectors.groupingBy(
                         e -> extractFilterName(e.getKey()),
-                        e -> parseCommaSeparatedParam(e.getValue()).sorted().toList()
+                        LinkedHashMap::new,
+                        Collectors.flatMapping(
+                                e -> parseCommaSeparatedParam(e.getValue()),
+                                Collectors.collectingAndThen(Collectors.toList(),
+                                        values -> values.stream().sorted().toList())
+                        )
                 ));
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateFilterParams(filterParams);
-        return filterParams;
     }
 
     public static Map<String, List<String>> parseFieldSets(Map<String, List<String>> params) {

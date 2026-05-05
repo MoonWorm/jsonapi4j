@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
@@ -99,7 +100,7 @@ public class UserRelativesOperations implements
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
         Set<String> relativeIdsToRemove = payload.getData()
                 .stream()
-                .map(rio -> rio.getId())
+                .map(ResourceIdentifierObject::getId)
                 .collect(Collectors.toSet());
         userDb.removeUserRelatives(request.getResourceId(), relativeIdsToRemove);
     }
@@ -109,13 +110,11 @@ public class UserRelativesOperations implements
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 resourceId -> {
-                    getValidator().validateNonBlank(resourceId, "data -> resourceId");
-                    getValidator().validateResourceId(resourceId);
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
                 },
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("users")),
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
                 UserOperations::validateRelationsMeta
         );
     }
@@ -124,8 +123,8 @@ public class UserRelativesOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
-                getValidator()::validateResourceId,
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("users"))
+                resourceId -> {},
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type")
         );
     }
 
@@ -134,13 +133,11 @@ public class UserRelativesOperations implements
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 resourceId -> {
-                    getValidator().validateNonBlank(resourceId, "data -> resourceId");
-                    getValidator().validateResourceId(resourceId);
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
                 },
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("users")),
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
                 UserOperations::validateRelationsMeta
         );
     }

@@ -9,14 +9,14 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 @Getter
 public class InvalidLimitException extends ConstraintViolationException {
 
-    private final String limit;
+    private final Long limit;
 
-    public InvalidLimitException(String limit, String message) {
+    public InvalidLimitException(Long limit, String message) {
         super(DefaultErrorCodes.INVALID_LIMIT, message, "page[limit]");
         this.limit = limit;
     }
 
-    public InvalidLimitException(String limit) {
+    public InvalidLimitException(Long limit) {
         this(limit, "Invalid limit value: " + limit + ". Must be a number.");
     }
 

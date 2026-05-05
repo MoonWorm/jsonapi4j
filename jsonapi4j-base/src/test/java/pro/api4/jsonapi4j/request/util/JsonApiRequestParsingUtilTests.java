@@ -1,8 +1,6 @@
 package pro.api4.jsonapi4j.request.util;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 
 import java.net.URI;
@@ -12,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JsonApiRequestParsingUtilTests {
 
@@ -121,20 +118,6 @@ class JsonApiRequestParsingUtilTests {
         assertThat(result).isEmpty();
     }
 
-    @Test
-    void parseSortBy_exceedsGlobalCap_throwsConstraintViolationWithCorrectCodeAndMessage() {
-        // when/then
-        assertThatThrownBy(() ->
-                JsonApiRequestParsingUtil.parseSortBy(List.of("a,b,c,d,e,f"))
-        ).isInstanceOf(ConstraintViolationException.class)
-                .satisfies(ex -> {
-                    ConstraintViolationException cve = (ConstraintViolationException) ex;
-                    assertThat(cve.getErrorCode()).isEqualTo(DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG);
-                    assertThat(cve.getDetail()).contains("Sort value");
-                    assertThat(cve.getParameter()).isEqualTo("sort");
-                });
-    }
-
     // --- parseCursor ---
 
     @Test
@@ -234,21 +217,6 @@ class JsonApiRequestParsingUtilTests {
         assertThat(result).isEmpty();
     }
 
-    @Test
-    void parseEffectiveIncludes_exceedsGlobalCap_throwsConstraintViolationWithCorrectCodeAndMessage() {
-        // given — cap is 10, so 11 includes should fail
-        // when/then
-        assertThatThrownBy(() ->
-                JsonApiRequestParsingUtil.parseEffectiveIncludes(List.of("a,b,c,d,e,f,g,h,i,j,k"))
-        ).isInstanceOf(ConstraintViolationException.class)
-                .satisfies(ex -> {
-                    ConstraintViolationException cve = (ConstraintViolationException) ex;
-                    assertThat(cve.getErrorCode()).isEqualTo(DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG);
-                    assertThat(cve.getDetail()).contains("Include value");
-                    assertThat(cve.getParameter()).isEqualTo("include");
-                });
-    }
-
     // --- parseOriginalIncludes ---
 
     @Test
@@ -258,20 +226,6 @@ class JsonApiRequestParsingUtilTests {
 
         // then
         assertThat(result).containsExactly("citizenships.currencies", "placeOfBirth"); // sorted
-    }
-
-    @Test
-    void parseOriginalIncludes_exceedsGlobalCap_throwsConstraintViolationWithCorrectCodeAndMessage() {
-        // when/then
-        assertThatThrownBy(() ->
-                JsonApiRequestParsingUtil.parseOriginalIncludes(List.of("a,b,c,d,e,f,g,h,i,j,k"))
-        ).isInstanceOf(ConstraintViolationException.class)
-                .satisfies(ex -> {
-                    ConstraintViolationException cve = (ConstraintViolationException) ex;
-                    assertThat(cve.getErrorCode()).isEqualTo(DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG);
-                    assertThat(cve.getDetail()).contains("Include value");
-                    assertThat(cve.getParameter()).isEqualTo("include");
-                });
     }
 
     // --- parseFieldSets ---

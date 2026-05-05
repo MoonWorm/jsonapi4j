@@ -15,9 +15,12 @@ import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @Slf4j
@@ -44,6 +47,7 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private Map<String, List<String>> customQueryParams = new LinkedHashMap<>();
 
     private byte[] payload = new byte[0];
+    private final Map<String, Object> payloadCache = new HashMap<>();
 
     private Map<String, SortOrder> sortBy = new LinkedHashMap<>();
 
@@ -64,8 +68,15 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
         if (payload == null || payload.length == 0) {
             return null;
         }
+        String key = cacheKey(attType, relType);
+        if (payloadCache.containsKey(key)) {
+            //noinspection unchecked
+            return (SingleResourceDoc<ResourceObject<A, R>>) payloadCache.get(key);
+        }
         try {
-            return bodyDeserializer.deserializeResourceDoc(payload, attType, relType);
+            SingleResourceDoc<ResourceObject<A, R>> doc = bodyDeserializer.deserializeResourceDoc(payload, attType, relType);
+            payloadCache.put(key, doc);
+            return doc;
         } catch (IOException e) {
             log.error("Error deserializing HTTP Request Payload into JsonApiSinglePrimaryResourceDoc. Ensure operation implementation follows JSON:API spec.", e);
             throw new InvalidPayloadException();
@@ -77,8 +88,14 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
         if (payload == null || payload.length == 0) {
             return null;
         }
+        String key = cacheKey(ToOneRelationshipDoc.class);
+        if (payloadCache.containsKey(key)) {
+            return (ToOneRelationshipDoc) payloadCache.get(key);
+        }
         try {
-            return bodyDeserializer.deserializeRelationshipDoc(payload, ToOneRelationshipDoc.class);
+            ToOneRelationshipDoc doc = bodyDeserializer.deserializeRelationshipDoc(payload, ToOneRelationshipDoc.class);
+            payloadCache.put(key, doc);
+            return doc;
         } catch (IOException e) {
             log.error("Error deserializing HTTP Request Payload into JsonApiSingleDataRelationshipDoc. Ensure operation implementation follows JSON:API spec.", e);
             throw new InvalidPayloadException();
@@ -90,8 +107,14 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
         if (payload == null || payload.length == 0) {
             return null;
         }
+        String key = cacheKey(ToManyRelationshipsDoc.class);
+        if (payloadCache.containsKey(key)) {
+            return (ToManyRelationshipsDoc) payloadCache.get(key);
+        }
         try {
-            return bodyDeserializer.deserializeRelationshipDoc(payload, ToManyRelationshipsDoc.class);
+            ToManyRelationshipsDoc doc = bodyDeserializer.deserializeRelationshipDoc(payload, ToManyRelationshipsDoc.class);
+            payloadCache.put(key, doc);
+            return doc;
         } catch (IOException e) {
             log.error("Error deserializing HTTP Request Payload into JsonApiSingleDataRelationshipDoc. Ensure operation implementation follows JSON:API spec.", e);
             throw new InvalidPayloadException();
@@ -108,6 +131,10 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
         <T> T deserializeRelationshipDoc(byte[] payload, Class<T> type) throws IOException;
 
+    }
+
+    private static String cacheKey(Class<?>... types) {
+        return Arrays.stream(types).map(Class::getName).collect(Collectors.joining(","));
     }
 
     public static JsonApiRequestBuilder builder() {

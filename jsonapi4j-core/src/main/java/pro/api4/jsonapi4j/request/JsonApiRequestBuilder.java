@@ -10,9 +10,13 @@ import pro.api4.jsonapi4j.operation.OperationType;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 public class JsonApiRequestBuilder {
+
+    private DefaultJsonApiRequest.BodyDeserializer bodyDeserializer;
+    private byte[] payloadAsBytes;
 
     private String resourceId;
     private ResourceType targetResourceType;
@@ -27,7 +31,7 @@ public class JsonApiRequestBuilder {
     private Long offset;
     private Map<String, SortAwareRequest.SortOrder> sortBy;
     private Map<String, List<String>> customQueryParams;
-    private Object payload;
+    private Object payloadAsObject;
     private URI extension;
     private URI profile;
 
@@ -49,13 +53,15 @@ public class JsonApiRequestBuilder {
         this.offset = from.getOffset();
         this.sortBy = from.getSortBy();
         this.customQueryParams = from.getCustomQueryParams();
-        this.payload = from.getSingleResourceDocPayload();
-        if (this.payload == null) {
-            this.payload = from.getToOneRelationshipDocPayload();
+
+        this.payloadAsObject = from.getSingleResourceDocPayload();
+        if (this.payloadAsObject == null) {
+            this.payloadAsObject = from.getToOneRelationshipDocPayload();
         }
-        if (this.payload == null) {
-            this.payload = from.getToManyRelationshipDocPayload();
+        if (this.payloadAsObject == null) {
+            this.payloadAsObject = from.getToManyRelationshipDocPayload();
         }
+
         this.extension = from.getExtension();
         this.profile = from.getProfile();
     }
@@ -115,18 +121,18 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    public <A, R> JsonApiRequestBuilder payload(SingleResourceDoc<ResourceObject<A, R>> payload) {
-        this.payload = payload;
+    public <A, R> JsonApiRequestBuilder payloadObject(SingleResourceDoc<ResourceObject<A, R>> payload) {
+        this.payloadAsObject = payload;
         return this;
     }
 
-    public JsonApiRequestBuilder payload(ToOneRelationshipDoc payload) {
-        this.payload = payload;
+    public JsonApiRequestBuilder payloadObject(ToOneRelationshipDoc payload) {
+        this.payloadAsObject = payload;
         return this;
     }
 
-    public JsonApiRequestBuilder payload(ToManyRelationshipsDoc payload) {
-        this.payload = payload;
+    public JsonApiRequestBuilder payloadObject(ToManyRelationshipsDoc payload) {
+        this.payloadAsObject = payload;
         return this;
     }
 
@@ -140,6 +146,7 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
+    // TODO: merge into .includes
     public JsonApiRequestBuilder originalIncludes(List<String> originalIncludes) {
         this.originalIncludes = originalIncludes;
         return this;
@@ -150,24 +157,38 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    public JsonApiRequest build() {
-        DefaultJsonApiRequest request = new DefaultJsonApiRequest(new DefaultJsonApiRequest.BodyDeserializer() {
-            @Override
-            public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] p,
-                                                                                         Class<A> attType,
-                                                                                         Class<R> relType) throws IOException {
-                //noinspection unchecked
-                return (SingleResourceDoc<ResourceObject<A, R>>) payload;
-            }
+    public JsonApiRequestBuilder payloadAsBytes(DefaultJsonApiRequest.BodyDeserializer bodyDeserializer,
+                                                byte[] payloadAsBytes) {
+        this.bodyDeserializer = bodyDeserializer;
+        this.payloadAsBytes = payloadAsBytes;
+        return this;
+    }
 
-            @Override
-            public <T> T deserializeRelationshipDoc(byte[] p,
-                                                    Class<T> type) throws IOException {
-                //noinspection unchecked
-                return (T) payload;
-            }
-        });
-        request.setPayload(new byte[]{1}); // to bypass not null/not empty validation
+    public JsonApiRequest build() {
+        DefaultJsonApiRequest request;
+        if (this.bodyDeserializer != null) {
+            request = new DefaultJsonApiRequest(this.bodyDeserializer);
+            request.setPayload(payloadAsBytes);
+        } else {
+            request = new DefaultJsonApiRequest(new DefaultJsonApiRequest.BodyDeserializer() {
+                @Override
+                public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] p,
+                                                                                             Class<A> attType,
+                                                                                             Class<R> relType) throws IOException {
+                    //noinspection unchecked
+                    return (SingleResourceDoc<ResourceObject<A, R>>) payloadAsObject;
+                }
+
+                @Override
+                public <T> T deserializeRelationshipDoc(byte[] p,
+                                                        Class<T> type) throws IOException {
+                    //noinspection unchecked
+                    return (T) payloadAsObject;
+                }
+            });
+            request.setPayload(new byte[]{1}); // to bypass not null/not empty validation
+        }
+
         request.setResourceId(resourceId);
         request.setTargetResourceType(targetResourceType);
         request.setTargetRelationshipName(targetRelationshipName);

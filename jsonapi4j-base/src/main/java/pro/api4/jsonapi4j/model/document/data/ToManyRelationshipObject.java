@@ -23,18 +23,6 @@ public class ToManyRelationshipObject extends RelationshipObject {
         this.data = data;
     }
 
-    public ToManyRelationshipObject(List<ResourceIdentifierObject> data,
-                                    LinksObject links) {
-        this(data, links, null);
-    }
-
-    public ToManyRelationshipObject(LinksObject links) {
-        this(null, links, null);
-    }
-
-    public ToManyRelationshipObject(List<ResourceIdentifierObject> data) {
-        this(data, null);
-    }
 
     public static ToManyRelationshipObject fromRelationshipObject(List<ResourceIdentifierObject> data,
                                                                   RelationshipObject relationshipObject) {

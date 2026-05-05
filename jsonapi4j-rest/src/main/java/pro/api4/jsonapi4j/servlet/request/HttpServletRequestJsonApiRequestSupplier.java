@@ -15,13 +15,12 @@ import pro.api4.jsonapi4j.http.exception.UnsupportedMediaTypeException;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.DefaultJsonApiRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
 import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
@@ -94,11 +93,6 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
                 method
         );
         String resourceId = parseResourceIdFromThePath(path);
-        if (operationDetails.getOperationType() != OperationType.READ_MULTIPLE_RESOURCES
-                && operationDetails.getOperationType() != OperationType.CREATE_RESOURCE) {
-            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceId, "resource id");
-            JsonApi4jDefaultValidatorHolder.INSTANCE.validateResourceId(resourceId);
-        }
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
         List<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
@@ -115,55 +109,57 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         ResourceType targetResourceType = operationDetails.getResourceType();
         RelationshipName targetRelationshipName = operationDetails.getRelationshipName();
         OperationType targetOperationType = operationDetails.getOperationType();
-        DefaultJsonApiRequest jsonApiRequest = new DefaultJsonApiRequest(
-                new DefaultJsonApiRequest.BodyDeserializer() {
-                    @Override
-                    public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] payload,
-                                                                                                 Class<A> attType,
-                                                                                                 Class<R> relType) throws IOException {
-                        TypeFactory typeFactory = jsonMapper.getTypeFactory();
-                        JavaType jsonApiPrimaryResourceJavaType = typeFactory.constructParametricType(
-                                ResourceObject.class,
-                                attType,
-                                relType
-                        );
-                        JavaType jsonApiSinglePrimaryResourceDocJavaType = typeFactory.constructParametricType(
-                                SingleResourceDoc.class,
-                                jsonApiPrimaryResourceJavaType
-                        );
-                        return jsonMapper.readValue(payload, jsonApiSinglePrimaryResourceDocJavaType);
-                    }
+        JsonApiRequest jsonApiRequest = new JsonApiRequestBuilder()
+                .payloadAsBytes(
+                        new DefaultJsonApiRequest.BodyDeserializer() {
+                            @Override
+                            public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] payload,
+                                                                                                         Class<A> attType,
+                                                                                                         Class<R> relType) throws IOException {
+                                TypeFactory typeFactory = jsonMapper.getTypeFactory();
+                                JavaType jsonApiPrimaryResourceJavaType = typeFactory.constructParametricType(
+                                        ResourceObject.class,
+                                        attType,
+                                        relType
+                                );
+                                JavaType jsonApiSinglePrimaryResourceDocJavaType = typeFactory.constructParametricType(
+                                        SingleResourceDoc.class,
+                                        jsonApiPrimaryResourceJavaType
+                                );
+                                return jsonMapper.readValue(payload, jsonApiSinglePrimaryResourceDocJavaType);
+                            }
 
-                    @Override
-                    public <T> T deserializeRelationshipDoc(byte[] payload,
-                                                            Class<T> type) throws IOException {
-                        return jsonMapper.readValue(payload, type);
-                    }
+                            @Override
+                            public <T> T deserializeRelationshipDoc(byte[] payload,
+                                                                    Class<T> type) throws IOException {
+                                return jsonMapper.readValue(payload, type);
+                            }
 
-                }
-        );
-        jsonApiRequest.setResourceId(resourceId);
-        jsonApiRequest.setTargetResourceType(targetResourceType);
-        jsonApiRequest.setTargetRelationshipName(targetRelationshipName);
-        jsonApiRequest.setOperationType(targetOperationType);
-        jsonApiRequest.setFilters(filters);
-        jsonApiRequest.setEffectiveIncludes(effectiveIncludes);
-        jsonApiRequest.setOriginalIncludes(originalIncludes);
-        jsonApiRequest.setCursor(cursor);
-        jsonApiRequest.setLimit(limit);
-        jsonApiRequest.setOffset(offset);
-        jsonApiRequest.setSortBy(sortBy);
-        jsonApiRequest.setFieldSets(fieldSets);
-        jsonApiRequest.setCustomQueryParams(customQueryParams);
-        jsonApiRequest.setPayload(payload);
-        jsonApiRequest.setExtension(ext);
-        jsonApiRequest.setProfile(profile);
+                        },
+                        payload
+                )
+                .resourceId(resourceId)
+                .targetResourceType(targetResourceType)
+                .targetRelationship(targetRelationshipName)
+                .operationType(targetOperationType)
+                .filterBy(filters)
+                .originalIncludes(originalIncludes)
+                .effectiveIncludes(effectiveIncludes)
+                .cursor(cursor)
+                .limit(limit)
+                .offset(offset)
+                .sortBy(sortBy)
+                .fieldSets(fieldSets)
+                .customQueryParams(customQueryParams)
+                .extension(ext)
+                .profile(profile)
+                .build();
         log.debug("Composed JsonApiRequest: {}", jsonApiRequest);
         return jsonApiRequest;
     }
 
     private boolean isMethodSupportBody(String method) {
-        return !"GET".equals(method) && !"HEAD".equals(method) && !"TRACE".equals(method);
+        return "POST".equals(method) || "PATCH".equals(method) || "PUT".equals(method);
     }
 
     private String getPath(HttpServletRequest request) {

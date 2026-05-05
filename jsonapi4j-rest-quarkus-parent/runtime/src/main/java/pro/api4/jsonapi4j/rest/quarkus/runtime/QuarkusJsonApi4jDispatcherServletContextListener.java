@@ -11,6 +11,7 @@ import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.JsonApi4jValidator;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 
@@ -26,6 +27,7 @@ public class QuarkusJsonApi4jDispatcherServletContextListener implements Servlet
     @Inject
     Provider<JsonApi4j> jsonApi4jProvider;
     @Inject
+    @Named("jsonApi4jObjectMapper")
     Provider<ObjectMapper> objectMapperProvider;
     @Inject
     Provider<ErrorHandlerFactoriesRegistry> errorHandlerFactoriesRegistryProvider;
@@ -34,6 +36,8 @@ public class QuarkusJsonApi4jDispatcherServletContextListener implements Servlet
     @Inject
     @Named("jsonApi4jExecutorService")
     Provider<ExecutorService> executorServiceProvider;
+    @Inject
+    Provider<JsonApi4jValidator> validatorProvider;
     @Inject
     Provider<QuarkusJsonApi4jProperties> jsonApi4jPropertiesProvider;
 
@@ -56,6 +60,9 @@ public class QuarkusJsonApi4jDispatcherServletContextListener implements Servlet
 
         servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorServiceProvider.get());
         log.debug("Common ExecutorService instance has been set as '{}' Servlet Context Attribute.", EXECUTOR_SERVICE_ATT_NAME);
+
+        servletContext.setAttribute(VALIDATOR_ATT_NAME, validatorProvider.get());
+        log.debug("JsonApi4jValidator instance has been set as '{}' Servlet Context Attribute.", VALIDATOR_ATT_NAME);
 
         servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, principalResolverProvider.get());
         log.debug("PrincipalResolver instance has been set as '{}' Servlet Context Attribute.", PRINCIPAL_RESOLVER_ATT_NAME);

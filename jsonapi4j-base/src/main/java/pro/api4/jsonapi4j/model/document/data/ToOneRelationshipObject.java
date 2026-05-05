@@ -21,18 +21,6 @@ public class ToOneRelationshipObject extends RelationshipObject {
         this.data = data;
     }
 
-    public ToOneRelationshipObject(ResourceIdentifierObject data,
-                                   LinksObject links) {
-        this(data, links, null);
-    }
-
-    public ToOneRelationshipObject(LinksObject links) {
-        this(null, links, null);
-    }
-
-    public ToOneRelationshipObject(ResourceIdentifierObject data) {
-        this(data, null);
-    }
 
     public static ToOneRelationshipObject fromRelationshipObject(ResourceIdentifierObject data,
                                                                  RelationshipObject relationshipObject) {

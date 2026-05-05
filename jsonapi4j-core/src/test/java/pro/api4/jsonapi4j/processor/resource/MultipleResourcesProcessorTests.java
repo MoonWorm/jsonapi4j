@@ -221,13 +221,15 @@ public class MultipleResourcesProcessorTests {
         when(fooRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO_1)).thenReturn(
                 new ToOneRelationshipObject(
                         new ResourceIdentifierObject("31", null, FOO.getName(), null),
-                        LinksObject.builder().self("/silver/1/relationships/foo").build()
+                        LinksObject.builder().self("/silver/1/relationships/foo").build(),
+                        null
                 )
         );
         when(barsRelSupplier.resolveRequestedData(REQUEST_ALL_INCLUDES, DTO_1)).thenReturn(
                 new ToManyRelationshipObject(
                         List.of(new ResourceIdentifierObject("51", null, BARS.getName(), null)),
-                        LinksObject.builder().self("/silver/1/relationships/bars").build()
+                        LinksObject.builder().self("/silver/1/relationships/bars").build(),
+                        null
                 )
         );
 

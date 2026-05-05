@@ -4,10 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
@@ -18,7 +19,6 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Param
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.principal.tier.TierAdmin;
-import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -247,33 +247,49 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public void validateCreate(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        getValidator().validateSingleResourceDoc(singleResourceDoc);
-        UserAttributes att = singleResourceDoc.getData().getAttributes();
-        if (att == null) {
+        if (singleResourceDoc.getData().getAttributes() == null) {
             throw new ConstraintViolationException("'attributes' is null", "attributes");
         }
-        if (att.getFullName() == null) {
-            throw new ConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
-        }
-        userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
-        userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
-        userValidator.validateEmail(att.getEmail());
-        validateRelationships(singleResourceDoc.getData().getRelationships());
+        getValidator().validateSingleResourceDoc(
+                singleResourceDoc,
+                resourceId -> getValidator().validateIsNull(resourceId, "body -> data -> id"),
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
+                att -> {
+                    if (att.getFullName() == null) {
+                        throw new ConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
+                    }
+                    userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
+                    userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
+                    userValidator.validateEmail(att.getEmail());
+                },
+                this::validateRelationships
+        );
     }
 
     @Override
     public void validateUpdate(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        getValidator().validateSingleResourceDoc(singleResourceDoc);
-        UserAttributes att = singleResourceDoc.getData().getAttributes();
-        if (att != null) {
-            if (att.getFullName() != null) {
-                userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
-                userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
-            }
-            userValidator.validateEmail(att.getEmail());
-        }
-        validateRelationships(singleResourceDoc.getData().getRelationships());
+        getValidator().validateSingleResourceDoc(
+                singleResourceDoc,
+                resourceId -> {
+                    if (userDb.readById(resourceId) == null) {
+                        throwResourceNotFoundException(request);
+                    }
+                },
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"),
+                att -> {
+                    if (att.getFullName() != null) {
+                        userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
+                        userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
+                    }
+                    userValidator.validateEmail(att.getEmail());
+                },
+                this::validateRelationships
+        );
+    }
+
+    @Override
+    public void validateDelete(JsonApiRequest request) {
         if (userDb.readById(request.getResourceId()) == null) {
             throwResourceNotFoundException(request);
         }
@@ -285,37 +301,28 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 getValidator().validateToManyRelationshipDoc(
                         rel.getCitizenships(),
                         countryValidator::validateCountryId,
-                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> relationships -> citizenships -> data[] -> type")
                 );
             }
             if (rel.getPlaceOfBirth() != null && rel.getPlaceOfBirth().getData() != null) {
                 getValidator().validateToOneRelationshipDoc(
                         rel.getPlaceOfBirth(),
                         countryValidator::validateCountryId,
-                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> relationships -> placeOfBirth -> data -> type")
                 );
             }
             if (rel.getRelatives() != null) {
                 getValidator().validateToManyRelationshipDoc(
                         rel.getRelatives(),
                         resourceId -> {
-                            getValidator().validateNonBlank(resourceId, "resourceId");
-                            getValidator().validateResourceId(resourceId);
                             if (userDb.readById(resourceId) == null) {
                                 throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
                             }
                         },
-                        resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("users")),
+                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> relationships -> relatives -> data[] -> type"),
                         UserOperations::validateRelationsMeta
                 );
             }
-        }
-    }
-
-    @Override
-    public void validateDelete(JsonApiRequest request) {
-        if (userDb.readById(request.getResourceId()) == null) {
-            throwResourceNotFoundException(request);
         }
     }
 

@@ -3,15 +3,17 @@ package pro.api4.jsonapi4j.config;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 
 @NoArgsConstructor
 @Getter
 @Setter
+@ToString
 public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 
     private String rootPath;
-    private DefaultValidationProperties validation;
+    private DefaultValidationProperties validation = new DefaultValidationProperties();
 
     @Override
     public String rootPath() {

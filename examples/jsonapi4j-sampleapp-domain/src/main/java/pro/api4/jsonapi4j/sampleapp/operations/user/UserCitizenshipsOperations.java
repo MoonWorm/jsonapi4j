@@ -157,7 +157,7 @@ public class UserCitizenshipsOperations implements
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
         );
     }
 
@@ -166,7 +166,7 @@ public class UserCitizenshipsOperations implements
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
         );
     }
 
@@ -175,7 +175,7 @@ public class UserCitizenshipsOperations implements
         getValidator().validateToManyRelationshipDoc(
                 request.getToManyRelationshipDocPayload(),
                 countryValidator::validateCountryId,
-                resourceType -> getValidator().validateResourceTypeAnyOf(resourceType, Set.of("countries"))
+                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
         );
     }
 

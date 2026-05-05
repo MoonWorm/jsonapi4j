@@ -69,21 +69,23 @@ public interface QuarkusJsonApi4jProperties {
         @WithDefault(ValidationProperties.DEFAULT_MAX_ELEMENTS_IN_SORT_BY_PARAM)
         Optional<Integer> maxElementsInSortByParam();
 
+        default DefaultValidationProperties toJsonApi4jProperties() {
+            DefaultValidationProperties dvp = new DefaultValidationProperties();
+            maxNumberFilterParams().ifPresent(dvp::setMaxNumberFilterParams);
+            maxElementsInFilterParam().ifPresent(dvp::setMaxElementsInFilterParam);
+            resourceIdMaxLength().ifPresent(dvp::setResourceIdMaxLength);
+            limitMaxValue().ifPresent(dvp::setLimitMaxValue);
+            maxElementsInIncludeParam().ifPresent(dvp::setMaxElementsInIncludeParam);
+            maxElementsInSortByParam().ifPresent(dvp::setMaxElementsInSortByParam);
+            return dvp;
+        }
+
     }
 
     default JsonApi4jProperties toJsonApi4jProperties() {
         DefaultJsonApi4jProperties properties = new DefaultJsonApi4jProperties();
         properties.setRootPath(rootPath());
-        properties.setValidation(validation().map(qv -> {
-            DefaultValidationProperties dvp = new DefaultValidationProperties();
-            qv.maxNumberFilterParams().ifPresent(dvp::setMaxNumberFilterParams);
-            qv.maxElementsInFilterParam().ifPresent(dvp::setMaxElementsInFilterParam);
-            qv.resourceIdMaxLength().ifPresent(dvp::setResourceIdMaxLength);
-            qv.limitMaxValue().ifPresent(dvp::setLimitMaxValue);
-            qv.maxElementsInIncludeParam().ifPresent(dvp::setMaxElementsInIncludeParam);
-            qv.maxElementsInSortByParam().ifPresent(dvp::setMaxElementsInSortByParam);
-            return dvp;
-        }).orElse(null));
+        properties.setValidation(validation().map(QuarkusValidationProperties::toJsonApi4jProperties).orElse(new DefaultValidationProperties()));
         return properties;
     }
 }

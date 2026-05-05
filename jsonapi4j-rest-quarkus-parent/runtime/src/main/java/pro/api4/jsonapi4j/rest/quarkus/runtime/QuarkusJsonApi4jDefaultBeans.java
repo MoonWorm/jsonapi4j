@@ -15,6 +15,7 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.JsonApi4jValidator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
@@ -30,6 +31,7 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
+import pro.api4.jsonapi4j.validation.DefaultJsonApiValidator;
 
 import java.util.Comparator;
 import java.util.List;
@@ -72,6 +74,20 @@ public class QuarkusJsonApi4jDefaultBeans {
     ExecutorService jsonApi4jExecutorService() {
         LOG.info("Composing common {}...", ExecutorService.class.getSimpleName());
         return Executors.newCachedThreadPool();
+    }
+
+    @Produces
+    @Singleton
+    @DefaultBean
+    JsonApi4jValidator jsonApi4jValidator(QuarkusJsonApi4jProperties properties,
+                                          @Named("jsonApi4jObjectMapper") ObjectMapper objectMapper,
+                                          DomainRegistry domainRegistry) {
+        LOG.info("Composing JsonApi4jValidator {}...", JsonApi4jValidator.class.getSimpleName());
+        return DefaultJsonApiValidator.builder()
+                .properties(properties.validation().map(QuarkusJsonApi4jProperties.QuarkusValidationProperties::toJsonApi4jProperties).orElse(null))
+                .objectMapper(objectMapper)
+                .domainRegistry(domainRegistry)
+                .build();
     }
 
     @Produces
@@ -150,17 +166,20 @@ public class QuarkusJsonApi4jDefaultBeans {
     JsonApi4j jsonApi4j(DomainRegistry domainRegistry,
                         OperationsRegistry operationsRegistry,
                         List<JsonApi4jPlugin> plugins,
-                        @Named("jsonApi4jExecutorService") ExecutorService executorService) {
+                        @Named("jsonApi4jExecutorService") ExecutorService executorService,
+                        JsonApi4jValidator validator) {
         LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
                 .plugins(plugins)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .executor(executorService)
+                .validator(validator)
                 .build();
     }
 
     @Produces
+    @Named("jsonApi4jObjectMapper")
     @Singleton
     @DefaultBean
     ObjectMapper objectMapper() {

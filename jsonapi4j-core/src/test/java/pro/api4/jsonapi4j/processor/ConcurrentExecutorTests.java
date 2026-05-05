@@ -82,7 +82,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("2", null, "secondtype", null)),
-                                LinksObject.builder().self("http://self.link").build()
+                                LinksObject.builder().self("http://self.link").build(),
+                                null
                         );
                     })
                     .toManyRelationshipResolver(REL2_MULTI, (req, dto) -> {
@@ -94,7 +95,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("3", null, "thirdtype", null)),
-                                LinksObject.builder().self("http://self2.link").build()
+                                LinksObject.builder().self("http://self2.link").build(),
+                                null
                         );
                     })
                     .toManyRelationshipResolver(REL3_MULTI, (req, dto) -> {
@@ -106,7 +108,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToManyRelationshipObject(
                                 List.of(new ResourceIdentifierObject("4", null, "fourthtype", null)),
-                                LinksObject.builder().self("http://self3.link").build()
+                                LinksObject.builder().self("http://self3.link").build(),
+                                null
                         );
                     })
                     .toOneRelationshipResolver(REL4_SINGLE, (req, dto) -> {
@@ -118,7 +121,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("5", null, "fifthtype", null),
-                                LinksObject.builder().self("http://self4.link").build()
+                                LinksObject.builder().self("http://self4.link").build(),
+                                null
                         );
                     })
                     .toOneRelationshipResolver(REL5_SINGLE, (req, dto) -> {
@@ -130,7 +134,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("6", null, "sixthtype", null),
-                                LinksObject.builder().self("http://self5.link").build()
+                                LinksObject.builder().self("http://self5.link").build(),
+                                null
                         );
                     })
                     .toOneRelationshipResolver(REL6_SINGLE, (req, dto) -> {
@@ -142,7 +147,8 @@ public class ConcurrentExecutorTests {
                         }
                         return new ToOneRelationshipObject(
                                 new ResourceIdentifierObject("7", null, "seventhtype", null),
-                                LinksObject.builder().self("http://self6.link").build()
+                                LinksObject.builder().self("http://self6.link").build(),
+                                null
                         );
                     })
                     .batchToOneRelationshipResolver(REL7_SINGLE_BATCH, (req, dto) -> {
@@ -153,9 +159,9 @@ public class ConcurrentExecutorTests {
                             throw new RuntimeException(e);
                         }
                         return Map.of(
-                                1, new ToOneRelationshipObject(new ResourceIdentifierObject("8", null, "eitthtype", null)),
-                                2, new ToOneRelationshipObject(new ResourceIdentifierObject("9", null, "eitthtype", null)),
-                                3, new ToOneRelationshipObject(new ResourceIdentifierObject("10", null, "eitthtype", null))
+                                1, new ToOneRelationshipObject(new ResourceIdentifierObject("8", null, "eitthtype", null), null, null),
+                                2, new ToOneRelationshipObject(new ResourceIdentifierObject("9", null, "eitthtype", null), null, null),
+                                3, new ToOneRelationshipObject(new ResourceIdentifierObject("10", null, "eitthtype", null), null, null)
                         );
                     })
                     .batchToManyRelationshipResolver(REL8_MULTI_BATCH, (req, dto) -> {
@@ -171,21 +177,21 @@ public class ConcurrentExecutorTests {
                                         List.of(
                                                 new ResourceIdentifierObject("11", null, "eleventhtype", null),
                                                 new ResourceIdentifierObject("12", null, "eleventhtype", null)
-                                        )
+                                        ), null, null
                                 ),
                                 2,
                                 new ToManyRelationshipObject(
                                         List.of(
                                                 new ResourceIdentifierObject("13", null, "eleventhtype", null),
                                                 new ResourceIdentifierObject("14", null, "eleventhtype", null)
-                                        )
+                                        ), null, null
                                 ),
                                 3,
                                 new ToManyRelationshipObject(
                                         List.of(
                                                 new ResourceIdentifierObject("15", null, "eleventhtype", null),
                                                 new ResourceIdentifierObject("16", null, "eleventhtype", null)
-                                        )
+                                        ), null, null
                                 )
                         );
                     })
