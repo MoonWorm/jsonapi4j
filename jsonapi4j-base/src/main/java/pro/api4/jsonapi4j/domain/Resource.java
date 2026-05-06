@@ -28,6 +28,7 @@ public interface Resource<RESOURCE_DTO> {
     String RESOLVE_RESOURCE_META_METHOD_NAME = "resolveResourceMeta";
 
     LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
+    Object NOT_IMPLEMENTED_META_STUB = new Object();
 
     /**
      * Resolves the resource unique identifier ("id" member) based on the corresponding downstream {@link RESOURCE_DTO}.
@@ -131,11 +132,13 @@ public interface Resource<RESOURCE_DTO> {
      *
      * @param request        the original JSON:API request
      * @param dataSourceDtos a list of the corresponding {@link RESOURCE_DTO}
+     * @param paginationContext  pagination context that contains some server-side info e.g. next cursor string
      * @return an instance of {@link LinksObject}
      */
     default Object resolveTopLevelMetaForMultiResourcesDoc(JsonApiRequest request,
-                                                           List<RESOURCE_DTO> dataSourceDtos) {
-        return null;
+                                                           List<RESOURCE_DTO> dataSourceDtos,
+                                                           PaginationContext paginationContext) {
+        return NOT_IMPLEMENTED_META_STUB;
     }
 
     /**

@@ -63,11 +63,13 @@ public interface ToManyRelationship<RELATIONSHIP_DTO> extends Relationship<RELAT
      *
      * @param relationshipRequest the corresponding relationship request
      * @param relationshipDtos    to-many relationship dtos
+     * @param paginationContext   pagination context that contains some server-side info e.g. next cursor string
      * @return any custom Java object that represents JSON:API meta object
      */
     default Object resolveRelationshipMeta(JsonApiRequest relationshipRequest,
-                                           List<RELATIONSHIP_DTO> relationshipDtos) {
-        return null;
+                                           List<RELATIONSHIP_DTO> relationshipDtos,
+                                           PaginationContext paginationContext) {
+        return NOT_IMPLEMENTED_META_STUB;
     }
 
     /**

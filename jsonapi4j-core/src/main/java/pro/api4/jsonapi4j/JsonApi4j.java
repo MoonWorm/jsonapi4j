@@ -50,6 +50,7 @@ import pro.api4.jsonapi4j.processor.resolvers.BatchToManyRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.BatchToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.DefaultRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocLinksResolver;
+import pro.api4.jsonapi4j.processor.resolvers.MultipleDataItemsDocMetaResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceLinksResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ResourceTypeAndIdResolver;
 import pro.api4.jsonapi4j.processor.resolvers.SingleDataItemDocLinksResolver;
@@ -57,6 +58,7 @@ import pro.api4.jsonapi4j.processor.resolvers.ToManyRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.ToOneRelationshipResolver;
 import pro.api4.jsonapi4j.processor.resolvers.links.resource.ResourceLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocLinksDefaultResolvers;
+import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.SingleResourceDocLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToManyRelationshipLinksDefaultResolvers;
 import pro.api4.jsonapi4j.processor.resolvers.links.toplevel.ToOneRelationshipLinksDefaultResolvers;
@@ -230,14 +232,14 @@ public class JsonApi4j {
                 .forRequest(relationshipRequest)
                 .plugins(pluginSettings)
                 .dataSupplier(executableCasted)
-                .topLevelLinksResolver(getSingleDataTopLevelLinksResolver(toOneRelationshipCasted, resourceType, relationshipName))
+                .topLevelLinksResolver(getToOneRelationshipObjectLinksResolver(toOneRelationshipCasted, resourceType, relationshipName))
                 .topLevelMetaResolver(toOneRelationshipCasted::resolveRelationshipMeta)
                 .resourceIdentifierMetaResolver(toOneRelationshipCasted::resolveResourceIdentifierMeta)
                 .resourceTypeAndIdSupplier(typeAndIdResolver)
                 .toToOneRelationshipDoc();
     }
 
-    private <RELATIONSHIP_DTO> SingleDataItemDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getSingleDataTopLevelLinksResolver(
+    private <RELATIONSHIP_DTO> SingleDataItemDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getToOneRelationshipObjectLinksResolver(
             ToOneRelationship<RELATIONSHIP_DTO> toOneRelationshipCasted,
             ResourceType resourceType,
             RelationshipName relationshipName
@@ -283,13 +285,13 @@ public class JsonApi4j {
                 .plugins(pluginSettings)
                 .dataSupplier(executableCasted)
                 .resourceIdentifierMetaResolver(toManyRelationshipCasted::resolveResourceIdentifierMeta)
-                .topLevelLinksResolver(getMultipleDataItemsTopLevelLinksResolver(toManyRelationshipCasted, resourceType, relationshipName))
-                .topLevelMetaResolver(toManyRelationshipCasted::resolveRelationshipMeta)
+                .topLevelLinksResolver(getToManyRelationshipObjectLinksResolver(toManyRelationshipCasted, resourceType, relationshipName))
+                .topLevelMetaResolver(getToManyRelationshipObjectMetaResolver(toManyRelationshipCasted))
                 .resourceTypeAndIdSupplier(typeAndIdResolver)
                 .toToManyRelationshipsDoc();
     }
 
-    private <RELATIONSHIP_DTO> MultipleDataItemsDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getMultipleDataItemsTopLevelLinksResolver(
+    private <RELATIONSHIP_DTO> MultipleDataItemsDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> getToManyRelationshipObjectLinksResolver(
             ToManyRelationship<RELATIONSHIP_DTO> toManyRelationshipCasted,
             ResourceType resourceType,
             RelationshipName relationshipName
@@ -306,6 +308,18 @@ public class JsonApi4j {
                 ).resolve(req, dtos, paginationContext);
             }
             return linksObject;
+        };
+    }
+
+    private <RELATIONSHIP_DTO> MultipleDataItemsDocMetaResolver<JsonApiRequest, RELATIONSHIP_DTO> getToManyRelationshipObjectMetaResolver(
+            ToManyRelationship<RELATIONSHIP_DTO> toManyRelationshipCasted
+    ) {
+        return (req, dtos, paginationContext) -> {
+            Object metaObject = toManyRelationshipCasted.resolveRelationshipMeta(req, dtos, paginationContext);
+            if (metaObject == Relationship.NOT_IMPLEMENTED_META_STUB) {
+                return MultiResourcesDocMetaDefaultResolvers.<JsonApiRequest, RELATIONSHIP_DTO>defaultTopLevelMetaResolver().resolve(req, dtos, paginationContext);
+            }
+            return metaObject;
         };
     }
 
@@ -600,7 +614,7 @@ public class JsonApi4j {
                     .toOneRelationshipResolvers(getToOneRelationshipResolvers(resourceConfig::resolveResourceId))
                     .batchToOneRelationshipResolvers(getBatchToOneRelationshipResolvers(resourceConfig::resolveResourceId))
                     .topLevelLinksResolver(getMultiDataItemTopLevelLinksResolver(resourceType, resourceConfig))
-                    .topLevelMetaResolver(resourceConfig::resolveTopLevelMetaForMultiResourcesDoc)
+                    .topLevelMetaResolver(getMultiDataItemTopLevelMetaResolver(resourceConfig))
                     .resourceLinksResolver(getResourceLinksResolver(resourceType, resourceConfig))
                     .resourceMetaResolver(resourceConfig::resolveResourceMeta)
                     .attributesResolver(resourceConfig::resolveAttributes)
@@ -636,6 +650,19 @@ public class JsonApi4j {
                     ).resolve(req, dtos, paginationContext);
                 }
                 return linksObject;
+            };
+        }
+
+        private <DATA_SOURCE_DTO> MultipleDataItemsDocMetaResolver<JsonApiRequest, DATA_SOURCE_DTO> getMultiDataItemTopLevelMetaResolver(
+                Resource<DATA_SOURCE_DTO> resourceConfig
+        ) {
+            return (req, dtos, paginationContext) -> {
+                Object metaObject = resourceConfig.resolveTopLevelMetaForMultiResourcesDoc(req, dtos, paginationContext);
+                if (metaObject == Resource.NOT_IMPLEMENTED_META_STUB) {
+                    return MultiResourcesDocMetaDefaultResolvers.<JsonApiRequest, DATA_SOURCE_DTO>defaultTopLevelMetaResolver()
+                            .resolve(req, dtos, paginationContext);
+                }
+                return metaObject;
             };
         }
 
@@ -763,7 +790,10 @@ public class JsonApi4j {
                     = getResourceIdentifierTypeAndIdResolver(toManyRelationshipCasted);
 
             MultipleDataItemsDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> topLevelLinksResolver
-                    = getMultipleDataItemsTopLevelLinksResolver(toManyRelationshipCasted, resourceType, relationshipName);
+                    = getToManyRelationshipObjectLinksResolver(toManyRelationshipCasted, resourceType, relationshipName);
+
+            MultipleDataItemsDocMetaResolver<JsonApiRequest, RELATIONSHIP_DTO> topLevelMetaResolver
+                    = getToManyRelationshipObjectMetaResolver(toManyRelationshipCasted);
 
             List<PluginSettings> pluginSettings = getPluginSettings(
                     registeredOperation,
@@ -776,7 +806,7 @@ public class JsonApi4j {
                     .dataSupplier(executable::readBatches)
                     .resourceIdentifierMetaResolver(toManyRelationshipCasted::resolveResourceIdentifierMeta)
                     .topLevelLinksResolver(topLevelLinksResolver)
-                    .topLevelMetaResolver(toManyRelationshipCasted::resolveRelationshipMeta)
+                    .topLevelMetaResolver(topLevelMetaResolver)
                     .resourceIdentifierTypeAndIdResolver(resourceIdentifierTypeAndIdResolver)
                     .toManyRelationshipsDocBatch(parentRequest, dataSourceDtos, relationshipRequestSupplier);
         }
@@ -905,7 +935,7 @@ public class JsonApi4j {
                     = getResourceIdentifierTypeAndIdResolver(toOneRelationshipCasted);
 
             SingleDataItemDocLinksResolver<JsonApiRequest, RELATIONSHIP_DTO> topLevelLinksResolver
-                    = getSingleDataTopLevelLinksResolver(toOneRelationshipCasted, resourceType, relationshipName);
+                    = getToOneRelationshipObjectLinksResolver(toOneRelationshipCasted, resourceType, relationshipName);
 
             return new BatchToOneRelationshipProcessor()
                     .plugins(pluginSettings)

@@ -35,9 +35,11 @@ public class ToManyRelationshipsJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO>
                 : null;
     }
 
-    public Object resolveDocMeta(REQUEST request, List<DATA_SOURCE_DTO> dataSourceDtos) {
+    public Object resolveDocMeta(REQUEST request,
+                                 List<DATA_SOURCE_DTO> dataSourceDtos,
+                                 PaginationContext paginationContext) {
         return jsonApiContext.getTopLevelMetaResolver() != null
-                ? jsonApiContext.getTopLevelMetaResolver().resolve(request, dataSourceDtos)
+                ? jsonApiContext.getTopLevelMetaResolver().resolve(request, dataSourceDtos, paginationContext)
                 : null;
     }
 

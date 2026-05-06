@@ -161,7 +161,7 @@ public class MultipleResourcesProcessorTests {
         MultipleResourcesDoc<?> result = new MultipleResourcesProcessor()
                 .forRequest(REQUEST_NO_INCLUDES)
                 .dataSupplier(ds)
-                .topLevelMetaResolver((req, dtos) -> Map.of("total", 1))
+                .topLevelMetaResolver((req, dtos, paginationContext) -> Map.of("total", 1))
                 .attributesResolver(attributesResolver)
                 .resourceTypeAndIdResolver(dto -> new IdAndType(dto.getId(), SILVER))
                 .toMultipleResourcesDoc();

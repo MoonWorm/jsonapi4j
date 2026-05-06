@@ -56,7 +56,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 ToManyRelationshipsDoc doc = new ToManyRelationshipsDoc(
                         null,
                         context.getTopLevelLinksResolver().resolve(request, null, null),
-                        context.getTopLevelMetaResolver().resolve(request, null)
+                        context.getTopLevelMetaResolver().resolve(request, null, null)
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -127,7 +127,11 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 
         // top-level meta
-        Object docMeta = context.getTopLevelMetaResolver().resolve(request, nonAnonymizedDtos);
+        Object docMeta = context.getTopLevelMetaResolver().resolve(
+                request,
+                nonAnonymizedDtos,
+                paginationAwareResponse.getPaginationContext()
+        );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
 
         return DataPostRetrievalPhase.mutatedDoc(doc);

@@ -56,7 +56,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
                         null,
                         context.getTopLevelLinksResolver().resolve(request, null, null),
-                        context.getTopLevelMetaResolver().resolve(request, null)
+                        context.getTopLevelMetaResolver().resolve(request, null, null)
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -125,7 +125,11 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 
         // top-level meta
-        Object docMeta = context.getTopLevelMetaResolver().resolve(request, nonAnonymizedDtos);
+        Object docMeta = context.getTopLevelMetaResolver().resolve(
+                request,
+                nonAnonymizedDtos,
+                paginationAwareResponse.getPaginationContext()
+        );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
 
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);

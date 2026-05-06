@@ -34,6 +34,7 @@ public abstract class ReadMultipleUsersOperationTests {
                 // top-level links with pagination
                 .body("links.self", equalTo("/users"))
                 .body("links.next", notNullValue())
+                .body("meta['pagination.nextCursor']", notNullValue())
                 // paginated — default page size is 2
                 .body("data", hasSize(2))
                 // first user

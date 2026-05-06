@@ -14,6 +14,7 @@ public interface Relationship<RELATIONSHIP_DTO> {
     String RESOLVE_RESOURCE_IDENTIFIER_META_METHOD_NAME = "resolveResourceIdentifierMeta";
 
     LinksObject NOT_IMPLEMENTED_LINKS_STUB = LinksObject.builder().build();
+    Object NOT_IMPLEMENTED_META_STUB = new Object();
 
     /**
      * Resolves relationship's resource linkage "type" of the "data" member.

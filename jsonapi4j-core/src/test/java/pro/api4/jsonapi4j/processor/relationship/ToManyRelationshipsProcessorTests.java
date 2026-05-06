@@ -142,7 +142,7 @@ class ToManyRelationshipsProcessorTests {
         ToManyRelationshipsDoc result = new ToManyRelationshipsProcessor()
                 .forRequest(REQUEST_ID)
                 .dataSupplier(ds)
-                .topLevelMetaResolver((req, dtos) -> Map.of("total", 1))
+                .topLevelMetaResolver((req, dtos, paginationContext) -> Map.of("total", 1))
                 .resourceTypeAndIdSupplier(dto -> new IdAndType(dto.getId(), COUNTRIES))
                 .toToManyRelationshipsDoc();
 

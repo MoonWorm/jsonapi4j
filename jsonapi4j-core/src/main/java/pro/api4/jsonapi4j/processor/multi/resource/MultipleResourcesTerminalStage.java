@@ -161,7 +161,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
             // top-level links
             LinksObject docLinks = jsonApiMembersResolver.resolveDocLinks(effectiveRequest, null, null);
             // top-level meta
-            Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, null);
+            Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, null, null);
             // compose doc
             return docSupplier.get(Collections.emptyList(), docLinks, docMeta);
         }
@@ -198,7 +198,11 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 paginationAwareResponse.getPaginationContext()
         );
         // top-level meta
-        Object docMeta = jsonApiMembersResolver.resolveDocMeta(effectiveRequest, paginationAwareResponse.getItems());
+        Object docMeta = jsonApiMembersResolver.resolveDocMeta(
+                effectiveRequest,
+                paginationAwareResponse.getItems(),
+                paginationAwareResponse.getPaginationContext()
+        );
 
         // compose doc
         DOC doc = docSupplier.get(data, docLinks, docMeta);

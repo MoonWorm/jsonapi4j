@@ -35,6 +35,7 @@ public abstract class ReadMultipleCountriesOperationTests {
                 // top-level links with pagination
                 .body("links.self", equalTo("/countries"))
                 .body("links.next", notNullValue())
+                .body("meta['pagination.nextCursor']", notNullValue())
                 // paginated — default page size is 2
                 .body("data", hasSize(2))
                 .body("data[0].id", equalTo("TG"))

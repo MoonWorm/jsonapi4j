@@ -53,9 +53,11 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                 : null;
     }
 
-    public Object resolveDocMeta(REQUEST request, List<DATA_SOURCE_DTO> dtos) {
+    public Object resolveDocMeta(REQUEST request,
+                                 List<DATA_SOURCE_DTO> dtos,
+                                 PaginationContext paginationContext) {
         return jsonApiContext.getTopLevelMetaResolver() != null
-                ? jsonApiContext.getTopLevelMetaResolver().resolve(request, dtos)
+                ? jsonApiContext.getTopLevelMetaResolver().resolve(request, dtos, paginationContext)
                 : null;
     }
 
