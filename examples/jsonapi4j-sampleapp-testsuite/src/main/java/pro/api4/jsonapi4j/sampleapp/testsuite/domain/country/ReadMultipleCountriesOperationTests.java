@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
+import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_NEXT_CURSOR_KEY_META;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.REGION_FILTER_NAME;
 
 public abstract class ReadMultipleCountriesOperationTests {
@@ -35,7 +36,7 @@ public abstract class ReadMultipleCountriesOperationTests {
                 // top-level links with pagination
                 .body("links.self", equalTo("/countries"))
                 .body("links.next", notNullValue())
-                .body("meta['pagination.nextCursor']", notNullValue())
+                .body("meta['" + PAGINATION_NEXT_CURSOR_KEY_META + "']", notNullValue())
                 // paginated — default page size is 2
                 .body("data", hasSize(2))
                 .body("data[0].id", equalTo("TG"))

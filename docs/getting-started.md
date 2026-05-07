@@ -230,6 +230,9 @@ And then you should receive a paginated, JSON:API-compliant response such as:
   "links": {
     "self": "/users?page%5Bcursor%5D=DoJu",
     "next": "/users?page%5Bcursor%5D=DoJw"
+  }, 
+  "meta": {
+    "pagination.nextCursor": "DoJw"
   }
 }
 ```

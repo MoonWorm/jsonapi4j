@@ -10,6 +10,9 @@ import java.util.Map;
 
 public final class MultiResourcesDocMetaDefaultResolvers {
 
+    public static final String PAGINATION_NEXT_CURSOR_KEY_META = "pagination.nextCursor";
+    public static final String PAGINATION_TOTAL_ITEMS_KEY_META = "pagination.totalItems";
+
     private MultiResourcesDocMetaDefaultResolvers() {
 
     }
@@ -19,10 +22,10 @@ public final class MultiResourcesDocMetaDefaultResolvers {
             if (paginationContext != null) {
                 Map<String, Object> meta = new HashMap<>();
                 if (request instanceof CursorAwareRequest && paginationContext.getNextCursor() != null) {
-                    meta.put("pagination.nextCursor", paginationContext.getNextCursor());
+                    meta.put(PAGINATION_NEXT_CURSOR_KEY_META, paginationContext.getNextCursor());
                 }
                 if (request instanceof LimitOffsetAwareRequest && paginationContext.getTotalItems() != null) {
-                    meta.put("pagination.totalItems", paginationContext.getTotalItems());
+                    meta.put(PAGINATION_TOTAL_ITEMS_KEY_META, paginationContext.getTotalItems());
                 }
                 return Collections.unmodifiableMap(meta);
             }

@@ -134,6 +134,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
   "links": {
     "self": "/users?page[offset]=0&page[limit]=20",
     "next": "/users?page[offset]=20&page[limit]=20"
+  },
+  "meta": {
+    "pagination.totalItems": 26
   }
 }
 ```

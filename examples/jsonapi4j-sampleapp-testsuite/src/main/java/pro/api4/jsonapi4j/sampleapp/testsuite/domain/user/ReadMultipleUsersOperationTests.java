@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
+import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_NEXT_CURSOR_KEY_META;
 
 public abstract class ReadMultipleUsersOperationTests {
 
@@ -34,7 +35,7 @@ public abstract class ReadMultipleUsersOperationTests {
                 // top-level links with pagination
                 .body("links.self", equalTo("/users"))
                 .body("links.next", notNullValue())
-                .body("meta['pagination.nextCursor']", notNullValue())
+                .body("meta['" + PAGINATION_NEXT_CURSOR_KEY_META + "']", notNullValue())
                 // paginated — default page size is 2
                 .body("data", hasSize(2))
                 // first user

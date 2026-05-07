@@ -29,6 +29,9 @@ Response:
         }
     },
     "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
+  },
+  "meta": {
+    "pagination.nextCursor": "DoJu"
   }
 }
 ```
@@ -65,6 +68,9 @@ Response:
         }
     },
     "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+  },
+  "meta": {
+    "pagination.nextCursor": "DoJu"
   },
   "included": [
     {
@@ -210,6 +216,9 @@ Response:
   "links": {
     "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
     "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
+  },
+  "meta": {
+    "pagination.nextCursor": "DoJw"
   },
   "included": [
     {

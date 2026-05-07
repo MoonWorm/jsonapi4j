@@ -129,6 +129,28 @@ The framework automatically generates pagination links based on the strategy:
 
 The `next` link is omitted when there are no more pages. You can customize link generation by overriding `resolveTopLevelLinksForMultiResourcesDoc()` on your [Resource](/domain/#resourceresource_dto) — the `PaginationContext` parameter provides the cursor, total items, and pagination mode.
 
+### Pagination Meta
+
+In addition to pagination links, the framework automatically includes pagination context in the top-level `meta` object of multi-resource responses. This is enabled by default and provides clients with structured pagination metadata alongside the standard `links`.
+
+**Cursor-based** — when a next page is available, the response includes the next cursor value:
+```json
+"meta": {
+    "pagination.nextCursor": "DoJw"
+}
+```
+
+**Limit-offset** — the total number of items available on the server is included:
+```json
+"meta": {
+    "pagination.totalItems": 26
+}
+```
+
+The `meta` object is only populated when pagination context is present — `pagination.nextCursor` appears only when the next cursor is non-null (i.e., there are more pages), and `pagination.totalItems` appears only for limit-offset responses. Non-pageable responses (`fromItemsNotPageable`) do not include pagination meta.
+
+You can customize meta generation by overriding `resolveTopLevelMetaForMultiResourcesDoc()` on your [Resource](/domain/#resourceresource_dto).
+
 ### Relationship Pagination
 
 To-many relationships have their own independent pagination. A user's `citizenships` relationship is paginated separately from the users list:
