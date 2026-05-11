@@ -79,6 +79,26 @@ public abstract class AddUserCitizenshipsOperationTests {
                 .body("errors[0].id", notNullValue());
     }
 
-    // TODO: add ID is not blank but follows wrong format
+    @Test
+    public void test_addCitizenships_validationError_tooLongResourceId() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": [
+                            { "type": "countries", "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }
+                          ]
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
+                .then()
+                .statusCode(400)
+                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].status", equalTo("400"))
+                .body("errors[0].detail", equalTo("resource id length can't be more than 64"))
+                .body("errors[0].source.parameter", equalTo("body -> data[0] -> id"))
+                .body("errors[0].id", notNullValue());
+    }
 
 }

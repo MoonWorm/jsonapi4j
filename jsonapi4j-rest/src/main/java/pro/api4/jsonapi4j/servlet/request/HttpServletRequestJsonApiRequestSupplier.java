@@ -95,8 +95,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         String resourceId = parseResourceIdFromThePath(path);
         Map<String, List<String>> params = getParams(servletRequest);
         Map<String, List<String>> filters = parseFilter(params);
-        List<String> effectiveIncludes = parseEffectiveIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
-        List<String> originalIncludes = parseOriginalIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
+        List<String> includes = parseOriginalIncludes(params.get(IncludeAwareRequest.INCLUDE_PARAM));
         Map<String, SortAwareRequest.SortOrder> sortBy = parseSortBy(params.get(SortAwareRequest.SORT_PARAM));
         Map<String, List<String>> fieldSets = parseFieldSets(params);
         Map<String, List<String>> customQueryParams = parseCustomQueryParams(params);
@@ -143,8 +142,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
                 .targetRelationship(targetRelationshipName)
                 .operationType(targetOperationType)
                 .filterBy(filters)
-                .originalIncludes(originalIncludes)
-                .effectiveIncludes(effectiveIncludes)
+                .includes(includes)
                 .cursor(cursor)
                 .limit(limit)
                 .offset(offset)
