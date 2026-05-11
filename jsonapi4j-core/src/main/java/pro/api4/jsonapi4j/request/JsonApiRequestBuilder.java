@@ -13,6 +13,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEffectiveIncludes;
+import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseOriginalIncludes;
+
 public class JsonApiRequestBuilder {
 
     private DefaultJsonApiRequest.BodyDeserializer bodyDeserializer;
@@ -146,14 +149,9 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
-    // TODO: merge into .includes
-    public JsonApiRequestBuilder originalIncludes(List<String> originalIncludes) {
-        this.originalIncludes = originalIncludes;
-        return this;
-    }
-
-    public JsonApiRequestBuilder effectiveIncludes(List<String> effectiveIncludes) {
-        this.effectiveIncludes = effectiveIncludes;
+    public JsonApiRequestBuilder includes(List<String> originalIncludes) {
+        this.originalIncludes = parseOriginalIncludes(originalIncludes);
+        this.effectiveIncludes = parseEffectiveIncludes(originalIncludes);
         return this;
     }
 
