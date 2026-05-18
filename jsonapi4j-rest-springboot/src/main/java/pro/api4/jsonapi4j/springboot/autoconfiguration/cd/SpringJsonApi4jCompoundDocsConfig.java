@@ -11,8 +11,8 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
-import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.DefaultDomainSettingsResolver;
+import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
@@ -38,10 +38,14 @@ public class SpringJsonApi4jCompoundDocsConfig {
         return new JsonApiCompoundDocsPlugin();
     }
 
-    @ConditionalOnMissingBean(DomainUrlResolver.class)
+    @ConditionalOnMissingBean(DomainSettingsResolver.class)
     @Bean
-    public DomainUrlResolver jsonApi4jCdDomainUrlResolver(CompoundDocsProperties cdProperties) {
-        return DefaultDomainUrlResolver.from(cdProperties.mapping());
+    public DomainSettingsResolver jsonApi4jCdDomainSettingsResolver(CompoundDocsProperties cdProperties) {
+        return DefaultDomainSettingsResolver.from(
+                cdProperties.mapping(),
+                cdProperties.batchSizeMapping(),
+                cdProperties.defaultMaxBatchSize()
+        );
     }
 
     @Bean
@@ -58,13 +62,13 @@ public class SpringJsonApi4jCompoundDocsConfig {
     public ServletContextInitializer jsonApi4jCdServletContextInitializer(
             JsonApi4jProperties jsonApi4jProperties,
             CompoundDocsProperties cdProperties,
-            DomainUrlResolver domainUrlResolver,
+            DomainSettingsResolver domainSettingsResolver,
             @Autowired(required = false) CompoundDocsResourceCache cache
     ) {
         return servletContext -> {
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.rootPath());
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME, cdProperties);
-            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME, domainUrlResolver);
+            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME, domainSettingsResolver);
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cache);
         };
     }

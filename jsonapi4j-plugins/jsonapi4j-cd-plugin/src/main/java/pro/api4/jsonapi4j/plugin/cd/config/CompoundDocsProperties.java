@@ -17,6 +17,7 @@ public interface CompoundDocsProperties {
     String DEFAULT_DEDUPLICATE_RESOURCES = "true";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
+    String DEFAULT_MAX_BATCH_SIZE = "20";
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);
@@ -36,6 +37,14 @@ public interface CompoundDocsProperties {
 
     default Map<String, String> mapping() {
         return Collections.emptyMap();
+    }
+
+    default Map<String, Integer> batchSizeMapping() {
+        return Collections.emptyMap();
+    }
+
+    default int defaultMaxBatchSize() {
+        return Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     }
 
     default List<Propagation> propagation() {

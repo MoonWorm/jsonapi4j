@@ -17,7 +17,6 @@ import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser.IntermediateP
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
 
-import java.net.URI;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -30,7 +29,7 @@ import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 public class CompoundDocsResolver {
 
     private final CompoundDocsResolverConfig config;
-    private final DomainUrlResolver domainUrlResolver;
+    private final DomainSettingsResolver domainSettingsResolver;
 
     private final CachingCompoundDocsFetcher fetcher;
 
@@ -40,10 +39,10 @@ public class CompoundDocsResolver {
     private final ExecutorService executorService;
 
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
-                                DomainUrlResolver domainUrlResolver,
+                                DomainSettingsResolver domainSettingsResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService) {
-        this(config, domainUrlResolver, objectMapper, executorService, null);
+        this(config, domainSettingsResolver, objectMapper, executorService, null);
     }
 
     /**
@@ -52,21 +51,22 @@ public class CompoundDocsResolver {
      * @param cache the resource cache, or {@code null} to disable caching
      */
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
-                                DomainUrlResolver domainUrlResolver,
+                                DomainSettingsResolver domainSettingsResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService,
                                 CompoundDocsResourceCache cache) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
-        Validate.notNull(domainUrlResolver, "DomainUrlResolver is not configured");
+        Validate.notNull(domainSettingsResolver, "DomainSettingsResolver is not configured");
+
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
         Validate.notNull(executorService, "ExecutorService is not configured");
 
         this.config = config;
-        this.domainUrlResolver = domainUrlResolver;
+        this.domainSettingsResolver = domainSettingsResolver;
 
         JsonApi4jCompoundDocsApiHttpClient httpClient =
                 new JsonApi4jCompoundDocsApiHttpClient(objectMapper, config.getErrorStrategy());
-        this.fetcher = new CachingCompoundDocsFetcher(httpClient, cache);
+        this.fetcher = new CachingCompoundDocsFetcher(httpClient, cache, executorService);
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
@@ -131,10 +131,10 @@ public class CompoundDocsResolver {
                                                                        Set<String> requestIncludes,
                                                                        CompoundDocsRequest originalRequest,
                                                                        Map<String, String> metaHeaders) {
-        URI domainUri = resolveDomainUrl(resourceType);
+        DomainSettings domainSettings = resolveDomainSettings(resourceType);
         return CompletableFuture.supplyAsync(
                 () -> fetcher.fetch(
-                        domainUri,
+                        domainSettings,
                         resourceType,
                         ids,
                         requestIncludes,
@@ -234,16 +234,16 @@ public class CompoundDocsResolver {
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
     }
 
-    private URI resolveDomainUrl(String resourceType) {
+    private DomainSettings resolveDomainSettings(String resourceType) {
         try {
-            URI domainUri = domainUrlResolver.getDomainUrl(resourceType);
-            if (domainUri == null) {
-                throw new NullPointerException("DomainUrlResolver returned a null URI");
+            DomainSettings settings = domainSettingsResolver.resolveDomainSettings(resourceType);
+            if (settings == null) {
+                throw new NullPointerException("DomainSettingsResolver returned null DomainSettings");
             }
-            return domainUri;
+            return settings;
         } catch (Exception e) {
-            log.warn("Failed to resolve domain URL for resource type '{}': {}", resourceType, e.getMessage());
-            throw new DomainResolutionException("Error resolving domain url", e);
+            log.warn("Failed to resolve domain settings for resource type '{}': {}", resourceType, e.getMessage());
+            throw new DomainResolutionException("Error resolving domain settings", e);
         }
     }
 

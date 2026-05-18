@@ -22,6 +22,9 @@ jsonapi4j:
     deduplicateResources: true
     httpConnectTimeoutMs: 5000
     httpTotalTimeoutMs: 10000
+    # Fallback max number of resource IDs per downstream filter[id]=... request.
+    # The resolver splits larger ID sets into parallel chunks of this size.
+    defaultMaxBatchSize: 20
     cache:
       enabled: true
       maxSize: 1000
@@ -29,6 +32,12 @@ jsonapi4j:
       users: http://localhost:${server.port}${jsonapi4j.root-path}
       countries: http://localhost:${server.port}${jsonapi4j.root-path}
       currencies: http://localhost:${server.port}${jsonapi4j.root-path}
+    # Per-resource override for the max filter[id]=... batch size — useful when a downstream
+    # service enforces a stricter cap than the global defaultMaxBatchSize.
+    batchSizeMapping:
+      users: 20
+      countries: 20
+      currencies: 20
 
   # AC Plugin
   ac:

@@ -8,7 +8,7 @@ import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jProperties;
 
@@ -26,7 +26,7 @@ public class QuarkusJsonApi4jCompoundDocsServletContextListener implements Servl
     Provider<QuarkusJsonApi4jCompoundDocsProperties> quarkusCdPropertiesProvider;
 
     @Inject
-    Provider<DomainUrlResolver> domainUrlResolverProvider;
+    Provider<DomainSettingsResolver> domainSettingsResolverProvider;
 
     @Inject
     Provider<CompoundDocsResourceCache> cacheProvider;
@@ -43,8 +43,8 @@ public class QuarkusJsonApi4jCompoundDocsServletContextListener implements Servl
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME, quarkusCdProperties.toCdProperties());
         log.debug("QuarkusJsonApi4jCompoundDocsProperties ('jsonapi4j.cd' prefix of Quarkus application properties) instance has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
 
-        servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME, domainUrlResolverProvider.get());
-        log.debug("DomainUrlResolver has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME);
+        servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME, domainSettingsResolverProvider.get());
+        log.debug("DomainSettingsResolver has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME);
 
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cacheProvider.get());
         log.debug("CompoundDocsResourceCache has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME);
