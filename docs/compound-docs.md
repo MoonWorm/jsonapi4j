@@ -47,6 +47,35 @@ That's why it's important to implement either "filter[id]" or "read-by-id" opera
 Since each additional level may trigger new batches of requests, it's important to use this feature judiciously.
 You can control and limit the depth and breadth of includes using the `CompoundDocsProperties` configuration - for example, the `maxHops` property defines the maximum allowed relationship depth.
 
+### Per-Domain Batch Size Limits
+
+Downstream services typically impose a hard cap on the number of values accepted in a single `filter[id]=...` parameter — 20, 50, 100 are all common in practice.
+To respect those limits, the resolver supports a configurable max batch size per resource type. When the IDs to fetch for a given type exceed that limit, the resolver splits the request into chunks of that size and fetches them **in parallel** through the configured `ExecutorService`. Cache lookups still happen against the full ID set, so only the cache **misses** are chunked.
+
+Configure the fallback batch size and per-resource-type overrides via plugin properties:
+
+```yaml
+jsonapi4j:
+  cd:
+    defaultMaxBatchSize: 20              # global fallback (default: 20)
+    batchSizeMapping:                    # per-resource overrides
+      users: 50
+      countries: 20
+```
+
+When using the standalone resolver, the same setting lives on `DomainSettings`:
+
+```java
+DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
+    Map.of("users",     "https://users.example.com",
+           "countries", "https://countries.example.com"),
+    Map.of("users", 50),  // per-type batch size override; countries falls back to the default
+    20                    // global default
+);
+```
+
+`DomainSettingsResolver` is a strict functional interface — `DomainSettings resolveDomainSettings(String resourceType)` — so any custom implementation has full control over both the URL and the per-type batch size.
+
 ### Standalone Resolver
 
 The resolver is provided by a separate module: `jsonapi4j-compound-docs-resolver`. It can be used independently of the JsonApi4j plugin system — for example, to add compound document support at the API Gateway level:

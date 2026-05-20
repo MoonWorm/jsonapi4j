@@ -14,6 +14,8 @@ validation:
 cd:
   enabled: true
   maxHops: 3
+  maxIncludedResources: 100
+  errorStrategy: IGNORE
   propagation:
     - FIELDS
     - CUSTOM_QUERY_PARAMS
@@ -28,6 +30,11 @@ cd:
     users: http://localhost:8080/jsonapi
     countries: http://localhost:8080/jsonapi
     currencies: http://localhost:8080/jsonapi
+  batchSizeMapping:
+    users: 20
+    countries: 20
+    currencies: 20
+  defaultMaxBatchSize: 20
 
 # AC Plugin
 ac:

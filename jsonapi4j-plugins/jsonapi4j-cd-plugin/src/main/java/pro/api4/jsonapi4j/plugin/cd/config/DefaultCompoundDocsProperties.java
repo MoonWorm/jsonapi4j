@@ -21,6 +21,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private int maxIncludedResources = Integer.parseInt(DEFAULT_MAX_INCLUDED_RESOURCES);
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
     private Map<String, String> mapping = Collections.emptyMap();
+    private Map<String, Integer> batchSizeMapping = Collections.emptyMap();
+    private int defaultMaxBatchSize = Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
     private boolean deduplicateResources = Boolean.parseBoolean(DEFAULT_DEDUPLICATE_RESOURCES);
     private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
@@ -85,6 +87,16 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public Map<String, String> mapping() {
         return mapping;
+    }
+
+    @Override
+    public Map<String, Integer> batchSizeMapping() {
+        return batchSizeMapping;
+    }
+
+    @Override
+    public int defaultMaxBatchSize() {
+        return defaultMaxBatchSize;
     }
 
     @Override

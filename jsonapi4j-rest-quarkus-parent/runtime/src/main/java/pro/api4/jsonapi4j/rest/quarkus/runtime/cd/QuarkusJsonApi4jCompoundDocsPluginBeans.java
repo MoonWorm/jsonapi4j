@@ -6,8 +6,8 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
-import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.DefaultDomainSettingsResolver;
+import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
@@ -34,9 +34,13 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    DomainUrlResolver jsonApiCdDomainUrlResolver(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
-        LOG.info("CD Plugin Enabled. Composing {}...", DomainUrlResolver.class.getSimpleName());
-        return DefaultDomainUrlResolver.from(cdProperties.mapping());
+    DomainSettingsResolver jsonApiCdDomainSettingsResolver(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
+        LOG.info("CD Plugin Enabled. Composing {}...", DomainSettingsResolver.class.getSimpleName());
+        return DefaultDomainSettingsResolver.from(
+                cdProperties.mapping(),
+                cdProperties.batchSizeMapping(),
+                cdProperties.defaultMaxBatchSize()
+        );
     }
 
     @Produces

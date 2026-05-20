@@ -49,7 +49,7 @@ public final class LinksGenerator {
 
     public String generateSelfLink(String basePath,
                                    boolean propagateIncludes,
-                                   boolean propagateCursor,
+                                   boolean propagatePagination,
                                    boolean propagateFilters,
                                    boolean propagateSortBy,
                                    boolean propagateFields,
@@ -58,8 +58,8 @@ public final class LinksGenerator {
         if (propagateIncludes) {
             populateIncludes(selfLinkParams);
         }
-        if (propagateCursor) {
-            populateCursor(selfLinkParams);
+        if (propagatePagination) {
+            populatePagination(selfLinkParams);
         }
         if (propagateFilters) {
             populateFilters(selfLinkParams);
@@ -76,27 +76,6 @@ public final class LinksGenerator {
         return basePath + toParamsStr(selfLinkParams);
     }
 
-    public String generateRelatedLink(String basePath,
-                                      boolean propagateFields,
-                                      boolean propagateQueryParams) {
-        Map<String, String> relatedLinkParams = new LinkedHashMap<>();
-        if (propagateFields) {
-            populateFields(relatedLinkParams);
-        }
-        if (propagateQueryParams) {
-            populateQueryParams(relatedLinkParams);
-        }
-        return basePath + toParamsStr(relatedLinkParams);
-    }
-
-    private boolean isCursorAwareRequest(PaginationContext paginationContext) {
-        return paginationContext.getMode() == PaginationMode.CURSOR && StringUtils.isNotBlank(paginationContext.getNextCursor());
-    }
-
-    private boolean isLimitOffsetAwareRequest(PaginationContext paginationContext) {
-        return paginationContext.getMode() == PaginationMode.LIMIT_OFFSET;
-    }
-
     public String generateNextLink(String basePath,
                                    PaginationContext paginationContext,
                                    boolean propagateIncludes,
@@ -104,18 +83,12 @@ public final class LinksGenerator {
                                    boolean propagateSortBy,
                                    boolean propagateFields,
                                    boolean propagateQueryParams) {
-        if (paginationContext != null) {
+        if (isNextLinkAvailable(paginationContext)) {
             Map<String, String> nextLinkParams = new LinkedHashMap<>();
             if (propagateIncludes) {
                 populateIncludes(nextLinkParams);
             }
-            if (isCursorAwareRequest(paginationContext)) {
-                populateCursor(nextLinkParams, paginationContext.getNextCursor());
-            } else if (isLimitOffsetAwareRequest(paginationContext)) {
-                populateLimitOffset(nextLinkParams, paginationContext.getTotalItems());
-            } else {
-                return null;
-            }
+            populatePagination(nextLinkParams, paginationContext);
             if (propagateFilters) {
                 populateFilters(nextLinkParams);
             }
@@ -133,20 +106,84 @@ public final class LinksGenerator {
         return null;
     }
 
-    private void populateLimitOffset(Map<String, String> linkParams,
-                                     Long totalItems) {
-        if (request instanceof LimitOffsetAwareRequest r) {
-            Long limit = r.getLimit();
-            if (limit == null) {
-                limit = DEFAULT_LIMIT;
+    private boolean isNextLinkAvailable(PaginationContext paginationContext) {
+        return paginationContext != null
+                && (isNextLinkAvailableInCursorMode(paginationContext) || isNextLinkAvailableInLimitOffsetMode(paginationContext));
+    }
+
+    private boolean isNextLinkAvailableInCursorMode(PaginationContext paginationContext) {
+        return paginationContext.getMode() == PaginationMode.CURSOR
+                && StringUtils.isNotBlank(paginationContext.getNextCursor());
+    }
+
+    private boolean isNextLinkAvailableInLimitOffsetMode(PaginationContext paginationContext) {
+        if (request instanceof LimitOffsetAwareRequest loar) {
+            return paginationContext.getMode() == PaginationMode.LIMIT_OFFSET
+                    && paginationContext.getTotalItems() != null
+                    && loar.getOffset() != null
+                    && loar.getOffset() + (loar.getLimit() == null ? DEFAULT_LIMIT : loar.getLimit() )< paginationContext.getTotalItems();
+        }
+        return false;
+    }
+
+    public String generateRelatedLink(String basePath,
+                                      boolean propagateFields,
+                                      boolean propagateQueryParams) {
+        Map<String, String> relatedLinkParams = new LinkedHashMap<>();
+        if (propagateFields) {
+            populateFields(relatedLinkParams);
+        }
+        if (propagateQueryParams) {
+            populateQueryParams(relatedLinkParams);
+        }
+        return basePath + toParamsStr(relatedLinkParams);
+    }
+
+    private boolean isCursorAwarePagination(PaginationContext paginationContext) {
+        return paginationContext.getMode() == PaginationMode.CURSOR && StringUtils.isNotBlank(paginationContext.getNextCursor());
+    }
+
+    private boolean isLimitOffsetAwarePagination(PaginationContext paginationContext) {
+        return paginationContext.getMode() == PaginationMode.LIMIT_OFFSET;
+    }
+
+    private void populatePagination(Map<String, String> selfLinkParams) {
+        if (request instanceof CursorAwareRequest car) {
+            String currentCursor = car.getCursor();
+            if (StringUtils.isNotBlank(currentCursor)) {
+                selfLinkParams.put(CursorAwareRequest.CURSOR_PARAM, currentCursor);
             }
-            Long offset = r.getOffset();
-            if (offset == null) {
-                offset = DEFAULT_OFFSET;
+        }
+        if (request instanceof LimitOffsetAwareRequest loar) {
+            Long limit = loar.getLimit();
+            if (limit != null) {
+                selfLinkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
             }
-            long nextOffset = Math.min(offset + limit, totalItems != null ? totalItems : Long.MAX_VALUE);
-            linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
-            linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(nextOffset));
+            Long offset = loar.getOffset();
+            if (offset != null) {
+                selfLinkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(offset));
+            }
+        }
+    }
+
+    private void populatePagination(Map<String, String> nextLinkParams, PaginationContext paginationContext) {
+        if (isCursorAwarePagination(paginationContext)) {
+            nextLinkParams.put(CursorAwareRequest.CURSOR_PARAM, paginationContext.getNextCursor());
+        } else if (isLimitOffsetAwarePagination(paginationContext)) {
+            Long totalItems = paginationContext.getTotalItems();
+            if (request instanceof LimitOffsetAwareRequest r) {
+                Long limit = r.getLimit();
+                if (limit == null) {
+                    limit = DEFAULT_LIMIT;
+                }
+                Long offset = r.getOffset();
+                if (offset == null) {
+                    offset = DEFAULT_OFFSET;
+                }
+                long nextOffset = Math.min(offset + limit, totalItems != null ? totalItems : Long.MAX_VALUE);
+                nextLinkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+                nextLinkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(nextOffset));
+            }
         }
     }
 
@@ -164,20 +201,6 @@ public final class LinksGenerator {
         if (request instanceof CustomQueryParamsAwareRequest r) {
             if (MapUtils.isNotEmpty(r.getCustomQueryParams())) {
                 linkParams.putAll(r.asSingleValueMap());
-            }
-        }
-    }
-
-    private void populateCursor(Map<String, String> linkParams,
-                                String nextCursor) {
-        linkParams.put(CursorAwareRequest.CURSOR_PARAM, nextCursor);
-    }
-
-    private void populateCursor(Map<String, String> linkParams) {
-        if (request instanceof CursorAwareRequest r) {
-            String currentCursor = r.getCursor();
-            if (StringUtils.isNotBlank(currentCursor)) {
-                linkParams.put(CursorAwareRequest.CURSOR_PARAM, currentCursor);
             }
         }
     }

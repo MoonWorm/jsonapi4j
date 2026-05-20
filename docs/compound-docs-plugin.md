@@ -49,6 +49,8 @@ jsonapi4j:
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
 | `jsonapi4j.cd.httpTotalTimeoutMs`     | `10000`                              | Controls total request timeout (in millisecond). Applied to each generated HTTP request.                                                                                          |
 | `jsonapi4j.cd.mapping.<resourceType>` | empty map                            | Per-resource-type base URL mapping used by compound docs resolver.                                                                                                                |
+| `jsonapi4j.cd.batchSizeMapping.<resourceType>` | empty map                   | Per-resource override for the max `filter[id]=...` batch size. Use when a downstream service enforces a stricter cap than the global default.                                     |
+| `jsonapi4j.cd.defaultMaxBatchSize`    | `20`                                 | Fallback max number of resource IDs per downstream `filter[id]=...` request. Larger ID sets are split into parallel chunks of this size.                                          |
 
 **Cache properties**
 

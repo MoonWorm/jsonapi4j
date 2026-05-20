@@ -4,8 +4,8 @@ import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
-import pro.api4.jsonapi4j.compound.docs.DefaultDomainUrlResolver;
-import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.DefaultDomainSettingsResolver;
+import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
@@ -23,14 +23,14 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
     public static final String COMPOUND_DOCS_FILTER_NAME = "jsonapi4jCompoundDocsFilter";
     public static final String COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME = "jsonApi4jCdPluginRootPath";
     public static final String COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME = "jsonApi4jCdPluginProperties";
-    public static final String COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME = "jsonApi4jCdPluginDomainResolver";
+    public static final String COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME = "jsonApi4jCdPluginDomainResolver";
     public static final String COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME = "jsonApi4jCdPluginCache";
 
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
         CompoundDocsProperties cdProperties = initCdProperties(servletContext);
         if (cdProperties.enabled()) {
-            initDomainUriResolver(servletContext, cdProperties);
+            initDomainSettingsResolver(servletContext, cdProperties);
             initCache(servletContext, cdProperties);
 
             String rootPath = initRootPath(servletContext);
@@ -61,11 +61,15 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
         }
     }
 
-    private void initDomainUriResolver(ServletContext servletContext, CompoundDocsProperties cdProperties) {
-        if (servletContext.getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME) == null) {
-            log.warn("CD Domain Url Resolver is not found in servlet context. Composing a default one...");
-            DomainUrlResolver domainUrlResolver = DefaultDomainUrlResolver.from(cdProperties.mapping());
-            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME, domainUrlResolver);
+    private void initDomainSettingsResolver(ServletContext servletContext, CompoundDocsProperties cdProperties) {
+        if (servletContext.getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME) == null) {
+            log.warn("CD Domain Settings Resolver is not found in servlet context. Composing a default one...");
+            DomainSettingsResolver domainSettingsResolver = DefaultDomainSettingsResolver.from(
+                    cdProperties.mapping(),
+                    cdProperties.batchSizeMapping(),
+                    cdProperties.defaultMaxBatchSize()
+            );
+            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME, domainSettingsResolver);
         }
     }
 

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
-import pro.api4.jsonapi4j.compound.docs.DomainUrlResolver;
+import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
@@ -25,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initExecutorService;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initObjectMapper;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
-import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
 
 @Slf4j
@@ -44,9 +44,9 @@ public class CompoundDocsFilter implements Filter {
                 .getAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
         Validate.notNull(cdProperties, "Compound Docs Properties are not found in ServletContext");
 
-        DomainUrlResolver domainUrlResolver = (DomainUrlResolver) filterConfig.getServletContext()
-                .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_URL_RESOLVER_ATT_NAME);
-        Validate.notNull(domainUrlResolver, "Domain Url Resolver is not found in ServletContext");
+        DomainSettingsResolver domainSettingsResolver = (DomainSettingsResolver) filterConfig.getServletContext()
+                .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME);
+        Validate.notNull(domainSettingsResolver, "Domain Settings Resolver is not found in ServletContext");
 
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                 cdProperties.enabled(),
@@ -73,7 +73,7 @@ public class CompoundDocsFilter implements Filter {
 
             resolver = new CompoundDocsResolver(
                     config,
-                    domainUrlResolver,
+                    domainSettingsResolver,
                     objectMapper,
                     executorService,
                     cache
