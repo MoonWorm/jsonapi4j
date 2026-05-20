@@ -219,7 +219,7 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [users]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> relatives -> data"))
+                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> relatives -> data[0] -> type"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -314,7 +314,7 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [countries]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> citizenships -> data"))
+                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> citizenships -> data[0] -> type"))
                 .body("errors[0].id", notNullValue());
     }
 

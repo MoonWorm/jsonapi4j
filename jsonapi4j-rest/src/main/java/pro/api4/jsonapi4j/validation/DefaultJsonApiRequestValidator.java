@@ -188,7 +188,6 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,ErrorSources.payload().data().id());
     }
 
-    // TODO: Introduce Parameter builder API and use it across the framework, fix all the tests
     // TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
     private void validateSingleResourceDocPayloadStructure(JsonApiRequest request) {
         ResourceType resourceType = request.getTargetResourceType();
