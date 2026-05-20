@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.http.exception.MethodNotSupportedException;
 import pro.api4.jsonapi4j.http.exception.NotAcceptableException;
 import pro.api4.jsonapi4j.http.exception.UnsupportedMediaTypeException;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +39,6 @@ import static java.util.stream.Collectors.toMap;
 import static pro.api4.jsonapi4j.operation.OperationType.Method.isSupportedMethod;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCursor;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseCustomQueryParams;
-import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseEffectiveIncludes;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseExt;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFieldSets;
 import static pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil.parseFilter;
@@ -112,14 +113,18 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
                 .payloadAsBytes(
                         new DefaultJsonApiRequest.BodyDeserializer() {
                             @Override
-                            public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] payload,
-                                                                                                         Class<A> attType,
-                                                                                                         Class<R> relType) throws IOException {
+                            public <A> SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> deserializeResourceDoc(byte[] payload,
+                                                                                                                                              Class<A> attType) throws IOException {
                                 TypeFactory typeFactory = jsonMapper.getTypeFactory();
+                                JavaType relJavaType = typeFactory.constructMapType(
+                                        LinkedHashMap.class,
+                                        typeFactory.constructType(String.class),
+                                        typeFactory.constructType(RelationshipObject.class)
+                                );
                                 JavaType jsonApiPrimaryResourceJavaType = typeFactory.constructParametricType(
                                         ResourceObject.class,
-                                        attType,
-                                        relType
+                                        typeFactory.constructType(attType),
+                                        relJavaType
                                 );
                                 JavaType jsonApiSinglePrimaryResourceDocJavaType = typeFactory.constructParametricType(
                                         SingleResourceDoc.class,

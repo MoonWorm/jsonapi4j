@@ -154,29 +154,26 @@ public class UserCitizenshipsOperations implements
 
     @Override
     public void validateAddToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipDoc(
-                request.getToManyRelationshipDocPayload(),
-                countryValidator::validateCountryId,
-                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
-        );
+        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+                .withResourceIdValidator(countryValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .validate();
     }
 
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipDoc(
-                request.getToManyRelationshipDocPayload(),
-                countryValidator::validateCountryId,
-                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
-        );
+        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+                .withResourceIdValidator(countryValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .validate();
     }
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipDoc(
-                request.getToManyRelationshipDocPayload(),
-                countryValidator::validateCountryId,
-                resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> type")
-        );
+        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+                .withResourceIdValidator(countryValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .validate();
     }
 
 }

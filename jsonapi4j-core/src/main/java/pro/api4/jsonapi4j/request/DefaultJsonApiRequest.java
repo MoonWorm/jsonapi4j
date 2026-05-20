@@ -5,6 +5,7 @@ import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
@@ -58,23 +59,22 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
     // lombok workaround
     @Override
-    public SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap>> getSingleResourceDocPayload() {
+    public SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap<String, RelationshipObject>>> getSingleResourceDocPayload() {
         return JsonApiRequest.super.getSingleResourceDocPayload();
     }
 
     @Override
-    public <A, R> SingleResourceDoc<ResourceObject<A, R>> getSingleResourceDocPayload(Class<A> attType,
-                                                                                      Class<R> relType) {
+    public <A> SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> getSingleResourceDocPayload(Class<A> attType) {
         if (payload == null || payload.length == 0) {
             return null;
         }
-        String key = cacheKey(attType, relType);
+        String key = cacheKey(attType);
         if (payloadCache.containsKey(key)) {
             //noinspection unchecked
-            return (SingleResourceDoc<ResourceObject<A, R>>) payloadCache.get(key);
+            return (SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>>) payloadCache.get(key);
         }
         try {
-            SingleResourceDoc<ResourceObject<A, R>> doc = bodyDeserializer.deserializeResourceDoc(payload, attType, relType);
+            SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> doc = bodyDeserializer.deserializeResourceDoc(payload, attType);
             payloadCache.put(key, doc);
             return doc;
         } catch (IOException e) {
@@ -123,18 +123,17 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
 
     public interface BodyDeserializer {
 
-        <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(
+        <A> SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> deserializeResourceDoc(
                 byte[] payload,
-                Class<A> attType,
-                Class<R> relType
+                Class<A> attType
         ) throws IOException;
 
         <T> T deserializeRelationshipDoc(byte[] payload, Class<T> type) throws IOException;
 
     }
 
-    private static String cacheKey(Class<?>... types) {
-        return Arrays.stream(types).map(Class::getName).collect(Collectors.joining(","));
+    private static String cacheKey(Class<?> attType) {
+        return attType.getName();
     }
 
     public static JsonApiRequestBuilder builder() {

@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 @EqualsAndHashCode
 public class RelationshipObject {
 
+    public static final String DATA_FIELD = "data";
     public static final String LINKS_FIELD = "links";
     public static final String META_FIELD = "meta";
 

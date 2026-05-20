@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import jakarta.servlet.FilterRegistration;
@@ -13,6 +14,7 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.JsonApiRequestValidator;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
@@ -99,14 +101,22 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         ObjectMapper om = (ObjectMapper) servletContext.getAttribute(OBJECT_MAPPER_ATT_NAME);
         if (om == null) {
             log.warn("ObjectMapper not found in servlet context. Setting a default ObjectMapper.");
-            om = new ObjectMapper();
-            om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-            om.registerModule(new JavaTimeModule());
-            om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-            om.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+            om = createObjectMapper();
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, om);
         }
+        return om;
+    }
+
+    public static ObjectMapper createObjectMapper() {
+        ObjectMapper om = new ObjectMapper();
+        om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        om.registerModule(new JavaTimeModule());
+        om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        om.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
+        SimpleModule relationshipModule = new SimpleModule();
+        relationshipModule.addDeserializer(RelationshipObject.class, new RelationshipObjectDeserializer());
+        om.registerModule(relationshipModule);
         return om;
     }
 

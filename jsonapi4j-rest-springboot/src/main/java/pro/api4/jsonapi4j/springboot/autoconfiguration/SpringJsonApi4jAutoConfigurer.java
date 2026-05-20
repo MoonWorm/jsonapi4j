@@ -1,12 +1,6 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,6 +20,7 @@ import pro.api4.jsonapi4j.JsonApiRequestValidator;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
+import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
@@ -48,7 +43,14 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.EXECUTOR_SERVICE_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.VALIDATOR_ATT_NAME;
 
 @Configuration
 @Import(value = {
@@ -139,13 +141,7 @@ public class SpringJsonApi4jAutoConfigurer {
     @ConditionalOnMissingBean(name = "jsonApi4jObjectMapper")
     @Bean(name = "jsonApi4jObjectMapper")
     public ObjectMapper jsonApi4jObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.registerModule(new ParameterNamesModule(JsonCreator.Mode.PROPERTIES));
-        return mapper;
+        return JsonApi4jServletContainerInitializer.createObjectMapper();
     }
 
     @ConditionalOnMissingBean(ErrorHandlerFactoriesRegistry.class)

@@ -2,12 +2,13 @@ package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
@@ -35,7 +36,7 @@ class DefaultErrorHandlerFactoryTests {
                 DataRetrievalException.class,
                 MappingException.class,
                 OperationNotFoundException.class,
-                ConstraintViolationException.class,
+                JsonApiRequestValidationException.class,
                 JsonApi4jException.class
         );
     }
@@ -120,10 +121,10 @@ class DefaultErrorHandlerFactoryTests {
     @Test
     void constraintViolationException_returns400() {
         // given
-        var exception = new ConstraintViolationException(
-                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", "name"
+        var exception = new JsonApiRequestValidationException(
+                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", ErrorSources.payload().data().attributes("name")
         );
-        ErrorsDocSupplier<ConstraintViolationException> supplier = getSupplier(ConstraintViolationException.class);
+        ErrorsDocSupplier<JsonApiRequestValidationException> supplier = getSupplier(JsonApiRequestValidationException.class);
 
         // when/then
         assertThat(supplier.getHttpStatus(exception)).isEqualTo(400);
@@ -132,10 +133,10 @@ class DefaultErrorHandlerFactoryTests {
     @Test
     void constraintViolationException_producesErrorDocWithCorrectCodeAndParameter() {
         // given
-        var exception = new ConstraintViolationException(
-                DefaultErrorCodes.VALUE_INVALID_FORMAT, "invalid email", "email"
+        var exception = new JsonApiRequestValidationException(
+                DefaultErrorCodes.VALUE_INVALID_FORMAT, "invalid email", ErrorSources.payload().data().attributes("email")
         );
-        ErrorsDocSupplier<ConstraintViolationException> supplier = getSupplier(ConstraintViolationException.class);
+        ErrorsDocSupplier<JsonApiRequestValidationException> supplier = getSupplier(JsonApiRequestValidationException.class);
 
         // when
         ErrorsDoc doc = supplier.getErrorResponse(exception);
@@ -146,7 +147,7 @@ class DefaultErrorHandlerFactoryTests {
         assertThat(error.getStatus()).isEqualTo("400");
         assertThat(error.getCode()).isEqualTo("VALUE_INVALID_FORMAT");
         assertThat(error.getDetail()).isEqualTo("invalid email");
-        assertThat(error.getSource().getParameter()).isEqualTo("email");
+        assertThat(error.getSource().getParameter()).isEqualTo("$body -> data -> attributes -> email");
     }
 
     // --- JsonApi4jException (catch-all) ---

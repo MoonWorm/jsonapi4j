@@ -12,7 +12,7 @@ import pro.api4.jsonapi4j.JsonApiRequestValidator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.InvalidLimitException;
 import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
@@ -24,15 +24,13 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
-import pro.api4.jsonapi4j.request.FiltersAwareRequest;
-import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 
 import java.text.MessageFormat;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +50,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateReadResourceById(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
         validateIncludes(request);
         validateFilterParams(request);
@@ -61,7 +59,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateReadMultipleResources(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateIncludes(request);
         validateFilterParams(request);
         validatePaginationParams(request);
@@ -70,13 +68,14 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateCreateResource(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
+        validateResourceIdIsNullInBody(request);
         validateSingleResourceDocPayloadStructure(request);
     }
 
     @Override
     public void validateUpdateResource(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
         validateResourceIdFromBodyMatchingOneInThePath(request);
         validateSingleResourceDocPayloadStructure(request);
@@ -84,15 +83,15 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateDeleteResource(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
     }
 
     @Override
     public void validateReadToOneRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateIncludes(request);
         validateFilterParams(request);
         validateSortBy(request);
@@ -100,17 +99,17 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateUpdateToOneRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateToOneRelationshipDocPayloadStructure(request);
     }
 
     @Override
     public void validateReadToManyRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateIncludes(request);
         validateFilterParams(request);
         validatePaginationParams(request);
@@ -119,29 +118,29 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     @Override
     public void validateUpdateToManyRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateToManyRelationshipDocPayloadStructure(request);
     }
 
     @Override
     public void validateAddToManyRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateToManyRelationshipDocPayloadStructure(request);
     }
 
     @Override
     public void validateDeleteToManyRelationship(JsonApiRequest request) {
-        validateKnownResourceType(request);
+        validateKnownResourceTypeInThePath(request);
         validateResourceIdInThePath(request);
-        validateKnownRelationshipName(request);
+        validateKnownRelationshipNameInThePath(request);
         validateToManyRelationshipDocPayloadStructure(request);
     }
 
-    private void validateKnownResourceType(JsonApiRequest request) {
+    private void validateKnownResourceTypeInThePath(JsonApiRequest request) {
         Set<String> availableResourceTypes = domainRegistry.getResourceTypes()
                 .stream()
                 .map(ResourceType::getType)
@@ -149,17 +148,17 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         JsonApi4jDefaultValidatorHolder.INSTANCE.validateValueAnyOf(
                 request.getTargetResourceType().getType(),
                 availableResourceTypes,
-                "path -> {resourceType}"
+                ErrorSources.url().path().resourceType()
         );
     }
 
     private void validateResourceIdInThePath(JsonApiRequest request) {
         String resourceId = request.getResourceId();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceId, "path -> {id}");
-        validateResourceId(resourceId, "path -> {resourceId}");
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceId, ErrorSources.url().path().resourceId());
+        validateResourceId(resourceId, ErrorSources.url().path().resourceId());
     }
 
-    private void validateKnownRelationshipName(JsonApiRequest request) {
+    private void validateKnownRelationshipNameInThePath(JsonApiRequest request) {
         Set<String> availableRelationships = domainRegistry.getRelationshipNames(request.getTargetResourceType())
                 .stream()
                 .map(RelationshipName::getName)
@@ -167,34 +166,41 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         JsonApi4jDefaultValidatorHolder.INSTANCE.validateValueAnyOf(
                 request.getTargetRelationshipName().getName(),
                 availableRelationships,
-                "path -> {relationshipName}"
+                ErrorSources.url().path().relationshipName()
         );
     }
 
+    private void validateResourceIdIsNullInBody(JsonApiRequest request) {
+        var doc = request.getSingleResourceDocPayload();
+        var data = doc.getData();
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.payload().data().toParameter());
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIsNull(data.getId(), ErrorSources.payload().data().id());
+    }
+
     private void validateResourceIdFromBodyMatchingOneInThePath(JsonApiRequest request) {
-        SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap>> doc = request.getSingleResourceDocPayload();
-        ResourceObject<LinkedHashMap, LinkedHashMap> data = doc.getData();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, "body -> data");
+        var doc = request.getSingleResourceDocPayload();
+        var data = doc.getData();
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.payload().data().toParameter());
 
         String resourceIdFromThePath = request.getResourceId();
         String resourceIdFromThePayload = data.getId();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdFromThePayload, "body -> data -> id");
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,"body -> data -> id");
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdFromThePayload, ErrorSources.payload().data().id());
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,ErrorSources.payload().data().id());
     }
 
     // TODO: Introduce Parameter builder API and use it across the framework, fix all the tests
     // TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
     private void validateSingleResourceDocPayloadStructure(JsonApiRequest request) {
         ResourceType resourceType = request.getTargetResourceType();
-        SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap>> doc = request.getSingleResourceDocPayload();
-        ResourceObject<LinkedHashMap, LinkedHashMap> data = doc.getData();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, "body -> data");
+        var doc = request.getSingleResourceDocPayload();
+        var data = doc.getData();
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.payload().data().toParameter());
 
-        validateResourceId(data.getId(), "body -> data -> id");
+        validateResourceId(data.getId(), ErrorSources.payload().data().id());
 
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(data.getType(), "body -> data -> type");
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(data.getType(), ErrorSources.payload().data().type());
         // type in the payload should match one in the path
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(data.getType(), resourceType.getType(), "body -> data -> type");
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(data.getType(), resourceType.getType(), ErrorSources.payload().data().type());
 
         if (MapUtils.isNotEmpty(data.getRelationships())) {
             Set<String> availableToOneRelationshipNames = domainRegistry.getToOneRelationshipNames(resourceType)
@@ -212,28 +218,28 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                     if (availableToOneRelationshipNames.contains(relationshipName)) {
                         try {
                             ToOneRelationshipObject toOneRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToOneRelationshipObject.class);
-                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toOneRelationshipObject, "body -> data -> relationships -> " + relationshipName + " -> data");
-                            validateToOneRelationshipObjectStructure(toOneRelationshipObject, "body -> data -> relationships -> " + relationshipName + " -> data");
+                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toOneRelationshipObject, ErrorSources.payload().data().relationship(relationshipName).toParameter());
+                            validateToOneRelationshipObjectStructure(toOneRelationshipObject, ErrorSources.payload().data().relationship(relationshipName));
                         } catch (JsonApi4jException e) {
                             throw e;
                         } catch (Exception e) {
                             throw new InvalidPayloadException(
                                     "Invalid To-One Relationship Object structure " + relationshipName,
-                                    "body -> data -> relationships -> " + relationshipName,
+                                    ErrorSources.payload().data().relationship(relationshipName).toParameter(),
                                     doc
                             );
                         }
                     } else if (availableToManyRelationshipNames.contains(relationshipName)) {
                         try {
                             ToManyRelationshipObject toManyRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToManyRelationshipObject.class);
-                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toManyRelationshipObject, "body -> data -> relationships -> " + relationshipName);
-                            validateToManyRelationshipObjectStructure(toManyRelationshipObject, "body -> data -> relationships -> " + relationshipName);
+                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toManyRelationshipObject, ErrorSources.payload().data().relationship(relationshipName).toParameter());
+                            validateToManyRelationshipObjectStructure(toManyRelationshipObject, ErrorSources.payload().data().relationship(relationshipName));
                         } catch (JsonApi4jException e) {
                             throw e;
                         } catch (Exception e) {
                             throw new InvalidPayloadException(
                                     "Invalid To-Many Relationship Object structure " + relationshipName,
-                                    "body -> data -> relationships -> " + relationshipName,
+                                    ErrorSources.payload().data().relationship(relationshipName).toParameter(),
                                     doc
                             );
                         }
@@ -241,7 +247,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                 } else {
                     throw new InvalidPayloadException(
                             "Invalid relationship name " + relationshipNameObj,
-                            "body -> data -> relationships -> " + relationshipNameObj,
+                            ErrorSources.payload().data().relationship(String.valueOf(relationshipNameObj)).toParameter(),
                             doc
                     );
                 }
@@ -249,44 +255,44 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         }
     }
 
-    private void validateToOneRelationshipObjectStructure(ToOneRelationshipObject relationshipObject, String parameterPathPrefix) {
+    private void validateToOneRelationshipObjectStructure(ToOneRelationshipObject relationshipObject, ErrorSources.PayloadSources.PayloadDataSources parameterPathPrefix) {
         ResourceIdentifierObject data = relationshipObject.getData();
         if (data != null) {
             validateResourceIdentifier(data, parameterPathPrefix);
         }
     }
 
-    private void validateResourceIdentifier(ResourceIdentifierObject resourceIdentifier, String parameterPathPrefix) {
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getId(), parameterPathPrefix + " -> id");
-        validateResourceId(resourceIdentifier.getId(), parameterPathPrefix + " -> id");
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getType(), parameterPathPrefix + " -> type");
+    private void validateResourceIdentifier(ResourceIdentifierObject resourceIdentifier, ErrorSources.PayloadSources.PayloadDataSources parameterPathPrefix) {
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getId(), parameterPathPrefix.id());
+        validateResourceId(resourceIdentifier.getId(), parameterPathPrefix.id());
+        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getType(), parameterPathPrefix.type());
     }
 
-    private void validateToManyRelationshipObjectStructure(ToManyRelationshipObject relationshipObject, String parameterPathPrefix) {
+    private void validateToManyRelationshipObjectStructure(ToManyRelationshipObject relationshipObject, ErrorSources.PayloadSources.PayloadDataSources parameterPathPrefix) {
         List<ResourceIdentifierObject> data = ListUtils.emptyIfNull(relationshipObject.getData());
         for (int i = 0; i < data.size(); i++) {
             ResourceIdentifierObject resourceIdentifier = data.get(i);
-            validateResourceIdentifier(resourceIdentifier, parameterPathPrefix + " -> data[" + i + "]");
+            validateResourceIdentifier(resourceIdentifier, parameterPathPrefix.index(i));
         }
     }
 
     private void validateToOneRelationshipDocPayloadStructure(JsonApiRequest request) {
         ToOneRelationshipDoc doc = request.getToOneRelationshipDocPayload();
-        validateToOneRelationshipObjectStructure(doc, "body -> data");
+        validateToOneRelationshipObjectStructure(doc, ErrorSources.payload().data());
     }
 
     private void validateToManyRelationshipDocPayloadStructure(JsonApiRequest request) {
         ToManyRelationshipsDoc doc = request.getToManyRelationshipDocPayload();
-        validateToManyRelationshipObjectStructure(doc, "body");
+        validateToManyRelationshipObjectStructure(doc, ErrorSources.payload().data());
     }
 
     private void validateIncludes(JsonApiRequest request) {
         int maxElementsInIncludeParam = properties.maxElementsInIncludeParam();
         if (ListUtils.emptyIfNull(request.getOriginalIncludes()).size() > maxElementsInIncludeParam) {
-            throw new ConstraintViolationException(
+            throw new JsonApiRequestValidationException(
                     DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
                     MessageFormat.format("Include value shouldn''t have more than {0} elements", maxElementsInIncludeParam),
-                    IncludeAwareRequest.INCLUDE_PARAM
+                    ErrorSources.url().queryParams().include()
             );
         }
     }
@@ -295,10 +301,10 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         Map<String, SortAwareRequest.SortOrder> sortBy = request.getSortBy();
         int maxElementsInSortByParam = properties.maxElementsInSortByParam();
         if (MapUtils.emptyIfNull(sortBy).size() > maxElementsInSortByParam) {
-            throw new ConstraintViolationException(
+            throw new JsonApiRequestValidationException(
                     DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
                     MessageFormat.format("Sort value shouldn''t have more than {0} elements", maxElementsInSortByParam),
-                    SortAwareRequest.SORT_PARAM
+                    ErrorSources.url().queryParams().sort()
             );
         }
     }
@@ -307,22 +313,22 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         Map<String, List<String>> filterParams = MapUtils.emptyIfNull(request.getFilters());
         int maxNumberFilterParams = properties.maxNumberFilterParams();
         if (filterParams.size() > maxNumberFilterParams) {
-            throw new ConstraintViolationException(
+            throw new JsonApiRequestValidationException(
                     MessageFormat.format("max number of filter params exceeded: {0}", maxNumberFilterParams),
-                    "filter[*]"
+                    ErrorSources.url().queryParams().filters()
             );
         }
         int maxElementsInFilterParam = properties.maxElementsInFilterParam();
         filterParams.forEach((filterName, filterValues) -> {
             if (filterValues.size() > maxElementsInFilterParam) {
-                throw new ConstraintViolationException(
+                throw new JsonApiRequestValidationException(
                         MessageFormat.format("max number of filter param elements exceeded: {0}", maxElementsInFilterParam),
-                        FiltersAwareRequest.getFilterParam(filterName)
+                        ErrorSources.url().queryParams().filter(filterName)
                 );
             }
             if (ID_FILTER_NAME.equals(filterName)) {
                 if (!filterValues.isEmpty()) {
-                    filterValues.forEach(this::validateResourceId);
+                    filterValues.forEach(resourceId -> validateResourceId(resourceId, ErrorSources.url().queryParams().filter(ID_FILTER_NAME)));
                 }
             }
         });
@@ -342,18 +348,14 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         }
     }
 
-    private void validateResourceId(String resourceId) {
-        validateResourceId(resourceId, "resource id");
-    }
-
-    private void validateResourceId(String resourceId, String parameterName) {
+    private void validateResourceId(String resourceId, ErrorSources.ParameterPath parameterPath) {
         if (StringUtils.isBlank(resourceId)) {
             return;
         }
         if (resourceId.length() > properties.resourceIdMaxLength()) {
-            throw new ConstraintViolationException(
+            throw new JsonApiRequestValidationException(
                     MessageFormat.format("resource id length can''t be more than {0}", properties.resourceIdMaxLength()),
-                    parameterName
+                    parameterPath
             );
         }
     }

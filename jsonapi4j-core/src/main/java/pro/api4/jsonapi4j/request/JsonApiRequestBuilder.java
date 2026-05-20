@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.request;
 
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
@@ -10,6 +11,7 @@ import pro.api4.jsonapi4j.operation.OperationType;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -170,11 +172,10 @@ public class JsonApiRequestBuilder {
         } else {
             request = new DefaultJsonApiRequest(new DefaultJsonApiRequest.BodyDeserializer() {
                 @Override
-                public <A, R> SingleResourceDoc<ResourceObject<A, R>> deserializeResourceDoc(byte[] p,
-                                                                                             Class<A> attType,
-                                                                                             Class<R> relType) throws IOException {
+                public <A> SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> deserializeResourceDoc(byte[] p,
+                                                                                                                                            Class<A> attType) throws IOException {
                     //noinspection unchecked
-                    return (SingleResourceDoc<ResourceObject<A, R>>) payloadAsObject;
+                    return (SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>>) payloadAsObject;
                 }
 
                 @Override

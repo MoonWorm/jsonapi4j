@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
@@ -53,14 +53,14 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
                 return HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode();
             }
         });
-        this.errorResponseMappers.put(ConstraintViolationException.class, new ErrorsDocSupplier<ConstraintViolationException>() {
+        this.errorResponseMappers.put(JsonApiRequestValidationException.class, new ErrorsDocSupplier<JsonApiRequestValidationException>() {
             @Override
-            public ErrorsDoc getErrorResponse(ConstraintViolationException e) {
-                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getParameter());
+            public ErrorsDoc getErrorResponse(JsonApiRequestValidationException e) {
+                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getParameter().path());
             }
 
             @Override
-            public int getHttpStatus(ConstraintViolationException e) {
+            public int getHttpStatus(JsonApiRequestValidationException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });

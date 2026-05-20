@@ -12,8 +12,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class ToManyRelationshipObject extends RelationshipObject {
 
-    public static final String DATA_FIELD = "data";
-
     private final List<ResourceIdentifierObject> data;
 
     public ToManyRelationshipObject(List<ResourceIdentifierObject> data,

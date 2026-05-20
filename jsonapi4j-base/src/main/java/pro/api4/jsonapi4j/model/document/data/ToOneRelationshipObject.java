@@ -10,8 +10,6 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 @Getter
 public class ToOneRelationshipObject extends RelationshipObject {
 
-    public static final String DATA_FIELD = "data";
-
     private final ResourceIdentifierObject data;
 
     public ToOneRelationshipObject(ResourceIdentifierObject data,

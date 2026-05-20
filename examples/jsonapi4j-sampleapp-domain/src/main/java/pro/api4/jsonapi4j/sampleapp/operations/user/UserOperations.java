@@ -4,11 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.exception.ConstraintViolationException;
+import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
@@ -24,7 +28,6 @@ import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
-import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelationships;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
@@ -66,7 +69,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         return Optional.empty();
     }
 
-    public static void validateRelationsMeta(Object meta) {
+    public static void validateRelationsMeta(Object meta, ErrorSources.ParameterPath parameterPath) {
         if (meta instanceof Map<?, ?> m) {
             Object relationshipTypeObj = m.get(RELATIONSHIP_TYPE_META_KEY);
             if (relationshipTypeObj == null) {
@@ -76,10 +79,16 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 try {
                     RelationshipType.valueOf(relationshipType.toUpperCase());
                 } catch (Exception ex) {
-                    throw new ConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
+                    throw new JsonApiRequestValidationException(
+                            "Meta 'relationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")),
+                            parameterPath
+                    );
                 }
             } else {
-                throw new ConstraintViolationException("Meta 'RelationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")), "meta -> relationshipType");
+                throw new JsonApiRequestValidationException(
+                        "Meta 'relationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", ")),
+                        parameterPath
+                );
             }
         }
     }
@@ -161,7 +170,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     )
     @Override
     public UserDbEntity create(JsonApiRequest request) {
-        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
+        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class);
         UserAttributes att = singleResourceDoc.getData().getAttributes();
         UserDbEntity result = userDb.createUser(
                 att.getFullName().split("\\s+")[0],
@@ -187,7 +196,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     )
     @Override
     public void update(JsonApiRequest request) {
-        var payload = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
+        var payload = request.getSingleResourceDocPayload(UserAttributes.class);
         UserAttributes att = payload.getData().getAttributes();
         String userId = payload.getData().getId();
         if (att != null) {
@@ -209,10 +218,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     private void updateUserRelationships(String userId,
-                                         UserRelationships relationships) {
+                                         LinkedHashMap<String, RelationshipObject> relationships) {
         if (relationships != null) {
-            if (relationships.getCitizenships() != null) {
-                List<String> countryIds = relationships.getCitizenships().getData()
+            ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get("citizenships");
+            if (citizenships != null) {
+                List<String> countryIds = citizenships.getData()
                         .stream()
                         .map(ResourceIdentifierObject::getId)
                         .toList();
@@ -220,11 +230,13 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                     userDb.updateUserCitizenships(userId, countryIds);
                 }
             }
-            if (relationships.getPlaceOfBirth() != null) {
-                userDb.updateUserPlaceOfBirth(userId, relationships.getPlaceOfBirth().getData().getId());
+            ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get("placeOfBirth");
+            if (placeOfBirth != null) {
+                userDb.updateUserPlaceOfBirth(userId, placeOfBirth.getData().getId());
             }
-            if (relationships.getRelatives() != null) {
-                Map<String, RelationshipType> relations = parseRelations(relationships.getRelatives().getData());
+            ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get("relatives");
+            if (relatives != null) {
+                Map<String, RelationshipType> relations = parseRelations(relatives.getData());
                 if (!relations.isEmpty()) {
                     userDb.updateUserRelatives(userId, relations);
                 }
@@ -246,43 +258,50 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateCreate(JsonApiRequest request) {
-        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
-        if (singleResourceDoc.getData().getAttributes() == null) {
-            throw new ConstraintViolationException("'attributes' is null", "attributes");
-        }
+        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class);
         getValidator().validateSingleResourceDoc(singleResourceDoc)
-                .withResourceIdValidator(resourceId -> getValidator().validateIsNull(resourceId, "body -> data -> id"))
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
                 .withAttributesValidator(att -> {
+                    if (att == null) {
+                        throw new JsonApiRequestValidationException("'attributes' is null", ErrorSources.payload().data().attributes());
+                    }
                     if (att.getFullName() == null) {
-                        throw new ConstraintViolationException("'attributes.fullName' is null", "attributes -> fullName");
+                        throw new JsonApiRequestValidationException("'attributes.fullName' is null", ErrorSources.payload().data().attributes("fullName"));
                     }
                     userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
                     userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
                     userValidator.validateEmail(att.getEmail());
                 })
-                .withRelationshipsValidator(this::validateRelationships)
+                .withToManyRelationshipValidator("citizenships", this::validateCitizenships)
+                .withToOneRelationshipValidator("placeOfBirth", this::validatePlaceOfBirth)
+                .withToManyRelationshipValidator("relatives", this::validateRelatives)
                 .validate();
     }
 
     @Override
     public void validateUpdate(JsonApiRequest request) {
-        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class, UserRelationships.class);
+        var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class);
         getValidator().validateSingleResourceDoc(singleResourceDoc)
                 .withResourceIdValidator(resourceId -> {
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> type"))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
                 .withAttributesValidator(att -> {
-                    if (att.getFullName() != null) {
-                        userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
-                        userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
+                    if (att != null) {
+                        if (att.getFullName() != null) {
+                            userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
+                            userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
+                        }
+                        if (att.getEmail() != null) {
+                            userValidator.validateEmail(att.getEmail());
+                        }
                     }
-                    userValidator.validateEmail(att.getEmail());
                 })
-                .withRelationshipsValidator(this::validateRelationships)
+                .withToManyRelationshipValidator("citizenships", this::validateCitizenships)
+                .withToOneRelationshipValidator("placeOfBirth", this::validatePlaceOfBirth)
+                .withToManyRelationshipValidator("relatives", this::validateRelatives)
                 .validate();
     }
 
@@ -293,34 +312,35 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         }
     }
 
-    private void validateRelationships(UserRelationships rel) {
-        if (rel != null) {
-            if (rel.getCitizenships() != null) {
-                getValidator().validateToManyRelationshipDoc(
-                        rel.getCitizenships(),
-                        countryValidator::validateCountryId,
-                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> relationships -> citizenships -> data[] -> type")
-                );
-            }
-            if (rel.getPlaceOfBirth() != null && rel.getPlaceOfBirth().getData() != null) {
-                getValidator().validateToOneRelationshipDoc(
-                        rel.getPlaceOfBirth(),
-                        countryValidator::validateCountryId,
-                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries"), "body -> data -> relationships -> placeOfBirth -> data -> type")
-                );
-            }
-            if (rel.getRelatives() != null) {
-                getValidator().validateToManyRelationshipDoc(
-                        rel.getRelatives(),
-                        resourceId -> {
-                            if (userDb.readById(resourceId) == null) {
-                                throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
-                            }
-                        },
-                        resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users"), "body -> data -> relationships -> relatives -> data[] -> type"),
-                        UserOperations::validateRelationsMeta
-                );
-            }
+    private void validateCitizenships(ToManyRelationshipObject citizenships) {
+        if (citizenships != null) {
+            getValidator().validateToManyRelationshipsObject(citizenships)
+                    .withResourceIdValidator(countryValidator::validateCountryId)
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                    .validate();
+        }
+    }
+
+    private void validatePlaceOfBirth(ToOneRelationshipObject placeOfBirth) {
+        if (placeOfBirth != null && placeOfBirth.getData() != null) {
+            getValidator().validateToOneRelationshipObject(placeOfBirth)
+                    .withResourceIdValidator(countryValidator::validateCountryId)
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                    .validate();
+        }
+    }
+
+    private void validateRelatives(ToManyRelationshipObject relatives) {
+        if (relatives != null) {
+            getValidator().validateToManyRelationshipsObject(relatives)
+                    .withResourceIdValidator(resourceId -> {
+                        if (userDb.readById(resourceId) == null) {
+                            throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
+                        }
+                    })
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                    .withResourceIdentifierMetaValidator(meta -> validateRelationsMeta(meta, ErrorSources.payload().data().relationship("relatives").meta()))
+                    .validate();
         }
     }
 
