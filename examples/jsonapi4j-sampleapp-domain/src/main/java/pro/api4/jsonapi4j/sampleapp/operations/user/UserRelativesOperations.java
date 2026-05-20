@@ -6,7 +6,6 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.BatchReadToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
-import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
@@ -19,7 +18,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
-import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
@@ -111,34 +109,34 @@ public class UserRelativesOperations implements
 
     @Override
     public void validateAddToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(resourceId -> {
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
                 })
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
-                .withResourceIdentifierMetaValidator(meta -> UserOperations.validateRelationsMeta(meta, ErrorSources.payload().data().meta()))
-                .validate();
+                .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta)
+                .validate(request.getToManyRelationshipDocPayload());
     }
 
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
-                .validate();
+                .validate(request.getToManyRelationshipDocPayload());
     }
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(resourceId -> {
                     if (userDb.readById(resourceId) == null) {
                         throwResourceNotFoundException(request);
                     }
                 })
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
-                .withResourceIdentifierMetaValidator(meta -> UserOperations.validateRelationsMeta(meta, ErrorSources.payload().data().meta()))
-                .validate();
+                .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta)
+                .validate(request.getToManyRelationshipDocPayload());
     }
 }

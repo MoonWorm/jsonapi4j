@@ -156,26 +156,26 @@ public class UserCitizenshipsOperations implements
 
     @Override
     public void validateAddToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(countryValidator::validateCountryId)
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate();
+                .validate(request.getToManyRelationshipDocPayload());
     }
 
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(countryValidator::validateCountryId)
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate();
+                .validate(request.getToManyRelationshipDocPayload());
     }
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
+        getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(countryValidator::validateCountryId)
                 .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate();
+                .validate(request.getToManyRelationshipDocPayload());
     }
 
 }

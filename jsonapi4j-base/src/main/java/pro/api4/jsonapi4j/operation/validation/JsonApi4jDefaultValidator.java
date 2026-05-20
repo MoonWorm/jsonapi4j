@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
@@ -122,19 +121,19 @@ public class JsonApi4jDefaultValidator {
         return new SingleResourceDocValidationState<>(singleResourceDoc);
     }
 
-    public ToOneRelationshipObjectValidationState validateToOneRelationshipObject(ToOneRelationshipObject toOneRelationshipObject) {
-        return ToOneRelationshipObjectValidationState.forRelationshipOperation(toOneRelationshipObject);
+    public ToOneRelationshipObjectValidationState validateToOneRelationshipObject() {
+        return new ToOneRelationshipObjectValidationState();
     }
 
-    public ToManyRelationshipObjectValidationState validateToManyRelationshipsObject(ToManyRelationshipObject toManyRelationshipObject) {
-        return ToManyRelationshipObjectValidationState.forRelationshipOperation(toManyRelationshipObject);
+    public ToManyRelationshipObjectValidationState validateToManyRelationshipsObject() {
+        return new ToManyRelationshipObjectValidationState();
     }
 
     public static class SingleResourceDocValidationState<ATTRIBUTES> {
 
         private final SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc;
-        private final Map<String, Consumer<ToOneRelationshipObject>> toOneRelationshipValidators = new LinkedHashMap<>();
-        private final Map<String, Consumer<ToManyRelationshipObject>> toManyRelationshipValidators = new LinkedHashMap<>();
+        private final Map<String, ToOneRelationshipObjectValidationState> toOneRelationshipValidators = new LinkedHashMap<>();
+        private final Map<String, ToManyRelationshipObjectValidationState> toManyRelationshipValidators = new LinkedHashMap<>();
         private Consumer<String> resourceIdValidator;
         private Consumer<String> resourceTypeValidator;
         private Consumer<ATTRIBUTES> attributesValidator;
@@ -158,12 +157,12 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public SingleResourceDocValidationState<ATTRIBUTES> withToOneRelationshipValidator(String relationshipName, Consumer<ToOneRelationshipObject> relationshipValidator) {
+        public SingleResourceDocValidationState<ATTRIBUTES> withToOneRelationshipValidator(String relationshipName, ToOneRelationshipObjectValidationState relationshipValidator) {
             this.toOneRelationshipValidators.put(relationshipName, relationshipValidator);
             return this;
         }
 
-        public SingleResourceDocValidationState<ATTRIBUTES> withToManyRelationshipValidator(String relationshipName, Consumer<ToManyRelationshipObject> relationshipValidator) {
+        public SingleResourceDocValidationState<ATTRIBUTES> withToManyRelationshipValidator(String relationshipName, ToManyRelationshipObjectValidationState relationshipValidator) {
             this.toManyRelationshipValidators.put(relationshipName, relationshipValidator);
             return this;
         }
@@ -218,7 +217,10 @@ public class JsonApi4jDefaultValidator {
                 toOneRelationshipValidators.forEach((relationshipName, relationshipValidator) -> {
                     try {
                         ToOneRelationshipObject relationshipObject = (ToOneRelationshipObject) singleResourceDoc.getData().getRelationships().get(relationshipName);
-                        relationshipValidator.accept(relationshipObject);
+                        if (relationshipObject != null && relationshipObject.getData() != null) {
+                            relationshipValidator.setInitPath(ErrorSources.payload().data().relationship(relationshipName));
+                            relationshipValidator.validate(relationshipObject);
+                        }
                     } catch (JsonApiRequestValidationException e) {
                         throw JsonApiRequestValidationException.withParameter(e, ErrorSources.payload().data().relationship(relationshipName).toParameter());
                     } catch (JsonApi4jException e) {
@@ -234,7 +236,10 @@ public class JsonApi4jDefaultValidator {
                 toManyRelationshipValidators.forEach((relationshipName, relationshipValidator) -> {
                     try {
                         ToManyRelationshipObject relationshipObject = (ToManyRelationshipObject) singleResourceDoc.getData().getRelationships().get(relationshipName);
-                        relationshipValidator.accept(relationshipObject);
+                        if (relationshipObject != null) {
+                            relationshipValidator.setInitPath(ErrorSources.payload().data().relationship(relationshipName));
+                            relationshipValidator.validate(relationshipObject);
+                        }
                     } catch (JsonApiRequestValidationException e) {
                         throw JsonApiRequestValidationException.withParameter(e, ErrorSources.payload().data().relationship(relationshipName).toParameter());
                     } catch (JsonApi4jException e) {
@@ -254,27 +259,18 @@ public class JsonApi4jDefaultValidator {
 
     public static class ToOneRelationshipObjectValidationState {
 
-        private final ErrorSources.PayloadSources.PayloadDataSources initPath;
-        private final ToOneRelationshipObject toOneRelationshipObject;
+        private ErrorSources.PayloadSources.PayloadDataSources initPath;
 
         private Consumer<String> resourceIdValidator;
         private Consumer<String> resourceTypeValidator;
         private Consumer<Object> metaValidator;
 
-        private ToOneRelationshipObjectValidationState(ToOneRelationshipObject toOneRelationshipObject,
-                                                       ErrorSources.PayloadSources.PayloadDataSources initPath) {
-            this.toOneRelationshipObject = toOneRelationshipObject;
+        private ToOneRelationshipObjectValidationState() {
+            this.initPath = ErrorSources.payload().data();
+        }
+
+        private void setInitPath(ErrorSources.PayloadSources.PayloadDataSources initPath) {
             this.initPath = initPath;
-        }
-
-        public static ToOneRelationshipObjectValidationState forRelationshipOperation(ToOneRelationshipObject toOneRelationshipObject) {
-            return new ToOneRelationshipObjectValidationState(toOneRelationshipObject, ErrorSources.payload().data());
-        }
-
-        // TODO: reuse
-        public static ToOneRelationshipObjectValidationState forResourceOperation(ToOneRelationshipObject toOneRelationshipObject,
-                                                                                  RelationshipName relationshipName) {
-            return new ToOneRelationshipObjectValidationState(toOneRelationshipObject, ErrorSources.payload().data().relationship(relationshipName));
         }
 
         public ToOneRelationshipObjectValidationState withResourceIdValidator(Consumer<String> resourceIdValidator) {
@@ -292,7 +288,7 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public void validate() {
+        public void validate(ToOneRelationshipObject toOneRelationshipObject) {
             if (toOneRelationshipObject.getData() != null) {
                 validateResourceIdentifier(
                         toOneRelationshipObject.getData(),
@@ -308,27 +304,18 @@ public class JsonApi4jDefaultValidator {
 
     public static class ToManyRelationshipObjectValidationState {
 
-        private final ErrorSources.PayloadSources.PayloadDataSources initPath;
+        private ErrorSources.PayloadSources.PayloadDataSources initPath;
 
-        private final ToManyRelationshipObject toManyRelationshipObject;
         private Consumer<String> resourceIdValidator;
         private Consumer<String> resourceTypeValidator;
         private Consumer<Object> metaValidator;
 
-        private ToManyRelationshipObjectValidationState(ToManyRelationshipObject toManyRelationshipObject,
-                                                        ErrorSources.PayloadSources.PayloadDataSources initPath) {
-            this.toManyRelationshipObject = toManyRelationshipObject;
+        private ToManyRelationshipObjectValidationState() {
+            this.initPath = ErrorSources.payload().data();
+        }
+
+        private void setInitPath(ErrorSources.PayloadSources.PayloadDataSources initPath) {
             this.initPath = initPath;
-        }
-
-        public static ToManyRelationshipObjectValidationState forRelationshipOperation(ToManyRelationshipObject toManyRelationshipObject) {
-            return new ToManyRelationshipObjectValidationState(toManyRelationshipObject, ErrorSources.payload().data());
-        }
-
-        // TODO: reuse
-        public static ToManyRelationshipObjectValidationState forResourceOperation(ToManyRelationshipObject toManyRelationshipObject,
-                                                                                   RelationshipName relationshipName) {
-            return new ToManyRelationshipObjectValidationState(toManyRelationshipObject, ErrorSources.payload().data().relationship(relationshipName));
         }
 
         public ToManyRelationshipObjectValidationState withResourceIdValidator(Consumer<String> resourceIdValidator) {
@@ -346,7 +333,7 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public void validate() {
+        public void validate(ToManyRelationshipObject toManyRelationshipObject) {
             List<ResourceIdentifierObject> emptyIfNull = emptyIfNull(toManyRelationshipObject.getData());
             for (int i = 0; i < emptyIfNull.size(); i++) {
                 ResourceIdentifierObject ri = emptyIfNull.get(i);
