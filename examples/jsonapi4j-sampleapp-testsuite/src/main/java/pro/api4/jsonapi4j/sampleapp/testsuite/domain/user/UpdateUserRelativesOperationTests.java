@@ -74,7 +74,7 @@ public abstract class UpdateUserRelativesOperationTests {
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [users]"))
                 .body("errors[0].source.parameter", equalTo("$body -> data[0] -> type"))
@@ -96,7 +96,7 @@ public abstract class UpdateUserRelativesOperationTests {
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/relatives")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("VALUE_EMPTY"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("value can't be blank"))
                 .body("errors[0].id", notNullValue());

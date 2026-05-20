@@ -59,25 +59,41 @@ public class JsonApi4jDefaultValidator {
 
     public void validateNonNull(Object object, ErrorSources.ParameterPath parameterPath) {
         if (object == null) {
-            throw new JsonApiRequestValidationException("value can't be null", parameterPath);
+            throw new JsonApiRequestValidationException(
+                    DefaultErrorCodes.VALUE_IS_ABSENT,
+                    "value can't be null",
+                    parameterPath
+            );
         }
     }
 
     public void validateEqualTo(Object actual, Object expected, ErrorSources.ParameterPath parameterPath) {
         if (!actual.equals(expected)) {
-            throw new JsonApiRequestValidationException(MessageFormat.format("value should match {0}", expected), parameterPath);
+            throw new JsonApiRequestValidationException(
+                    DefaultErrorCodes.VALUE_IS_NOT_EQUAL_TO,
+                    MessageFormat.format("value should match {0}", expected),
+                    parameterPath
+            );
         }
     }
 
     public void validateNonBlank(String value, ErrorSources.ParameterPath parameterPath) {
         if (StringUtils.isBlank(value)) {
-            throw new JsonApiRequestValidationException("value can't be blank", parameterPath);
+            throw new JsonApiRequestValidationException(
+                    DefaultErrorCodes.VALUE_EMPTY,
+                    "value can't be blank",
+                    parameterPath
+            );
         }
     }
 
     public void validateIsNull(Object value, ErrorSources.ParameterPath parameterPath) {
         if (value != null) {
-            throw new JsonApiRequestValidationException("value must be null", parameterPath);
+            throw new JsonApiRequestValidationException(
+                    DefaultErrorCodes.VALUE_IS_NOT_ABSENT,
+                    "value must be null",
+                    parameterPath
+            );
         }
     }
 
@@ -90,6 +106,7 @@ public class JsonApi4jDefaultValidator {
             }
         }
         throw new JsonApiRequestValidationException(
+                DefaultErrorCodes.INVALID_ENUM_VALUE,
                 MessageFormat.format("''{0}'' value is not allowed, available values: [{1}]", value, String.join(", ", allowedValues)),
                 parameterPath
         );

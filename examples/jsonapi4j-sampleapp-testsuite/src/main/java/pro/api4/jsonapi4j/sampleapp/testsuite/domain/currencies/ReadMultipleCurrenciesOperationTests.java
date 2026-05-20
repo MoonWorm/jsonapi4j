@@ -47,7 +47,7 @@ public abstract class ReadMultipleCurrenciesOperationTests {
                 .then()
                 .statusCode(400)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
                 .body("errors[0].detail", equalTo("value can't be null"))
                 .body("errors[0].source.parameter", equalTo("$url -> $queryParams -> filter[id]"))
                 .body("errors[0].status", equalTo("400"))
