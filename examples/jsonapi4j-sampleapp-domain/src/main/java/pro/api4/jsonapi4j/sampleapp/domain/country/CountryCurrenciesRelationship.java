@@ -6,15 +6,19 @@ import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyResource;
 
-@JsonApiRelationship(relationshipName = "currencies", parentResource = CountryResource.class)
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship.CURRENCIES;
+
+@JsonApiRelationship(relationshipName = CURRENCIES, parentResource = CountryResource.class)
 @OasRelationshipInfo(
         relationshipTypes = {CurrencyResource.class}
 )
 public class CountryCurrenciesRelationship implements ToManyRelationship<DownstreamCurrencyWithCode> {
 
+    public static final String CURRENCIES = "currencies";
+
     @Override
     public String resolveResourceIdentifierType(DownstreamCurrencyWithCode downstreamCurrency) {
-        return "currencies";
+        return CurrencyResource.CURRENCIES;
     }
 
     @Override

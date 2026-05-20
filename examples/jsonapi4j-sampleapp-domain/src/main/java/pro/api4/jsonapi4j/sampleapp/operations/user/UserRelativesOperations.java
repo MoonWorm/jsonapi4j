@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
+import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
@@ -26,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @RequiredArgsConstructor
 @JsonApiRelationshipOperation(
@@ -114,7 +117,7 @@ public class UserRelativesOperations implements
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withResourceIdentifierMetaValidator(meta -> UserOperations.validateRelationsMeta(meta, ErrorSources.payload().data().meta()))
                 .validate();
     }
@@ -122,7 +125,7 @@ public class UserRelativesOperations implements
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
                 .validate();
     }
 
@@ -134,7 +137,7 @@ public class UserRelativesOperations implements
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withResourceIdentifierMetaValidator(meta -> UserOperations.validateRelationsMeta(meta, ErrorSources.payload().data().meta()))
                 .validate();
     }

@@ -8,17 +8,22 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshi
 
 import java.util.Map;
 
-@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIVES;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
+
+@JsonApiRelationship(relationshipName = RELATIVES, parentResource = UserResource.class)
 @OasRelationshipInfo(
         relationshipTypes = {UserResource.class}
 )
 public class UserRelativesRelationship implements ToManyRelationship<UserRelationshipInfo> {
 
+    public static final String RELATIVES = "relatives";
+
     public static final String RELATIONSHIP_TYPE_META_KEY = "relationshipType";
 
     @Override
     public String resolveResourceIdentifierType(UserRelationshipInfo userRelationshipInfo) {
-        return "users";
+        return USERS;
     }
 
     @Override

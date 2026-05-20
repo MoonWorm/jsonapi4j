@@ -3,21 +3,22 @@ package pro.api4.jsonapi4j.sampleapp.operations.country;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.Collections;
 
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.readCountriesByIds;
 
 @JsonApiResourceOperation(resource = CountryResource.class)
@@ -30,7 +31,7 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
     public static DownstreamCountry readCountryById(String id, CountriesClient client) {
         var result = readCountriesByIds(Collections.singletonList(id), client);
         if (CollectionUtils.isEmpty(result)) {
-            throw new ResourceNotFoundException(id, new ResourceType("countries"));
+            throw new ResourceNotFoundException(id, new ResourceType(COUNTRIES));
         }
         return result.getFirst();
     }

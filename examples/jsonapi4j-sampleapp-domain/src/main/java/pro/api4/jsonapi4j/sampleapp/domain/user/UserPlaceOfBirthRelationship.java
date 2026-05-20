@@ -6,15 +6,20 @@ import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 
-@JsonApiRelationship(relationshipName = "placeOfBirth", parentResource = UserResource.class)
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
+
+@JsonApiRelationship(relationshipName = PLACE_OF_BIRTH, parentResource = UserResource.class)
 @OasRelationshipInfo(
         relationshipTypes = {CountryResource.class}
 )
 public class UserPlaceOfBirthRelationship implements ToOneRelationship<DownstreamCountry> {
 
+    public static final String PLACE_OF_BIRTH = "placeOfBirth";
+
     @Override
     public String resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
-        return "countries";
+        return COUNTRIES;
     }
 
     @Override

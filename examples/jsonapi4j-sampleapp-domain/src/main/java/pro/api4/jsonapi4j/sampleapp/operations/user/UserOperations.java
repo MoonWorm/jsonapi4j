@@ -40,7 +40,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIONSHIP_TYPE_META_KEY;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIVES;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @RequiredArgsConstructor
 @JsonApiResourceOperation(resource = UserResource.class)
@@ -220,7 +225,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     private void updateUserRelationships(String userId,
                                          LinkedHashMap<String, RelationshipObject> relationships) {
         if (relationships != null) {
-            ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get("citizenships");
+            ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get(CITIZENSHIPS);
             if (citizenships != null) {
                 List<String> countryIds = citizenships.getData()
                         .stream()
@@ -230,11 +235,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                     userDb.updateUserCitizenships(userId, countryIds);
                 }
             }
-            ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get("placeOfBirth");
+            ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get(PLACE_OF_BIRTH);
             if (placeOfBirth != null) {
                 userDb.updateUserPlaceOfBirth(userId, placeOfBirth.getData().getId());
             }
-            ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get("relatives");
+            ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get(RELATIVES);
             if (relatives != null) {
                 Map<String, RelationshipType> relations = parseRelations(relatives.getData());
                 if (!relations.isEmpty()) {
@@ -260,7 +265,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public void validateCreate(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class);
         getValidator().validateSingleResourceDoc(singleResourceDoc)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withAttributesValidator(att -> {
                     if (att == null) {
                         throw new JsonApiRequestValidationException("'attributes' is null", ErrorSources.payload().data().attributes());
@@ -272,9 +277,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                     userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
                     userValidator.validateEmail(att.getEmail());
                 })
-                .withToManyRelationshipValidator("citizenships", this::validateCitizenships)
-                .withToOneRelationshipValidator("placeOfBirth", this::validatePlaceOfBirth)
-                .withToManyRelationshipValidator("relatives", this::validateRelatives)
+                .withToManyRelationshipValidator(CITIZENSHIPS, this::validateCitizenships)
+                .withToOneRelationshipValidator(PLACE_OF_BIRTH, this::validatePlaceOfBirth)
+                .withToManyRelationshipValidator(RELATIVES, this::validateRelatives)
                 .validate();
     }
 
@@ -287,7 +292,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withAttributesValidator(att -> {
                     if (att != null) {
                         if (att.getFullName() != null) {
@@ -299,9 +304,9 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                         }
                     }
                 })
-                .withToManyRelationshipValidator("citizenships", this::validateCitizenships)
-                .withToOneRelationshipValidator("placeOfBirth", this::validatePlaceOfBirth)
-                .withToManyRelationshipValidator("relatives", this::validateRelatives)
+                .withToManyRelationshipValidator(CITIZENSHIPS, this::validateCitizenships)
+                .withToOneRelationshipValidator(PLACE_OF_BIRTH, this::validatePlaceOfBirth)
+                .withToManyRelationshipValidator(RELATIVES, this::validateRelatives)
                 .validate();
     }
 
@@ -316,7 +321,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (citizenships != null) {
             getValidator().validateToManyRelationshipsObject(citizenships)
                     .withResourceIdValidator(countryValidator::validateCountryId)
-                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                     .validate();
         }
     }
@@ -325,7 +330,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (placeOfBirth != null && placeOfBirth.getData() != null) {
             getValidator().validateToOneRelationshipObject(placeOfBirth)
                     .withResourceIdValidator(countryValidator::validateCountryId)
-                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                     .validate();
         }
     }
@@ -335,11 +340,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             getValidator().validateToManyRelationshipsObject(relatives)
                     .withResourceIdValidator(resourceId -> {
                         if (userDb.readById(resourceId) == null) {
-                            throw new ResourceNotFoundException(resourceId, new ResourceType("users"));
+                            throw new ResourceNotFoundException(resourceId, new ResourceType(USERS));
                         }
                     })
-                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("users")))
-                    .withResourceIdentifierMetaValidator(meta -> validateRelationsMeta(meta, ErrorSources.payload().data().relationship("relatives").meta()))
+                    .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                    .withResourceIdentifierMetaValidator(meta -> validateRelationsMeta(meta, ErrorSources.payload().data().relationship(RELATIVES).meta()))
                     .validate();
         }
     }

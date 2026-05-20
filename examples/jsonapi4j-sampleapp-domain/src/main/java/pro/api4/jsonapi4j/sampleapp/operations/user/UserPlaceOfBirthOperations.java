@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
+
 @JsonApiRelationshipOperation(
         relationship = UserPlaceOfBirthRelationship.class
 )
@@ -110,7 +112,7 @@ public class UserPlaceOfBirthOperations implements
     public void validateUpdateToOne(JsonApiRequest request) {
         getValidator().validateToOneRelationshipObject(request.getToOneRelationshipDocPayload())
                 .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                 .validate();
     }
 

@@ -31,6 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
+
 @JsonApiRelationshipOperation(
         relationship = UserCitizenshipsRelationship.class
 )
@@ -156,7 +158,7 @@ public class UserCitizenshipsOperations implements
     public void validateAddToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
                 .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                 .validate();
     }
 
@@ -164,7 +166,7 @@ public class UserCitizenshipsOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
                 .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                 .validate();
     }
 
@@ -172,7 +174,7 @@ public class UserCitizenshipsOperations implements
     public void validateUpdateToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipsObject(request.getToManyRelationshipDocPayload())
                 .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of("countries")))
+                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                 .validate();
     }
 
