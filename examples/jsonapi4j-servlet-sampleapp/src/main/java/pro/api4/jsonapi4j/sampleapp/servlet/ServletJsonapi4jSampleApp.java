@@ -39,7 +39,6 @@ import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
-import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleCountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleUserInputParamsValidator;
 
 import java.util.List;
@@ -96,16 +95,15 @@ public class ServletJsonapi4jSampleApp {
         UserDb userDb = new UserInMemoryDb();
         CountriesClient countriesClient = new CountriesInMemoryClient();
         UserInputParamsValidator userInputParamsValidator = new SimpleUserInputParamsValidator();
-        SimpleCountryInputParamsValidator countryInputParamsValidator = new SimpleCountryInputParamsValidator();
 
         OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
-                .operation(new UserOperations(userDb, userInputParamsValidator, countryInputParamsValidator))
-                .operation(new UserCitizenshipsOperations(countriesClient, userDb, countryInputParamsValidator))
-                .operation(new UserPlaceOfBirthOperations(countriesClient, userDb, countryInputParamsValidator))
+                .operation(new UserOperations(userDb, userInputParamsValidator))
+                .operation(new UserCitizenshipsOperations(countriesClient, userDb))
+                .operation(new UserPlaceOfBirthOperations(countriesClient, userDb))
                 .operation(new UserRelativesOperations(userDb))
-                .operation(new ReadCountryByIdOperation(countriesClient, countryInputParamsValidator))
-                .operation(new ReadMultipleCountriesOperation(countriesClient, countryInputParamsValidator))
-                .operation(new ReadCountryCurrenciesRelationshipOperation(countriesClient, countryInputParamsValidator))
+                .operation(new ReadCountryByIdOperation(countriesClient))
+                .operation(new ReadMultipleCountriesOperation(countriesClient))
+                .operation(new ReadCountryCurrenciesRelationshipOperation(countriesClient))
                 .operation(new CurrencyOperations(countriesClient))
                 .build();
 

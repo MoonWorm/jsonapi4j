@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
@@ -105,7 +106,7 @@ public final class Jsr380ErrorHandlers implements ErrorHandlerFactory {
 
         public interface PropertyPathResolver {
 
-            String resolveFieldName(Path path);
+            ErrorSources.JsonPointer resolveFieldName(Path path);
 
         }
 
@@ -126,36 +127,40 @@ public final class Jsr380ErrorHandlers implements ErrorHandlerFactory {
             private static final java.util.regex.Pattern COMPLEX_PATH_TO_ARRAY_REGEXP = java.util.regex.Pattern.compile("(.*\\.(.*\\[\\d+\\]).*)|((.*\\[\\d+\\]).*)");
 
             @Override
-            public String resolveFieldName(Path path) {
+            public ErrorSources.JsonPointer resolveFieldName(Path path) {
                 if (path == null) {
                     return null;
                 }
-                String pathStr = path.toString();
-                if (isComplexPath(pathStr)) {
-                    if (isComplexPathToArray(pathStr)) {
-                        return extractArrayPropertySubpath(pathStr);
+                String pointer = path.toString();
+                if (isComplexPath(pointer)) {
+                    if (isComplexPathToArray(pointer)) {
+                        return extractArrayPropertySubpath(pointer);
                     } else {
-                        return extractRegularPropertySubpath(pathStr);
+                        return extractRegularPropertySubpath(pointer);
                     }
                 }
-                return pathStr;
+                return toJsonPointer(pointer);
             }
 
-            private String extractArrayPropertySubpath(String path) {
+            private ErrorSources.JsonPointer toJsonPointer(String pointer) {
+                return ErrorSources.pointer().data().attributes(pointer);
+            }
+
+            private ErrorSources.JsonPointer extractArrayPropertySubpath(String path) {
                 Matcher matcher = COMPLEX_PATH_TO_ARRAY_REGEXP.matcher(path);
                 while (matcher.find()) {
                     for (int i = 0; i <= matcher.groupCount(); i++) {
                         String group = matcher.group(i);
                         if (group.contains("[") && group.contains("]") && !group.contains(".")) {
-                            return group;
+                            return toJsonPointer(group);
                         }
                     }
                 }
-                return path;
+                return toJsonPointer(path);
             }
 
-            private String extractRegularPropertySubpath(String path) {
-                return path.substring(path.lastIndexOf(".") + 1);
+            private ErrorSources.JsonPointer extractRegularPropertySubpath(String path) {
+                return ErrorSources.pointer().data().attributes(path.substring(path.lastIndexOf(".") + 1));
             }
 
             private boolean isComplexPathToArray(String path) {

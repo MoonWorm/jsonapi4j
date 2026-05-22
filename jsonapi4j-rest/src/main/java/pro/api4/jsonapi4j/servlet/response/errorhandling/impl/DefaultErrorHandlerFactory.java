@@ -56,7 +56,7 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
         this.errorResponseMappers.put(JsonApiRequestValidationException.class, new ErrorsDocSupplier<JsonApiRequestValidationException>() {
             @Override
             public ErrorsDoc getErrorResponse(JsonApiRequestValidationException e) {
-                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getParameter().path());
+                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getSource());
             }
 
             @Override

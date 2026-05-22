@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.operation.validation.ErrorSources;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
@@ -78,10 +78,10 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
 
     @Override
     public void validateReadMultiple(JsonApiRequest request) {
-        getValidator().validateNonNull(
-                request.getFilters().get(ID_FILTER_NAME),
-                ErrorSources.url().queryParams().filter(ID_FILTER_NAME)
-        );
+        getValidator().validateParameters()
+                .withFilterValidator(ID_FILTER_NAME, JsonApi4jDefaultValidator::validateNonNull)
+                .validate(request);
+
     }
 
 }

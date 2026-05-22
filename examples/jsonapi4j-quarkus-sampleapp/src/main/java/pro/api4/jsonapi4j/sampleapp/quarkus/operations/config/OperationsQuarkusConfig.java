@@ -7,9 +7,12 @@ import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.*;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
 
 @ApplicationScoped
 public class OperationsQuarkusConfig {
@@ -24,30 +27,27 @@ public class OperationsQuarkusConfig {
     @Produces
     public UserOperations userOperations(
             UserDb userDb,
-            UserInputParamsValidator userValidator,
-            CountryInputParamsValidator countryValidator
+            UserInputParamsValidator userValidator
     ) {
-        return new UserOperations(userDb, userValidator, countryValidator);
+        return new UserOperations(userDb, userValidator);
     }
 
     @ApplicationScoped
     @Produces
     public UserCitizenshipsOperations userCitizenshipsOperations(
             CountriesClient countriesClient,
-            UserDb userDb,
-            CountryInputParamsValidator validator
+            UserDb userDb
     ) {
-        return new UserCitizenshipsOperations(countriesClient, userDb, validator);
+        return new UserCitizenshipsOperations(countriesClient, userDb);
     }
 
     @ApplicationScoped
     @Produces
     public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
             CountriesClient client,
-            UserDb userDb,
-            CountryInputParamsValidator validator
+            UserDb userDb
     ) {
-        return new UserPlaceOfBirthOperations(client, userDb, validator);
+        return new UserPlaceOfBirthOperations(client, userDb);
     }
 
     @ApplicationScoped
@@ -58,24 +58,21 @@ public class OperationsQuarkusConfig {
 
     @ApplicationScoped
     @Produces
-    public ReadCountryByIdOperation readCountryByIdOperation(CountriesClient countriesClient,
-                                                             CountryInputParamsValidator validator) {
-        return new ReadCountryByIdOperation(countriesClient, validator);
+    public ReadCountryByIdOperation readCountryByIdOperation(CountriesClient countriesClient) {
+        return new ReadCountryByIdOperation(countriesClient);
     }
 
     @ApplicationScoped
     @Produces
-    public ReadMultipleCountriesOperation readMultipleCountriesOperation(CountriesClient countriesClient,
-                                                                         CountryInputParamsValidator validator) {
-        return new ReadMultipleCountriesOperation(countriesClient, validator);
+    public ReadMultipleCountriesOperation readMultipleCountriesOperation(CountriesClient countriesClient) {
+        return new ReadMultipleCountriesOperation(countriesClient);
     }
 
     @ApplicationScoped
     @Produces
     public ReadCountryCurrenciesRelationshipOperation readCountryCurrenciesRelationshipOperation(
-            CountriesClient countriesClient,
-            CountryInputParamsValidator validator) {
-        return new ReadCountryCurrenciesRelationshipOperation(countriesClient, validator);
+            CountriesClient countriesClient) {
+        return new ReadCountryCurrenciesRelationshipOperation(countriesClient);
     }
 
 }

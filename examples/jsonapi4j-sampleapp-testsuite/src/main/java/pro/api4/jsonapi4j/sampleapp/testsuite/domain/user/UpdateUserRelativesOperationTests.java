@@ -77,7 +77,7 @@ public abstract class UpdateUserRelativesOperationTests {
                 .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [users]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data[0] -> type"))
+                .body("errors[0].source.pointer", equalTo("/data/0/type"))
                 .body("errors[0].id", notNullValue());
     }
 

@@ -13,7 +13,7 @@ public class InvalidCursorException extends JsonApiRequestValidationException {
     private final String cursor;
 
     public InvalidCursorException(String cursor, String message) {
-        super(DefaultErrorCodes.INVALID_CURSOR, message, ErrorSources.url().queryParams().cursor());
+        super(DefaultErrorCodes.INVALID_CURSOR, message, ErrorSources.parameter().cursor());
         this.cursor = cursor;
     }
 

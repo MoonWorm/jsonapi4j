@@ -16,5 +16,6 @@ public class ErrorSourceObject {
     private String pointer;
     private String parameter;
     private String header;
+    private String path;
 
 }

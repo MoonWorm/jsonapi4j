@@ -14,7 +14,6 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.Collections;
 
@@ -26,7 +25,6 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountr
 public class ReadCountryByIdOperation implements ReadResourceByIdOperation<DownstreamCountry> {
 
     private final CountriesClient client;
-    private final CountryInputParamsValidator validator;
 
     public static DownstreamCountry readCountryById(String id, CountriesClient client) {
         var result = readCountriesByIds(Collections.singletonList(id), client);
@@ -57,7 +55,9 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
 
     @Override
     public void validate(JsonApiRequest request) {
-        validator.validateCountryId(request.getResourceId());
+        getValidator().validatePath()
+                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                .validate(request);
     }
 
 }

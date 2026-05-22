@@ -14,10 +14,10 @@ public class InvalidPayloadException extends JsonApiRequestValidationException {
     private final Object payload;
 
     public InvalidPayloadException(String detail, Object payload) {
-        this(detail, ErrorSources.payload().toParameter(), payload);
+        this(detail, ErrorSources.pointer().toPointer(), payload);
     }
 
-    public InvalidPayloadException(String detail, ErrorSources.ParameterPath parameter, Object payload) {
+    public InvalidPayloadException(String detail, ErrorSources.JsonPointer parameter, Object payload) {
         super(DefaultErrorCodes.INVALID_PAYLOAD, detail, parameter);
         this.payload = payload;
     }

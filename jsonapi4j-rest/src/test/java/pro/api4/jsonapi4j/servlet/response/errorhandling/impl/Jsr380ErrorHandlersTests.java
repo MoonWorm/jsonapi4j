@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
 
 import java.lang.annotation.Annotation;
@@ -60,7 +61,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_IS_ABSENT", "must not be null", "name");
+        assertSingleError(doc, "VALUE_IS_ABSENT", "must not be null", ErrorSources.pointer().data().attributes("name"));
     }
 
     @Test
@@ -72,7 +73,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_EMPTY", "must not be blank", "title");
+        assertSingleError(doc, "VALUE_EMPTY", "must not be blank", ErrorSources.pointer().data().attributes("title"));
     }
 
     @Test
@@ -84,7 +85,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_TOO_LONG", "size must be between 0 and 100", "bio");
+        assertSingleError(doc, "VALUE_TOO_LONG", "size must be between 0 and 100", ErrorSources.pointer().data().attributes("bio"));
     }
 
     @Test
@@ -96,7 +97,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "ARRAY_LENGTH_TOO_LONG", "size must be between 0 and 10", "items");
+        assertSingleError(doc, "ARRAY_LENGTH_TOO_LONG", "size must be between 0 and 10", ErrorSources.pointer().data().attributes("items"));
     }
 
     @Test
@@ -108,7 +109,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_INVALID_FORMAT", "must match pattern", "code");
+        assertSingleError(doc, "VALUE_INVALID_FORMAT", "must match pattern", ErrorSources.pointer().data().attributes("code"));
     }
 
     @Test
@@ -120,7 +121,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_INVALID_FORMAT", "numeric value out of bounds", "amount");
+        assertSingleError(doc, "VALUE_INVALID_FORMAT", "numeric value out of bounds", ErrorSources.pointer().data().attributes("amount"));
     }
 
     @Test
@@ -132,7 +133,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_TOO_LOW", "must be positive", "quantity");
+        assertSingleError(doc, "VALUE_TOO_LOW", "must be positive", ErrorSources.pointer().data().attributes("quantity"));
     }
 
     @Test
@@ -144,7 +145,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "VALUE_TOO_HIGH", "must be less than 1000", "price");
+        assertSingleError(doc, "VALUE_TOO_HIGH", "must be less than 1000", ErrorSources.pointer().data().attributes("price"));
     }
 
     @Test
@@ -156,7 +157,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertSingleError(doc, "GENERIC_REQUEST_ERROR", "must be at least 1", "age");
+        assertSingleError(doc, "GENERIC_REQUEST_ERROR", "must be at least 1", ErrorSources.pointer().data().attributes("age"));
     }
 
     // --- Multiple violations ---
@@ -189,7 +190,7 @@ class Jsr380ErrorHandlersTests {
         ErrorsDoc doc = getSupplier().getErrorResponse(exception);
 
         // then
-        assertThat(doc.getErrors().getFirst().getSource().getParameter()).isEqualTo("name");
+        assertThat(doc.getErrors().getFirst().getSource().getPointer()).isEqualTo(ErrorSources.pointer().data().attributes("name").pointer());
     }
 
     // --- Helpers ---
@@ -225,13 +226,13 @@ class Jsr380ErrorHandlersTests {
         return violation;
     }
 
-    private void assertSingleError(ErrorsDoc doc, String expectedCode, String expectedDetail, String expectedParameter) {
+    private void assertSingleError(ErrorsDoc doc, String expectedCode, String expectedDetail, ErrorSources.JsonPointer expectedPointer) {
         assertThat(doc.getErrors()).hasSize(1);
         ErrorObject error = doc.getErrors().getFirst();
         assertThat(error.getStatus()).isEqualTo("400");
         assertThat(error.getCode()).isEqualTo(expectedCode);
         assertThat(error.getDetail()).isEqualTo(expectedDetail);
-        assertThat(error.getSource().getParameter()).isEqualTo(expectedParameter);
+        assertThat(error.getSource().getPointer()).isEqualTo(expectedPointer.pointer());
         assertThat(error.getId()).isNotBlank();
     }
 

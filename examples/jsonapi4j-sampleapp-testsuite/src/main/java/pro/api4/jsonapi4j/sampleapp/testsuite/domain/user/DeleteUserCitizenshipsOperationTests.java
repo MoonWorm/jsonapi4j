@@ -53,7 +53,7 @@ public abstract class DeleteUserCitizenshipsOperationTests {
                 .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [countries]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data[0] -> type"))
+                .body("errors[0].source.pointer", equalTo("/data/0/type"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -75,7 +75,7 @@ public abstract class DeleteUserCitizenshipsOperationTests {
                 .body("errors[0].code", equalTo("VALUE_EMPTY"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("value can't be blank"))
-                .body("errors[0].source.parameter", equalTo("$body -> data[0] -> id"))
+                .body("errors[0].source.pointer", equalTo("/data/0/id"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -97,7 +97,7 @@ public abstract class DeleteUserCitizenshipsOperationTests {
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("resource id length can't be more than 64"))
-                .body("errors[0].source.parameter", equalTo("$body -> data[0] -> id"))
+                .body("errors[0].source.pointer", equalTo("/data/0/id"))
                 .body("errors[0].id", notNullValue());
     }
 

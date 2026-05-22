@@ -6,224 +6,257 @@ import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ErrorSources {
 
-    public static final String FRAGMENT_SEPARATOR = " -> ";
-
-    public static UrlSources url() {
-        return new UrlSources(List.of("$url"));
+    public static PathBuilder path() {
+        return new PathBuilder();
     }
 
-    public static PayloadSources payload() {
-        return new PayloadSources(List.of("$body"));
+    public static Header header(String header) {
+        return new Header(header);
     }
 
-    public static abstract class SourceBuilder {
+    public static ParameterBuilder parameter() {
+        return new ParameterBuilder();
+    }
 
-        private final List<String> source;
+    public static JsonPointerBuilder pointer() {
+        return new JsonPointerBuilder();
+    }
 
-        public SourceBuilder(List<String> source) {
-            this.source = source;
+    public static class PathBuilder {
+
+        private PathBuilder() {
+
         }
 
-        public List<String> getSource() {
-            return source;
+        public Path resourceType() {
+            return new Path("{resourceType}");
         }
 
-        protected ParameterPath toParameter(List<String> source) {
-            return new ParameterPath(String.join(FRAGMENT_SEPARATOR, source));
+        public Path resourceId() {
+            return new Path("{resourceId}");
         }
 
-        public ParameterPath toParameter() {
-            return toParameter(source);
+        public Path relationshipName() {
+            return new Path("{relationshipName}");
         }
 
     }
 
-    public static class UrlSources extends SourceBuilder {
+    public static class ParameterBuilder {
 
-        public UrlSources(List<String> source) {
-            super(source);
+        private ParameterBuilder() {
+
         }
 
-        public PathSources path() {
+        public Parameter filter(String filterName) {
+            return custom(FiltersAwareRequest.getFilterParam(filterName));
+        }
+
+        public Parameter filters() {
+            return custom(FiltersAwareRequest.getFilterParam(""));
+        }
+
+        public Parameter include() {
+            return custom(IncludeAwareRequest.INCLUDE_PARAM);
+        }
+
+        public Parameter cursor() {
+            return custom(CursorAwareRequest.CURSOR_PARAM);
+        }
+
+        public Parameter limit() {
+            return custom(LimitOffsetAwareRequest.LIMIT_PARAM);
+        }
+
+        public Parameter offset() {
+            return custom(LimitOffsetAwareRequest.OFFSET_PARAM);
+        }
+
+        public Parameter sort() {
+            return custom(SortAwareRequest.SORT_PARAM);
+        }
+
+        public Parameter fieldSets(String resourceType) {
+            return custom(SparseFieldsetsAwareRequest.getFieldsParam(resourceType));
+        }
+
+        public Parameter custom(String paramName) {
+            return new Parameter(paramName);
+        }
+
+    }
+
+    /**
+     *  JSON Pointer [RFC6901] to the value in the request document that caused the error [e.g. "/data" for a primary data
+     *  object, or "/data/attributes/title" for a specific attribute].
+     */
+    public static class JsonPointerBuilder extends AbstractJsonPointerBuilder {
+
+        private JsonPointerBuilder() {
+            super(new ArrayList<>());
+        }
+
+        public JsonPointer custom(String... pathFragments) {
             List<String> source = new ArrayList<>(getSource());
-            source.add("$path");
-            return new PathSources(source);
+            source.addAll(Arrays.asList(pathFragments));
+            return toPointer(source);
         }
 
-        public QueryParamSources queryParams() {
-            List<String> source = new ArrayList<>(getSource());
-            source.add("$queryParams");
-            return new QueryParamSources(source);
-        }
-
-        public static class PathSources extends SourceBuilder {
-
-            public PathSources(List<String> source) {
-                super(source);
-            }
-
-            public ParameterPath resourceType() {
-                List<String> source = new ArrayList<>(getSource());
-                source.add("{resourceType}");
-                return toParameter(source);
-            }
-
-            public ParameterPath resourceId() {
-                List<String> source = new ArrayList<>(getSource());
-                source.add("{resourceId}");
-                return toParameter(source);
-            }
-
-            public ParameterPath relationshipName() {
-                List<String> source = new ArrayList<>(getSource());
-                source.add("{relationshipName}");
-                return toParameter(source);
-            }
-
-        }
-
-        public static class QueryParamSources extends SourceBuilder {
-
-            public QueryParamSources(List<String> source) {
-                super(source);
-            }
-
-            public ParameterPath filter(String filterName) {
-                return custom(FiltersAwareRequest.getFilterParam(filterName));
-            }
-
-            public ParameterPath filters() {
-                return custom(FiltersAwareRequest.getFilterParam(""));
-            }
-
-            public ParameterPath include() {
-                return custom(IncludeAwareRequest.INCLUDE_PARAM);
-            }
-
-            public ParameterPath cursor() {
-                return custom(CursorAwareRequest.CURSOR_PARAM);
-            }
-
-            public ParameterPath limit() {
-                return custom(LimitOffsetAwareRequest.LIMIT_PARAM);
-            }
-
-            public ParameterPath offset() {
-                return custom(LimitOffsetAwareRequest.OFFSET_PARAM);
-            }
-
-            public ParameterPath sort() {
-                return custom(SortAwareRequest.SORT_PARAM);
-            }
-
-            public ParameterPath custom(String paramName) {
-                List<String> source = new ArrayList<>(getSource());
-                source.add(paramName);
-                return toParameter(source);
-            }
-
-        }
-
-    }
-
-    public static class PayloadSources extends SourceBuilder {
-
-        public PayloadSources(List<String> source) {
-            super(source);
-        }
-
-        public PayloadDataSources data() {
+        public DataJsonPointerBuilder data() {
             List<String> source = new ArrayList<>(getSource());
             source.add("data");
-            return new PayloadDataSources(source);
+            return new DataJsonPointerBuilder(source);
         }
 
-        public ParameterPath links() {
+        public JsonPointer links() {
             List<String> source = new ArrayList<>(getSource());
             source.add("links");
-            return toParameter(source);
+            return toPointer(source);
         }
 
-        public ParameterPath meta() {
+        public JsonPointer meta() {
             List<String> source = new ArrayList<>(getSource());
             source.add("meta");
-            return toParameter(source);
+            return toPointer(source);
         }
 
-        public static class PayloadDataSources extends SourceBuilder {
+        public static class DataJsonPointerBuilder extends AbstractJsonPointerBuilder {
 
-            public PayloadDataSources(List<String> source) {
+            private DataJsonPointerBuilder(List<String> source) {
                 super(source);
             }
 
-            public PayloadDataSources index(int index) {
+            public DataJsonPointerBuilder index(int index) {
                 List<String> source = new ArrayList<>(getSource());
-                if (!source.isEmpty() && source.getLast().equals("data")) {
-                    source.set(source.size() - 1, "data[" + index + "]");
-                }
-                return new PayloadDataSources(source);
+                source.add(String.valueOf(index));
+                return new DataJsonPointerBuilder(source);
             }
 
-            public ParameterPath id() {
+            public JsonPointer id() {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("id");
-                return toParameter(source);
+                return toPointer(source);
             }
 
-            public ParameterPath type() {
+            public JsonPointer type() {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("type");
-                return toParameter(source);
+                return toPointer(source);
             }
 
-            public ParameterPath attributes() {
+            public JsonPointer attributes() {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("attributes");
-                return toParameter(source);
+                return toPointer(source);
             }
 
-            public ParameterPath attributes(String path) {
+            public JsonPointer attributes(String path) {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("attributes");
                 source.add(path);
-                return toParameter(source);
+                return toPointer(source);
             }
 
-            public PayloadDataSources relationship(RelationshipName relationshipName) {
+            public DataJsonPointerBuilder relationship(RelationshipName relationshipName) {
                 return relationship(relationshipName.getName());
             }
 
-            public PayloadDataSources relationship(String relationshipName) {
+            public DataJsonPointerBuilder relationship(String relationshipName) {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("relationships");
                 source.add(relationshipName);
                 source.add("data");
-                return new PayloadDataSources(source);
+                return new DataJsonPointerBuilder(source);
             }
 
-            public ParameterPath links() {
+            public JsonPointer links() {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("links");
-                return toParameter(source);
+                return toPointer(source);
             }
 
-            public ParameterPath meta() {
+            public JsonPointer meta() {
                 List<String> source = new ArrayList<>(getSource());
                 source.add("meta");
-                return toParameter(source);
+                return toPointer(source);
             }
 
         }
 
     }
 
-    public record ParameterPath(String path) {
+    public static abstract class AbstractJsonPointerBuilder {
+
+        public static final String FRAGMENT_SEPARATOR = "/";
+
+        private final List<String> source;
+
+        protected AbstractJsonPointerBuilder(List<String> source) {
+            this.source = source;
+        }
+
+        protected List<String> getSource() {
+            return source;
+        }
+
+        protected JsonPointer toPointer(List<String> source) {
+            return new JsonPointer(FRAGMENT_SEPARATOR + String.join(FRAGMENT_SEPARATOR, source));
+        }
+
+        public JsonPointer toPointer() {
+            return toPointer(source);
+        }
+
+    }
+
+    public interface Source {}
+
+    // body
+    public record JsonPointer(String pointer) implements Source {
+
+        @Override
+        public String toString() {
+            return pointer;
+        }
+
+    }
+
+    // path
+    public record Path(String path) implements Source {
+
+        @Override
+        public String toString() {
+            return path;
+        }
+
+    }
+
+    // query param
+    public record Parameter(String parameter) implements Source {
+
+        @Override
+        public String toString() {
+            return parameter;
+        }
+
+    }
+
+    // header
+    public record Header(String header) implements Source {
+
+        @Override
+        public String toString() {
+            return header;
+        }
+
     }
 
 }

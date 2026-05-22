@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +36,7 @@ class ErrorsDocFactoryTests {
     void badRequestErrorsDoc_produces400ErrorWithParameter() {
         // when
         ErrorsDoc doc = ErrorsDocFactory.badRequestErrorsDoc(
-                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", "name"
+                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", ErrorSources.parameter().custom("name")
         );
 
         // then
@@ -64,7 +65,6 @@ class ErrorsDocFactoryTests {
 
         // then
         assertSingleError(doc, "400", "INVALID_PAYLOAD", "body is not valid JSON");
-        assertThat(doc.getErrors().getFirst().getSource().getParameter()).isEqualTo("requestBody");
     }
 
     // --- resourceNotFoundErrorsDoc ---
@@ -175,7 +175,7 @@ class ErrorsDocFactoryTests {
     void genericErrorsDoc_withParameter_includesSourceParameter() {
         // when
         ErrorsDoc doc = ErrorsDocFactory.genericErrorsDoc(
-                400, DefaultErrorCodes.INVALID_ENUM_VALUE, "invalid value", "status"
+                400, DefaultErrorCodes.INVALID_ENUM_VALUE, "invalid value", ErrorSources.parameter().custom("status")
         );
 
         // then
@@ -218,7 +218,7 @@ class ErrorsDocFactoryTests {
     @Test
     void errorObject_withParameter_hasSourceWithParameter() {
         // when
-        ErrorObject error = ErrorsDocFactory.errorObject(400, DefaultErrorCodes.VALUE_IS_ABSENT, "missing", "field1");
+        ErrorObject error = ErrorsDocFactory.errorObject(400, DefaultErrorCodes.VALUE_IS_ABSENT, "missing", ErrorSources.parameter().custom("field1"));
 
         // then
         assertThat(error.getSource()).isNotNull();

@@ -13,7 +13,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCo
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 
 import java.util.ArrayList;
 
@@ -26,7 +25,6 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOpe
 public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry, DownstreamCurrencyWithCode> {
 
     private final CountriesClient client;
-    private final CountryInputParamsValidator validator;
 
     @OasOperationInfo(
             securityConfig = @SecurityConfig(
@@ -72,7 +70,9 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
 
     @Override
     public void validate(JsonApiRequest request) {
-        validator.validateCountryId(request.getResourceId());
+        getValidator().validatePath()
+                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                .validate(request);
     }
 
 }

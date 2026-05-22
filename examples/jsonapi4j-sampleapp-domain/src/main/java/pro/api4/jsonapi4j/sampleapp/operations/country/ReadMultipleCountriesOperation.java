@@ -7,14 +7,13 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
+import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.domain.country.Region;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
+import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +25,6 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
     public static final String REGION_FILTER_NAME = "region";
 
     private final CountriesClient client;
-    private final CountryInputParamsValidator validator;
 
     public static List<DownstreamCountry> readCountriesByIds(List<String> ids, CountriesClient client) {
         if (CollectionUtils.isEmpty(ids)) {
@@ -115,11 +113,14 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
 
     @Override
     public void validate(JsonApiRequest request) {
-        if (request.getFilters().containsKey(ID_FILTER_NAME)) {
-            validator.validateCountryIds(request.getFilters().get(ID_FILTER_NAME));
-        } else if (request.getFilters().containsKey(REGION_FILTER_NAME)) {
-            validator.validateRegion(request.getFilters().get(REGION_FILTER_NAME).get(0));
-        }
+        getValidator().validateParameters()
+                .withFilterValidator(ID_FILTER_NAME, CountryInputParamsValidator::validateCountryIds)
+                .withFilterValidator(REGION_FILTER_NAME, regions -> {
+                    if (regions != null && !regions.isEmpty()) {
+                        CountryInputParamsValidator.validateRegion(regions.getFirst());
+                    }
+                })
+                .validate(request);
     }
 
 }

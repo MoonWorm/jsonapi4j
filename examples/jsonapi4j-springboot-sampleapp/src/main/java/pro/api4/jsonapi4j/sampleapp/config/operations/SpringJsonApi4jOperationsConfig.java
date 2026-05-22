@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.IntegrationsConfig;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
@@ -25,28 +24,25 @@ public class SpringJsonApi4jOperationsConfig {
     @Bean
     public UserOperations userOperations(
             UserDb userDb,
-            UserInputParamsValidator userValidator,
-            CountryInputParamsValidator countryValidator
+            UserInputParamsValidator userValidator
     ) {
-        return new UserOperations(userDb, userValidator, countryValidator);
+        return new UserOperations(userDb, userValidator);
     }
 
     @Bean
     public UserCitizenshipsOperations userCitizenshipsOperations(
             CountriesClient countriesClient,
-            UserDb userDb,
-            CountryInputParamsValidator validator
+            UserDb userDb
     ) {
-        return new UserCitizenshipsOperations(countriesClient, userDb, validator);
+        return new UserCitizenshipsOperations(countriesClient, userDb);
     }
 
     @Bean
     public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
             CountriesClient client,
-            UserDb userDb,
-            CountryInputParamsValidator validator
+            UserDb userDb
     ) {
-        return new UserPlaceOfBirthOperations(client, userDb, validator);
+        return new UserPlaceOfBirthOperations(client, userDb);
     }
 
     @Bean
@@ -55,22 +51,19 @@ public class SpringJsonApi4jOperationsConfig {
     }
 
     @Bean
-    public ReadCountryByIdOperation readCountryByIdOperation(CountriesClient countriesClient,
-                                                             CountryInputParamsValidator validator) {
-        return new ReadCountryByIdOperation(countriesClient, validator);
+    public ReadCountryByIdOperation readCountryByIdOperation(CountriesClient countriesClient) {
+        return new ReadCountryByIdOperation(countriesClient);
     }
 
     @Bean
-    public ReadMultipleCountriesOperation readMultipleCountriesOperation(CountriesClient countriesClient,
-                                                                         CountryInputParamsValidator validator) {
-        return new ReadMultipleCountriesOperation(countriesClient, validator);
+    public ReadMultipleCountriesOperation readMultipleCountriesOperation(CountriesClient countriesClient) {
+        return new ReadMultipleCountriesOperation(countriesClient);
     }
 
     @Bean
     public ReadCountryCurrenciesRelationshipOperation readCountryCurrenciesRelationshipOperation(
-            CountriesClient countriesClient,
-            CountryInputParamsValidator validator) {
-        return new ReadCountryCurrenciesRelationshipOperation(countriesClient, validator);
+            CountriesClient countriesClient) {
+        return new ReadCountryCurrenciesRelationshipOperation(countriesClient);
     }
 
 }

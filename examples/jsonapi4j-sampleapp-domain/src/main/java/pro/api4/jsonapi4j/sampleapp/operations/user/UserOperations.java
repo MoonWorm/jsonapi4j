@@ -13,8 +13,8 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationState.ToManyRelationshipObjectValidationState;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationState.ToOneRelationshipObjectValidationState;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
+import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
@@ -32,7 +32,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshi
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
+import pro.api4.jsonapi4j.sampleapp.operations.country.CountryInputParamsValidator;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -42,6 +42,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateNonNull;
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
@@ -55,7 +57,6 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
     private final UserInputParamsValidator userValidator;
-    private final CountryInputParamsValidator countryValidator;
 
     public static Map<String, RelationshipType> parseRelations(List<ResourceIdentifierObject> data) {
         Map<String, RelationshipType> relations = new LinkedHashMap<>();
@@ -265,14 +266,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public void validateCreate(JsonApiRequest request) {
         var singleResourceDoc = request.getSingleResourceDocPayload(UserAttributes.class);
         getValidator().validateSingleResourceDoc(singleResourceDoc)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withAttributesValidator(att -> {
-                    if (att == null) {
-                        throw new JsonApiRequestValidationException("'attributes' is null", ErrorSources.payload().data().attributes());
-                    }
-                    if (att.getFullName() == null) {
-                        throw new JsonApiRequestValidationException("'attributes.fullName' is null", ErrorSources.payload().data().attributes("fullName"));
-                    }
+                    validateNonNull(att, ErrorSources.pointer().data().attributes());
+                    validateNonNull(att.getFullName(), ErrorSources.pointer().data().attributes("fullName"));
                     userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
                     userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
                     userValidator.validateEmail(att.getEmail());
@@ -292,7 +289,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withAttributesValidator(att -> {
                     if (att != null) {
                         if (att.getFullName() != null) {
@@ -318,26 +315,26 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
 
-    private ToManyRelationshipObjectValidationState citizenshipsValidator() {
+    private ToManyRelationshipObjectValidationBuilder citizenshipsValidator() {
         return getValidator().validateToManyRelationshipsObject()
-                .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
+                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
     }
 
-    private ToOneRelationshipObjectValidationState placeOfBirthValidator() {
+    private ToOneRelationshipObjectValidationBuilder placeOfBirthValidator() {
         return getValidator().validateToOneRelationshipObject()
-                .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
+                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
     }
 
-    private ToManyRelationshipObjectValidationState relativesValidator() {
+    private ToManyRelationshipObjectValidationBuilder relativesValidator() {
         return getValidator().validateToManyRelationshipsObject()
                 .withResourceIdValidator(resourceId -> {
                     if (userDb.readById(resourceId) == null) {
                         throw new ResourceNotFoundException(resourceId, new ResourceType(USERS));
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta);
 
     }

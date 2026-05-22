@@ -122,7 +122,7 @@ class DefaultErrorHandlerFactoryTests {
     void constraintViolationException_returns400() {
         // given
         var exception = new JsonApiRequestValidationException(
-                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", ErrorSources.payload().data().attributes("name")
+                DefaultErrorCodes.VALUE_IS_ABSENT, "must not be null", ErrorSources.pointer().data().attributes("name")
         );
         ErrorsDocSupplier<JsonApiRequestValidationException> supplier = getSupplier(JsonApiRequestValidationException.class);
 
@@ -134,7 +134,7 @@ class DefaultErrorHandlerFactoryTests {
     void constraintViolationException_producesErrorDocWithCorrectCodeAndParameter() {
         // given
         var exception = new JsonApiRequestValidationException(
-                DefaultErrorCodes.VALUE_INVALID_FORMAT, "invalid email", ErrorSources.payload().data().attributes("email")
+                DefaultErrorCodes.VALUE_INVALID_FORMAT, "invalid email", ErrorSources.pointer().data().attributes("email")
         );
         ErrorsDocSupplier<JsonApiRequestValidationException> supplier = getSupplier(JsonApiRequestValidationException.class);
 
@@ -147,7 +147,7 @@ class DefaultErrorHandlerFactoryTests {
         assertThat(error.getStatus()).isEqualTo("400");
         assertThat(error.getCode()).isEqualTo("VALUE_INVALID_FORMAT");
         assertThat(error.getDetail()).isEqualTo("invalid email");
-        assertThat(error.getSource().getParameter()).isEqualTo("$body -> data -> attributes -> email");
+        assertThat(error.getSource().getPointer()).isEqualTo("/data/attributes/email");
     }
 
     // --- JsonApi4jException (catch-all) ---

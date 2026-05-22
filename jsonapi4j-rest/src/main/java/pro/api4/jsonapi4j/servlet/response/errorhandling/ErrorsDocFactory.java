@@ -6,6 +6,8 @@ import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorSourceObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
+import pro.api4.jsonapi4j.request.CursorAwareRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +22,10 @@ public final class ErrorsDocFactory {
     public static ErrorsDoc genericErrorsDoc(int status,
                                              ErrorCode code,
                                              String detail,
-                                             String parameter) {
+                                             ErrorSources.Source source) {
         return new ErrorsDoc(
                 singletonList(
-                        errorObject(status, code, detail, parameter)
+                        errorObject(status, code, detail, source)
                 )
         );
     }
@@ -40,15 +42,15 @@ public final class ErrorsDocFactory {
 
     public static ErrorsDoc badRequestErrorsDoc(ErrorCode code,
                                                 String detail,
-                                                String parameter) {
-        return genericErrorsDoc(HttpStatusCodes.SC_400_BAD_REQUEST.getCode(), code, detail, parameter);
+                                                ErrorSources.Source source) {
+        return genericErrorsDoc(HttpStatusCodes.SC_400_BAD_REQUEST.getCode(), code, detail, source);
     }
 
     public static ErrorsDoc badRequestInvalidCursorErrorsDoc(String cursor) {
         return badRequestErrorsDoc(
                 DefaultErrorCodes.INVALID_CURSOR,
                 "Invalid cursor value: " + cursor,
-                "page[cursor]"
+                ErrorSources.parameter().cursor()
         );
     }
 
@@ -56,7 +58,7 @@ public final class ErrorsDocFactory {
         return badRequestErrorsDoc(
                 DefaultErrorCodes.INVALID_PAYLOAD,
                 detail,
-                "requestBody"
+                null
         );
     }
 
@@ -165,14 +167,27 @@ public final class ErrorsDocFactory {
     public static ErrorObject errorObject(int status,
                                           ErrorCode code,
                                           String detail,
-                                          String parameter) {
+                                          ErrorSources.Source source) {
         return ErrorObject.builder()
                 .id(UUID.randomUUID().toString())
                 .status(String.valueOf(status))
                 .code(code == null ? DefaultErrorCodes.GENERIC_REQUEST_ERROR.toCode() : code.toCode())
                 .detail(detail)
-                .source(parameter == null ? null : ErrorSourceObject.builder().parameter(parameter).build())
+                .source(source == null ? null : toErrorSourceObject(source))
                 .build();
+    }
+
+    private static ErrorSourceObject toErrorSourceObject(ErrorSources.Source source) {
+        if (source instanceof ErrorSources.Path(String path)) {
+            return ErrorSourceObject.builder().path(path).build();
+        } else if (source instanceof ErrorSources.Header(String header)) {
+            return ErrorSourceObject.builder().header(header).build();
+        } else if (source instanceof ErrorSources.Parameter(String parameter)) {
+            return ErrorSourceObject.builder().parameter(parameter).build();
+        } else if (source instanceof ErrorSources.JsonPointer(String jsonPointer)) {
+            return ErrorSourceObject.builder().pointer(jsonPointer).build();
+        }
+        return null;
     }
 
     public static ErrorObject errorObject(int status,

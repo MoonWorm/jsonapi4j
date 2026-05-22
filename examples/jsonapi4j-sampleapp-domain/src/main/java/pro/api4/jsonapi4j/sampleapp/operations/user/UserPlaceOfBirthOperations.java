@@ -16,9 +16,9 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
+import pro.api4.jsonapi4j.sampleapp.operations.country.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
-import pro.api4.jsonapi4j.sampleapp.operations.country.validation.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 
 import java.util.List;
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -38,7 +39,6 @@ public class UserPlaceOfBirthOperations implements
 
     private final CountriesClient client;
     private final UserDb userDb;
-    private final CountryInputParamsValidator countryValidator;
 
     @OasOperationInfo(
             securityConfig = @OasOperationInfo.SecurityConfig(
@@ -78,7 +78,7 @@ public class UserPlaceOfBirthOperations implements
                         DownstreamCountry::getCca2,
                         Collectors.collectingAndThen(
                                 Collectors.mapping(c -> c, Collectors.toList()),
-                                list -> list.get(0)
+                                List::getFirst
                         )
                 ));
         return usersPlaceOfBirthMap.entrySet().stream().collect(
@@ -111,8 +111,8 @@ public class UserPlaceOfBirthOperations implements
     @Override
     public void validateUpdateToOne(JsonApiRequest request) {
         getValidator().validateToOneRelationshipObject()
-                .withResourceIdValidator(countryValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
+                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
                 .validate(request.getToOneRelationshipDocPayload());
     }
 

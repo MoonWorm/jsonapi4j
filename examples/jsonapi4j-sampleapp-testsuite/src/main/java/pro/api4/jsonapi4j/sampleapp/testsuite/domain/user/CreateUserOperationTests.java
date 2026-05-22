@@ -97,9 +97,10 @@ public abstract class CreateUserOperationTests {
                 .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("'attributes' is null"))
+                .body("errors[0].source.pointer", equalTo("/data/attributes"))
+                .body("errors[0].detail", equalTo("value can't be null"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -120,9 +121,10 @@ public abstract class CreateUserOperationTests {
                 .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
                 .body("errors[0].status", equalTo("400"))
-                .body("errors[0].detail", equalTo("'attributes.fullName' is null"))
+                .body("errors[0].source.pointer", equalTo("/data/attributes/fullName"))
+                .body("errors[0].detail", equalTo("value can't be null"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -146,6 +148,7 @@ public abstract class CreateUserOperationTests {
                 .statusCode(400)
                 .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
                 .body("errors[0].status", equalTo("400"))
+                .body("errors[0].source.pointer", equalTo("/data/attributes/email"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -219,7 +222,7 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [users]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> relatives -> data[0] -> type"))
+                .body("errors[0].source.pointer", equalTo("/data/relationships/relatives/data/0/type"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -282,7 +285,7 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("VALUE_EMPTY"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("value can't be blank"))
-                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> relatives -> data[0] -> id"))
+                .body("errors[0].source.pointer", equalTo("/data/relationships/relatives/data/0/id"))
                 .body("errors[0].id", notNullValue());
     }
 
@@ -314,7 +317,7 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("'wrong-type' value is not allowed, available values: [countries]"))
-                .body("errors[0].source.parameter", equalTo("$body -> data -> relationships -> citizenships -> data[0] -> type"))
+                .body("errors[0].source.pointer", equalTo("/data/relationships/citizenships/data/0/type"))
                 .body("errors[0].id", notNullValue());
     }
 

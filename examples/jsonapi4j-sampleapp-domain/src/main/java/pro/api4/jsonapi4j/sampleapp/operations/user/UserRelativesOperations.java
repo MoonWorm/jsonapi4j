@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @RequiredArgsConstructor
@@ -115,7 +116,7 @@ public class UserRelativesOperations implements
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta)
                 .validate(request.getToManyRelationshipDocPayload());
     }
@@ -123,7 +124,7 @@ public class UserRelativesOperations implements
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
         getValidator().validateToManyRelationshipsObject()
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .validate(request.getToManyRelationshipDocPayload());
     }
 
@@ -135,7 +136,7 @@ public class UserRelativesOperations implements
                         throwResourceNotFoundException(request);
                     }
                 })
-                .withResourceTypeValidator(resourceType -> getValidator().validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                 .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta)
                 .validate(request.getToManyRelationshipDocPayload());
     }

@@ -11,7 +11,7 @@ import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 public class BadJsonApiRequestException extends JsonApiRequestValidationException {
 
     public BadJsonApiRequestException(ErrorCode errorCode,
-                                      ErrorSources.ParameterPath parameter,
+                                      ErrorSources.JsonPointer parameter,
                                       String message) {
         super(errorCode, message, parameter);
     }

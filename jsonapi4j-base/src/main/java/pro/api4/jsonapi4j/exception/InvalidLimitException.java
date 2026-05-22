@@ -13,7 +13,7 @@ public class InvalidLimitException extends JsonApiRequestValidationException {
     private final Long limit;
 
     public InvalidLimitException(Long limit, String message) {
-        super(DefaultErrorCodes.INVALID_LIMIT, message, ErrorSources.url().queryParams().limit());
+        super(DefaultErrorCodes.INVALID_LIMIT, message, ErrorSources.parameter().limit());
         this.limit = limit;
     }
 
