@@ -13,7 +13,8 @@ public interface JsonApiRequest extends
         CustomQueryParamsAwareRequest,
         PayloadAwareRequest,
         ExtensionAwareRequest,
-        ProfileAwareRequest {
+        ProfileAwareRequest,
+        HeadersAwareRequest {
 
     /**
      * @return this operation {@link OperationType} that is basically represents one of the available JSON:API

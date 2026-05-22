@@ -57,6 +57,8 @@ public class DefaultJsonApiRequest implements JsonApiRequest {
     private URI extension;
     private URI profile;
 
+    private Map<String, String> headers = new LinkedHashMap<>();
+
     // lombok workaround
     @Override
     public SingleResourceDoc<ResourceObject<LinkedHashMap, LinkedHashMap<String, RelationshipObject>>> getSingleResourceDocPayload() {

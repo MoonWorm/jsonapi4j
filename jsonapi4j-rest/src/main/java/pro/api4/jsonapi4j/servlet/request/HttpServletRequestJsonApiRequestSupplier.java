@@ -30,6 +30,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +108,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
         Long offset = parseOffset(params.get(LimitOffsetAwareRequest.OFFSET_PARAM));
         URI ext = parseExt(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
         URI profile = parseProfile(servletRequest.getHeader(HttpHeaders.CONTENT_TYPE.getName()));
+        Map<String, String> headers = parseHeaders(servletRequest);
 
         ResourceType targetResourceType = operationDetails.getResourceType();
         RelationshipName targetRelationshipName = operationDetails.getRelationshipName();
@@ -156,6 +160,7 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
                 .customQueryParams(customQueryParams)
                 .extension(ext)
                 .profile(profile)
+                .headers(headers)
                 .build();
         log.debug("Composed JsonApiRequest: {}", jsonApiRequest);
         return jsonApiRequest;
@@ -179,6 +184,19 @@ public class HttpServletRequestJsonApiRequestSupplier implements JsonApiRequestS
                 .entrySet()
                 .stream()
                 .collect(toMap(Map.Entry::getKey, e -> Arrays.asList(e.getValue())));
+    }
+
+    private static Map<String, String> parseHeaders(HttpServletRequest request) {
+        Map<String, String> headers = new HashMap<>();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        if (headerNames != null) {
+            while (headerNames.hasMoreElements()) {
+                String headerName = headerNames.nextElement();
+                String headerValue = request.getHeader(headerName);
+                headers.put(headerName, headerValue);
+            }
+        }
+        return Collections.unmodifiableMap(headers);
     }
 
 }

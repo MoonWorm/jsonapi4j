@@ -39,6 +39,7 @@ public class JsonApiRequestBuilder {
     private Object payloadAsObject;
     private URI extension;
     private URI profile;
+    private Map<String, String> headers;
 
     public JsonApiRequestBuilder() {
 
@@ -69,6 +70,7 @@ public class JsonApiRequestBuilder {
 
         this.extension = from.getExtension();
         this.profile = from.getProfile();
+        this.headers = from.getHeaders();
     }
 
     public JsonApiRequestBuilder resourceId(String resourceId) {
@@ -151,6 +153,11 @@ public class JsonApiRequestBuilder {
         return this;
     }
 
+    public JsonApiRequestBuilder headers(Map<String, String> headers) {
+        this.headers = headers;
+        return this;
+    }
+
     public JsonApiRequestBuilder includes(List<String> originalIncludes) {
         this.originalIncludes = parseOriginalIncludes(originalIncludes);
         this.effectiveIncludes = parseEffectiveIncludes(originalIncludes);
@@ -203,6 +210,7 @@ public class JsonApiRequestBuilder {
         request.setFieldSets(fieldSets);
         request.setExtension(extension);
         request.setProfile(profile);
+        request.setHeaders(headers);
         return request;
     }
 

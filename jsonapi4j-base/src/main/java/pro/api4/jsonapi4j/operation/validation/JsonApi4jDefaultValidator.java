@@ -138,15 +138,35 @@ public class JsonApi4jDefaultValidator {
         return new ToManyRelationshipObjectValidationBuilder();
     }
 
+    public static class HeadersValidationState {
+
+        private final Map<String, Consumer<String>> headerValidators = new LinkedHashMap<>();
+
+        public HeadersValidationState withHeaderValidator(String headerName, Consumer<String> headerValidator) {
+            this.headerValidators.put(headerName, headerValidator);
+            return this;
+        }
+
+        public void validate(JsonApiRequest request) {
+            MapUtils.emptyIfNull(headerValidators).forEach((headerName, headerValidator) -> {
+                wrapExceptions(
+                        () -> headerValidator.accept(request.getHeader(headerName)),
+                        ErrorSources.header(headerName)
+                );
+            });
+        }
+
+    }
+
     public static class ParametersValidationState {
-        private Map<String, Consumer<List<String>>> filterValidators = new LinkedHashMap<>();
+        private final Map<String, Consumer<List<String>>> filterValidators = new LinkedHashMap<>();
         private Consumer<List<String>> includeValidator;
         private Consumer<Map<String, SortAwareRequest.SortOrder>> sortValidator;
         private Consumer<String> cursorValidator;
         private Consumer<Long> limitValidator;
         private Consumer<Long> offsetValidator;
-        private Map<String, Consumer<List<String>>> fieldSetsValidators = new LinkedHashMap<>();
-        private Map<String, Consumer<List<String>>> customQueryParamsValidators = new LinkedHashMap<>();
+        private final Map<String, Consumer<List<String>>> fieldSetsValidators = new LinkedHashMap<>();
+        private final Map<String, Consumer<List<String>>> customQueryParamsValidators = new LinkedHashMap<>();
 
         public ParametersValidationState withFilterValidator(String filterName, Consumer<List<String>> filterValidator) {
             this.filterValidators.put(filterName, filterValidator);
