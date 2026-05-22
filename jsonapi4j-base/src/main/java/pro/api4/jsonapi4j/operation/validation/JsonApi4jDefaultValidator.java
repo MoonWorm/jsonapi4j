@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import org.apache.commons.collections4.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
@@ -11,13 +10,11 @@ import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 
-import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +23,15 @@ import java.util.function.Consumer;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
-// TODO: accept JsonApiRequest as a parameter everywhere
-// TODO: introduce the only uber method - validate requests - as a builder
-public class JsonApi4jDefaultValidator {
+public final class JsonApi4jDefaultValidator {
+
+    private JsonApi4jDefaultValidator() {
+
+    }
+
+    public static RequestValidationBuilder forRequest(JsonApiRequest request) {
+        return new RequestValidationBuilder(request);
+    }
 
     private static void wrapExceptions(Runnable runnable, ErrorSources.Source source) {
         try {
@@ -54,88 +57,78 @@ public class JsonApi4jDefaultValidator {
         }
     }
 
-    public static void validateNonNull(Object object, ErrorSources.Source source) {
-        if (object == null) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.VALUE_IS_ABSENT,
-                    "value can't be null",
-                    source
-            );
+    public static class RequestValidationBuilder {
+
+        private final JsonApiRequest request;
+        private PathValidationState pathValidationState;
+        private ParametersValidationState parametersValidationState;
+        private HeadersValidationState headersValidationState;
+        private Runnable bodyValidation;
+
+        private RequestValidationBuilder(JsonApiRequest request) {
+            this.request = request;
         }
-    }
 
-    public static void validateNonNull(Object object) {
-        validateNonNull(object, null);
-    }
-
-    public static void validateEqualTo(Object actual, Object expected, ErrorSources.Source source) {
-        if (!actual.equals(expected)) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.VALUE_IS_NOT_EQUAL_TO,
-                    MessageFormat.format("value should match {0}", expected),
-                    source
-            );
+        public RequestValidationBuilder path(Consumer<PathValidationState> configurator) {
+            this.pathValidationState = new PathValidationState();
+            configurator.accept(this.pathValidationState);
+            return this;
         }
-    }
 
-    public static void validateNonBlank(String value, ErrorSources.Source source) {
-        if (StringUtils.isBlank(value)) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.VALUE_EMPTY,
-                    "value can't be blank",
-                    source
-            );
+        public RequestValidationBuilder parameters(Consumer<ParametersValidationState> configurator) {
+            this.parametersValidationState = new ParametersValidationState();
+            configurator.accept(this.parametersValidationState);
+            return this;
         }
-    }
 
-    public static void validateIsNull(Object value, ErrorSources.Source source) {
-        if (value != null) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.VALUE_IS_NOT_ABSENT,
-                    "value must be null",
-                    source
-            );
+        public RequestValidationBuilder headers(Consumer<HeadersValidationState> configurator) {
+            this.headersValidationState = new HeadersValidationState();
+            configurator.accept(this.headersValidationState);
+            return this;
         }
-    }
 
-    public static void validateValueAnyOf(String value,
-                                          Set<String> allowedValues,
-                                          ErrorSources.Source source) {
-        for (String allowedValue : allowedValues) {
-            if (allowedValue.equalsIgnoreCase(value)) {
-                return;
+        public <ATTRIBUTES> RequestValidationBuilder singleResourceBody(
+                SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc,
+                Consumer<SingleResourceDocValidationBuilder<ATTRIBUTES>> configurator) {
+            SingleResourceDocValidationBuilder<ATTRIBUTES> builder = new SingleResourceDocValidationBuilder<>(singleResourceDoc);
+            configurator.accept(builder);
+            this.bodyValidation = builder::validate;
+            return this;
+        }
+
+        public RequestValidationBuilder toOneRelationshipBody(
+                ToOneRelationshipObject toOneRelationshipObject,
+                Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
+            ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.bodyValidation = () -> builder.validate(toOneRelationshipObject);
+            return this;
+        }
+
+        public RequestValidationBuilder toManyRelationshipBody(
+                ToManyRelationshipObject toManyRelationshipObject,
+                Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
+            ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.bodyValidation = () -> builder.validate(toManyRelationshipObject);
+            return this;
+        }
+
+        public void validate() {
+            if (pathValidationState != null) {
+                pathValidationState.validate(request);
+            }
+            if (parametersValidationState != null) {
+                parametersValidationState.validate(request);
+            }
+            if (headersValidationState != null) {
+                headersValidationState.validate(request);
+            }
+            if (bodyValidation != null) {
+                bodyValidation.run();
             }
         }
-        throw new JsonApiRequestValidationException(
-                DefaultErrorCodes.INVALID_ENUM_VALUE,
-                MessageFormat.format("''{0}'' value is not allowed, available values: [{1}]", value, String.join(", ", allowedValues)),
-                source
-        );
-    }
 
-    public static void validateValueAnyOf(String value,
-                                          Set<String> allowedValues) {
-        validateValueAnyOf(value, allowedValues, null);
-    }
-
-    public PathValidationState validatePath() {
-        return new PathValidationState();
-    }
-
-    public ParametersValidationState validateParameters() {
-        return new ParametersValidationState();
-    }
-
-    public <ATTRIBUTES> SingleResourceDocValidationBuilder<ATTRIBUTES> validateSingleResourceDoc(SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc) {
-        return new SingleResourceDocValidationBuilder<>(singleResourceDoc);
-    }
-
-    public ToOneRelationshipObjectValidationBuilder validateToOneRelationshipObject() {
-        return new ToOneRelationshipObjectValidationBuilder();
-    }
-
-    public ToManyRelationshipObjectValidationBuilder validateToManyRelationshipsObject() {
-        return new ToManyRelationshipObjectValidationBuilder();
     }
 
     public static class HeadersValidationState {
@@ -147,7 +140,7 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public void validate(JsonApiRequest request) {
+        private void validate(JsonApiRequest request) {
             MapUtils.emptyIfNull(headerValidators).forEach((headerName, headerValidator) -> {
                 wrapExceptions(
                         () -> headerValidator.accept(request.getHeader(headerName)),
@@ -208,7 +201,7 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public void validate(JsonApiRequest request) {
+        private void validate(JsonApiRequest request) {
             MapUtils.emptyIfNull(filterValidators).forEach((filterName, filterValidator) -> {
                 wrapExceptions(
                         () -> filterValidator.accept(request.getFilters().get(filterName)),
@@ -282,7 +275,7 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public void validate(JsonApiRequest request) {
+        private void validate(JsonApiRequest request) {
             if (resourceTypeValidator != null) {
                 wrapExceptions(
                         () -> resourceTypeValidator.accept(request.getTargetResourceType()),
@@ -332,13 +325,17 @@ public class JsonApi4jDefaultValidator {
             return this;
         }
 
-        public SingleResourceDocValidationBuilder<ATTRIBUTES> withToOneRelationshipValidator(String relationshipName, ToOneRelationshipObjectValidationBuilder relationshipValidator) {
-            this.toOneRelationshipValidators.put(relationshipName, relationshipValidator);
+        public SingleResourceDocValidationBuilder<ATTRIBUTES> withToOneRelationship(String relationshipName, Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
+            ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.toOneRelationshipValidators.put(relationshipName, builder);
             return this;
         }
 
-        public SingleResourceDocValidationBuilder<ATTRIBUTES> withToManyRelationshipValidator(String relationshipName, ToManyRelationshipObjectValidationBuilder relationshipValidator) {
-            this.toManyRelationshipValidators.put(relationshipName, relationshipValidator);
+        public SingleResourceDocValidationBuilder<ATTRIBUTES> withToManyRelationship(String relationshipName, Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
+            ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.toManyRelationshipValidators.put(relationshipName, builder);
             return this;
         }
 

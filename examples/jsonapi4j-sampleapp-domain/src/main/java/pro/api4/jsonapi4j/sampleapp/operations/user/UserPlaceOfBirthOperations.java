@@ -26,7 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.forRequest;
+import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -110,10 +111,11 @@ public class UserPlaceOfBirthOperations implements
 
     @Override
     public void validateUpdateToOne(JsonApiRequest request) {
-        getValidator().validateToOneRelationshipObject()
-                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate(request.getToOneRelationshipDocPayload());
+        forRequest(request)
+                .toOneRelationshipBody(request.getToOneRelationshipDocPayload(), body -> body
+                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                .validate();
     }
 
 }

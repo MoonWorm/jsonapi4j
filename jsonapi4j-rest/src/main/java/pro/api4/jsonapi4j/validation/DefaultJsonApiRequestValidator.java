@@ -23,7 +23,7 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidatorHolder;
+import pro.api4.jsonapi4j.operation.validation.ValidationAssertions;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
@@ -143,7 +143,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                 .stream()
                 .map(ResourceType::getType)
                 .collect(Collectors.toSet());
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateValueAnyOf(
+        ValidationAssertions.validateValueAnyOf(
                 request.getTargetResourceType().getType(),
                 availableResourceTypes,
                 ErrorSources.path().resourceType()
@@ -152,7 +152,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
 
     private void validateResourceIdInThePath(JsonApiRequest request) {
         String resourceId = request.getResourceId();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceId, ErrorSources.path().resourceId());
+        ValidationAssertions.validateNonBlank(resourceId, ErrorSources.path().resourceId());
         validateResourceId(resourceId, ErrorSources.path().resourceId());
     }
 
@@ -161,7 +161,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                 .stream()
                 .map(RelationshipName::getName)
                 .collect(Collectors.toSet());
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateValueAnyOf(
+        ValidationAssertions.validateValueAnyOf(
                 request.getTargetRelationshipName().getName(),
                 availableRelationships,
                 ErrorSources.path().relationshipName()
@@ -171,19 +171,19 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
     private void validateResourceIdIsNullInBody(JsonApiRequest request) {
         var doc = request.getSingleResourceDocPayload();
         var data = doc.getData();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.pointer().data().toPointer());
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateIsNull(data.getId(), ErrorSources.pointer().data().id());
+        ValidationAssertions.validateNonNull(data, ErrorSources.pointer().data().toPointer());
+        ValidationAssertions.validateIsNull(data.getId(), ErrorSources.pointer().data().id());
     }
 
     private void validateResourceIdFromBodyMatchingOneInThePath(JsonApiRequest request) {
         var doc = request.getSingleResourceDocPayload();
         var data = doc.getData();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.pointer().data().toPointer());
+        ValidationAssertions.validateNonNull(data, ErrorSources.pointer().data().toPointer());
 
         String resourceIdFromThePath = request.getResourceId();
         String resourceIdFromThePayload = data.getId();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdFromThePayload, ErrorSources.pointer().data().id());
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,ErrorSources.pointer().data().id());
+        ValidationAssertions.validateNonBlank(resourceIdFromThePayload, ErrorSources.pointer().data().id());
+        ValidationAssertions.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,ErrorSources.pointer().data().id());
     }
 
     // TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
@@ -191,13 +191,13 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         ResourceType resourceType = request.getTargetResourceType();
         var doc = request.getSingleResourceDocPayload();
         var data = doc.getData();
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(data, ErrorSources.pointer().data().toPointer());
+        ValidationAssertions.validateNonNull(data, ErrorSources.pointer().data().toPointer());
 
         validateResourceId(data.getId(), ErrorSources.pointer().data().id());
 
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(data.getType(), ErrorSources.pointer().data().type());
+        ValidationAssertions.validateNonBlank(data.getType(), ErrorSources.pointer().data().type());
         // type in the payload should match one in the path
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateEqualTo(data.getType(), resourceType.getType(), ErrorSources.pointer().data().type());
+        ValidationAssertions.validateEqualTo(data.getType(), resourceType.getType(), ErrorSources.pointer().data().type());
 
         if (MapUtils.isNotEmpty(data.getRelationships())) {
             Set<String> availableToOneRelationshipNames = domainRegistry.getToOneRelationshipNames(resourceType)
@@ -215,7 +215,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                     if (availableToOneRelationshipNames.contains(relationshipName)) {
                         try {
                             ToOneRelationshipObject toOneRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToOneRelationshipObject.class);
-                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toOneRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
+                            ValidationAssertions.validateNonNull(toOneRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
                             validateToOneRelationshipObjectStructure(toOneRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName));
                         } catch (JsonApi4jException e) {
                             throw e;
@@ -229,7 +229,7 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
                     } else if (availableToManyRelationshipNames.contains(relationshipName)) {
                         try {
                             ToManyRelationshipObject toManyRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToManyRelationshipObject.class);
-                            JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonNull(toManyRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
+                            ValidationAssertions.validateNonNull(toManyRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
                             validateToManyRelationshipObjectStructure(toManyRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName));
                         } catch (JsonApi4jException e) {
                             throw e;
@@ -260,9 +260,9 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
     }
 
     private void validateResourceIdentifier(ResourceIdentifierObject resourceIdentifier, ErrorSources.JsonPointerBuilder.DataJsonPointerBuilder parameterPathPrefix) {
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getId(), parameterPathPrefix.id());
+        ValidationAssertions.validateNonBlank(resourceIdentifier.getId(), parameterPathPrefix.id());
         validateResourceId(resourceIdentifier.getId(), parameterPathPrefix.id());
-        JsonApi4jDefaultValidatorHolder.INSTANCE.validateNonBlank(resourceIdentifier.getType(), parameterPathPrefix.type());
+        ValidationAssertions.validateNonBlank(resourceIdentifier.getType(), parameterPathPrefix.type());
     }
 
     private void validateToManyRelationshipObjectStructure(ToManyRelationshipObject relationshipObject, ErrorSources.JsonPointerBuilder.DataJsonPointerBuilder parameterPathPrefix) {

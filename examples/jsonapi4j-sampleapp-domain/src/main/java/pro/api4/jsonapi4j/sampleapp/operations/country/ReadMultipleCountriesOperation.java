@@ -16,6 +16,8 @@ import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient.Field;
 
 import java.util.Collections;
+
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.forRequest;
 import java.util.List;
 
 @JsonApiResourceOperation(resource = CountryResource.class)
@@ -113,14 +115,15 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
 
     @Override
     public void validate(JsonApiRequest request) {
-        getValidator().validateParameters()
-                .withFilterValidator(ID_FILTER_NAME, CountryInputParamsValidator::validateCountryIds)
-                .withFilterValidator(REGION_FILTER_NAME, regions -> {
-                    if (regions != null && !regions.isEmpty()) {
-                        CountryInputParamsValidator.validateRegion(regions.getFirst());
-                    }
-                })
-                .validate(request);
+        forRequest(request)
+                .parameters(params -> params
+                        .withFilterValidator(ID_FILTER_NAME, CountryInputParamsValidator::validateCountryIds)
+                        .withFilterValidator(REGION_FILTER_NAME, regions -> {
+                            if (regions != null && !regions.isEmpty()) {
+                                CountryInputParamsValidator.validateRegion(regions.getFirst());
+                            }
+                        }))
+                .validate();
     }
 
 }

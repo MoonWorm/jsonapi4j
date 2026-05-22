@@ -251,7 +251,7 @@ public abstract class CreateUserOperationTests {
                 .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].detail", equalTo("Meta 'relationshipType' object only accepts string values: HUSBAND, WIFE, SON, DAUGHTER, MOTHER, FATHER, BROTHER"))
                 .body("errors[0].id", notNullValue());

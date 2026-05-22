@@ -31,7 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.forRequest;
+import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -156,26 +157,29 @@ public class UserCitizenshipsOperations implements
 
     @Override
     public void validateAddToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject()
-                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate(request.getToManyRelationshipDocPayload());
+        forRequest(request)
+                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                .validate();
     }
 
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject()
-                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate(request.getToManyRelationshipDocPayload());
+        forRequest(request)
+                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                .validate();
     }
 
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
-        getValidator().validateToManyRelationshipsObject()
-                .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)))
-                .validate(request.getToManyRelationshipDocPayload());
+        forRequest(request)
+                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
+                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                .validate();
     }
 
 }
