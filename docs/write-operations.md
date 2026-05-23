@@ -205,25 +205,32 @@ Empty body.
 
 ### 5. Add Validation
 
-Each operation has a dedicated validation method that runs before the main logic. Override them to add custom checks:
+Each operation has a dedicated validation method that runs before the main logic. Use `JsonApiRequestValidator.forRequest(request)` to build validation rules declaratively:
 
 ```java
+import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
+import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.*;
+
 @Override
 public void validateCreate(JsonApiRequest request) {
-    var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
-    getValidator().validateSingleResourceDoc(payload);
-    UserAttributes attributes = payload.getData().getAttributes();
-    if (attributes.getEmail() == null || !attributes.getEmail().contains("@")) {
-        throw new ConstraintViolationException(
-                DefaultErrorCodes.VALUE_INVALID_FORMAT,
-                "Invalid email format",
-                "email"
-        );
-    }
+    forRequest(request)
+            .singleResourceBody(UserAttributes.class, body -> body
+                    .withResourceTypeValidator(type -> validateValueAnyOf(type, Set.of("users")))
+                    .withAttributesValidator(att -> {
+                        validateNonNull(att, ErrorSources.pointer().data().attributes());
+                        if (att.getEmail() == null || !att.getEmail().contains("@")) {
+                            throw new JsonApiRequestValidationException(
+                                    DefaultErrorCodes.VALUE_INVALID_FORMAT,
+                                    "Invalid email format",
+                                    ErrorSources.pointer().data().attributes("email")
+                            );
+                        }
+                    }))
+            .validate();
 }
 ```
 
-If validation fails, the framework automatically converts the exception into a JSON:API error response:
+The validator **collects all errors** across sections and returns them in a single response. If both the resource type and email are invalid, the client gets both errors at once:
 
 ```json
 {
@@ -231,10 +238,19 @@ If validation fails, the framework automatically converts the exception into a J
     {
       "id": "...",
       "status": "400",
+      "code": "INVALID_ENUM_VALUE",
+      "detail": "'wrong' value is not allowed, available values: [users]",
+      "source": {
+        "pointer": "/data/type"
+      }
+    },
+    {
+      "id": "...",
+      "status": "400",
       "code": "VALUE_INVALID_FORMAT",
       "detail": "Invalid email format",
       "source": {
-        "parameter": "email"
+        "pointer": "/data/attributes/email"
       }
     }
   ]

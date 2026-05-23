@@ -140,7 +140,7 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 
 ## Validation Properties
 
-JsonApi4j includes a built-in default validator (`JsonApi4jDefaultValidator`) that enforces limits on common request parameters. These properties configure the thresholds used by the default validator.
+JsonApi4j includes a built-in structural validator that enforces limits on common request parameters. These properties configure the thresholds used by the built-in validator.
 
 | Property | Default | Description |
 |----------|---------|-------------|

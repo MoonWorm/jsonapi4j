@@ -77,18 +77,44 @@ JsonApi4j registers two default error handler factories.
 
 ### DefaultErrorHandlerFactory
 
-Covers all framework-specific exceptions from the core and REST layers, as well as user-facing exceptions from the `pro.api4.jsonapi4j.exception` package. The registry matches the most specific exception class first — subclass handlers (e.g., `ConstraintViolationException`) take priority over the `JsonApi4jException` catch-all.
+Covers all framework-specific exceptions from the core and REST layers, as well as user-facing exceptions from the `pro.api4.jsonapi4j.exception` package. The registry matches the most specific exception class first — subclass handlers take priority over the `JsonApi4jException` catch-all.
 
 | Exception | HTTP Status | Error Code | When It Occurs |
 |-----------|------------|------------|----------------|
-| `ConstraintViolationException` | 400 | From exception | Validation failures — request parameters, operation constraints, business rules |
+| `JsonApiRequestValidationException` | 400 | From exception | Single validation failure — produces one error object |
+| `CompositeJsonApiRequestValidationException` | 400 | From errors | Multiple validation failures collected by `JsonApiRequestValidator` — produces multiple error objects in one response |
 | `ResourceNotFoundException` | 404 | `NOT_FOUND` | Resource with the given ID does not exist |
 | `JsonApi4jException` | From exception | From exception | Catch-all for exceptions that extend `JsonApi4jException` — uses the exception's own `httpStatus` and `errorCode` |
 | `DataRetrievalException` | 502 | `BAD_GATEWAY` | Downstream service failed to return data |
 | `MappingException` | 500 | `INTERNAL_SERVER_ERROR` | DTO-to-JSON:API object failure |
 | `OperationNotFoundException` | 404 | `NOT_FOUND` | Requested operation is not implemented for this resource |
 
-The first three rows handle exceptions from the [user-facing hierarchy](#exception-hierarchy). The remaining rows handle framework-internal exceptions.
+#### Collect-All-Errors Validation
+
+When using `JsonApiRequestValidator.forRequest(request)`, the validator runs **all** configured validators (path, parameters, headers, body) and collects errors rather than stopping at the first failure. If multiple validators fail, the response contains all errors at once:
+
+```json
+{
+  "errors": [
+    {
+      "id": "...",
+      "status": "400",
+      "code": "VALUE_IS_ABSENT",
+      "detail": "value can't be null",
+      "source": { "pointer": "/data/attributes" }
+    },
+    {
+      "id": "...",
+      "status": "400",
+      "code": "INVALID_ENUM_VALUE",
+      "detail": "'wrong' value is not allowed, available values: [countries]",
+      "source": { "pointer": "/data/relationships/citizenships/data/0/type" }
+    }
+  ]
+}
+```
+
+Each developer-provided validator lambda is atomic — if a lambda throws, the error is collected and the next validator runs. Errors within a single lambda are still fail-fast (e.g., a null check followed by a method call on the same value). This design prevents NPEs from interdependent checks while still collecting errors across independent validators.
 
 ### Jsr380ErrorHandlers
 
@@ -287,26 +313,29 @@ public UserDto readById(JsonApiRequest request) {
 }
 ```
 
-For validation errors, throw `ConstraintViolationException` with an error code, detail message, and the offending parameter name. The framework formats the `source.parameter` field automatically:
+For validation errors, throw `JsonApiRequestValidationException` with an error code, detail message, and optionally an error source. When using `JsonApiRequestValidator.forRequest(request)`, the builder handles error sources automatically for path, parameter, and body field validators:
 
 ```java
 @Override
 public void validate(JsonApiRequest request) {
-    String region = request.getFilterValue("region");
-    if (region != null && !SUPPORTED_REGIONS.contains(region)) {
-        throw new ConstraintViolationException(
-            DefaultErrorCodes.INVALID_ENUM_VALUE,
-            "Unsupported region: " + region,
-            "filter[region]"
-        );
-    }
+    forRequest(request)
+            .parameters(params -> params
+                    .withFilterValidator("region", regions -> {
+                        if (regions != null && !regions.isEmpty() && !SUPPORTED_REGIONS.contains(regions.getFirst())) {
+                            throw new JsonApiRequestValidationException(
+                                    DefaultErrorCodes.INVALID_ENUM_VALUE,
+                                    "Unsupported region: " + regions.getFirst()
+                            );
+                        }
+                    }))
+            .validate();
 }
 ```
 
-If you don't need a specific error code, use the two-argument constructor — it defaults to `GENERIC_REQUEST_ERROR`:
+If you don't need a specific error code, use the single-argument constructor — it defaults to `GENERIC_REQUEST_ERROR`:
 
 ```java
-throw new ConstraintViolationException("name must not be blank", "name");
+throw new JsonApiRequestValidationException("name must not be blank");
 ```
 
 For situations where a resource is not found — either throw `ResourceNotFoundException` or use built-in helper methods on the operation level: `ResourceOperations#throwResourceNotFoundException(JsonApiRequest)`. 
@@ -317,7 +346,7 @@ For situations where a resource is not found — either throw `ResourceNotFoundE
 RuntimeException
 │
 ├── JsonApi4jException (httpStatus, errorCode, detail)        — user-facing
-│   ├── ConstraintViolationException (+ parameter)            — 400
+│   ├── JsonApiRequestValidationException (+ source)          — 400 (single error)
 │   │   ├── InvalidCursorException                            — 400 INVALID_CURSOR
 │   │   ├── InvalidLimitException                             — 400 INVALID_LIMIT
 │   │   └── InvalidPayloadException                           — 400 INVALID_PAYLOAD
@@ -325,6 +354,9 @@ RuntimeException
 │   ├── MethodNotSupportedException                           — 405 METHOD_NOT_SUPPORTED
 │   ├── NotAcceptableException                                — 406 NOT_ACCEPTABLE
 │   └── UnsupportedMediaTypeException                         — 415 UNSUPPORTED_MEDIA_TYPE
+│
+├── CompositeJsonApiRequestValidationException                — 400 (multiple errors)
+│   └── (collected by JsonApiRequestValidator)
 │
 ├── DataRetrievalException                                    — framework-internal
 │   └── (caught and mapped to 502 BAD_GATEWAY)
