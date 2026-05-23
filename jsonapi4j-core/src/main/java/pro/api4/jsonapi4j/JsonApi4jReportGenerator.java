@@ -14,6 +14,18 @@ import java.util.List;
 
 public class JsonApi4jReportGenerator {
 
+    private static final String BANNER = """
+
+                   ██                               ███              ██     ████  ███    \s
+                   ██                              █████                   █████         \s
+                   ██  ██████▒ ███████  ███████   ███ ██   ████████  ██   ██ ███   ██    \s
+                   ██  █████   ██   ███ ███  ███  ███ ███  ███   ███ ██  ██  ███   ██    \s
+              ██   ██     ████ ██   ███ ██▒  ███ ████████▓ ███   ██▓ ██ █████████  ██    \s
+              ███████  ███████ ███████  ██▒  ███ ██    ███ ████████  ██      ███   ██    \s
+                                                           ███                    ███    \s
+                                                            ██                   ███     \s
+
+            """;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final List<JsonApi4jPlugin> plugins;
@@ -36,7 +48,8 @@ public class JsonApi4jReportGenerator {
      */
     public String generateStateReport() {
         return MessageFormat.format(
-                "=== JsonApi4j State ===\n\n{0}\n{1}\n{2}\n{3}",
+                "\n{0}{1}\n{2}\n{3}\n{4}",
+                BANNER,
                 generatePluginsReport(),
                 new DomainRegistryReportGenerator(domainRegistry).generateStateReport(),
                 new OperationsRegistryReportGenerator(operationsRegistry).generateStateReport(),
