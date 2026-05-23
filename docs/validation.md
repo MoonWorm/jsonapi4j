@@ -139,7 +139,7 @@ The `dataValidator` runs first. If it throws (e.g., data is null), the remaining
 
 ### Automatic Error Source
 
-The builder automatically populates the JSON:API error `source` field based on where the validator is registered:
+The builder automatically populates the JSON:API error `source` field based on where the validator is registered. Body validators use [JSON Pointer (RFC 6901)](https://datatracker.ietf.org/doc/html/rfc6901) for the `pointer` field, as required by the [JSON:API specification](https://jsonapi.org/format/#error-objects):
 
 | Validator location | Error source |
 |---|---|
