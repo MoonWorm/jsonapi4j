@@ -8,7 +8,7 @@ import lombok.Getter;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.JsonApiRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -36,10 +36,11 @@ import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
+// TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
 @Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
+public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequestValidator {
 
     private final DomainRegistry domainRegistry;
     private final ObjectMapper objectMapper;
@@ -186,7 +187,6 @@ public class DefaultJsonApiRequestValidator implements JsonApiRequestValidator {
         ValidationAssertions.validateEqualTo(resourceIdFromThePayload, resourceIdFromThePath,ErrorSources.pointer().data().id());
     }
 
-    // TODO: REUSE COMMON VALIDATOR PAYLOAD METHODS?
     private void validateSingleResourceDocPayloadStructure(JsonApiRequest request) {
         ResourceType resourceType = request.getTargetResourceType();
         var doc = request.getSingleResourceDocPayload();

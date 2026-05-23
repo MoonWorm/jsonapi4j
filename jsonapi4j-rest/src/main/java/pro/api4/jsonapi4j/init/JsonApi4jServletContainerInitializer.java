@@ -15,7 +15,7 @@ import jakarta.servlet.ServletRegistration;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
-import pro.api4.jsonapi4j.JsonApiRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -23,7 +23,7 @@ import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.validation.DefaultJsonApiRequestValidator;
+import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.Collections;
 import java.util.List;
@@ -61,13 +61,13 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return es;
     }
 
-    public static JsonApiRequestValidator initValidator(ServletContext servletContext, DomainRegistry domainRegistry) {
-        JsonApiRequestValidator validator = (JsonApiRequestValidator) servletContext.getAttribute(VALIDATOR_ATT_NAME);
+    public static JsonApiBuildInRequestValidator initValidator(ServletContext servletContext, DomainRegistry domainRegistry) {
+        JsonApiBuildInRequestValidator validator = (JsonApiBuildInRequestValidator) servletContext.getAttribute(VALIDATOR_ATT_NAME);
         if (validator == null) {
-            log.warn("JsonApi4jValidator not found in servlet context. Setting a default one ({}).", DefaultJsonApiRequestValidator.class.getSimpleName());
+            log.warn("JsonApi4jValidator not found in servlet context. Setting a default one ({}).", DefaultJsonApiBuildInRequestValidator.class.getSimpleName());
             ObjectMapper objectMapper = initObjectMapper(servletContext);
             JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
-            validator = DefaultJsonApiRequestValidator.builder()
+            validator = DefaultJsonApiBuildInRequestValidator.builder()
                     .objectMapper(objectMapper)
                     .properties(properties.validation())
                     .domainRegistry(domainRegistry)
@@ -148,7 +148,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
             List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
             ExecutorService executorService = initExecutorService(servletContext);
-            JsonApiRequestValidator validator = initValidator(servletContext, domainRegistry);
+            JsonApiBuildInRequestValidator validator = initValidator(servletContext, domainRegistry);
             jsonApi4j = JsonApi4j.builder()
                     .domainRegistry(domainRegistry)
                     .operationsRegistry(operationsRegistry)

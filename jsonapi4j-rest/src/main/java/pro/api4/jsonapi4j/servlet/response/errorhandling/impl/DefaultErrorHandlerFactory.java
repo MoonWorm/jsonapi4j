@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
+import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
@@ -61,6 +62,17 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
 
             @Override
             public int getHttpStatus(JsonApiRequestValidationException e) {
+                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            }
+        });
+        this.errorResponseMappers.put(CompositeJsonApiRequestValidationException.class, new ErrorsDocSupplier<CompositeJsonApiRequestValidationException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(CompositeJsonApiRequestValidationException e) {
+                return ErrorsDocFactory.badRequestErrorsDoc(e.getValidationErrors());
+            }
+
+            @Override
+            public int getHttpStatus(CompositeJsonApiRequestValidationException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
             }
         });

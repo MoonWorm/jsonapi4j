@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class CreateUserOperationTests {
@@ -287,6 +288,76 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].detail", equalTo("value can't be blank"))
                 .body("errors[0].source.pointer", equalTo("/data/relationships/relatives/data/0/id"))
                 .body("errors[0].id", notNullValue());
+    }
+
+    @Test
+    public void test_createUser_validationError_multipleErrors_nullAttributesAndInvalidRelationships() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "users",
+                            "relationships": {
+                              "citizenships": {
+                                "data": [
+                                  { "type": "wrong-type", "id": "US" }
+                                ]
+                              },
+                              "placeOfBirth": {
+                                "data": { "type": "wrong-type", "id": "FI" }
+                              }
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(400)
+                .body("errors", hasSize(3))
+                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
+                .body("errors[0].source.pointer", equalTo("/data/attributes"))
+                .body("errors[1].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[1].source.pointer", equalTo("/data/relationships/placeOfBirth/data/type"))
+                .body("errors[2].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[2].source.pointer", equalTo("/data/relationships/citizenships/data/0/type"));
+    }
+
+    @Test
+    public void test_createUser_validationError_multipleErrors_invalidCitizenshipAndPlaceOfBirthType() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "users",
+                            "attributes": {
+                              "fullName": "Test User",
+                              "email": "test@user.com"
+                            },
+                            "relationships": {
+                              "citizenships": {
+                                "data": [
+                                  { "type": "wrong-type", "id": "US" }
+                                ]
+                              },
+                              "placeOfBirth": {
+                                "data": { "type": "wrong-type", "id": "FI" }
+                              }
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(400)
+                .body("errors", hasSize(2))
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[0].source.pointer", equalTo("/data/relationships/placeOfBirth/data/type"))
+                .body("errors[0].id", notNullValue())
+                .body("errors[1].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[1].source.pointer", equalTo("/data/relationships/citizenships/data/0/type"))
+                .body("errors[1].id", notNullValue());
     }
 
     @Test

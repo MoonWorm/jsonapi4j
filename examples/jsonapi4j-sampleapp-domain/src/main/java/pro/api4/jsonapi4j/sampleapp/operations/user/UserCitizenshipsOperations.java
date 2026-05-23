@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.forRequest;
+import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 

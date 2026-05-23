@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.servlet.response.errorhandling;
 
+import pro.api4.jsonapi4j.exception.ValidationError;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
@@ -7,7 +8,6 @@ import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorSourceObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
-import pro.api4.jsonapi4j.request.CursorAwareRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -44,6 +44,18 @@ public final class ErrorsDocFactory {
                                                 String detail,
                                                 ErrorSources.Source source) {
         return genericErrorsDoc(HttpStatusCodes.SC_400_BAD_REQUEST.getCode(), code, detail, source);
+    }
+
+    public static ErrorsDoc badRequestErrorsDoc(List<ValidationError> validationErrors) {
+        List<ErrorObject> errors = validationErrors.stream()
+                .map(ve -> errorObject(
+                        HttpStatusCodes.SC_400_BAD_REQUEST.getCode(),
+                        ve.errorCode(),
+                        ve.detail(),
+                        ve.source()
+                ))
+                .toList();
+        return new ErrorsDoc(errors);
     }
 
     public static ErrorsDoc badRequestInvalidCursorErrorsDoc(String cursor) {

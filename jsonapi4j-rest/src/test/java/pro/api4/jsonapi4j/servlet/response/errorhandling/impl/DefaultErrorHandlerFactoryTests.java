@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
@@ -27,7 +28,7 @@ class DefaultErrorHandlerFactoryTests {
     // --- Registered exception classes ---
 
     @Test
-    void registersHandlersForFiveExceptionClasses() {
+    void registersHandlersForSixExceptionClasses() {
         // given/when
         var mappers = factory.getErrorResponseMappers();
 
@@ -37,6 +38,7 @@ class DefaultErrorHandlerFactoryTests {
                 MappingException.class,
                 OperationNotFoundException.class,
                 JsonApiRequestValidationException.class,
+                CompositeJsonApiRequestValidationException.class,
                 JsonApi4jException.class
         );
     }

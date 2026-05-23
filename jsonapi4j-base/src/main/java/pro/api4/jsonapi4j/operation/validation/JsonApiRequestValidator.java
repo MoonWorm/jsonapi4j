@@ -3,29 +3,27 @@ package pro.api4.jsonapi4j.operation.validation;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
-import pro.api4.jsonapi4j.operation.validation.JsonApi4jDefaultValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
+import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
+import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
-public final class JsonApi4jDefaultValidator {
+public final class JsonApiRequestValidator {
 
-    private JsonApi4jDefaultValidator() {
+    private JsonApiRequestValidator() {
 
     }
 
@@ -33,56 +31,49 @@ public final class JsonApi4jDefaultValidator {
         return new RequestValidationBuilder(request);
     }
 
-    private static void wrapExceptions(Runnable runnable, ErrorSources.Source source) {
-        try {
-            runnable.run();
-        } catch (JsonApiRequestValidationException e) {
-            throw JsonApiRequestValidationException.withSource(e, source);
-        }
-    }
-
-    private static void validateResourceIdentifier(ResourceIdentifierObject resourceIdentifier,
+    private static void validateResourceIdentifier(ValidationErrorCollector collector,
+                                                   ResourceIdentifierObject resourceIdentifier,
                                                    ErrorSources.JsonPointerBuilder.DataJsonPointerBuilder initPath,
                                                    Consumer<String> resourceIdValidator,
                                                    Consumer<String> resourceTypeValidator,
                                                    Consumer<Object> metaValidator) {
         if (resourceIdValidator != null && resourceIdentifier.getId() != null) {
-            wrapExceptions(() -> resourceIdValidator.accept(resourceIdentifier.getId()), initPath.id());
+            collector.collect(() -> resourceIdValidator.accept(resourceIdentifier.getId()), initPath.id());
         }
         if (resourceTypeValidator != null) {
-            wrapExceptions(() -> resourceTypeValidator.accept(resourceIdentifier.getType()), initPath.type());
+            collector.collect(() -> resourceTypeValidator.accept(resourceIdentifier.getType()), initPath.type());
         }
         if (metaValidator != null) {
-            wrapExceptions(() -> metaValidator.accept(resourceIdentifier.getMeta()), initPath.meta());
+            collector.collect(() -> metaValidator.accept(resourceIdentifier.getMeta()), initPath.meta());
         }
     }
 
     public static class RequestValidationBuilder {
 
         private final JsonApiRequest request;
-        private PathValidationState pathValidationState;
-        private ParametersValidationState parametersValidationState;
-        private HeadersValidationState headersValidationState;
+        private PathValidationBuilder pathValidationState;
+        private ParametersValidationBuilder parametersValidationState;
+        private HeadersValidationBuilder headersValidationState;
         private Runnable bodyValidation;
 
         private RequestValidationBuilder(JsonApiRequest request) {
             this.request = request;
         }
 
-        public RequestValidationBuilder path(Consumer<PathValidationState> configurator) {
-            this.pathValidationState = new PathValidationState();
+        public RequestValidationBuilder path(Consumer<PathValidationBuilder> configurator) {
+            this.pathValidationState = new PathValidationBuilder();
             configurator.accept(this.pathValidationState);
             return this;
         }
 
-        public RequestValidationBuilder parameters(Consumer<ParametersValidationState> configurator) {
-            this.parametersValidationState = new ParametersValidationState();
+        public RequestValidationBuilder parameters(Consumer<ParametersValidationBuilder> configurator) {
+            this.parametersValidationState = new ParametersValidationBuilder();
             configurator.accept(this.parametersValidationState);
             return this;
         }
 
-        public RequestValidationBuilder headers(Consumer<HeadersValidationState> configurator) {
-            this.headersValidationState = new HeadersValidationState();
+        public RequestValidationBuilder headers(Consumer<HeadersValidationBuilder> configurator) {
+            this.headersValidationState = new HeadersValidationBuilder();
             configurator.accept(this.headersValidationState);
             return this;
         }
@@ -115,43 +106,47 @@ public final class JsonApi4jDefaultValidator {
         }
 
         public void validate() {
+            ValidationErrorCollector collector = new ValidationErrorCollector();
             if (pathValidationState != null) {
-                pathValidationState.validate(request);
+                collector.collect(() -> pathValidationState.validate(request));
             }
             if (parametersValidationState != null) {
-                parametersValidationState.validate(request);
+                collector.collect(() -> parametersValidationState.validate(request));
             }
             if (headersValidationState != null) {
-                headersValidationState.validate(request);
+                collector.collect(() -> headersValidationState.validate(request));
             }
             if (bodyValidation != null) {
-                bodyValidation.run();
+                collector.collect(bodyValidation);
             }
+            collector.throwIfErrors();
         }
 
     }
 
-    public static class HeadersValidationState {
+    public static class HeadersValidationBuilder {
 
         private final Map<String, Consumer<String>> headerValidators = new LinkedHashMap<>();
 
-        public HeadersValidationState withHeaderValidator(String headerName, Consumer<String> headerValidator) {
+        public HeadersValidationBuilder withHeaderValidator(String headerName, Consumer<String> headerValidator) {
             this.headerValidators.put(headerName, headerValidator);
             return this;
         }
 
         private void validate(JsonApiRequest request) {
+            ValidationErrorCollector collector = new ValidationErrorCollector();
             MapUtils.emptyIfNull(headerValidators).forEach((headerName, headerValidator) -> {
-                wrapExceptions(
+                collector.collect(
                         () -> headerValidator.accept(request.getHeader(headerName)),
                         ErrorSources.header(headerName)
                 );
             });
+            collector.throwIfErrors();
         }
 
     }
 
-    public static class ParametersValidationState {
+    public static class ParametersValidationBuilder {
         private final Map<String, Consumer<List<String>>> filterValidators = new LinkedHashMap<>();
         private Consumer<List<String>> includeValidator;
         private Consumer<Map<String, SortAwareRequest.SortOrder>> sortValidator;
@@ -161,139 +156,142 @@ public final class JsonApi4jDefaultValidator {
         private final Map<String, Consumer<List<String>>> fieldSetsValidators = new LinkedHashMap<>();
         private final Map<String, Consumer<List<String>>> customQueryParamsValidators = new LinkedHashMap<>();
 
-        public ParametersValidationState withFilterValidator(String filterName, Consumer<List<String>> filterValidator) {
+        public ParametersValidationBuilder withFilterValidator(String filterName, Consumer<List<String>> filterValidator) {
             this.filterValidators.put(filterName, filterValidator);
             return this;
         }
 
-        public ParametersValidationState withIncludeValidator(Consumer<List<String>> includeValidator) {
+        public ParametersValidationBuilder withIncludeValidator(Consumer<List<String>> includeValidator) {
             this.includeValidator = includeValidator;
             return this;
         }
 
-        public ParametersValidationState withSortValidator(Consumer<Map<String, SortAwareRequest.SortOrder>> sortValidator) {
+        public ParametersValidationBuilder withSortValidator(Consumer<Map<String, SortAwareRequest.SortOrder>> sortValidator) {
             this.sortValidator = sortValidator;
             return this;
         }
 
-        public ParametersValidationState withCursorValidator(Consumer<String> cursorValidator) {
+        public ParametersValidationBuilder withCursorValidator(Consumer<String> cursorValidator) {
             this.cursorValidator = cursorValidator;
             return this;
         }
 
-        public ParametersValidationState withLimitValidator(Consumer<Long> limitValidator) {
+        public ParametersValidationBuilder withLimitValidator(Consumer<Long> limitValidator) {
             this.limitValidator = limitValidator;
             return this;
         }
 
-        public ParametersValidationState withOffsetValidator(Consumer<Long> offsetValidator) {
+        public ParametersValidationBuilder withOffsetValidator(Consumer<Long> offsetValidator) {
             this.offsetValidator = offsetValidator;
             return this;
         }
 
-        public ParametersValidationState withFieldSetsValidator(String resourceType, Consumer<List<String>> fieldSetsValidator) {
+        public ParametersValidationBuilder withFieldSetsValidator(String resourceType, Consumer<List<String>> fieldSetsValidator) {
             this.fieldSetsValidators.put(resourceType, fieldSetsValidator);
             return this;
         }
 
-        public ParametersValidationState withCustomQueryParamValidator(String paramName, Consumer<List<String>> customQueryParamValidator) {
+        public ParametersValidationBuilder withCustomQueryParamValidator(String paramName, Consumer<List<String>> customQueryParamValidator) {
             this.customQueryParamsValidators.put(paramName, customQueryParamValidator);
             return this;
         }
 
         private void validate(JsonApiRequest request) {
+            ValidationErrorCollector collector = new ValidationErrorCollector();
             MapUtils.emptyIfNull(filterValidators).forEach((filterName, filterValidator) -> {
-                wrapExceptions(
+                collector.collect(
                         () -> filterValidator.accept(request.getFilters().get(filterName)),
                         ErrorSources.parameter().filter(filterName)
                 );
             });
             if (includeValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> includeValidator.accept(request.getOriginalIncludes()),
                         ErrorSources.parameter().include()
                 );
             }
             if (sortValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> sortValidator.accept(request.getSortBy()),
                         ErrorSources.parameter().sort()
                 );
             }
             if (cursorValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> cursorValidator.accept(request.getCursor()),
                         ErrorSources.parameter().cursor()
                 );
             }
             if (limitValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> limitValidator.accept(request.getLimit()),
                         ErrorSources.parameter().limit()
                 );
             }
             if (offsetValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> offsetValidator.accept(request.getOffset()),
                         ErrorSources.parameter().offset()
                 );
             }
             MapUtils.emptyIfNull(fieldSetsValidators).forEach((resourceType, fieldSetsValidator) -> {
-                wrapExceptions(
+                collector.collect(
                         () -> fieldSetsValidator.accept(request.getFieldSets().get(resourceType)),
                         ErrorSources.parameter().fieldSets(resourceType)
                 );
             });
             MapUtils.emptyIfNull(customQueryParamsValidators).forEach((paramName, customQueryParamValidator) -> {
-                wrapExceptions(
+                collector.collect(
                         () -> customQueryParamValidator.accept(request.getCustomQueryParams().get(paramName)),
                         ErrorSources.parameter().custom(paramName)
                 );
-
             });
+            collector.throwIfErrors();
         }
     }
 
-    public static class PathValidationState {
+    public static class PathValidationBuilder {
 
         private Consumer<ResourceType> resourceTypeValidator;
         private Consumer<String> resourceIdValidator;
         private Consumer<RelationshipName> relationshipNameValidator;
 
-        public PathValidationState withResourceTypeValidator(Consumer<ResourceType> resourceTypeValidator) {
+        public PathValidationBuilder withResourceTypeValidator(Consumer<ResourceType> resourceTypeValidator) {
             this.resourceTypeValidator = resourceTypeValidator;
             return this;
         }
 
-        public PathValidationState withResourceIdValidator(Consumer<String> resourceIdValidator) {
+        public PathValidationBuilder withResourceIdValidator(Consumer<String> resourceIdValidator) {
             this.resourceIdValidator = resourceIdValidator;
             return this;
         }
 
-        public PathValidationState withRelationshipNameValidator(Consumer<RelationshipName> relationshipNameValidator) {
+        public PathValidationBuilder withRelationshipNameValidator(Consumer<RelationshipName> relationshipNameValidator) {
             this.relationshipNameValidator = relationshipNameValidator;
             return this;
         }
 
         private void validate(JsonApiRequest request) {
+            ValidationErrorCollector collector = new ValidationErrorCollector();
             if (resourceTypeValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> resourceTypeValidator.accept(request.getTargetResourceType()),
                         ErrorSources.path().resourceType()
                 );
             }
             if (resourceIdValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> resourceIdValidator.accept(request.getResourceId()),
                         ErrorSources.path().resourceId()
                 );
             }
             if (relationshipNameValidator != null) {
-                wrapExceptions(
+                collector.collect(
                         () -> relationshipNameValidator.accept(request.getTargetRelationshipName()),
                         ErrorSources.path().relationshipName()
                 );
             }
+            collector.throwIfErrors();
         }
     }
 
@@ -340,32 +338,34 @@ public final class JsonApi4jDefaultValidator {
         }
 
         public void validate() {
+            ValidationErrorCollector collector = new ValidationErrorCollector();
             var data = singleResourceDoc.getData();
             if (resourceIdValidator != null && data.getId() != null) {
-                wrapExceptions(() -> resourceIdValidator.accept(data.getId()), ErrorSources.pointer().data().id());
+                collector.collect(() -> resourceIdValidator.accept(data.getId()), ErrorSources.pointer().data().id());
             }
             if (resourceTypeValidator != null) {
-                wrapExceptions(() -> resourceTypeValidator.accept(data.getType()), ErrorSources.pointer().data().type());
+                collector.collect(() -> resourceTypeValidator.accept(data.getType()), ErrorSources.pointer().data().type());
             }
             if (attributesValidator != null) {
-                attributesValidator.accept(data.getAttributes());
+                collector.collect(() -> attributesValidator.accept(data.getAttributes()));
             }
             if (data.getRelationships() != null) {
                 MapUtils.emptyIfNull(toOneRelationshipValidators).forEach((relationshipName, relationshipValidator) -> {
                     ToOneRelationshipObject relationshipObject = (ToOneRelationshipObject) singleResourceDoc.getData().getRelationships().get(relationshipName);
                     if (relationshipObject != null && relationshipObject.getData() != null) {
                         relationshipValidator.setInitPath(ErrorSources.pointer().data().relationship(relationshipName));
-                        relationshipValidator.validate(relationshipObject);
+                        collector.collect(() -> relationshipValidator.validate(relationshipObject));
                     }
                 });
                 MapUtils.emptyIfNull(toManyRelationshipValidators).forEach((relationshipName, relationshipValidator) -> {
                     ToManyRelationshipObject relationshipObject = (ToManyRelationshipObject) singleResourceDoc.getData().getRelationships().get(relationshipName);
                     if (relationshipObject != null) {
                         relationshipValidator.setInitPath(ErrorSources.pointer().data().relationship(relationshipName));
-                        relationshipValidator.validate(relationshipObject);
+                        collector.collect(() -> relationshipValidator.validate(relationshipObject));
                     }
                 });
             }
+            collector.throwIfErrors();
         }
 
         public static class ToOneRelationshipObjectValidationBuilder {
@@ -401,13 +401,16 @@ public final class JsonApi4jDefaultValidator {
 
             public void validate(ToOneRelationshipObject toOneRelationshipObject) {
                 if (toOneRelationshipObject.getData() != null) {
+                    ValidationErrorCollector collector = new ValidationErrorCollector();
                     validateResourceIdentifier(
+                            collector,
                             toOneRelationshipObject.getData(),
                             initPath,
                             resourceIdValidator,
                             resourceTypeValidator,
                             metaValidator
                     );
+                    collector.throwIfErrors();
                 }
             }
 
@@ -445,11 +448,13 @@ public final class JsonApi4jDefaultValidator {
             }
 
             public void validate(ToManyRelationshipObject toManyRelationshipObject) {
+                ValidationErrorCollector collector = new ValidationErrorCollector();
                 List<ResourceIdentifierObject> emptyIfNull = emptyIfNull(toManyRelationshipObject.getData());
                 for (int i = 0; i < emptyIfNull.size(); i++) {
                     ResourceIdentifierObject ri = emptyIfNull.get(i);
                     if (ri != null) {
                         validateResourceIdentifier(
+                                collector,
                                 ri,
                                 initPath.index(i),
                                 resourceIdValidator,
@@ -458,6 +463,7 @@ public final class JsonApi4jDefaultValidator {
                         );
                     }
                 }
+                collector.throwIfErrors();
             }
         }
 

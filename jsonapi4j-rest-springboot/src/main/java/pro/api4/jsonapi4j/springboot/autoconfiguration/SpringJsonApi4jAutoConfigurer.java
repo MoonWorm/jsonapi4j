@@ -16,7 +16,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.JsonApiRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -36,7 +36,7 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandler
 import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAcPluginConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPluginConfig;
-import pro.api4.jsonapi4j.validation.DefaultJsonApiRequestValidator;
+import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.Collections;
 import java.util.List;
@@ -127,7 +127,7 @@ public class SpringJsonApi4jAutoConfigurer {
             OperationsRegistry operationsRegistry,
             List<JsonApi4jPlugin> defaultPlugins,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
-            JsonApiRequestValidator validator
+            JsonApiBuildInRequestValidator validator
     ) {
         return JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
@@ -158,14 +158,14 @@ public class SpringJsonApi4jAutoConfigurer {
         return jsonapi4jErrorHandlerFactoriesRegistry;
     }
 
-    @ConditionalOnMissingBean(JsonApiRequestValidator.class)
+    @ConditionalOnMissingBean(JsonApiBuildInRequestValidator.class)
     @Bean
-    public JsonApiRequestValidator jsonApi4jValidator(
+    public JsonApiBuildInRequestValidator jsonApi4jValidator(
             JsonApi4jProperties properties,
             @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
             DomainRegistry domainRegistry
     ) {
-        return DefaultJsonApiRequestValidator.builder()
+        return DefaultJsonApiBuildInRequestValidator.builder()
                 .properties(properties.validation())
                 .objectMapper(objectMapper)
                 .domainRegistry(domainRegistry)
@@ -179,7 +179,7 @@ public class SpringJsonApi4jAutoConfigurer {
             @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
             ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry,
             @Qualifier("jsonApi4jExecutorService") ExecutorService executorService,
-            JsonApiRequestValidator jsonApiRequestValidator,
+            JsonApiBuildInRequestValidator jsonApiBuildInRequestValidator,
             PrincipalResolver jsonApi4jPrincipalResolver
     ) {
         return servletContext -> {
@@ -188,7 +188,7 @@ public class SpringJsonApi4jAutoConfigurer {
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapper);
             servletContext.setAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME, errorHandlerFactoriesRegistry);
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorService);
-            servletContext.setAttribute(VALIDATOR_ATT_NAME, jsonApiRequestValidator);
+            servletContext.setAttribute(VALIDATOR_ATT_NAME, jsonApiBuildInRequestValidator);
 
             servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, jsonApi4jPrincipalResolver);
         };
