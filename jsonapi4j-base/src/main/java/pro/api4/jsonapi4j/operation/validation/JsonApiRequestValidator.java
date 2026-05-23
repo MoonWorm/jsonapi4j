@@ -444,7 +444,7 @@ public final class JsonApiRequestValidator {
                 return this;
             }
 
-            public void validate(ToOneRelationshipObject toOneRelationshipObject) {
+            private void validate(ToOneRelationshipObject toOneRelationshipObject) {
                 if (toOneRelationshipObject.getData() != null) {
                     ValidationErrorCollector collector = new ValidationErrorCollector();
                     validateResourceIdentifier(
@@ -492,7 +492,7 @@ public final class JsonApiRequestValidator {
                 return this;
             }
 
-            public void validate(ToManyRelationshipObject toManyRelationshipObject) {
+            private void validate(ToManyRelationshipObject toManyRelationshipObject) {
                 ValidationErrorCollector collector = new ValidationErrorCollector();
                 List<ResourceIdentifierObject> emptyIfNull = emptyIfNull(toManyRelationshipObject.getData());
                 for (int i = 0; i < emptyIfNull.size(); i++) {
