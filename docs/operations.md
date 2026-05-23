@@ -147,46 +147,13 @@ Every operation has a `validate(JsonApiRequest request)` method that runs before
 | `validateAddToMany(request)` | `add` |
 | `validateDeleteFromToMany(request)` | `delete` |
 
-Each validator has a default implementation that runs the operation's built-in validation. Override only the ones where you need custom logic.
+Each validator has a default implementation that runs the operation's built-in structural validation. Override only the ones where you need custom logic.
 
-Use `JsonApiRequestValidator.forRequest(request)` to build validation rules declaratively. The fluent API lets you validate path segments, query parameters, headers, and request body — all in a single chain:
+Use `JsonApiRequestValidator.forRequest(request)` to build validation rules declaratively. The fluent API lets you validate path segments, query parameters, headers, and request body — all in a single chain. The validator collects all errors and returns them in one response.
 
-```java
-import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.*;
+See the [Validation](/validation/) page for the full API reference, available assertions, automatic error source mapping, collect-all-errors behavior, and reusable validator patterns.
 
-@Override
-public void validateCreate(JsonApiRequest request) {
-    forRequest(request)
-            .singleResourceBody(UserAttributes.class, body -> body
-                    .withResourceTypeValidator(type -> validateValueAnyOf(type, Set.of("users")))
-                    .withAttributesValidator(att -> {
-                        validateNonNull(att, ErrorSources.pointer().data().attributes());
-                        validateNonNull(att.getEmail(), ErrorSources.pointer().data().attributes("email"));
-                    })
-                    .withToManyRelationship("citizenships", rel -> rel
-                            .withResourceTypeValidator(type -> validateValueAnyOf(type, Set.of("countries")))))
-            .validate();
-}
-```
-
-The validator **collects all errors** across all sections (path, parameters, headers, body) and returns them in a single JSON:API error response. Within the body, errors from resource type, attributes, and each relationship are all collected rather than failing on the first one.
-
-Common assertion methods are available via `ValidationAssertions`: `validateNonNull`, `validateNonBlank`, `validateEqualTo`, `validateIsNull`, `validateValueAnyOf`. Reusable relationship validators can be extracted as method references:
-
-```java
-private void citizenshipsValidator(ToManyRelationshipObjectValidationBuilder v) {
-    v.withResourceIdValidator(CountryValidator::validateCountryId)
-            .withResourceTypeValidator(type -> validateValueAnyOf(type, Set.of("countries")));
-}
-
-// Used as:
-.withToManyRelationship("citizenships", this::citizenshipsValidator)
-```
-
-For validation failures, throw `JsonApiRequestValidationException` with an error code, detail message, and optionally a source. If a resource is not found, throw `ResourceNotFoundException`. For other scenarios, throw `JsonApi4jException` with `httpStatus`, `errorCode`, and `detail`.
-
-All exceptions are automatically converted into JSON:API-compliant error responses. See the [Error Handling](/error-handling/) page for the full exception hierarchy, built-in error mappings, JSR-380 integration, and how to register custom error handler factories.
+For validation failures, throw `JsonApiRequestValidationException`. If a resource is not found, throw `ResourceNotFoundException`. All exceptions are automatically converted into JSON:API-compliant error responses — see [Error Handling](/error-handling/).
 
 ### Override HTTP Response Status and Headers
 

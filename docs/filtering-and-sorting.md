@@ -66,21 +66,26 @@ Without this, the compound docs resolver falls back to sequential read-by-id cal
 
 #### Validation
 
-The framework does not validate filter names or values — any `filter[...]` parameter is parsed and passed through. If you need to reject unknown filters or validate values, do so in your operation's `validateReadMultiple()` method:
+The framework does not validate filter names or values — any `filter[...]` parameter is parsed and passed through. If you need to reject unknown filters or validate values, use the [Validation API](/validation/) in your operation's `validateReadMultiple()` method:
 
 ```java
 @Override
 public void validateReadMultiple(JsonApiRequest request) {
-    Set<String> allowedFilters = Set.of("id", "region", "status");
-    for (String filterName : request.getFilters().keySet()) {
-        if (!allowedFilters.contains(filterName)) {
-            throw new ConstraintViolationException(
-                DefaultErrorCodes.MISSING_REQUIRED_PARAMETER,
-                "Unknown filter: " + filterName,
-                "filter[" + filterName + "]"
-            );
-        }
-    }
+    forRequest(request)
+            .parameters(params -> params
+                    .withFiltersValidator(filters -> {
+                        Set<String> allowedFilters = Set.of("id", "region", "status");
+                        for (String filterName : filters.keySet()) {
+                            if (!allowedFilters.contains(filterName)) {
+                                throw new JsonApiRequestValidationException(
+                                        DefaultErrorCodes.MISSING_REQUIRED_PARAMETER,
+                                        "Unknown filter: " + filterName,
+                                        ErrorSources.parameter().filter(filterName)
+                                );
+                            }
+                        }
+                    }))
+            .validate();
 }
 ```
 

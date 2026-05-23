@@ -31,6 +31,8 @@ docs:
         url: /pagination/
       - title: "Filtering and Sorting"
         url: /filtering-and-sorting/
+      - title: "Validation"
+        url: /validation/
       - title: "Request Processing Pipeline"
         url: /request-processing-pipeline/
       - title: "Error Handling"
