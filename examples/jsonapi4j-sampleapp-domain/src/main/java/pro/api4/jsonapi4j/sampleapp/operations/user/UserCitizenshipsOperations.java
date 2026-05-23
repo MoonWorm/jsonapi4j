@@ -158,7 +158,7 @@ public class UserCitizenshipsOperations implements
     @Override
     public void validateAddToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
                 .validate();
@@ -167,7 +167,7 @@ public class UserCitizenshipsOperations implements
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
                 .validate();
@@ -176,7 +176,7 @@ public class UserCitizenshipsOperations implements
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
                 .validate();

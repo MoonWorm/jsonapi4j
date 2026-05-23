@@ -78,31 +78,42 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        public RequestValidationBuilder singleResourceBody(
+                Consumer<SingleResourceDocValidationBuilder<LinkedHashMap>> configurator) {
+            configureSingleResourceBody(request.getSingleResourceDocPayload(), (Consumer) configurator);
+            return this;
+        }
+
         public <ATTRIBUTES> RequestValidationBuilder singleResourceBody(
+                Class<ATTRIBUTES> attType,
+                Consumer<SingleResourceDocValidationBuilder<ATTRIBUTES>> configurator) {
+            configureSingleResourceBody(request.getSingleResourceDocPayload(attType), configurator);
+            return this;
+        }
+
+        public RequestValidationBuilder toOneRelationshipBody(
+                Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
+            ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.bodyValidation = () -> builder.validate(request.getToOneRelationshipDocPayload());
+            return this;
+        }
+
+        public RequestValidationBuilder toManyRelationshipBody(
+                Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
+            ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
+            configurator.accept(builder);
+            this.bodyValidation = () -> builder.validate(request.getToManyRelationshipDocPayload());
+            return this;
+        }
+
+        private <ATTRIBUTES> void configureSingleResourceBody(
                 SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc,
                 Consumer<SingleResourceDocValidationBuilder<ATTRIBUTES>> configurator) {
             SingleResourceDocValidationBuilder<ATTRIBUTES> builder = new SingleResourceDocValidationBuilder<>(singleResourceDoc);
             configurator.accept(builder);
             this.bodyValidation = builder::validate;
-            return this;
-        }
-
-        public RequestValidationBuilder toOneRelationshipBody(
-                ToOneRelationshipObject toOneRelationshipObject,
-                Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
-            ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
-            configurator.accept(builder);
-            this.bodyValidation = () -> builder.validate(toOneRelationshipObject);
-            return this;
-        }
-
-        public RequestValidationBuilder toManyRelationshipBody(
-                ToManyRelationshipObject toManyRelationshipObject,
-                Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
-            ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
-            configurator.accept(builder);
-            this.bodyValidation = () -> builder.validate(toManyRelationshipObject);
-            return this;
         }
 
         public void validate() {
@@ -148,6 +159,7 @@ public final class JsonApiRequestValidator {
 
     public static class ParametersValidationBuilder {
         private final Map<String, Consumer<List<String>>> filterValidators = new LinkedHashMap<>();
+        private Consumer<Map<String, List<String>>> filtersValidator;
         private Consumer<List<String>> includeValidator;
         private Consumer<Map<String, SortAwareRequest.SortOrder>> sortValidator;
         private Consumer<String> cursorValidator;
@@ -158,6 +170,11 @@ public final class JsonApiRequestValidator {
 
         public ParametersValidationBuilder withFilterValidator(String filterName, Consumer<List<String>> filterValidator) {
             this.filterValidators.put(filterName, filterValidator);
+            return this;
+        }
+
+        public ParametersValidationBuilder withFiltersValidator(Consumer<Map<String, List<String>>> filtersValidator) {
+            this.filtersValidator = filtersValidator;
             return this;
         }
 
@@ -198,6 +215,9 @@ public final class JsonApiRequestValidator {
 
         private void validate(JsonApiRequest request) {
             ValidationErrorCollector collector = new ValidationErrorCollector();
+            if (filtersValidator != null) {
+                collector.collect(() -> filtersValidator.accept(request.getFilters()));
+            }
             MapUtils.emptyIfNull(filterValidators).forEach((filterName, filterValidator) -> {
                 collector.collect(
                         () -> filterValidator.accept(request.getFilters().get(filterName)),
@@ -300,12 +320,20 @@ public final class JsonApiRequestValidator {
         private final SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc;
         private final Map<String, ToOneRelationshipObjectValidationBuilder> toOneRelationshipValidators = new LinkedHashMap<>();
         private final Map<String, ToManyRelationshipObjectValidationBuilder> toManyRelationshipValidators = new LinkedHashMap<>();
+        private Consumer<ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> dataValidator;
         private Consumer<String> resourceIdValidator;
         private Consumer<String> resourceTypeValidator;
         private Consumer<ATTRIBUTES> attributesValidator;
+        private Consumer<LinkedHashMap<String, RelationshipObject>> relationshipsValidator;
 
         private SingleResourceDocValidationBuilder(SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc) {
             this.singleResourceDoc = singleResourceDoc;
+        }
+
+        public SingleResourceDocValidationBuilder<ATTRIBUTES> withDataValidator(
+                Consumer<ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> dataValidator) {
+            this.dataValidator = dataValidator;
+            return this;
         }
 
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withResourceIdValidator(Consumer<String> resourceIdValidator) {
@@ -323,6 +351,11 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        public SingleResourceDocValidationBuilder<ATTRIBUTES> withRelationshipsValidator(Consumer<LinkedHashMap<String, RelationshipObject>> relationshipsValidator) {
+            this.relationshipsValidator = relationshipsValidator;
+            return this;
+        }
+
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withToOneRelationship(String relationshipName, Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
             ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
             configurator.accept(builder);
@@ -337,10 +370,19 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        @SuppressWarnings("unchecked")
         public void validate() {
             ValidationErrorCollector collector = new ValidationErrorCollector();
             var data = singleResourceDoc.getData();
-            if (resourceIdValidator != null && data.getId() != null) {
+            if (dataValidator != null) {
+                collector.collect(() -> dataValidator.accept(
+                        (ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>) data));
+            }
+            if (data == null) {
+                collector.throwIfErrors();
+                return;
+            }
+            if (resourceIdValidator != null) {
                 collector.collect(() -> resourceIdValidator.accept(data.getId()), ErrorSources.pointer().data().id());
             }
             if (resourceTypeValidator != null) {
@@ -348,6 +390,9 @@ public final class JsonApiRequestValidator {
             }
             if (attributesValidator != null) {
                 collector.collect(() -> attributesValidator.accept(data.getAttributes()));
+            }
+            if (relationshipsValidator != null && data.getRelationships() != null) {
+                collector.collect(() -> relationshipsValidator.accept(data.getRelationships()));
             }
             if (data.getRelationships() != null) {
                 MapUtils.emptyIfNull(toOneRelationshipValidators).forEach((relationshipName, relationshipValidator) -> {

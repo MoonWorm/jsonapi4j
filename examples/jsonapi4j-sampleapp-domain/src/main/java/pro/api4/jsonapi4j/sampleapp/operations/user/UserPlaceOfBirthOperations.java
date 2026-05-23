@@ -112,7 +112,7 @@ public class UserPlaceOfBirthOperations implements
     @Override
     public void validateUpdateToOne(JsonApiRequest request) {
         forRequest(request)
-                .toOneRelationshipBody(request.getToOneRelationshipDocPayload(), body -> body
+                .toOneRelationshipBody(body -> body
                         .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
                 .validate();

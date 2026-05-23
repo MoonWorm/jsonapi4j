@@ -112,7 +112,7 @@ public class UserRelativesOperations implements
     @Override
     public void validateAddToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceIdValidator(resourceId -> {
                             if (userDb.readById(resourceId) == null) {
                                 throwResourceNotFoundException(request);
@@ -126,7 +126,7 @@ public class UserRelativesOperations implements
     @Override
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS))))
                 .validate();
     }
@@ -134,7 +134,7 @@ public class UserRelativesOperations implements
     @Override
     public void validateUpdateToMany(JsonApiRequest request) {
         forRequest(request)
-                .toManyRelationshipBody(request.getToManyRelationshipDocPayload(), body -> body
+                .toManyRelationshipBody(body -> body
                         .withResourceIdValidator(resourceId -> {
                             if (userDb.readById(resourceId) == null) {
                                 throwResourceNotFoundException(request);

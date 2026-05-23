@@ -37,6 +37,10 @@ public final class ValidationAssertions {
         }
     }
 
+    public static void validateEqualTo(Object actual, Object expected) {
+        validateEqualTo(actual, expected, null);
+    }
+
     public static void validateNonBlank(String value, ErrorSources.Source source) {
         if (StringUtils.isBlank(value)) {
             throw new JsonApiRequestValidationException(
@@ -47,6 +51,10 @@ public final class ValidationAssertions {
         }
     }
 
+    public static void validateNonBlank(String value) {
+        validateNonBlank(value, null);
+    }
+
     public static void validateIsNull(Object value, ErrorSources.Source source) {
         if (value != null) {
             throw new JsonApiRequestValidationException(
@@ -55,6 +63,10 @@ public final class ValidationAssertions {
                     source
             );
         }
+    }
+
+    public static void validateIsNull(Object value) {
+        validateIsNull(value, null);
     }
 
     public static void validateValueAnyOf(String value,

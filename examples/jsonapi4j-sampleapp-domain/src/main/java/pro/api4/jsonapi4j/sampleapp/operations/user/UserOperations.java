@@ -269,7 +269,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public void validateCreate(JsonApiRequest request) {
         forRequest(request)
-                .singleResourceBody(request.getSingleResourceDocPayload(UserAttributes.class), body -> body
+                .singleResourceBody(UserAttributes.class, body -> body
                         .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
                         .withAttributesValidator(att -> {
                             validateNonNull(att, ErrorSources.pointer().data().attributes());
@@ -287,7 +287,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public void validateUpdate(JsonApiRequest request) {
         forRequest(request)
-                .singleResourceBody(request.getSingleResourceDocPayload(UserAttributes.class), body -> body
+                .singleResourceBody(UserAttributes.class, body -> body
                         .withResourceIdValidator(resourceId -> {
                             if (userDb.readById(resourceId) == null) {
                                 throwResourceNotFoundException(request);

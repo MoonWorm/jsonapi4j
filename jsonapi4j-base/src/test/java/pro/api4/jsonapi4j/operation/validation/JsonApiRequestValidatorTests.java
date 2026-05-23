@@ -13,6 +13,8 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
+import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -164,6 +166,28 @@ public class JsonApiRequestValidatorTests {
                         assertThat(errors.get(1).detail()).isEqualTo("bad cursor");
                     });
         }
+
+        @Test
+        void validate_filtersValidatorReceivesWholeMap() {
+            var filters = Map.of("a", List.of("1"), "b", List.of("2"));
+            when(request.getFilters()).thenReturn(filters);
+
+            assertThatThrownBy(() ->
+                    forRequest(request)
+                            .parameters(params -> params
+                                    .withFiltersValidator(f -> {
+                                        if (f.size() > 1) {
+                                            throw new JsonApiRequestValidationException("too many filters");
+                                        }
+                                    }))
+                            .validate()
+            )
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(ex.getDetail()).isEqualTo("too many filters");
+                    });
+        }
     }
 
     // --- Headers validation ---
@@ -209,11 +233,11 @@ public class JsonApiRequestValidatorTests {
 
         @Test
         void validate_validBody_doesNotThrow() {
-            var doc = singleResourceDoc("123", "users", null, null);
+            mockSingleResourceDoc("123", "users", null, null);
 
             assertThatCode(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withResourceTypeValidator(type -> {}))
                             .validate()
             ).doesNotThrowAnyException();
@@ -221,11 +245,11 @@ public class JsonApiRequestValidatorTests {
 
         @Test
         void validate_invalidType_throwsWithPointerSource() {
-            var doc = singleResourceDoc(null, "wrong", null, null);
+            mockSingleResourceDoc(null, "wrong", null, null);
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("wrong type");
                                     }))
@@ -241,11 +265,11 @@ public class JsonApiRequestValidatorTests {
 
         @Test
         void validate_typeAndAttributesFail_throwsComposite() {
-            var doc = singleResourceDoc(null, "wrong", "bad-attrs", null);
+            mockSingleResourceDoc(null, "wrong", new LinkedHashMap<>(), null);
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("wrong type");
                                     })
@@ -270,6 +294,30 @@ public class JsonApiRequestValidatorTests {
         }
 
         @Test
+        void validate_dataValidatorRejectsNullData_skipsRemainingValidators() {
+            when(request.getSingleResourceDocPayload()).thenReturn(new SingleResourceDoc<>(null));
+
+            assertThatThrownBy(() ->
+                    forRequest(request)
+                            .singleResourceBody(body -> body
+                                    .withDataValidator(data -> {
+                                        if (data == null) {
+                                            throw new JsonApiRequestValidationException("data is null");
+                                        }
+                                    })
+                                    .withResourceTypeValidator(type -> {
+                                        throw new JsonApiRequestValidationException("should not reach");
+                                    }))
+                            .validate()
+            )
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(ex.getDetail()).isEqualTo("data is null");
+                    });
+        }
+
+        @Test
         void validate_toOneRelationship_invalidType_throwsWithCorrectPointer() {
             var relData = resourceIdentifier("FI", "wrong");
             var rel = new ToOneRelationshipObject(relData, null, null);
@@ -277,11 +325,11 @@ public class JsonApiRequestValidatorTests {
             LinkedHashMap<String, RelationshipObject> rels = new LinkedHashMap<>();
             rels.put("placeOfBirth", rel);
 
-            var doc = singleResourceDoc(null, "users", null, rels);
+            mockSingleResourceDoc(null, "users", null, rels);
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withToOneRelationship("placeOfBirth", r -> r
                                             .withResourceTypeValidator(type -> {
                                                 throw new JsonApiRequestValidationException("wrong rel type");
@@ -305,11 +353,11 @@ public class JsonApiRequestValidatorTests {
             LinkedHashMap<String, RelationshipObject> rels = new LinkedHashMap<>();
             rels.put("citizenships", rel);
 
-            var doc = singleResourceDoc(null, "users", null, rels);
+            mockSingleResourceDoc(null, "users", null, rels);
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withToManyRelationship("citizenships", r -> r
                                             .withResourceTypeValidator(type -> {
                                                 throw new JsonApiRequestValidationException("bad type");
@@ -335,11 +383,11 @@ public class JsonApiRequestValidatorTests {
             LinkedHashMap<String, RelationshipObject> rels = new LinkedHashMap<>();
             rels.put("placeOfBirth", rel);
 
-            var doc = singleResourceDoc(null, "users", "attrs", rels);
+            mockSingleResourceDoc(null, "users", new LinkedHashMap<>(), rels);
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withAttributesValidator(att -> {
                                         throw new JsonApiRequestValidationException("bad attrs");
                                     })
@@ -367,11 +415,12 @@ public class JsonApiRequestValidatorTests {
         @Test
         void validate_validToOneBody_doesNotThrow() {
             var relData = resourceIdentifier("FI", "countries");
-            var rel = new ToOneRelationshipObject(relData, null, null);
+            var doc = new ToOneRelationshipDoc(relData, null, null);
+            when(request.getToOneRelationshipDocPayload()).thenReturn(doc);
 
             assertThatCode(() ->
                     forRequest(request)
-                            .toOneRelationshipBody(rel, body -> body
+                            .toOneRelationshipBody(body -> body
                                     .withResourceTypeValidator(type -> {}))
                             .validate()
             ).doesNotThrowAnyException();
@@ -379,11 +428,12 @@ public class JsonApiRequestValidatorTests {
 
         @Test
         void validate_nullData_doesNotThrow() {
-            var rel = new ToOneRelationshipObject(null, null, null);
+            var doc = new ToOneRelationshipDoc(null, null, null);
+            when(request.getToOneRelationshipDocPayload()).thenReturn(doc);
 
             assertThatCode(() ->
                     forRequest(request)
-                            .toOneRelationshipBody(rel, body -> body
+                            .toOneRelationshipBody(body -> body
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("should not reach");
                                     }))
@@ -400,11 +450,12 @@ public class JsonApiRequestValidatorTests {
         @Test
         void validate_validToManyBody_doesNotThrow() {
             var ri = resourceIdentifier("US", "countries");
-            var rel = new ToManyRelationshipObject(List.of(ri), null, null);
+            var doc = new ToManyRelationshipsDoc(List.of(ri), null, null);
+            when(request.getToManyRelationshipDocPayload()).thenReturn(doc);
 
             assertThatCode(() ->
                     forRequest(request)
-                            .toManyRelationshipBody(rel, body -> body
+                            .toManyRelationshipBody(body -> body
                                     .withResourceTypeValidator(type -> {}))
                             .validate()
             ).doesNotThrowAnyException();
@@ -412,11 +463,12 @@ public class JsonApiRequestValidatorTests {
 
         @Test
         void validate_emptyData_doesNotThrow() {
-            var rel = new ToManyRelationshipObject(List.of(), null, null);
+            var doc = new ToManyRelationshipsDoc(List.of(), null, null);
+            when(request.getToManyRelationshipDocPayload()).thenReturn(doc);
 
             assertThatCode(() ->
                     forRequest(request)
-                            .toManyRelationshipBody(rel, body -> body
+                            .toManyRelationshipBody(body -> body
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("should not reach");
                                     }))
@@ -462,8 +514,7 @@ public class JsonApiRequestValidatorTests {
         void validate_pathHeadersAndBodyFail_collectsAllThreeSections() {
             when(request.getResourceId()).thenReturn("bad");
             when(request.getHeader("X-Tenant")).thenReturn(null);
-
-            var doc = singleResourceDoc(null, "wrong", null, null);
+            mockSingleResourceDoc(null, "wrong", null, null);
 
             assertThatThrownBy(() ->
                     forRequest(request)
@@ -475,7 +526,7 @@ public class JsonApiRequestValidatorTests {
                                     .withHeaderValidator("X-Tenant", v -> {
                                         throw new JsonApiRequestValidationException("missing tenant");
                                     }))
-                            .singleResourceBody(doc, body -> body
+                            .singleResourceBody(body -> body
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("wrong type");
                                     }))
@@ -494,10 +545,12 @@ public class JsonApiRequestValidatorTests {
 
     // --- Helpers ---
 
-    private static <A> SingleResourceDoc<ResourceObject<A, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc(
-            String id, String type, A attributes, LinkedHashMap<String, RelationshipObject> relationships) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void mockSingleResourceDoc(String id, String type, Object attributes,
+                                       LinkedHashMap<String, RelationshipObject> relationships) {
         var ro = new ResourceObject<>(id, null, type, attributes, relationships, null, null);
-        return new SingleResourceDoc<>(ro);
+        var doc = new SingleResourceDoc(ro);
+        when(request.getSingleResourceDocPayload()).thenReturn(doc);
     }
 
     private static ResourceIdentifierObject resourceIdentifier(String id, String type) {
