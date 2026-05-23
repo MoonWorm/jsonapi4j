@@ -76,7 +76,7 @@ class JsonApi4jReportGeneratorTests {
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
 
         // then
-        assertThat(report).contains("JsonApi4j State");
+        assertThat(report).contains("████████");
         assertThat(report).contains("Plugins");
         assertThat(report).contains("Resources");
         assertThat(report).contains("Operations");

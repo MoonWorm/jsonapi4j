@@ -19,7 +19,7 @@
     </modules>
 
     <properties>
-        <jsonapi4j.version>1.7.3-SNAPSHOT</jsonapi4j.version>
+        <jsonapi4j.version>1.8.0</jsonapi4j.version>
 
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
 
