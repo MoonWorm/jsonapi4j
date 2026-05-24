@@ -54,4 +54,4 @@ Example applications are available in the [examples](https://github.com/MoonWorm
 
 - **[Spring Boot](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-springboot-sampleapp)** — Users, Countries, and Currencies domain with relationships, pagination, and compound documents
 - **[Quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-quarkus-sampleapp)** — Same domain, demonstrating CDI-based integration
-- **[Servlet API](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp)** — Plain servlet integration with a Cookbook domain (recipes and ingredients)
+- **[Servlet API](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp)** — Plain servlet integration with the same domain, demonstrating manual wiring without a framework
