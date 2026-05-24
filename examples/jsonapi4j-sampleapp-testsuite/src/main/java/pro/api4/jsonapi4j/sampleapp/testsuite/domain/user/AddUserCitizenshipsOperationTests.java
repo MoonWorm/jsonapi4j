@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class AddUserCitizenshipsOperationTests {
@@ -77,6 +78,29 @@ public abstract class AddUserCitizenshipsOperationTests {
                 .body("errors[0].detail", equalTo("value can't be blank"))
                 .body("errors[0].source.pointer", equalTo("/data/0/id"))
                 .body("errors[0].id", notNullValue());
+    }
+
+    @Test
+    public void test_addCitizenships_validationError_multipleErrors_twoElementsWithWrongType() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": [
+                            { "type": "wrong-type-1", "id": "US" },
+                            { "type": "wrong-type-2", "id": "NO" }
+                          ]
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/citizenships")
+                .then()
+                .statusCode(400)
+                .body("errors", hasSize(2))
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[0].source.pointer", equalTo("/data/0/type"))
+                .body("errors[1].code", equalTo("INVALID_ENUM_VALUE"))
+                .body("errors[1].source.pointer", equalTo("/data/1/type"));
     }
 
     @Test
