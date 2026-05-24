@@ -9,7 +9,6 @@ import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRela
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
@@ -25,11 +24,8 @@ public class OperationsQuarkusConfig {
 
     @ApplicationScoped
     @Produces
-    public UserOperations userOperations(
-            UserDb userDb,
-            UserInputParamsValidator userValidator
-    ) {
-        return new UserOperations(userDb, userValidator);
+    public UserOperations userOperations(UserDb userDb) {
+        return new UserOperations(userDb);
     }
 
     @ApplicationScoped

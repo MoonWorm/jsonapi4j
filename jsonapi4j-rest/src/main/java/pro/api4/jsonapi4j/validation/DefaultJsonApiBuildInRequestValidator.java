@@ -24,7 +24,7 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator;
-import pro.api4.jsonapi4j.operation.validation.ValidationAssertions;
+import pro.api4.jsonapi4j.operation.validation.Validate;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
@@ -80,12 +80,11 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 .path(path -> path
                         .withResourceTypeValidator(this::validateKnownResourceType))
                 .singleResourceBody(body -> body
-                        .withDataValidator(data -> ValidationAssertions.validateNonNull(data, ErrorSources.pointer().data().toPointer()))
-                        .withResourceIdValidator(ValidationAssertions::validateIsNull)
-                        .withResourceTypeValidator(type -> {
-                            ValidationAssertions.validateNonBlank(type);
-                            ValidationAssertions.validateEqualTo(type, request.getTargetResourceType().getType());
-                        })
+                        .withDataValidator(data -> Validate.assertThat(data).withSource(ErrorSources.pointer().data().toPointer()).isNotNull())
+                        .withResourceIdValidator(id -> Validate.assertThat(id).isNull())
+                        .withResourceTypeValidator(type -> Validate.assertThat(type)
+                                .isNotBlank()
+                                .isEqualTo(request.getTargetResourceType().getType()))
                         .withRelationshipsValidator(relationships ->
                                 validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), relationships)))
                 .validate();
@@ -98,16 +97,15 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withResourceTypeValidator(this::validateKnownResourceType)
                         .withResourceIdValidator(this::validateResourceIdValue))
                 .singleResourceBody(body -> body
-                        .withDataValidator(data -> ValidationAssertions.validateNonNull(data, ErrorSources.pointer().data().toPointer()))
+                        .withDataValidator(data -> Validate.assertThat(data).withSource(ErrorSources.pointer().data().toPointer()).isNotNull())
                         .withResourceIdValidator(id -> {
-                            ValidationAssertions.validateNonBlank(id);
+                            Validate.assertThat(id).isNotBlank();
                             validateResourceId(id);
-                            ValidationAssertions.validateEqualTo(id, request.getResourceId());
+                            Validate.assertThat(id).isEqualTo(request.getResourceId());
                         })
-                        .withResourceTypeValidator(type -> {
-                            ValidationAssertions.validateNonBlank(type);
-                            ValidationAssertions.validateEqualTo(type, request.getTargetResourceType().getType());
-                        })
+                        .withResourceTypeValidator(type -> Validate.assertThat(type)
+                                .isNotBlank()
+                                .isEqualTo(request.getTargetResourceType().getType()))
                         .withRelationshipsValidator(relationships ->
                                 validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), relationships)))
                 .validate();
@@ -210,11 +208,11 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 .stream()
                 .map(ResourceType::getType)
                 .collect(Collectors.toSet());
-        ValidationAssertions.validateValueAnyOf(resourceType.getType(), availableResourceTypes);
+        Validate.assertThat(resourceType.getType()).isOneOf(availableResourceTypes);
     }
 
     private void validateResourceIdValue(String resourceId) {
-        ValidationAssertions.validateNonBlank(resourceId);
+        Validate.assertThat(resourceId).isNotBlank();
         validateResourceId(resourceId);
     }
 
@@ -233,16 +231,16 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 .stream()
                 .map(RelationshipName::getName)
                 .collect(Collectors.toSet());
-        ValidationAssertions.validateValueAnyOf(relationshipName.getName(), availableRelationships);
+        Validate.assertThat(relationshipName.getName()).isOneOf(availableRelationships);
     }
 
     private void validateResourceIdentifierId(String id) {
-        ValidationAssertions.validateNonBlank(id);
+        Validate.assertThat(id).isNotBlank();
         validateResourceId(id);
     }
 
     private void validateResourceIdentifierType(String type) {
-        ValidationAssertions.validateNonBlank(type);
+        Validate.assertThat(type).isNotBlank();
     }
 
     private void validateSortByCount(Map<String, SortAwareRequest.SortOrder> sortBy) {
@@ -281,7 +279,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 if (availableToOneRelationshipNames.contains(relationshipName)) {
                     try {
                         ToOneRelationshipObject toOneRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToOneRelationshipObject.class);
-                        ValidationAssertions.validateNonNull(toOneRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
+                        Validate.assertThat(toOneRelationshipObject).withSource(ErrorSources.pointer().data().relationship(relationshipName).toPointer()).isNotNull();
                         validateToOneRelationshipObjectStructure(toOneRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName));
                     } catch (JsonApi4jException e) {
                         throw e;
@@ -295,7 +293,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 } else if (availableToManyRelationshipNames.contains(relationshipName)) {
                     try {
                         ToManyRelationshipObject toManyRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToManyRelationshipObject.class);
-                        ValidationAssertions.validateNonNull(toManyRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName).toPointer());
+                        Validate.assertThat(toManyRelationshipObject).withSource(ErrorSources.pointer().data().relationship(relationshipName).toPointer()).isNotNull();
                         validateToManyRelationshipObjectStructure(toManyRelationshipObject, ErrorSources.pointer().data().relationship(relationshipName));
                     } catch (JsonApi4jException e) {
                         throw e;
@@ -325,9 +323,9 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
     }
 
     private void validateResourceIdentifier(ResourceIdentifierObject resourceIdentifier, ErrorSources.JsonPointerBuilder.DataJsonPointerBuilder parameterPathPrefix) {
-        ValidationAssertions.validateNonBlank(resourceIdentifier.getId(), parameterPathPrefix.id());
+        Validate.assertThat(resourceIdentifier.getId()).withSource(parameterPathPrefix.id()).isNotBlank();
         validateResourceId(resourceIdentifier.getId(), parameterPathPrefix.id());
-        ValidationAssertions.validateNonBlank(resourceIdentifier.getType(), parameterPathPrefix.type());
+        Validate.assertThat(resourceIdentifier.getType()).withSource(parameterPathPrefix.type()).isNotBlank();
     }
 
     private void validateToManyRelationshipObjectStructure(ToManyRelationshipObject relationshipObject, ErrorSources.JsonPointerBuilder.DataJsonPointerBuilder parameterPathPrefix) {

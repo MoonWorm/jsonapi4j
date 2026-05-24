@@ -16,6 +16,8 @@ import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 
 import java.util.ArrayList;
 
+import pro.api4.jsonapi4j.operation.validation.Validate;
+
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation.readCountryById;
 
@@ -73,7 +75,7 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
     public void validate(JsonApiRequest request) {
         forRequest(request)
                 .path(path -> path
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId))
+                        .withResourceIdValidator(id -> Validate.assertThat(id).isNotBlank()))
                 .validate();
     }
 

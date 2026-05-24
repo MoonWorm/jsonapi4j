@@ -16,7 +16,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.util.CustomCollectors;
@@ -27,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -113,8 +112,8 @@ public class UserPlaceOfBirthOperations implements
     public void validateUpdateToOne(JsonApiRequest request) {
         forRequest(request)
                 .toOneRelationshipBody(body -> body
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
                 .validate();
     }
 

@@ -35,11 +35,9 @@ import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRela
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.UserInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
-import pro.api4.jsonapi4j.sampleapp.servlet.validation.SimpleUserInputParamsValidator;
 
 import java.util.List;
 import java.util.Map;
@@ -94,10 +92,8 @@ public class ServletJsonapi4jSampleApp {
     static void initOperationRegistry(List<JsonApi4jPlugin> plugins, ServletContext servletContext) {
         UserDb userDb = new UserInMemoryDb();
         CountriesClient countriesClient = new CountriesInMemoryClient();
-        UserInputParamsValidator userInputParamsValidator = new SimpleUserInputParamsValidator();
-
         OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
-                .operation(new UserOperations(userDb, userInputParamsValidator))
+                .operation(new UserOperations(userDb))
                 .operation(new UserCitizenshipsOperations(countriesClient, userDb))
                 .operation(new UserPlaceOfBirthOperations(countriesClient, userDb))
                 .operation(new UserRelativesOperations(userDb))

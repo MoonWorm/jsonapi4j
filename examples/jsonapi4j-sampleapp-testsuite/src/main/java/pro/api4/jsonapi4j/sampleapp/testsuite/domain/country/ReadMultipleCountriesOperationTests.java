@@ -116,8 +116,7 @@ public abstract class ReadMultipleCountriesOperationTests {
                 .then()
                 .statusCode(400)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body("errors[0].code", equalTo("VALUE_INVALID_FORMAT"))
-                .body("errors[0].detail", equalTo("Unknown region"))
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].source.parameter", equalTo("filter[region]"))
                 .body("errors[0].id", notNullValue());

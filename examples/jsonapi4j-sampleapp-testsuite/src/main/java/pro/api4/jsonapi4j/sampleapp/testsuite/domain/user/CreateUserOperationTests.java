@@ -147,7 +147,7 @@ public abstract class CreateUserOperationTests {
                 .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("GENERIC_REQUEST_ERROR"))
+                .body("errors[0].code", equalTo("VALUE_INVALID_FORMAT"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].source.pointer", equalTo("/data/attributes/email"))
                 .body("errors[0].id", notNullValue());

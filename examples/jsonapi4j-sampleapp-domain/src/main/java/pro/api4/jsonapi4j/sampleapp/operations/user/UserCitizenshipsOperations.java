@@ -21,7 +21,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.CountryInputParamsValidator;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
 import java.util.Collection;
@@ -32,7 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -159,8 +158,8 @@ public class UserCitizenshipsOperations implements
     public void validateAddToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
                 .validate();
     }
 
@@ -168,8 +167,8 @@ public class UserCitizenshipsOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
                 .validate();
     }
 
@@ -177,8 +176,8 @@ public class UserCitizenshipsOperations implements
     public void validateUpdateToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES))))
+                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
                 .validate();
     }
 

@@ -10,7 +10,10 @@ import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryCurrenciesRelationshipOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 import pro.api4.jsonapi4j.sampleapp.operations.currency.CurrencyOperations;
-import pro.api4.jsonapi4j.sampleapp.operations.user.*;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserCitizenshipsOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
+import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
 
 @Configuration
 @Import(IntegrationsConfig.class)
@@ -22,11 +25,8 @@ public class SpringJsonApi4jOperationsConfig {
     }
 
     @Bean
-    public UserOperations userOperations(
-            UserDb userDb,
-            UserInputParamsValidator userValidator
-    ) {
-        return new UserOperations(userDb, userValidator);
+    public UserOperations userOperations(UserDb userDb) {
+        return new UserOperations(userDb);
     }
 
     @Bean

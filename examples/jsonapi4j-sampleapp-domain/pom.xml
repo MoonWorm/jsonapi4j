@@ -36,12 +36,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- JSR-380 validation -->
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-
         <!-- OAS annotations -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>

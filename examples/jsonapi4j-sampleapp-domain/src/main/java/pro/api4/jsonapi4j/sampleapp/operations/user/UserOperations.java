@@ -33,7 +33,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshi
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.CountryInputParamsValidator;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -44,8 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateNonNull;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
@@ -58,7 +56,6 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
-    private final UserInputParamsValidator userValidator;
 
     public static Map<String, RelationshipType> parseRelations(List<ResourceIdentifierObject> data) {
         Map<String, RelationshipType> relations = new LinkedHashMap<>();
@@ -270,13 +267,22 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public void validateCreate(JsonApiRequest request) {
         forRequest(request)
                 .singleResourceBody(UserAttributes.class, body -> body
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
                         .withAttributesValidator(att -> {
-                            validateNonNull(att, ErrorSources.pointer().data().attributes());
-                            validateNonNull(att.getFullName(), ErrorSources.pointer().data().attributes("fullName"));
-                            userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
-                            userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
-                            userValidator.validateEmail(att.getEmail());
+                            assertThat(att).withSource(ErrorSources.pointer().data().attributes()).isNotNull();
+                            assertThat(att.getFullName()).withSource(ErrorSources.pointer().data().attributes("fullName")).isNotNull();
+                            assertThat(att.getFullName()).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                                    .isNotBlank()
+                                    .hasLengthLessThanOrEqualTo(128);
+                            assertThat(att.getFullName().split("\\s+")[0]).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                                    .isNotBlank()
+                                    .hasLengthBetween(1, 64);
+                            assertThat(att.getFullName().split("\\s+")[1]).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                                    .isNotBlank()
+                                    .hasLengthBetween(1, 64);
+                            assertThat(att.getEmail()).withSource(ErrorSources.pointer().data().attributes("email"))
+                                    .isNotBlank()
+                                    .isEmail();
                         })
                         .withToManyRelationship(CITIZENSHIPS, this::citizenshipsValidator)
                         .withToOneRelationship(PLACE_OF_BIRTH, this::placeOfBirthValidator)
@@ -293,15 +299,17 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                                 throwResourceNotFoundException(request);
                             }
                         })
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
                         .withAttributesValidator(att -> {
                             if (att != null) {
                                 if (att.getFullName() != null) {
-                                    userValidator.validateFirstName(att.getFullName().split("\\s+")[0]);
-                                    userValidator.validateLastName(att.getFullName().split("\\s+")[1]);
+                                    assertThat(att.getFullName().split("\\s+")[0]).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                                            .isNotBlank().hasLengthBetween(1, 64);
+                                    assertThat(att.getFullName().split("\\s+")[1]).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                                            .isNotBlank().hasLengthBetween(1, 64);
                                 }
                                 if (att.getEmail() != null) {
-                                    userValidator.validateEmail(att.getEmail());
+                                    assertThat(att.getEmail()).withSource(ErrorSources.pointer().data().attributes("email")).isEmail();
                                 }
                             }
                         })
@@ -319,13 +327,13 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     private void citizenshipsValidator(ToManyRelationshipObjectValidationBuilder v) {
-        v.withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
+        v.withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES));
     }
 
     private void placeOfBirthValidator(ToOneRelationshipObjectValidationBuilder v) {
-        v.withResourceIdValidator(CountryInputParamsValidator::validateCountryId)
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(COUNTRIES)));
+        v.withResourceIdValidator(id -> assertThat(id).isNotBlank())
+                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES));
     }
 
     private void relativesValidator(ToManyRelationshipObjectValidationBuilder v) {
@@ -334,7 +342,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                         throw new ResourceNotFoundException(resourceId, new ResourceType(USERS));
                     }
                 })
-                .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
+                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
                 .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta);
     }
 

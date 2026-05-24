@@ -17,6 +17,8 @@ import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 
 import java.util.Collections;
 
+import pro.api4.jsonapi4j.operation.validation.Validate;
+
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation.readCountriesByIds;
@@ -58,7 +60,7 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
     public void validate(JsonApiRequest request) {
         forRequest(request)
                 .path(path -> path
-                        .withResourceIdValidator(CountryInputParamsValidator::validateCountryId))
+                        .withResourceIdValidator(id -> Validate.assertThat(id).isNotBlank()))
                 .validate();
     }
 

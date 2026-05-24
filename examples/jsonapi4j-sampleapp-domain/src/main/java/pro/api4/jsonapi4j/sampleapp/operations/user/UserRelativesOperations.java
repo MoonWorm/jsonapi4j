@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.validateValueAnyOf;
+import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @RequiredArgsConstructor
@@ -118,7 +118,7 @@ public class UserRelativesOperations implements
                                 throwResourceNotFoundException(request);
                             }
                         })
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
                         .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta))
                 .validate();
     }
@@ -127,7 +127,7 @@ public class UserRelativesOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS))))
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS)))
                 .validate();
     }
 
@@ -140,7 +140,7 @@ public class UserRelativesOperations implements
                                 throwResourceNotFoundException(request);
                             }
                         })
-                        .withResourceTypeValidator(resourceType -> validateValueAnyOf(resourceType, Set.of(USERS)))
+                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
                         .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta))
                 .validate();
     }
