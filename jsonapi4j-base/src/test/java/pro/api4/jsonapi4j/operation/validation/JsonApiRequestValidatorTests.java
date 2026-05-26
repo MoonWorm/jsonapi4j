@@ -276,8 +276,7 @@ public class JsonApiRequestValidatorTests {
                                     .withAttributesValidator(att -> {
                                         throw new JsonApiRequestValidationException(
                                                 DefaultErrorCodes.VALUE_IS_ABSENT,
-                                                "attrs invalid",
-                                                ErrorSources.pointer().data().attributes()
+                                                "attrs invalid"
                                         );
                                     }))
                             .validate()
@@ -391,6 +390,7 @@ public class JsonApiRequestValidatorTests {
                                     .withAttributesValidator(att -> {
                                         throw new JsonApiRequestValidationException("bad attrs");
                                     })
+
                                     .withToOneRelationship("placeOfBirth", r -> r
                                             .withResourceTypeValidator(type -> {
                                                 throw new JsonApiRequestValidationException("bad rel type");

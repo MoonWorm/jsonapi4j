@@ -448,4 +448,311 @@ class ValidateTests {
         }
     }
 
+    // --- Field navigation and narrowing ---
+
+    @Nested
+    class FieldNavigation {
+
+        record Address(String street, String city, String zip) {}
+        record User(String name, String email, Integer age, Address address) {}
+
+        private static final ErrorSources.Source ATTRIBUTES_SOURCE = ErrorSources.pointer().data().attributes();
+
+        @Test
+        void field_extractsValueAndAppendsSource() {
+            var user = new User("John", "john@example.com", 30, null);
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("email", User::email).asString().isEmpty())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(ex.getSource()).isInstanceOf(ErrorSources.JsonPointer.class);
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/email");
+                    });
+        }
+
+        @Test
+        void field_validValue_doesNotThrow() {
+            var user = new User("John", "john@example.com", 30, null);
+
+            assertThatCode(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("email", User::email).asString().isNotBlank().isEmail())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void field_nullParent_doesNotThrowNPE() {
+            assertThatThrownBy(() ->
+                    Validate.assertThat((Object) null).withSource(ATTRIBUTES_SOURCE)
+                            .field("email", o -> ((User) o).email()).asString().isNotBlank())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/email");
+                    });
+        }
+
+        @Test
+        void field_siblingFields_variablePattern() {
+            var user = new User("John", "john@example.com", 30, null);
+
+            assertThatCode(() -> {
+                var v = Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE).isNotNull();
+                v.field("name", User::name).asString().isNotBlank();
+                v.field("email", User::email).asString().isNotBlank().isEmail();
+                v.field("age", User::age).asNumber().isPositive();
+            }).doesNotThrowAnyException();
+        }
+
+        @Test
+        void field_nestedObject_deepTraversal() {
+            var user = new User("John", "john@example.com", 30, new Address("Main St", "NYC", "10001"));
+
+            assertThatCode(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE).isNotNull()
+                            .field("address", User::address).isNotNull()
+                            .field("street", Address::street).asString().isNotBlank())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void field_nestedObject_deepPath() {
+            var user = new User("John", "john@example.com", 30, new Address("", "NYC", "10001"));
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("address", User::address)
+                            .field("street", Address::street).asString().isNotBlank())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/address/street");
+                    });
+        }
+
+        @Test
+        void field_nestedObject_siblingPattern() {
+            var user = new User("John", "john@example.com", 30, new Address("Main St", "NYC", "10001"));
+
+            assertThatCode(() -> {
+                var addr = Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                        .field("address", User::address).isNotNull();
+                addr.field("street", Address::street).asString().isNotBlank();
+                addr.field("city", Address::city).asString().isNotBlank();
+                addr.field("zip", Address::zip).asString().isNotBlank();
+            }).doesNotThrowAnyException();
+        }
+
+        @Test
+        void field_noSource_createsPathFromFieldName() {
+            var user = new User("John", null, 30, null);
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(user)
+                            .field("email", User::email).asString().isNotBlank())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/email");
+                    });
+        }
+
+        @Test
+        void asString_preservesSource() {
+            assertThatThrownBy(() ->
+                    Validate.assertThat((Object) "hello").withSource(ATTRIBUTES_SOURCE).asString().isEmpty())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getSource())
+                            .isEqualTo(ATTRIBUTES_SOURCE));
+        }
+
+        @Test
+        void asNumber_preservesSource() {
+            assertThatThrownBy(() ->
+                    Validate.assertThat((Object) 5).withSource(ATTRIBUTES_SOURCE).asNumber().isNegative())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getSource())
+                            .isEqualTo(ATTRIBUTES_SOURCE));
+        }
+
+        @Test
+        void satisfies_inheritsParentSource_passes() {
+            var user = new User("John Doe", "john@example.com", 30, null);
+
+            assertThatCode(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("fullName", User::name).asString()
+                            .satisfies(name -> {
+                                // inner assertThat has no source — should inherit from parent
+                                Validate.assertThat(name.split("\\s+")[0]).isNotBlank();
+                                Validate.assertThat(name.split("\\s+")[1]).isNotBlank();
+                            }))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void satisfies_inheritsParentSource_onFailure() {
+            var user = new User("", "john@example.com", 30, null);
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("fullName", User::name).asString()
+                            .satisfies(name -> {
+                                Validate.assertThat(name).isNotBlank();
+                            }))
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/fullName");
+                    });
+        }
+
+        @Test
+        void satisfies_respectsExplicitSource() {
+            var user = new User("", "john@example.com", 30, null);
+            var customSource = ErrorSources.pointer().data().attributes("custom");
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE)
+                            .field("fullName", User::name).asString()
+                            .satisfies(name -> {
+                                // inner assertion sets explicit source — should be respected
+                                Validate.assertThat(name).withSource(customSource).isNotBlank();
+                            }))
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/custom");
+                    });
+        }
+    }
+
+    // --- ifPresent ---
+
+    @Nested
+    class IfPresentTests {
+
+        record User(String name, String email, Integer age) {}
+
+        private static final ErrorSources.Source ATTRIBUTES_SOURCE = ErrorSources.pointer().data().attributes();
+
+        @Test
+        void ifPresent_nullValue_skipsAllAssertions() {
+            assertThatCode(() ->
+                    Validate.assertThat((String) null).ifPresent().isNotBlank().isEmail())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_nonNullValue_runsAssertions() {
+            assertThatThrownBy(() ->
+                    Validate.assertThat("not-email").ifPresent().isEmail())
+                    .isInstanceOf(JsonApiRequestValidationException.class);
+        }
+
+        @Test
+        void ifPresent_propagatesThroughField() {
+            var user = new User(null, null, null);
+
+            assertThatCode(() -> {
+                var v = Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE);
+                v.field("name", User::name).asString().ifPresent().isNotBlank();
+                v.field("email", User::email).asString().ifPresent().isEmail();
+                v.field("age", User::age).asNumber().ifPresent().isPositive();
+            }).doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_propagatesThroughNestedField() {
+            record Address(String street, String city) {}
+            record Person(Address address) {}
+
+            var person = new Person(null);
+
+            assertThatCode(() ->
+                    Validate.assertThat(person).withSource(ATTRIBUTES_SOURCE)
+                            .field("address", Person::address).ifPresent()
+                            .field("street", Address::street).asString().isNotBlank())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_nonNullNested_validatesCorrectly() {
+            record Address(String street, String city) {}
+            record Person(Address address) {}
+
+            var person = new Person(new Address("", "NYC"));
+
+            assertThatThrownBy(() ->
+                    Validate.assertThat(person).withSource(ATTRIBUTES_SOURCE)
+                            .field("address", Person::address).ifPresent()
+                            .field("street", Address::street).asString().isNotBlank())
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/address/street");
+                    });
+        }
+
+        @Test
+        void ifPresent_propagatesThroughNarrowing() {
+            assertThatCode(() ->
+                    Validate.assertThat((Object) null).withSource(ATTRIBUTES_SOURCE)
+                            .asString().ifPresent().isNotBlank().isEmail())
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_skipsSatisfies() {
+            assertThatCode(() ->
+                    Validate.assertThat((String) null).ifPresent()
+                            .satisfies(name -> {
+                                throw new JsonApiRequestValidationException("should not reach");
+                            }))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_preservesSourceOnSkippedChain() {
+            // After ifPresent skips, field() still builds the correct source path
+            // so if a later non-skipped assertion fails, the source is correct
+            var user = new User("John", null, 30);
+
+            assertThatCode(() -> {
+                var v = Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE);
+                // email is null — ifPresent skips, source should still be /data/attributes/email
+                v.field("email", User::email).asString().ifPresent().isNotBlank().isEmail();
+                // name is present — should validate normally with correct source
+                v.field("name", User::name).asString().isNotBlank();
+            }).doesNotThrowAnyException();
+        }
+
+        @Test
+        void ifPresent_mixedNullAndNonNull_correctSources() {
+            var user = new User("John", null, -5);
+
+            assertThatThrownBy(() -> {
+                var v = Validate.assertThat(user).withSource(ATTRIBUTES_SOURCE);
+                v.field("email", User::email).asString().ifPresent().isEmail(); // skipped
+                v.field("age", User::age).asNumber().isPositive();              // fails
+            })
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> {
+                        var ex = (JsonApiRequestValidationException) e;
+                        assertThat(((ErrorSources.JsonPointer) ex.getSource()).pointer())
+                                .isEqualTo("/data/attributes/age");
+                    });
+        }
+    }
+
 }

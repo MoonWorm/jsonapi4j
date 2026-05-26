@@ -323,7 +323,7 @@ public final class JsonApiRequestValidator {
         private Consumer<ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> dataValidator;
         private Consumer<String> resourceIdValidator;
         private Consumer<String> resourceTypeValidator;
-        private Consumer<ATTRIBUTES> attributesValidator;
+        private Consumer<ObjectValidationAssert<?, ATTRIBUTES>> attributesValidator;
         private Consumer<LinkedHashMap<String, RelationshipObject>> relationshipsValidator;
 
         private SingleResourceDocValidationBuilder(SingleResourceDoc<? extends ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>> singleResourceDoc) {
@@ -346,7 +346,7 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
-        public SingleResourceDocValidationBuilder<ATTRIBUTES> withAttributesValidator(Consumer<ATTRIBUTES> attributesValidator) {
+        public SingleResourceDocValidationBuilder<ATTRIBUTES> withAttributesValidator(Consumer<ObjectValidationAssert<?, ATTRIBUTES>> attributesValidator) {
             this.attributesValidator = attributesValidator;
             return this;
         }
@@ -389,7 +389,10 @@ public final class JsonApiRequestValidator {
                 collector.collect(() -> resourceTypeValidator.accept(data.getType()), ErrorSources.pointer().data().type());
             }
             if (attributesValidator != null) {
-                collector.collect(() -> attributesValidator.accept(data.getAttributes()));
+                collector.collect(() -> {
+                    var attAssert = new ObjectValidationAssert<>(data.getAttributes(), ErrorSources.pointer().data().attributes());
+                    attributesValidator.accept(attAssert);
+                }, ErrorSources.pointer().data().attributes());
             }
             if (relationshipsValidator != null && data.getRelationships() != null) {
                 collector.collect(() -> relationshipsValidator.accept(data.getRelationships()));

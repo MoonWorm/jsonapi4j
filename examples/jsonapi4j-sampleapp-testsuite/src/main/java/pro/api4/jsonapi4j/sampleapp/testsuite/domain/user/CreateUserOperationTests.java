@@ -122,10 +122,10 @@ public abstract class CreateUserOperationTests {
                 .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(400)
-                .body("errors[0].code", equalTo("VALUE_IS_ABSENT"))
+                .body("errors[0].code", equalTo("VALUE_EMPTY"))
                 .body("errors[0].status", equalTo("400"))
                 .body("errors[0].source.pointer", equalTo("/data/attributes/fullName"))
-                .body("errors[0].detail", equalTo("value can't be null"))
+                .body("errors[0].detail", equalTo("value can't be blank"))
                 .body("errors[0].id", notNullValue());
     }
 

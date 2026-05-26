@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j.operation.validation;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Map;
 
 public class MapValidationAssert<K, V>
@@ -14,6 +13,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> isEmpty() {
+        if (isSkipped()) return this;
         if (actual != null && !actual.isEmpty()) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "map must be empty");
         }
@@ -21,6 +21,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> isNotEmpty() {
+        if (isSkipped()) return this;
         if (actual == null || actual.isEmpty()) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "map can't be empty");
         }
@@ -28,6 +29,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> hasSize(int expected) {
+        if (isSkipped()) return this;
         if (actual == null || actual.size() != expected) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("expected size {0}, got {1}", expected, actual == null ? "null" : actual.size()));
@@ -36,6 +38,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> hasSizeLessThan(int max) {
+        if (isSkipped()) return this;
         if (actual != null && actual.size() >= max) {
             fail(DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
                     MessageFormat.format("size must be less than {0}", max));
@@ -44,6 +47,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> hasSizeGreaterThan(int min) {
+        if (isSkipped()) return this;
         if (actual == null || actual.size() <= min) {
             fail(DefaultErrorCodes.ARRAY_LENGTH_TOO_SHORT,
                     MessageFormat.format("size must be greater than {0}", min));
@@ -52,6 +56,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> containsKey(K key) {
+        if (isSkipped()) return this;
         if (actual == null || !actual.containsKey(key)) {
             fail(DefaultErrorCodes.MISSING_REQUIRED_PARAMETER,
                     MessageFormat.format("required key ''{0}'' is missing", key));
@@ -60,6 +65,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> doesNotContainKey(K key) {
+        if (isSkipped()) return this;
         if (actual != null && actual.containsKey(key)) {
             fail(DefaultErrorCodes.UNEXPECTED_PARAMETER,
                     MessageFormat.format("unexpected key ''{0}''", key));
@@ -69,6 +75,7 @@ public class MapValidationAssert<K, V>
 
     @SafeVarargs
     public final MapValidationAssert<K, V> containsKeys(K... keys) {
+        if (isSkipped()) return this;
         if (actual == null) {
             fail(DefaultErrorCodes.MISSING_REQUIRED_PARAMETER, "map is null, expected keys");
             return this;
@@ -84,6 +91,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> containsValue(V value) {
+        if (isSkipped()) return this;
         if (actual == null || !actual.containsValue(value)) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("map must contain value ''{0}''", value));
@@ -92,6 +100,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> containsEntry(K key, V value) {
+        if (isSkipped()) return this;
         if (actual == null || !actual.containsKey(key) || !value.equals(actual.get(key))) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("map must contain entry ''{0}''=''{1}''", key, value));
@@ -100,6 +109,7 @@ public class MapValidationAssert<K, V>
     }
 
     public MapValidationAssert<K, V> doesNotContainEntry(K key, V value) {
+        if (isSkipped()) return this;
         if (actual != null && actual.containsKey(key) && value.equals(actual.get(key))) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("map must not contain entry ''{0}''=''{1}''", key, value));

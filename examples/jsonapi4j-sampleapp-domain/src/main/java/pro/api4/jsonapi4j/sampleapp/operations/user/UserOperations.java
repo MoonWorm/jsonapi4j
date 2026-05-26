@@ -13,7 +13,6 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
@@ -268,19 +267,16 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         forRequest(request)
                 .singleResourceBody(UserAttributes.class, body -> body
                         .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                        .withAttributesValidator(att -> {
-                            assertThat(att).withSource(ErrorSources.pointer().data().attributes()).isNotNull();
-                            assertThat(att.getFullName()).withSource(ErrorSources.pointer().data().attributes("fullName")).isNotNull();
-                            assertThat(att.getFullName()).withSource(ErrorSources.pointer().data().attributes("fullName"))
+                        .withAttributesValidator(v -> {
+                            v.isNotNull();
+                            v.field("fullName", UserAttributes::getFullName).asString()
                                     .isNotBlank()
-                                    .hasLengthLessThanOrEqualTo(128);
-                            assertThat(att.getFullName().split("\\s+")[0]).withSource(ErrorSources.pointer().data().attributes("fullName"))
-                                    .isNotBlank()
-                                    .hasLengthBetween(1, 64);
-                            assertThat(att.getFullName().split("\\s+")[1]).withSource(ErrorSources.pointer().data().attributes("fullName"))
-                                    .isNotBlank()
-                                    .hasLengthBetween(1, 64);
-                            assertThat(att.getEmail()).withSource(ErrorSources.pointer().data().attributes("email"))
+                                    .hasLengthLessThanOrEqualTo(128)
+                                    .satisfies(name -> {
+                                        assertThat(name.split("\\s+")[0]).isNotBlank().hasLengthBetween(1, 64);
+                                        assertThat(name.split("\\s+")[1]).isNotBlank().hasLengthBetween(1, 64);
+                                    });
+                            v.field("email", UserAttributes::getEmail).asString()
                                     .isNotBlank()
                                     .isEmail();
                         })
@@ -296,22 +292,18 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 .singleResourceBody(UserAttributes.class, body -> body
                         .withResourceIdValidator(resourceId -> {
                             if (userDb.readById(resourceId) == null) {
-                                throwResourceNotFoundException(request);
+                                throwResourceNotFoundException(request); // TODO: with code / status
                             }
                         })
                         .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                        .withAttributesValidator(att -> {
-                            if (att != null) {
-                                if (att.getFullName() != null) {
-                                    assertThat(att.getFullName().split("\\s+")[0]).withSource(ErrorSources.pointer().data().attributes("fullName"))
-                                            .isNotBlank().hasLengthBetween(1, 64);
-                                    assertThat(att.getFullName().split("\\s+")[1]).withSource(ErrorSources.pointer().data().attributes("fullName"))
-                                            .isNotBlank().hasLengthBetween(1, 64);
-                                }
-                                if (att.getEmail() != null) {
-                                    assertThat(att.getEmail()).withSource(ErrorSources.pointer().data().attributes("email")).isEmail();
-                                }
-                            }
+                        .withAttributesValidator(v -> {
+                            v.ifPresent();
+                            v.field("fullName", UserAttributes::getFullName).ifPresent().asString()
+                                    .satisfies(name -> {
+                                        assertThat(name.split("\\s+")[0]).isNotBlank().hasLengthBetween(1, 64);
+                                        assertThat(name.split("\\s+")[1]).isNotBlank().hasLengthBetween(1, 64);
+                                    });
+                            v.field("email", UserAttributes::getEmail).ifPresent().asString().isEmail();
                         })
                         .withToManyRelationship(CITIZENSHIPS, this::citizenshipsValidator)
                         .withToOneRelationship(PLACE_OF_BIRTH, this::placeOfBirthValidator)
@@ -321,7 +313,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateDelete(JsonApiRequest request) {
-        if (userDb.readById(request.getResourceId()) == null) {
+        if (userDb.readById(request.getResourceId()) == null) { // TODO: with code / status
             throwResourceNotFoundException(request);
         }
     }
@@ -338,7 +330,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private void relativesValidator(ToManyRelationshipObjectValidationBuilder v) {
         v.withResourceIdValidator(resourceId -> {
-                    if (userDb.readById(resourceId) == null) {
+                    if (userDb.readById(resourceId) == null) { // TODO: with code / status
                         throw new ResourceNotFoundException(resourceId, new ResourceType(USERS));
                     }
                 })

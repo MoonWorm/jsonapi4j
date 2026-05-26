@@ -11,15 +11,22 @@ public class ValidationErrorCollector {
 
     private final List<ValidationError> errors = new ArrayList<>();
 
-    public void collect(Runnable runnable, ErrorSources.Source source) {
+    /**
+     * Collects validation errors from the runnable. The provided source acts as a fallback —
+     * it is only used when the exception does not already carry its own source.
+     * This allows validators that build their own source (e.g. via {@code field()}) to retain it,
+     * while simple validators that throw without a source get the builder-provided one.
+     */
+    public void collect(Runnable runnable, ErrorSources.Source fallbackSource) {
         try {
             runnable.run();
         } catch (JsonApiRequestValidationException e) {
-            var wrapped = JsonApiRequestValidationException.withSource(e, source);
-            errors.add(new ValidationError(wrapped.getErrorCode(), wrapped.getDetail(), wrapped.getSource()));
+            ErrorSources.Source effectiveSource = e.getSource() != null ? e.getSource() : fallbackSource;
+            errors.add(new ValidationError(e.getErrorCode(), e.getDetail(), effectiveSource));
         } catch (CompositeJsonApiRequestValidationException e) {
             for (ValidationError ve : e.getValidationErrors()) {
-                errors.add(new ValidationError(ve.errorCode(), ve.detail(), source));
+                ErrorSources.Source effectiveSource = ve.source() != null ? ve.source() : fallbackSource;
+                errors.add(new ValidationError(ve.errorCode(), ve.detail(), effectiveSource));
             }
         }
     }

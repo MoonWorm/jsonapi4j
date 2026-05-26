@@ -12,6 +12,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isZero() {
+        if (isSkipped()) return this;
         if (actual == null || actual.doubleValue() != 0) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "value must be zero");
         }
@@ -19,6 +20,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isNotZero() {
+        if (isSkipped()) return this;
         if (actual != null && actual.doubleValue() == 0) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR, "value must not be zero");
         }
@@ -26,6 +28,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isPositive() {
+        if (isSkipped()) return this;
         if (actual == null || actual.doubleValue() <= 0) {
             fail(DefaultErrorCodes.VALUE_TOO_LOW, "value must be positive");
         }
@@ -33,6 +36,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isNegative() {
+        if (isSkipped()) return this;
         if (actual == null || actual.doubleValue() >= 0) {
             fail(DefaultErrorCodes.VALUE_TOO_HIGH, "value must be negative");
         }
@@ -40,6 +44,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isNotNegative() {
+        if (isSkipped()) return this;
         if (actual != null && actual.doubleValue() < 0) {
             fail(DefaultErrorCodes.VALUE_TOO_LOW, "value must not be negative");
         }
@@ -47,6 +52,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isNotPositive() {
+        if (isSkipped()) return this;
         if (actual != null && actual.doubleValue() > 0) {
             fail(DefaultErrorCodes.VALUE_TOO_HIGH, "value must not be positive");
         }
@@ -54,6 +60,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isGreaterThan(T value) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(value) <= 0) {
             fail(DefaultErrorCodes.VALUE_TOO_LOW,
                     MessageFormat.format("value must be greater than {0}", value));
@@ -62,6 +69,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isGreaterThanOrEqualTo(T value) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(value) < 0) {
             fail(DefaultErrorCodes.VALUE_TOO_LOW,
                     MessageFormat.format("value must be greater than or equal to {0}", value));
@@ -70,6 +78,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isLessThan(T value) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(value) >= 0) {
             fail(DefaultErrorCodes.VALUE_TOO_HIGH,
                     MessageFormat.format("value must be less than {0}", value));
@@ -78,6 +87,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isLessThanOrEqualTo(T value) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(value) > 0) {
             fail(DefaultErrorCodes.VALUE_TOO_HIGH,
                     MessageFormat.format("value must be less than or equal to {0}", value));
@@ -86,6 +96,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isBetween(T start, T end) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(start) < 0 || actual.compareTo(end) > 0) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("value must be between {0} and {1}", start, end));
@@ -94,6 +105,7 @@ public class NumberValidationAssert<T extends Number & Comparable<T>>
     }
 
     public NumberValidationAssert<T> isStrictlyBetween(T start, T end) {
+        if (isSkipped()) return this;
         if (actual == null || actual.compareTo(start) <= 0 || actual.compareTo(end) >= 0) {
             fail(DefaultErrorCodes.GENERIC_REQUEST_ERROR,
                     MessageFormat.format("value must be strictly between {0} and {1}", start, end));
