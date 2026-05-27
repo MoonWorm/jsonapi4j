@@ -313,32 +313,35 @@ public UserDto readById(JsonApiRequest request) {
 }
 ```
 
-For validation errors, throw `JsonApiRequestValidationException` with an error code, detail message, and optionally an error source. When using `JsonApiRequestValidator.forRequest(request)`, the builder handles error sources automatically for path, parameter, and body field validators:
+For validation errors, use `JsonApiRequestValidator.forRequest(request)` with the fluent assertion API. The builder handles error sources automatically for path, parameter, and body field validators:
 
 ```java
 @Override
 public void validate(JsonApiRequest request) {
     forRequest(request)
             .parameters(params -> params
-                    .withFilterValidator("region", regions -> {
-                        if (regions != null && !regions.isEmpty() && !SUPPORTED_REGIONS.contains(regions.getFirst())) {
-                            throw new JsonApiRequestValidationException(
-                                    DefaultErrorCodes.INVALID_ENUM_VALUE,
-                                    "Unsupported region: " + regions.getFirst()
-                            );
-                        }
-                    }))
+                    .withFilterValidator("region", regions ->
+                            regions.ifPresent().allSatisfy(region ->
+                                    Validate.assertThat(region).isOneOf(SUPPORTED_REGIONS))))
             .validate();
 }
 ```
 
-If you don't need a specific error code, use the single-argument constructor — it defaults to `GENERIC_REQUEST_ERROR`:
+You can also throw `JsonApiRequestValidationException` directly with an error code, detail message, and optionally an error source. If you don't need a specific error code, use the single-argument constructor — it defaults to `GENERIC_REQUEST_ERROR`:
 
 ```java
 throw new JsonApiRequestValidationException("name must not be blank");
 ```
 
-For situations where a resource is not found — either throw `ResourceNotFoundException` or use built-in helper methods on the operation level: `ResourceOperations#throwResourceNotFoundException(JsonApiRequest)`. 
+For situations where a resource is not found — either throw `ResourceNotFoundException` directly or use the `exists(predicate)` assertion which throws it automatically when the predicate fails:
+
+```java
+// Standalone
+assertThat(request.getResourceId()).exists(id -> userDb.readById(id) != null);
+
+// Inside a body validator
+.withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
+```
 
 ## Exception Hierarchy
 

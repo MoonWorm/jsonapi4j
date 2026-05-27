@@ -31,7 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
+import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
+
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 @JsonApiRelationshipOperation(
@@ -158,8 +159,8 @@ public class UserCitizenshipsOperations implements
     public void validateAddToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
+                        .withResourceIdValidator(id -> id.isNotBlank().satisfies(CountryResource::validateCountryId))
+                        .withResourceTypeValidator(type -> type.isOneOf(COUNTRIES)))
                 .validate();
     }
 
@@ -167,8 +168,8 @@ public class UserCitizenshipsOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
+                        .withResourceIdValidator(id -> id.isNotBlank().satisfies(CountryResource::validateCountryId))
+                        .withResourceTypeValidator(type -> type.isOneOf(COUNTRIES)))
                 .validate();
     }
 
@@ -176,8 +177,8 @@ public class UserCitizenshipsOperations implements
     public void validateUpdateToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(id -> assertThat(id).isNotBlank())
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES)))
+                        .withResourceIdValidator(id -> id.isNotBlank().satisfies(CountryResource::validateCountryId))
+                        .withResourceTypeValidator(type -> type.isOneOf(COUNTRIES)))
                 .validate();
     }
 

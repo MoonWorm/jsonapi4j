@@ -37,6 +37,15 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    public MapValidationAssert<K, V> hasSizeLessThanOrEqualTo(int max) {
+        if (isSkipped()) return this;
+        if (actual != null && actual.size() > max) {
+            fail(DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
+                    MessageFormat.format("size can''t be more than {0}", max));
+        }
+        return this;
+    }
+
     public MapValidationAssert<K, V> hasSizeLessThan(int max) {
         if (isSkipped()) return this;
         if (actual != null && actual.size() >= max) {

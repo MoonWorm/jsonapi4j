@@ -6,6 +6,8 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class CollectionValidationAssert<E>
@@ -134,6 +136,20 @@ public class CollectionValidationAssert<E>
             fail(DefaultErrorCodes.ARRAY_CONTAINS_DUPLICATES, "collection must not contain duplicates");
         }
         return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    public ObjectValidationAssert<?, List<E>> asList() {
+        ObjectValidationAssert<?, List<E>> result = new ObjectValidationAssert<>((List<E>) actual, getSource());
+        if (isSkipped()) result.setSkipped();
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    public ObjectValidationAssert<?, Set<E>> asSet() {
+        ObjectValidationAssert<?, Set<E>> result = new ObjectValidationAssert<>((Set<E>) actual, getSource());
+        if (isSkipped()) result.setSkipped();
+        return result;
     }
 
     public CollectionValidationAssert<E> allSatisfy(Consumer<E> requirement) {

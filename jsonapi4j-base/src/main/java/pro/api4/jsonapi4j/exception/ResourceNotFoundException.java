@@ -9,13 +9,17 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
  */
 public class ResourceNotFoundException extends JsonApi4jException {
 
-    public ResourceNotFoundException(String id,
-                                     ResourceType resourceType) {
+    public ResourceNotFoundException(String detail) {
         super(
                 HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND.getCode(),
                 DefaultErrorCodes.NOT_FOUND,
-                String.format("'%s' resource of a given id (%s) is not found", resourceType.getType(), id)
+                detail
         );
+    }
+
+    public ResourceNotFoundException(String id,
+                                     ResourceType resourceType) {
+        this(String.format("'%s' resource of a given id (%s) is not found", resourceType.getType(), id));
     }
 
 }

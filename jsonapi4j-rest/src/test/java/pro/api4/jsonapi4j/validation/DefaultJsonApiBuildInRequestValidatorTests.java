@@ -198,7 +198,7 @@ class DefaultJsonApiBuildInRequestValidatorTests {
 
             assertThatThrownBy(() -> validator.validateReadMultipleResources(request))
                     .isInstanceOf(JsonApiRequestValidationException.class)
-                    .satisfies(e -> assertThat(e.getMessage()).contains("max allowed limit"));
+                    .satisfies(e -> assertThat(e.getMessage()).contains("less than or equal to"));
         }
     }
 
@@ -486,7 +486,7 @@ class DefaultJsonApiBuildInRequestValidatorTests {
 
             assertThatThrownBy(() -> validator.validateReadToManyRelationship(request))
                     .isInstanceOf(JsonApiRequestValidationException.class)
-                    .satisfies(e -> assertThat(e.getMessage()).contains("max allowed limit"));
+                    .satisfies(e -> assertThat(e.getMessage()).contains("less than or equal to"));
         }
     }
 

@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
+import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 
@@ -10,6 +11,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
@@ -158,6 +160,26 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
         return (SELF) this;
     }
 
+    // --- Existence check ---
+
+    public SELF exists(Predicate<ACTUAL> predicate) {
+        if (skipped) return (SELF) this;
+        if (actual != null && !predicate.test(actual)) {
+            throw new ResourceNotFoundException(MessageFormat.format("''{0}'' not found", actual));
+        }
+        clearOverrides();
+        return (SELF) this;
+    }
+
+    public SELF exists(Predicate<ACTUAL> predicate, Function<ACTUAL, String> messageProvider) {
+        if (skipped) return (SELF) this;
+        if (actual != null && !predicate.test(actual)) {
+            throw new ResourceNotFoundException(messageProvider.apply(actual));
+        }
+        clearOverrides();
+        return (SELF) this;
+    }
+
     // --- Field navigation ---
 
     public <R> ObjectValidationAssert<?, R> field(String name, Function<ACTUAL, R> extractor) {
@@ -197,6 +219,10 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
     }
 
     // --- Failure handling ---
+
+    protected ErrorSources.Source getSource() {
+        return source;
+    }
 
     protected void setSkipped() {
         this.skipped = true;

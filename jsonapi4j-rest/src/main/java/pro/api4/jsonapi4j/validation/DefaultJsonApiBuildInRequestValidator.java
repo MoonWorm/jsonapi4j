@@ -22,8 +22,14 @@ import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.operation.validation.CollectionValidationAssert;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator;
+import pro.api4.jsonapi4j.operation.validation.MapValidationAssert;
+import pro.api4.jsonapi4j.operation.validation.NumberValidationAssert;
+import pro.api4.jsonapi4j.operation.validation.RelationshipNameValidationAssert;
+import pro.api4.jsonapi4j.operation.validation.ResourceTypeValidationAssert;
+import pro.api4.jsonapi4j.operation.validation.StringValidationAssert;
 import pro.api4.jsonapi4j.operation.validation.Validate;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -80,13 +86,13 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 .path(path -> path
                         .withResourceTypeValidator(this::validateKnownResourceType))
                 .singleResourceBody(body -> body
-                        .withDataValidator(data -> Validate.assertThat(data).withSource(ErrorSources.pointer().data().toPointer()).isNotNull())
-                        .withResourceIdValidator(id -> Validate.assertThat(id).isNull())
-                        .withResourceTypeValidator(type -> Validate.assertThat(type)
+                        .withDataValidator(data -> data.isNotNull())
+                        .withResourceIdValidator(id -> id.isNull())
+                        .withResourceTypeValidator(type -> type
                                 .isNotBlank()
                                 .isEqualTo(request.getTargetResourceType().getType()))
-                        .withRelationshipsValidator(relationships ->
-                                validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), relationships)))
+                        .withRelationshipsValidator(relationships -> relationships.satisfies(
+                                rels -> validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), (LinkedHashMap<String, RelationshipObject>) rels))))
                 .validate();
     }
 
@@ -97,17 +103,17 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withResourceTypeValidator(this::validateKnownResourceType)
                         .withResourceIdValidator(this::validateResourceIdValue))
                 .singleResourceBody(body -> body
-                        .withDataValidator(data -> Validate.assertThat(data).withSource(ErrorSources.pointer().data().toPointer()).isNotNull())
-                        .withResourceIdValidator(id -> {
-                            Validate.assertThat(id).isNotBlank();
-                            validateResourceId(id);
-                            Validate.assertThat(id).isEqualTo(request.getResourceId());
-                        })
-                        .withResourceTypeValidator(type -> Validate.assertThat(type)
+                        .withDataValidator(data -> data.isNotNull())
+                        .withResourceIdValidator(id -> id.satisfies(raw -> {
+                            Validate.assertThat(raw).isNotBlank();
+                            validateResourceId(raw);
+                            Validate.assertThat(raw).isEqualTo(request.getResourceId());
+                        }))
+                        .withResourceTypeValidator(type -> type
                                 .isNotBlank()
                                 .isEqualTo(request.getTargetResourceType().getType()))
-                        .withRelationshipsValidator(relationships ->
-                                validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), relationships)))
+                        .withRelationshipsValidator(relationships -> relationships.satisfies(
+                                rels -> validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), (LinkedHashMap<String, RelationshipObject>) rels))))
                 .validate();
     }
 
@@ -203,63 +209,74 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
 
     // --- Reusable validators for method references ---
 
-    private void validateKnownResourceType(ResourceType resourceType) {
+    private void validateKnownResourceType(ResourceTypeValidationAssert rt) {
         Set<String> availableResourceTypes = domainRegistry.getResourceTypes()
                 .stream()
                 .map(ResourceType::getType)
                 .collect(Collectors.toSet());
-        Validate.assertThat(resourceType.getType()).isOneOf(availableResourceTypes);
+        rt.type().isOneOf(availableResourceTypes);
     }
 
-    private void validateResourceIdValue(String resourceId) {
-        Validate.assertThat(resourceId).isNotBlank();
-        validateResourceId(resourceId);
+    private void validateResourceIdValue(StringValidationAssert id) {
+        id.isNotBlank().satisfies(raw -> validateResourceId(raw));
     }
 
-    private void validateIncludesCount(List<String> includes) {
+    private void validateIncludesCount(CollectionValidationAssert<String> includes) {
         int max = properties.maxElementsInIncludeParam();
-        if (ListUtils.emptyIfNull(includes).size() > max) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
-                    MessageFormat.format("Include value shouldn''t have more than {0} elements", max)
-            );
-        }
+        includes.hasSizeLessThanOrEqualTo(max);
     }
 
-    private void validateKnownRelationshipName(JsonApiRequest request, RelationshipName relationshipName) {
+    private void validateKnownRelationshipName(JsonApiRequest request, RelationshipNameValidationAssert rn) {
         Set<String> availableRelationships = domainRegistry.getRelationshipNames(request.getTargetResourceType())
                 .stream()
                 .map(RelationshipName::getName)
                 .collect(Collectors.toSet());
-        Validate.assertThat(relationshipName.getName()).isOneOf(availableRelationships);
+        rn.name().isOneOf(availableRelationships);
     }
 
-    private void validateResourceIdentifierId(String id) {
-        Validate.assertThat(id).isNotBlank();
-        validateResourceId(id);
+    private void validateResourceIdentifierId(StringValidationAssert id) {
+        id.isNotBlank().satisfies(raw -> validateResourceId(raw));
     }
 
-    private void validateResourceIdentifierType(String type) {
-        Validate.assertThat(type).isNotBlank();
+    private void validateResourceIdentifierType(StringValidationAssert type) {
+        type.isNotBlank();
     }
 
-    private void validateSortByCount(Map<String, SortAwareRequest.SortOrder> sortBy) {
+    private void validateSortByCount(MapValidationAssert<String, SortAwareRequest.SortOrder> sortBy) {
         int max = properties.maxElementsInSortByParam();
-        if (MapUtils.emptyIfNull(sortBy).size() > max) {
-            throw new JsonApiRequestValidationException(
-                    DefaultErrorCodes.ARRAY_LENGTH_TOO_LONG,
-                    MessageFormat.format("Sort value shouldn''t have more than {0} elements", max)
-            );
-        }
+        sortBy.hasSizeLessThanOrEqualTo(max);
     }
 
-    private void validateLimitValue(Long limit) {
-        if (limit == null) {
-            return;
-        }
-        if (limit > properties.limitMaxValue()) {
-            throw new InvalidLimitException(limit, MessageFormat.format("max allowed limit is {0}", properties.limitMaxValue()));
-        }
+    private void validateLimitValue(NumberValidationAssert<Long> limit) {
+        limit.ifPresent().isLessThanOrEqualTo(properties.limitMaxValue());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateFilterParams(MapValidationAssert<String, List<String>> filters) {
+        filters.satisfies(raw -> {
+            Map<String, List<String>> filterParams = MapUtils.emptyIfNull(raw);
+            int maxNumberFilterParams = properties.maxNumberFilterParams();
+            if (filterParams.size() > maxNumberFilterParams) {
+                throw new JsonApiRequestValidationException(
+                        MessageFormat.format("max number of filter params exceeded: {0}", maxNumberFilterParams),
+                        ErrorSources.parameter().filters()
+                );
+            }
+            int maxElementsInFilterParam = properties.maxElementsInFilterParam();
+            filterParams.forEach((filterName, filterValues) -> {
+                if (filterValues.size() > maxElementsInFilterParam) {
+                    throw new JsonApiRequestValidationException(
+                            MessageFormat.format("max number of filter param elements exceeded: {0}", maxElementsInFilterParam),
+                            ErrorSources.parameter().filter(filterName)
+                    );
+                }
+                if (ID_FILTER_NAME.equals(filterName)) {
+                    if (!filterValues.isEmpty()) {
+                        filterValues.forEach(resourceId -> validateResourceId(resourceId, ErrorSources.parameter().filter(ID_FILTER_NAME)));
+                    }
+                }
+            });
+        });
     }
 
     private void validateRelationshipsStructure(ResourceType resourceType,
@@ -334,31 +351,6 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
             ResourceIdentifierObject resourceIdentifier = data.get(i);
             validateResourceIdentifier(resourceIdentifier, parameterPathPrefix.index(i));
         }
-    }
-
-    private void validateFilterParams(Map<String, List<String>> filters) {
-        Map<String, List<String>> filterParams = MapUtils.emptyIfNull(filters);
-        int maxNumberFilterParams = properties.maxNumberFilterParams();
-        if (filterParams.size() > maxNumberFilterParams) {
-            throw new JsonApiRequestValidationException(
-                    MessageFormat.format("max number of filter params exceeded: {0}", maxNumberFilterParams),
-                    ErrorSources.parameter().filters()
-            );
-        }
-        int maxElementsInFilterParam = properties.maxElementsInFilterParam();
-        filterParams.forEach((filterName, filterValues) -> {
-            if (filterValues.size() > maxElementsInFilterParam) {
-                throw new JsonApiRequestValidationException(
-                        MessageFormat.format("max number of filter param elements exceeded: {0}", maxElementsInFilterParam),
-                        ErrorSources.parameter().filter(filterName)
-                );
-            }
-            if (ID_FILTER_NAME.equals(filterName)) {
-                if (!filterValues.isEmpty()) {
-                    filterValues.forEach(resourceId -> validateResourceId(resourceId, ErrorSources.parameter().filter(ID_FILTER_NAME)));
-                }
-            }
-        });
     }
 
     private void validateResourceId(String resourceId) {

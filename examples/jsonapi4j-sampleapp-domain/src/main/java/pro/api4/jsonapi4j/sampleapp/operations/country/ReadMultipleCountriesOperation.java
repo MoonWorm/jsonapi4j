@@ -102,7 +102,7 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
         } else if (request.getFilters().containsKey(REGION_FILTER_NAME)) {
             return PaginationAwareResponse.inMemoryCursorAware(
                     readCountriesByRegion(
-                            request.getFilters().get(REGION_FILTER_NAME).get(0),
+                            request.getFilters().get(REGION_FILTER_NAME).getFirst(),
                             client
                     ),
                     request.getCursor()
@@ -120,17 +120,18 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
     public void validate(JsonApiRequest request) {
         forRequest(request)
                 .parameters(params -> params
-                        .withFilterValidator(ID_FILTER_NAME, ids -> {
-                            if (ids != null) {
-                                ids.forEach(id -> Validate.assertThat(id).isNotBlank());
-                            }
-                        })
-                        .withFilterValidator(REGION_FILTER_NAME, regions -> {
-                            if (regions != null && !regions.isEmpty()) {
-                                Validate.assertThat(regions.getFirst()).isOneOf(
-                                        Arrays.stream(Region.values()).map(Enum::name).toArray(String[]::new));
-                            }
-                        }))
+                        .withFilterValidator(ID_FILTER_NAME, ids ->
+                                ids.ifPresent().allSatisfy(id -> Validate.assertThat(id)
+                                        .isNotBlank()
+                                        .satisfies(CountryResource::validateCountryId))
+                        )
+                        .withFilterValidator(REGION_FILTER_NAME, regions ->
+                                regions.ifPresent().asList().satisfies(raw -> {
+                                    if (!raw.isEmpty()) {
+                                        Validate.assertThat(raw.getFirst()).isOneOf(
+                                                Arrays.stream(Region.values()).map(Enum::name).toArray(String[]::new));
+                                    }
+                                })))
                 .validate();
     }
 

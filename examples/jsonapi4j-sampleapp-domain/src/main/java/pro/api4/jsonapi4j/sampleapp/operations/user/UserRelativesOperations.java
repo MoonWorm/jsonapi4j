@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @RequiredArgsConstructor
@@ -113,13 +112,9 @@ public class UserRelativesOperations implements
     public void validateAddToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(resourceId -> {
-                            if (userDb.readById(resourceId) == null) {
-                                throwResourceNotFoundException(request);
-                            }
-                        })
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                        .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta))
+                        .withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
+                        .withResourceTypeValidator(type -> type.isOneOf(USERS))
+                        .withResourceIdentifierMetaValidator(meta -> meta.satisfies(UserOperations::validateRelationsMeta)))
                 .validate();
     }
 
@@ -127,7 +122,7 @@ public class UserRelativesOperations implements
     public void validateDeleteFromToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS)))
+                        .withResourceTypeValidator(type -> type.isOneOf(USERS)))
                 .validate();
     }
 
@@ -135,13 +130,9 @@ public class UserRelativesOperations implements
     public void validateUpdateToMany(JsonApiRequest request) {
         forRequest(request)
                 .toManyRelationshipBody(body -> body
-                        .withResourceIdValidator(resourceId -> {
-                            if (userDb.readById(resourceId) == null) {
-                                throwResourceNotFoundException(request);
-                            }
-                        })
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                        .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta))
+                        .withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
+                        .withResourceTypeValidator(type -> type.isOneOf(USERS))
+                        .withResourceIdentifierMetaValidator(meta -> meta.satisfies(UserOperations::validateRelationsMeta)))
                 .validate();
     }
 }

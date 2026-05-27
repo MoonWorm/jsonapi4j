@@ -73,21 +73,27 @@ The framework does not validate filter names or values — any `filter[...]` par
 public void validateReadMultiple(JsonApiRequest request) {
     forRequest(request)
             .parameters(params -> params
-                    .withFiltersValidator(filters -> {
-                        Set<String> allowedFilters = Set.of("id", "region", "status");
-                        for (String filterName : filters.keySet()) {
-                            if (!allowedFilters.contains(filterName)) {
-                                throw new JsonApiRequestValidationException(
-                                        DefaultErrorCodes.MISSING_REQUIRED_PARAMETER,
-                                        "Unknown filter: " + filterName,
-                                        ErrorSources.parameter().filter(filterName)
-                                );
-                            }
-                        }
-                    }))
+                    .withFiltersValidator(filters ->
+                            filters.satisfies(map -> {
+                                Set<String> allowedFilters = Set.of("id", "region", "status");
+                                for (String filterName : map.keySet()) {
+                                    if (!allowedFilters.contains(filterName)) {
+                                        throw new JsonApiRequestValidationException(
+                                                DefaultErrorCodes.MISSING_REQUIRED_PARAMETER,
+                                                "Unknown filter: " + filterName,
+                                                ErrorSources.parameter().filter(filterName)
+                                        );
+                                    }
+                                }
+                            }))
+                    .withFilterValidator("region", regions ->
+                            regions.ifPresent().allSatisfy(region ->
+                                    Validate.assertThat(region).isOneOf("Asia", "Europe", "Africa"))))
             .validate();
 }
 ```
+
+`withFiltersValidator` receives a `MapValidationAssert` — use `.satisfies()` for custom cross-filter logic. `withFilterValidator` receives a `CollectionValidationAssert` for a single named filter — use `.allSatisfy()` to validate each value.
 
 ### Sorting
 

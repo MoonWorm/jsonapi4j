@@ -64,16 +64,13 @@ public class JsonApiRequestValidatorTests {
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .path(path -> path.withResourceIdValidator(id -> {
-                                throw new JsonApiRequestValidationException("invalid id");
-                            }))
+                            .path(path -> path.withResourceIdValidator(id -> id.isEmpty()))
                             .validate()
             )
                     .isInstanceOf(JsonApiRequestValidationException.class)
                     .satisfies(e -> {
                         var ex = (JsonApiRequestValidationException) e;
                         assertThat(ex.getSource()).isInstanceOf(ErrorSources.Path.class);
-                        assertThat(ex.getDetail()).isEqualTo("invalid id");
                     });
         }
 
@@ -175,18 +172,10 @@ public class JsonApiRequestValidatorTests {
             assertThatThrownBy(() ->
                     forRequest(request)
                             .parameters(params -> params
-                                    .withFiltersValidator(f -> {
-                                        if (f.size() > 1) {
-                                            throw new JsonApiRequestValidationException("too many filters");
-                                        }
-                                    }))
+                                    .withFiltersValidator(f -> f.hasSizeLessThanOrEqualTo(1)))
                             .validate()
             )
-                    .isInstanceOf(JsonApiRequestValidationException.class)
-                    .satisfies(e -> {
-                        var ex = (JsonApiRequestValidationException) e;
-                        assertThat(ex.getDetail()).isEqualTo("too many filters");
-                    });
+                    .isInstanceOf(JsonApiRequestValidationException.class);
         }
     }
 
@@ -212,9 +201,7 @@ public class JsonApiRequestValidatorTests {
 
             assertThatThrownBy(() ->
                     forRequest(request)
-                            .headers(h -> h.withHeaderValidator("X-Tenant", v -> {
-                                throw new JsonApiRequestValidationException("missing header");
-                            }))
+                            .headers(h -> h.withHeaderValidator("X-Tenant", v -> v.isNotBlank()))
                             .validate()
             )
                     .isInstanceOf(JsonApiRequestValidationException.class)
@@ -250,9 +237,7 @@ public class JsonApiRequestValidatorTests {
             assertThatThrownBy(() ->
                     forRequest(request)
                             .singleResourceBody(body -> body
-                                    .withResourceTypeValidator(type -> {
-                                        throw new JsonApiRequestValidationException("wrong type");
-                                    }))
+                                    .withResourceTypeValidator(type -> type.isOneOf("users")))
                             .validate()
             )
                     .isInstanceOf(JsonApiRequestValidationException.class)
@@ -270,9 +255,7 @@ public class JsonApiRequestValidatorTests {
             assertThatThrownBy(() ->
                     forRequest(request)
                             .singleResourceBody(body -> body
-                                    .withResourceTypeValidator(type -> {
-                                        throw new JsonApiRequestValidationException("wrong type");
-                                    })
+                                    .withResourceTypeValidator(type -> type.isOneOf("users"))
                                     .withAttributesValidator(att -> {
                                         throw new JsonApiRequestValidationException(
                                                 DefaultErrorCodes.VALUE_IS_ABSENT,
@@ -285,7 +268,7 @@ public class JsonApiRequestValidatorTests {
                     .satisfies(e -> {
                         var errors = ((CompositeJsonApiRequestValidationException) e).getValidationErrors();
                         assertThat(errors).hasSize(2);
-                        assertThat(errors.get(0).detail()).isEqualTo("wrong type");
+                        assertThat(errors.get(0).detail()).isEqualTo("'wrong' value is not allowed, available values: [users]");
                         assertThat(((ErrorSources.JsonPointer) errors.get(0).source()).pointer()).isEqualTo("/data/type");
                         assertThat(errors.get(1).detail()).isEqualTo("attrs invalid");
                         assertThat(((ErrorSources.JsonPointer) errors.get(1).source()).pointer()).isEqualTo("/data/attributes");
@@ -299,11 +282,7 @@ public class JsonApiRequestValidatorTests {
             assertThatThrownBy(() ->
                     forRequest(request)
                             .singleResourceBody(body -> body
-                                    .withDataValidator(data -> {
-                                        if (data == null) {
-                                            throw new JsonApiRequestValidationException("data is null");
-                                        }
-                                    })
+                                    .withDataValidator(data -> data.isNotNull())
                                     .withResourceTypeValidator(type -> {
                                         throw new JsonApiRequestValidationException("should not reach");
                                     }))
@@ -312,7 +291,7 @@ public class JsonApiRequestValidatorTests {
                     .isInstanceOf(JsonApiRequestValidationException.class)
                     .satisfies(e -> {
                         var ex = (JsonApiRequestValidationException) e;
-                        assertThat(ex.getDetail()).isEqualTo("data is null");
+                        assertThat(ex.getDetail()).isEqualTo("value can't be null");
                     });
         }
 
@@ -330,9 +309,7 @@ public class JsonApiRequestValidatorTests {
                     forRequest(request)
                             .singleResourceBody(body -> body
                                     .withToOneRelationship("placeOfBirth", r -> r
-                                            .withResourceTypeValidator(type -> {
-                                                throw new JsonApiRequestValidationException("wrong rel type");
-                                            })))
+                                            .withResourceTypeValidator(type -> type.isOneOf("countries"))))
                             .validate()
             )
                     .isInstanceOf(JsonApiRequestValidationException.class)
@@ -358,9 +335,7 @@ public class JsonApiRequestValidatorTests {
                     forRequest(request)
                             .singleResourceBody(body -> body
                                     .withToManyRelationship("citizenships", r -> r
-                                            .withResourceTypeValidator(type -> {
-                                                throw new JsonApiRequestValidationException("bad type");
-                                            })))
+                                            .withResourceTypeValidator(type -> type.isOneOf("countries"))))
                             .validate()
             )
                     .isInstanceOf(CompositeJsonApiRequestValidationException.class)
@@ -390,11 +365,8 @@ public class JsonApiRequestValidatorTests {
                                     .withAttributesValidator(att -> {
                                         throw new JsonApiRequestValidationException("bad attrs");
                                     })
-
                                     .withToOneRelationship("placeOfBirth", r -> r
-                                            .withResourceTypeValidator(type -> {
-                                                throw new JsonApiRequestValidationException("bad rel type");
-                                            })))
+                                            .withResourceTypeValidator(type -> type.isOneOf("countries"))))
                             .validate()
             )
                     .isInstanceOf(CompositeJsonApiRequestValidationException.class)
@@ -402,7 +374,7 @@ public class JsonApiRequestValidatorTests {
                         var errors = ((CompositeJsonApiRequestValidationException) e).getValidationErrors();
                         assertThat(errors).hasSize(2);
                         assertThat(errors.get(0).detail()).isEqualTo("bad attrs");
-                        assertThat(errors.get(1).detail()).isEqualTo("bad rel type");
+                        assertThat(errors.get(1).detail()).contains("wrong");
                     });
         }
     }

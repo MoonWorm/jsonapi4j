@@ -205,26 +205,21 @@ Empty body.
 
 ### 5. Add Validation
 
-Each operation has a dedicated validation method that runs before the main logic. Use `JsonApiRequestValidator.forRequest(request)` to build validation rules declaratively:
+Each operation has a dedicated validation method that runs before the main logic. Use `JsonApiRequestValidator.forRequest(request)` to build validation rules declaratively. Each validator callback receives a typed assertion object that supports fluent chaining:
 
 ```java
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
-import static pro.api4.jsonapi4j.operation.validation.ValidationAssertions.*;
 
 @Override
 public void validateCreate(JsonApiRequest request) {
     forRequest(request)
             .singleResourceBody(UserAttributes.class, body -> body
-                    .withResourceTypeValidator(type -> validateValueAnyOf(type, Set.of("users")))
+                    .withResourceTypeValidator(type -> type.isOneOf("users"))
                     .withAttributesValidator(att -> {
-                        validateNonNull(att, ErrorSources.pointer().data().attributes());
-                        if (att.getEmail() == null || !att.getEmail().contains("@")) {
-                            throw new JsonApiRequestValidationException(
-                                    DefaultErrorCodes.VALUE_INVALID_FORMAT,
-                                    "Invalid email format",
-                                    ErrorSources.pointer().data().attributes("email")
-                            );
-                        }
+                        att.isNotNull();
+                        att.field("email", UserAttributes::getEmail).asString()
+                                .isNotBlank()
+                                .isEmail();
                     }))
             .validate();
 }

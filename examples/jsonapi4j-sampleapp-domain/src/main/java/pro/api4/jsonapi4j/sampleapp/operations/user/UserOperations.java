@@ -38,11 +38,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
+import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
+
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
@@ -117,7 +118,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public UserDbEntity readById(JsonApiRequest request) {
         UserDbEntity userDbEntity = userDb.readById(request.getResourceId());
         if (userDbEntity == null) {
-            throwResourceNotFoundException(request);
+            throw new ResourceNotFoundException(request.getResourceId(), new ResourceType(USERS));
         }
         return userDbEntity;
     }
@@ -266,17 +267,17 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public void validateCreate(JsonApiRequest request) {
         forRequest(request)
                 .singleResourceBody(UserAttributes.class, body -> body
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                        .withAttributesValidator(v -> {
-                            v.isNotNull();
-                            v.field("fullName", UserAttributes::getFullName).asString()
+                        .withResourceTypeValidator(type -> type.isOneOf(USERS))
+                        .withAttributesValidator(att -> {
+                            att.isNotNull();
+                            att.field("fullName", UserAttributes::getFullName).asString()
                                     .isNotBlank()
                                     .hasLengthLessThanOrEqualTo(128)
                                     .satisfies(name -> {
                                         assertThat(name.split("\\s+")[0]).isNotBlank().hasLengthBetween(1, 64);
                                         assertThat(name.split("\\s+")[1]).isNotBlank().hasLengthBetween(1, 64);
                                     });
-                            v.field("email", UserAttributes::getEmail).asString()
+                            att.field("email", UserAttributes::getEmail).asString()
                                     .isNotBlank()
                                     .isEmail();
                         })
@@ -290,12 +291,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     public void validateUpdate(JsonApiRequest request) {
         forRequest(request)
                 .singleResourceBody(UserAttributes.class, body -> body
-                        .withResourceIdValidator(resourceId -> {
-                            if (userDb.readById(resourceId) == null) {
-                                throwResourceNotFoundException(request); // TODO: with code / status
-                            }
-                        })
-                        .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
+                        .withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
+                        .withResourceTypeValidator(type -> type.isOneOf(USERS))
                         .withAttributesValidator(v -> {
                             v.ifPresent();
                             v.field("fullName", UserAttributes::getFullName).ifPresent().asString()
@@ -313,29 +310,24 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void validateDelete(JsonApiRequest request) {
-        if (userDb.readById(request.getResourceId()) == null) { // TODO: with code / status
-            throwResourceNotFoundException(request);
-        }
+        assertThat(request.getResourceId())
+                .exists(resourceId -> userDb.readById(resourceId) != null);
     }
 
     private void citizenshipsValidator(ToManyRelationshipObjectValidationBuilder v) {
-        v.withResourceIdValidator(id -> assertThat(id).isNotBlank())
-                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES));
+        v.withResourceIdValidator(id -> id.isNotBlank().satisfies(CountryResource::validateCountryId))
+                .withResourceTypeValidator(type -> type.isOneOf(COUNTRIES));
     }
 
     private void placeOfBirthValidator(ToOneRelationshipObjectValidationBuilder v) {
-        v.withResourceIdValidator(id -> assertThat(id).isNotBlank())
-                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(COUNTRIES));
+        v.withResourceIdValidator(id -> id.isNotBlank().satisfies(CountryResource::validateCountryId))
+                .withResourceTypeValidator(type -> type.isOneOf(COUNTRIES));
     }
 
     private void relativesValidator(ToManyRelationshipObjectValidationBuilder v) {
-        v.withResourceIdValidator(resourceId -> {
-                    if (userDb.readById(resourceId) == null) { // TODO: with code / status
-                        throw new ResourceNotFoundException(resourceId, new ResourceType(USERS));
-                    }
-                })
-                .withResourceTypeValidator(resourceType -> assertThat(resourceType).isOneOf(USERS))
-                .withResourceIdentifierMetaValidator(UserOperations::validateRelationsMeta);
+        v.withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
+                .withResourceTypeValidator(type -> type.isOneOf(USERS))
+                .withResourceIdentifierMetaValidator(meta -> meta.satisfies(UserOperations::validateRelationsMeta));
     }
 
 }
