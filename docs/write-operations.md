@@ -23,11 +23,11 @@ By the end of this page, the `users` resource will support:
 Write operations receive a JSON:API document as the request body. The framework parses it and makes it available via `request.getSingleResourceDocPayload()`. You pass your attributes class to get typed access:
 
 ```java
-var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+var payload = request.getSingleResourceDocPayload(UserAttributes.class);
 UserAttributes attributes = payload.getData().getAttributes();
 ```
 
-The first type parameter is the attributes class, the second is the relationships class (`Void` if you don't need it). Without type arguments, attributes are deserialized as `LinkedHashMap`.
+Without a type argument, attributes are deserialized as `LinkedHashMap`.
 
 ### 2. Add Create Operation
 
@@ -51,7 +51,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public UserDbEntity create(JsonApiRequest request) {
-        var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+        var payload = request.getSingleResourceDocPayload(UserAttributes.class);
         UserAttributes attributes = payload.getData().getAttributes();
         return userDb.createUser(
                 attributes.getFullName(),
@@ -123,7 +123,7 @@ Add the `update` method to the same `UserOperations` class:
 ```java
 @Override
 public void update(JsonApiRequest request) {
-    var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+    var payload = request.getSingleResourceDocPayload(UserAttributes.class);
     UserAttributes attributes = payload.getData().getAttributes();
     userDb.updateUser(
             request.getResourceId(),
@@ -279,7 +279,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public UserDbEntity create(JsonApiRequest request) {
-        var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+        var payload = request.getSingleResourceDocPayload(UserAttributes.class);
         UserAttributes attributes = payload.getData().getAttributes();
         return userDb.createUser(
                 attributes.getFullName(),
@@ -290,7 +290,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @Override
     public void update(JsonApiRequest request) {
-        var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+        var payload = request.getSingleResourceDocPayload(UserAttributes.class);
         UserAttributes attributes = payload.getData().getAttributes();
         userDb.updateUser(
                 request.getResourceId(),

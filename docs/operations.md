@@ -100,17 +100,17 @@ Write operations (POST, PATCH, DELETE on relationships) receive the client's JSO
 
 | Operation target | Method | Returns |
 |-----------------|--------|---------|
-| Resource (POST/PATCH) | `request.getSingleResourceDocPayload(attType, relType)` | `SingleResourceDoc<ResourceObject<A, R>>` |
+| Resource (POST/PATCH) | `request.getSingleResourceDocPayload(attType)` | `SingleResourceDoc<ResourceObject<A, LinkedHashMap>>` |
 | To-One relationship | `request.getToOneRelationshipDocPayload()` | `ToOneRelationshipDoc` |
 | To-Many relationship | `request.getToManyRelationshipDocPayload()` | `ToManyRelationshipsDoc` |
 
-For resource payloads, pass your attributes and relationships classes to get typed access. Without type arguments, attributes and relationships are deserialized as `LinkedHashMap`:
+For resource payloads, pass your attributes class to get typed access. Without a type argument, attributes are deserialized as `LinkedHashMap`:
 
 ```java
 @Override
 public UserDto create(JsonApiRequest request) {
     // Typed — attributes are deserialized into UserAttributes
-    var payload = request.getSingleResourceDocPayload(UserAttributes.class, Void.class);
+    var payload = request.getSingleResourceDocPayload(UserAttributes.class);
     UserAttributes attributes = payload.getData().getAttributes();
 
     return userDb.create(attributes.getFullName(), attributes.getEmail());

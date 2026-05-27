@@ -166,12 +166,12 @@ public class ProjectOperations implements ResourceOperations<ProjectDto> {
 
     @Override
     public ProjectDto create(JsonApiRequest request) {
-        return projectService.create(request.getSingleResourceDocPayload());
+        return projectService.create(request.getSingleResourceDocPayload(ProjectAttributes.class));
     }
 
     @Override
     public void update(JsonApiRequest request) {
-        projectService.update(request.getResourceId(), request.getSingleResourceDocPayload());
+        projectService.update(request.getResourceId(), request.getSingleResourceDocPayload(ProjectAttributes.class));
     }
 
     @Override
