@@ -106,6 +106,96 @@ public final class LinksGenerator {
         return null;
     }
 
+    public String generateFirstLink(String basePath,
+                                    PaginationContext paginationContext,
+                                    boolean propagateIncludes,
+                                    boolean propagateFilters,
+                                    boolean propagateSortBy,
+                                    boolean propagateFields,
+                                    boolean propagateQueryParams) {
+        if (paginationContext == null) {
+            return null;
+        }
+        Map<String, String> firstLinkParams = new LinkedHashMap<>();
+        if (propagateIncludes) {
+            populateIncludes(firstLinkParams);
+        }
+        populateFirstPagePagination(firstLinkParams, paginationContext);
+        if (propagateFilters) {
+            populateFilters(firstLinkParams);
+        }
+        if (propagateSortBy) {
+            populateSortBy(firstLinkParams);
+        }
+        if (propagateFields) {
+            populateFields(firstLinkParams);
+        }
+        if (propagateQueryParams) {
+            populateQueryParams(firstLinkParams);
+        }
+        return basePath + toParamsStr(firstLinkParams);
+    }
+
+    public String generatePrevLink(String basePath,
+                                   PaginationContext paginationContext,
+                                   boolean propagateIncludes,
+                                   boolean propagateFilters,
+                                   boolean propagateSortBy,
+                                   boolean propagateFields,
+                                   boolean propagateQueryParams) {
+        if (!isPrevLinkAvailable(paginationContext)) {
+            return null;
+        }
+        Map<String, String> prevLinkParams = new LinkedHashMap<>();
+        if (propagateIncludes) {
+            populateIncludes(prevLinkParams);
+        }
+        populatePrevPagePagination(prevLinkParams, paginationContext);
+        if (propagateFilters) {
+            populateFilters(prevLinkParams);
+        }
+        if (propagateSortBy) {
+            populateSortBy(prevLinkParams);
+        }
+        if (propagateFields) {
+            populateFields(prevLinkParams);
+        }
+        if (propagateQueryParams) {
+            populateQueryParams(prevLinkParams);
+        }
+        return basePath + toParamsStr(prevLinkParams);
+    }
+
+    public String generateLastLink(String basePath,
+                                   PaginationContext paginationContext,
+                                   boolean propagateIncludes,
+                                   boolean propagateFilters,
+                                   boolean propagateSortBy,
+                                   boolean propagateFields,
+                                   boolean propagateQueryParams) {
+        if (!isLastLinkAvailable(paginationContext)) {
+            return null;
+        }
+        Map<String, String> lastLinkParams = new LinkedHashMap<>();
+        if (propagateIncludes) {
+            populateIncludes(lastLinkParams);
+        }
+        populateLastPagePagination(lastLinkParams, paginationContext);
+        if (propagateFilters) {
+            populateFilters(lastLinkParams);
+        }
+        if (propagateSortBy) {
+            populateSortBy(lastLinkParams);
+        }
+        if (propagateFields) {
+            populateFields(lastLinkParams);
+        }
+        if (propagateQueryParams) {
+            populateQueryParams(lastLinkParams);
+        }
+        return basePath + toParamsStr(lastLinkParams);
+    }
+
     private boolean isNextLinkAvailable(PaginationContext paginationContext) {
         return paginationContext != null
                 && (isNextLinkAvailableInCursorMode(paginationContext) || isNextLinkAvailableInLimitOffsetMode(paginationContext));
@@ -124,6 +214,55 @@ public final class LinksGenerator {
                     && loar.getOffset() + (loar.getLimit() == null ? DEFAULT_LIMIT : loar.getLimit() )< paginationContext.getTotalItems();
         }
         return false;
+    }
+
+    private boolean isPrevLinkAvailable(PaginationContext paginationContext) {
+        if (paginationContext == null || paginationContext.getMode() != PaginationMode.LIMIT_OFFSET) {
+            return false;
+        }
+        if (request instanceof LimitOffsetAwareRequest loar) {
+            Long offset = loar.getOffset();
+            return offset != null && offset > 0;
+        }
+        return false;
+    }
+
+    private boolean isLastLinkAvailable(PaginationContext paginationContext) {
+        return paginationContext != null
+                && paginationContext.getMode() == PaginationMode.LIMIT_OFFSET
+                && paginationContext.getTotalItems() != null;
+    }
+
+    private void populateFirstPagePagination(Map<String, String> linkParams, PaginationContext paginationContext) {
+        if (paginationContext.getMode() == PaginationMode.CURSOR) {
+            // First page in cursor mode = no cursor param at all
+        } else if (paginationContext.getMode() == PaginationMode.LIMIT_OFFSET) {
+            if (request instanceof LimitOffsetAwareRequest loar) {
+                long limit = loar.getLimit() == null ? DEFAULT_LIMIT : loar.getLimit();
+                linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+                linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(DEFAULT_OFFSET));
+            }
+        }
+    }
+
+    private void populatePrevPagePagination(Map<String, String> linkParams, PaginationContext paginationContext) {
+        if (request instanceof LimitOffsetAwareRequest loar) {
+            long limit = loar.getLimit() == null ? DEFAULT_LIMIT : loar.getLimit();
+            long offset = loar.getOffset() == null ? DEFAULT_OFFSET : loar.getOffset();
+            long prevOffset = Math.max(0, offset - limit);
+            linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+            linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(prevOffset));
+        }
+    }
+
+    private void populateLastPagePagination(Map<String, String> linkParams, PaginationContext paginationContext) {
+        if (request instanceof LimitOffsetAwareRequest loar) {
+            long limit = loar.getLimit() == null ? DEFAULT_LIMIT : loar.getLimit();
+            long totalItems = paginationContext.getTotalItems();
+            long lastOffset = totalItems <= 0 ? 0 : (long) (Math.ceil((double) totalItems / limit) - 1) * limit;
+            linkParams.put(LimitOffsetAwareRequest.LIMIT_PARAM, String.valueOf(limit));
+            linkParams.put(LimitOffsetAwareRequest.OFFSET_PARAM, String.valueOf(lastOffset));
+        }
     }
 
     public String generateRelatedLink(String basePath,

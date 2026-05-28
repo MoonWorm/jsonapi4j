@@ -80,11 +80,27 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                         );
             }
 
+            String firstLink = linksGenerator.generateFirstLink(
+                    relationshipBasePath, paginationContext, true, true, true, true, true
+            );
+            String prevLink = linksGenerator.generatePrevLink(
+                    relationshipBasePath, paginationContext, true, true, true, true, true
+            );
             String nextLink = linksGenerator.generateNextLink(
                     relationshipBasePath, paginationContext, true, true, true, true, true
             );
+            String lastLink = linksGenerator.generateLastLink(
+                    relationshipBasePath, paginationContext, true, true, true, true, true
+            );
 
-            return LinksObject.builder().self(selfLink).next(nextLink).putAll(relatedLinks).build();
+            return LinksObject.builder()
+                    .self(selfLink)
+                    .first(firstLink)
+                    .prev(prevLink)
+                    .next(nextLink)
+                    .last(lastLink)
+                    .putAll(relatedLinks)
+                    .build();
         };
     }
 

@@ -22,13 +22,14 @@ Response:
   ],
   "links": {
     "self": "/users/1/relationships/citizenships",
+    "first": "/users/1/relationships/citizenships",
+    "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu",
     "related:countries": {
         "href": "/countries?filter[id]=FI,NO",
         "meta": {
           "ids": ["FI", "NO"]
         }
-    },
-    "next": "/users/1/relationships/citizenships?page%5Bcursor%5D=DoJu"
+    }
   },
   "meta": {
     "pagination.nextCursor": "DoJu"
@@ -61,13 +62,14 @@ Response:
   ],
   "links": {
     "self": "/users/1/relationships/citizenships?include=citizenships",
+    "first": "/users/1/relationships/citizenships?include=citizenships",
+    "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu",
     "related:countries": {
         "href": "/countries?filter[id]=FI,NO",
         "meta": {
           "ids": ["FI", "NO"]
         }
-    },
-    "next": "/users/1/relationships/citizenships?include=citizenships&page%5Bcursor%5D=DoJu"
+    }
   },
   "meta": {
     "pagination.nextCursor": "DoJu"
@@ -215,6 +217,7 @@ Response:
   ],
   "links": {
     "self": "/users?include=citizenships&page%5Bcursor%5D=DoJu",
+    "first": "/users?include=citizenships",
     "next": "/users?include=citizenships&page%5Bcursor%5D=DoJw"
   },
   "meta": {

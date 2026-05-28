@@ -16,8 +16,11 @@ import java.util.Map;
 public class LinksObject extends LinkedHashMap<String, Object> {
 
     public static final String SELF_FIELD = "self";
-    public static final String RELATED_FIELD = "related";
+    public static final String FIRST_FIELD = "first";
+    public static final String PREV_FIELD = "prev";
     public static final String NEXT_FIELD = "next";
+    public static final String LAST_FIELD = "last";
+    public static final String RELATED_FIELD = "related";
 
     public static LinksObjectBuilder builder() {
         return new LinksObjectBuilder();
@@ -32,8 +35,23 @@ public class LinksObject extends LinkedHashMap<String, Object> {
             return this;
         }
 
+        public LinksObjectBuilder first(String href) {
+            this.links.put(FIRST_FIELD, href);
+            return this;
+        }
+
+        public LinksObjectBuilder prev(String href) {
+            this.links.put(PREV_FIELD, href);
+            return this;
+        }
+
         public LinksObjectBuilder next(String href) {
             this.links.put(NEXT_FIELD, href);
+            return this;
+        }
+
+        public LinksObjectBuilder last(String href) {
+            this.links.put(LAST_FIELD, href);
             return this;
         }
 

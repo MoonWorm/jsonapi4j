@@ -5,7 +5,7 @@ permalink: /pagination/
 
 JsonApi4j supports [JSON:API pagination](https://jsonapi.org/format/#fetching-pagination) for all multi-resource operations — both resource reads (`GET /users`) and to-many relationship reads (`GET /users/1/relationships/citizenships`).
 
-The framework handles the JSON:API wire format: parsing `page[...]` query parameters from the client and generating pagination links (`self`, `next`) in the response. Your code handles the actual data slicing — the framework never touches your data source.
+The framework handles the JSON:API wire format: parsing `page[...]` query parameters from the client and generating pagination links (`self`, `first`, `prev`, `next`, `last`) in the response. Your code handles the actual data slicing — the framework never touches your data source.
 
 ### Pagination Strategies
 
@@ -30,7 +30,7 @@ public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
 }
 ```
 
-The framework generates a `next` link when the cursor is non-null.
+The framework generates a `first` link (the URL without a cursor parameter) and a `next` link when the cursor is non-null. Since cursor-based pagination is forward-only, `prev` and `last` are always `null`.
 
 **In-memory cursor** — use when your data source uses limit-offset internally but you want cursor-based pagination on the API. `LimitOffsetToCursorAdapter` encodes limit and offset into a Base62 cursor string:
 
@@ -78,7 +78,7 @@ public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) {
 }
 ```
 
-The framework generates `next` links automatically based on the total count and current position.
+The framework generates `first`, `prev`, `next`, and `last` links automatically based on the total count and current position. `prev` is `null` on the first page; `next` is `null` on the last page.
 
 **In-memory limit-offset** — use when slicing a full dataset in memory:
 
@@ -94,7 +94,7 @@ When a response should return all items without pagination (e.g., a small lookup
 return PaginationAwareResponse.fromItemsNotPageable(allCountries);
 ```
 
-No `next` link is generated in the response.
+No pagination links are generated in the response.
 
 ### PaginationAwareResponse Factory Methods
 
@@ -109,25 +109,35 @@ No `next` link is generated in the response.
 
 ### Pagination Links
 
-The framework automatically generates pagination links based on the strategy:
+The framework automatically generates pagination links based on the strategy. The JSON:API specification defines four pagination links: `first`, `prev`, `next`, and `last`. Links that are unavailable are set to `null`.
 
-**Cursor-based:**
+**Cursor-based** (second page):
 ```json
 "links": {
     "self": "/users?page[cursor]=DoJu",
-    "next": "/users?page[cursor]=DoJw"
+    "first": "/users",
+    "prev": null,
+    "next": "/users?page[cursor]=DoJw",
+    "last": null
 }
 ```
 
-**Limit-offset:**
+Cursor-based pagination is forward-only, so `prev` and `last` are always `null`. The `first` link is always the URL without a `page[cursor]` parameter. The `next` link is `null` when there are no more pages.
+
+**Limit-offset** (second page, 100 total items):
 ```json
 "links": {
-    "self": "/users?page[offset]=0&page[limit]=20",
-    "next": "/users?page[offset]=20&page[limit]=20"
+    "self": "/users?page[offset]=20&page[limit]=20",
+    "first": "/users?page[offset]=0&page[limit]=20",
+    "prev": "/users?page[offset]=0&page[limit]=20",
+    "next": "/users?page[offset]=40&page[limit]=20",
+    "last": "/users?page[offset]=80&page[limit]=20"
 }
 ```
 
-The `next` link is omitted when there are no more pages. You can customize link generation by overriding `resolveTopLevelLinksForMultiResourcesDoc()` on your [Resource](/domain/#resourceresource_dto) — the `PaginationContext` parameter provides the cursor, total items, and pagination mode.
+All four links are available in limit-offset mode when the total count is known. `prev` is `null` on the first page; `next` is `null` on the last page.
+
+You can customize link generation by overriding `resolveTopLevelLinksForMultiResourcesDoc()` on your [Resource](/domain/#resourceresource_dto) — the `PaginationContext` parameter provides the cursor, total items, and pagination mode.
 
 ### Pagination Meta
 
@@ -160,7 +170,7 @@ GET /users/1/relationships/citizenships                      → first page
 GET /users/1/relationships/citizenships?page[cursor]=DoJu    → second page
 ```
 
-This is handled the same way as resource pagination — your `readMany()` method returns a `PaginationAwareResponse`, and the framework generates the appropriate `next` link.
+This is handled the same way as resource pagination — your `readMany()` method returns a `PaginationAwareResponse`, and the framework generates the appropriate pagination links.
 
 ### Choosing a Strategy
 
@@ -168,7 +178,8 @@ This is handled the same way as resource pagination — your `readMany()` method
 |--------------|--------|--------------|
 | Dynamic data (inserts/deletes between pages) | No skipped/duplicated items | Items may be skipped or duplicated |
 | Jump to arbitrary page | Not supported | Supported via `page[offset]` |
-| Total count required | No | Yes, for accurate `next` link |
+| Total count required | No | Yes, for accurate pagination links |
+| Pagination links generated | `first`, `next` | `first`, `prev`, `next`, `last` |
 | Implementation complexity | Lower with `LimitOffsetToCursorAdapter` | Straightforward with SQL |
 
 The JSON:API specification does not mandate a specific pagination strategy. JsonApi4j defaults to cursor-based pagination in its examples and utilities, but both strategies are fully supported.

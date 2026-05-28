@@ -10,6 +10,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_NEXT_CURSOR_KEY_META;
 
@@ -32,9 +34,12 @@ public abstract class ReadMultipleUsersOperationTests {
                 .then()
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                // top-level links with pagination
+                // top-level links with pagination (cursor-based, first page)
                 .body("links.self", equalTo("/users"))
-                .body("links.next", notNullValue())
+                .body("links.first", equalTo("/users"))
+                .body("links.prev", nullValue())
+                .body("links.next", startsWith("/users?page%5Bcursor%5D="))
+                .body("links.last", nullValue())
                 .body("meta['" + PAGINATION_NEXT_CURSOR_KEY_META + "']", notNullValue())
                 // paginated — default page size is 2
                 .body("data", hasSize(2))
