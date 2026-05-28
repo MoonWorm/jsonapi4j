@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.DataPreRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors.RelationshipsPreRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
@@ -132,10 +133,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, null, null)
                     );
                     if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -158,11 +156,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            dataSourceDto,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, dataSourceDto, null)
                     );
                     if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -218,12 +212,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
                 if (visitors != null) {
                     RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            dataSourceDto,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
                     );
                     if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -259,12 +248,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
                 SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
                 if (visitors != null) {
                     RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            dataSourceDto,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
                     );
                     if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -280,6 +264,19 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
         // return doc
         return doc;
+    }
+
+    private SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> buildCtx(
+            REQUEST request, PluginSettings plugin,
+            DATA_SOURCE_DTO dataSourceDto, SingleResourceDoc<?> doc) {
+        return SingleResourceVisitorContext.<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>builder()
+                .request(request)
+                .operationMeta(plugin.getOperationMeta())
+                .pluginInfo(plugin.getInfo())
+                .jsonApiContext(jsonApiContext)
+                .dataSourceDto(dataSourceDto)
+                .doc(doc)
+                .build();
     }
 
     private DATA_SOURCE_DTO retrieveData(REQUEST req) {

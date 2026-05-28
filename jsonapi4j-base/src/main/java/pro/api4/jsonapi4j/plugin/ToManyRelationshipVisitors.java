@@ -5,9 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.processor.multi.relationship.ToManyRelationshipsJsonApiContext;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
+import pro.api4.jsonapi4j.plugin.context.ToManyRelationshipVisitorContext;
 
 /**
  * Plugin visitor hooks for the to-many relationship processing pipeline.
@@ -26,18 +24,13 @@ public interface ToManyRelationshipVisitors {
     /**
      * Called before the relationship list is retrieved from the operation.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream relationship DTO type
      * @return a {@link DataPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            ToManyRelationshipsJsonApiContext<REQUEST, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            ToManyRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx
     ) {
         return DataPreRetrievalPhase.doNothing();
     }
@@ -45,23 +38,13 @@ public interface ToManyRelationshipVisitors {
     /**
      * Called after the relationship list has been retrieved and the {@link ToManyRelationshipsDoc} is built.
      *
-     * @param request                  the original request
-     * @param operationMeta            metadata about the current operation
-     * @param paginationAwareResponse  the paginated response returned by the operation
-     * @param doc                      the built to-many relationships doc
-     * @param context                  the processing context containing all configured resolvers
-     * @param pluginInfo               pre-extracted plugin-specific metadata
-     * @param <REQUEST>                request type
-     * @param <DATA_SOURCE_DTO>        downstream relationship DTO type
+     * @param ctx the visitor context (request, operationMeta, paginationAwareResponse, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream relationship DTO type
      * @return a {@link DataPostRetrievalPhase} describing the continuation behaviour
      */
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            ToManyRelationshipsDoc doc,
-            ToManyRelationshipsJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
-            JsonApiPluginInfo pluginInfo
+            ToManyRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx
     ) {
         return DataPostRetrievalPhase.doNothing();
     }

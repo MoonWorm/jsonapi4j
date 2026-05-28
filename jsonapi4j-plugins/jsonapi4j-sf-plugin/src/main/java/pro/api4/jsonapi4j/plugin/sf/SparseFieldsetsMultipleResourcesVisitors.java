@@ -2,14 +2,10 @@ package pro.api4.jsonapi4j.plugin.sf;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
-import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
+import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 @Slf4j
 class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisitors {
@@ -21,20 +17,14 @@ class SparseFieldsetsMultipleResourcesVisitors implements MultipleResourcesVisit
     }
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-            REQUEST request,
-            OperationMeta meta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            DOC doc,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
-    ) {
-        if (request instanceof JsonApiRequest jsonApiRequest
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
+        if (ctx.getRequest() instanceof JsonApiRequest jsonApiRequest
                 && MapUtils.isNotEmpty(jsonApiRequest.getFieldSets())
-                && doc != null
-                && doc.getData() != null) {
-            log.debug("Applying sparse fieldsets for {} resources, requested fields: {}", doc.getData().size(), jsonApiRequest.getFieldSets());
-            for (ResourceObject<?, ?> resourceObject : doc.getData()) {
+                && ctx.getDoc() != null
+                && ctx.getDoc().getData() != null) {
+            log.debug("Applying sparse fieldsets for {} resources, requested fields: {}", ctx.getDoc().getData().size(), jsonApiRequest.getFieldSets());
+            for (ResourceObject<?, ?> resourceObject : ctx.getDoc().getData()) {
                 helper.sparseFieldsets(jsonApiRequest, resourceObject);
             }
         }

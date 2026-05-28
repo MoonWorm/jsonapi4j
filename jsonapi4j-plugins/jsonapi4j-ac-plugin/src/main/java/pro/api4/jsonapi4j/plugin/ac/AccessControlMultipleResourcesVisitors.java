@@ -9,15 +9,12 @@ import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
-import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
-import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,52 +35,45 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
      * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
      */
     @Override
-    public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
-                                                                 OperationMeta operationMeta,
-                                                                 MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
-                                                                 JsonApiPluginInfo pluginInfo) {
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
 
-        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(pluginInfo, request);
+        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(ctx.getPluginInfo(), ctx.getRequest());
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(request, inboundAccessControlSettings)) {
-            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
+        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
-            if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
-                log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
+            if (ctx.getOperationMeta().getOperationType().getMethod() == OperationType.Method.GET) {
+                log.debug("Inbound Access is not allowed for a request {}, returning empty response", ctx.getRequest());
                 MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
                         null,
-                        context.getTopLevelLinksResolver().resolve(request, null, null),
-                        context.getTopLevelMetaResolver().resolve(request, null, null)
+                        ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null, null),
+                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null, null)
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
-                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", ctx.getRequest());
                 throw new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
             }
         }
     }
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            DOC doc,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
-    ) {
-        if (doc == null || doc.getData() == null || paginationAwareResponse.getItems() == null) {
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
+        MultipleResourcesDoc<?> doc = ctx.getDoc();
+        if (doc == null || doc.getData() == null || ctx.getPaginationAwareResponse().getItems() == null) {
             return RelationshipsPreRetrievalPhase.doNothing();
         }
 
         List<? extends ResourceObject<?, ?>> data = doc.getData();
 
-        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = paginationAwareResponse.getItems().stream()
+        Map<IdAndType, DATA_SOURCE_DTO> idAndTypeToDtoMap = ctx.getPaginationAwareResponse().getItems().stream()
                 .collect(Collectors.toMap(
-                        dto -> context.getResourceTypeAndIdResolver().resolveTypeAndId(dto),
+                        dto -> ctx.getJsonApiContext().getResourceTypeAndIdResolver().resolveTypeAndId(dto),
                         dto -> dto
                 ));
         List<DATA_SOURCE_DTO> nonAnonymizedDtos = new ArrayList<>();
@@ -93,7 +83,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                     accessControlEvaluator,
                     resourceObject,
                     resourceObject,
-                    getOutboundAccessControlModel(pluginInfo, resourceObject)
+                    getOutboundAccessControlModel(ctx.getPluginInfo(), resourceObject)
             );
 
             if (anonymizationResult.isNothingAnonymized()) {
@@ -109,7 +99,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
             anonymizedData.add(anonymizationResult.targetObject());
         }
 
-        if (nonAnonymizedDtos.size() == paginationAwareResponse.getItems().size()) {
+        if (nonAnonymizedDtos.size() == ctx.getPaginationAwareResponse().getItems().size()) {
             return RelationshipsPreRetrievalPhase.doNothing();
         }
 
@@ -117,18 +107,18 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.DATA_FIELD, anonymizedData);
 
         // top-level links
-        LinksObject docLinks = context.getTopLevelLinksResolver().resolve(
-                request,
+        LinksObject docLinks = ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(
+                ctx.getRequest(),
                 nonAnonymizedDtos,
-                paginationAwareResponse.getPaginationContext()
+                ctx.getPaginationAwareResponse().getPaginationContext()
         );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
 
         // top-level meta
-        Object docMeta = context.getTopLevelMetaResolver().resolve(
-                request,
+        Object docMeta = ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(
+                ctx.getRequest(),
                 nonAnonymizedDtos,
-                paginationAwareResponse.getPaginationContext()
+                ctx.getPaginationAwareResponse().getPaginationContext()
         );
         ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
 

@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.DataPreRetrievalPhase
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.RelationshipsPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors.RelationshipsPreRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
+import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.*;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
@@ -114,10 +115,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, null, null)
                     );
                     if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -139,11 +137,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            paginationAwareResponse,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, paginationAwareResponse, null)
                     );
                     if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -213,12 +207,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
                 if (visitors != null) {
                     RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            paginationAwareResponse,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, paginationAwareResponse, doc)
                     );
                     if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -277,12 +266,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
                 MultipleResourcesVisitors visitors = plugin.getPlugin().multipleResourcesVisitors();
                 if (visitors != null) {
                     RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            paginationAwareResponse,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, paginationAwareResponse, doc)
                     );
                     if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -298,6 +282,19 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
 
         // return doc
         return doc;
+    }
+
+    private MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> buildCtx(
+            REQUEST request, PluginSettings plugin,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse, MultipleResourcesDoc<?> doc) {
+        return MultipleResourcesVisitorContext.<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>builder()
+                .request(request)
+                .operationMeta(plugin.getOperationMeta())
+                .pluginInfo(plugin.getInfo())
+                .jsonApiContext(jsonApiContext)
+                .paginationAwareResponse(paginationAwareResponse)
+                .doc(doc)
+                .build();
     }
 
     private PaginationAwareResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {

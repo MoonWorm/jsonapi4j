@@ -11,11 +11,10 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
-import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.plugin.*;
+import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.multi.MultipleDataItemsSupplier;
-import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
 import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesProcessor;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
@@ -67,10 +66,8 @@ class MultipleResourcesProcessorPluginTests {
             public MultipleResourcesVisitors multipleResourcesVisitors() {
                 return new MultipleResourcesVisitors() {
                     @Override
-                    public <REQUEST> MultipleResourcesVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
-                            REQUEST request, OperationMeta operationMeta,
-                            MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> MultipleResourcesVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
+                            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return MultipleResourcesVisitors.DataPreRetrievalPhase.returnDoc(earlyDoc);
                     }
                 };
@@ -99,10 +96,8 @@ class MultipleResourcesProcessorPluginTests {
             public MultipleResourcesVisitors multipleResourcesVisitors() {
                 return new MultipleResourcesVisitors() {
                     @Override
-                    public <REQ> MultipleResourcesVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
-                            REQ request, OperationMeta operationMeta,
-                            MultipleResourcesJsonApiContext<REQ, ?, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> MultipleResourcesVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
+                            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return MultipleResourcesVisitors.DataPreRetrievalPhase.mutatedRequest(mutatedRequest);
                     }
                 };
@@ -135,12 +130,9 @@ class MultipleResourcesProcessorPluginTests {
             public MultipleResourcesVisitors multipleResourcesVisitors() {
                 return new MultipleResourcesVisitors() {
                     @Override
-                    public <REQ, DST, DOC extends MultipleResourcesDoc<?>>
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
                     MultipleResourcesVisitors.RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-                            REQ request, OperationMeta operationMeta,
-                            PaginationAwareResponse<DST> paginationAwareResponse, DOC doc,
-                            MultipleResourcesJsonApiContext<REQ, DST, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return MultipleResourcesVisitors.RelationshipsPreRetrievalPhase.returnDoc(overrideDoc);
                     }
                 };
@@ -171,12 +163,9 @@ class MultipleResourcesProcessorPluginTests {
             public MultipleResourcesVisitors multipleResourcesVisitors() {
                 return new MultipleResourcesVisitors() {
                     @Override
-                    public <REQ, DST, DOC extends MultipleResourcesDoc<?>>
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
                     MultipleResourcesVisitors.RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-                            REQ request, OperationMeta operationMeta,
-                            PaginationAwareResponse<DST> paginationAwareResponse, DOC doc,
-                            MultipleResourcesJsonApiContext<REQ, DST, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return MultipleResourcesVisitors.RelationshipsPostRetrievalPhase.mutatedDoc(mutatedDoc);
                     }
                 };

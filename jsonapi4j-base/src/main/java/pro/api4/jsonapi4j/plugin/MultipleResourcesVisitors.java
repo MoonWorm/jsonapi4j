@@ -5,9 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.processor.multi.resource.MultipleResourcesJsonApiContext;
-import pro.api4.jsonapi4j.response.PaginationAwareResponse;
+import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 
 /**
  * Plugin visitor hooks for the multiple-resources processing pipeline.
@@ -28,18 +26,14 @@ public interface MultipleResourcesVisitors {
     /**
      * Called before the resource list is retrieved from the operation.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link DataPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            MultipleResourcesJsonApiContext<REQUEST, ?, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return DataPreRetrievalPhase.doNothing();
     }
@@ -47,21 +41,14 @@ public interface MultipleResourcesVisitors {
     /**
      * Called after the resource list has been retrieved from the operation.
      *
-     * @param request                  the original request
-     * @param operationMeta            metadata about the current operation
-     * @param paginationAwareResponse  the paginated response returned by the operation
-     * @param context                  the processing context containing all configured resolvers
-     * @param pluginInfo               pre-extracted plugin-specific metadata
-     * @param <REQUEST>                request type
-     * @param <DATA_SOURCE_DTO>        downstream DTO type
+     * @param ctx the visitor context (request, operationMeta, paginationAwareResponse, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link DataPostRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPostRetrievalPhase<?> onDataPostRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return DataPostRetrievalPhase.doNothing();
     }
@@ -69,24 +56,14 @@ public interface MultipleResourcesVisitors {
     /**
      * Called after the resource array doc is built but before any relationships are resolved.
      *
-     * @param request                  the original request
-     * @param operationMeta            metadata about the current operation
-     * @param paginationAwareResponse  the paginated response returned by the operation
-     * @param doc                      the partially-built multiple-resources doc (no relationships yet)
-     * @param context                  the processing context containing all configured resolvers
-     * @param pluginInfo               pre-extracted plugin-specific metadata
-     * @param <REQUEST>                request type
-     * @param <DATA_SOURCE_DTO>        downstream DTO type
-     * @param <DOC>                    concrete doc type
+     * @param ctx the visitor context (request, operationMeta, paginationAwareResponse, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link RelationshipsPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            DOC doc,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return RelationshipsPreRetrievalPhase.doNothing();
     }
@@ -94,24 +71,14 @@ public interface MultipleResourcesVisitors {
     /**
      * Called after all relationships have been resolved and added to the doc.
      *
-     * @param request                  the original request
-     * @param operationMeta            metadata about the current operation
-     * @param paginationAwareResponse  the paginated response returned by the operation
-     * @param doc                      the fully-built multiple-resources doc (including relationships)
-     * @param context                  the processing context containing all configured resolvers
-     * @param pluginInfo               pre-extracted plugin-specific metadata
-     * @param <REQUEST>                request type
-     * @param <DATA_SOURCE_DTO>        downstream DTO type
-     * @param <DOC>                    concrete doc type
+     * @param ctx the visitor context (request, operationMeta, paginationAwareResponse, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link RelationshipsPostRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            DOC doc,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return RelationshipsPostRetrievalPhase.doNothing();
     }

@@ -5,8 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
+import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 
 /**
  * Plugin visitor hooks for the single-resource processing pipeline.
@@ -34,18 +33,14 @@ public interface SingleResourceVisitors {
      * Can be used to short-circuit the entire pipeline (e.g. return a cached doc) or
      * to substitute a mutated request before the operation is invoked.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link DataPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            SingleResourceJsonApiContext<REQUEST, ?, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return DataPreRetrievalPhase.doNothing();
     }
@@ -56,21 +51,14 @@ public interface SingleResourceVisitors {
      * Can be used to inspect or transform the retrieved DTO, or to short-circuit
      * relationship resolution by returning a pre-built doc.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param dataSourceDto the primary resource DTO returned by the operation
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, dataSourceDto, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
      * @param <DATA_SOURCE_DTO> downstream DTO type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link DataPostRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPostRetrievalPhase<?> onDataPostRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return DataPostRetrievalPhase.doNothing();
     }
@@ -81,24 +69,14 @@ public interface SingleResourceVisitors {
      * <p>
      * Can be used to modify the partially-built doc or to skip relationship resolution entirely.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param dataSourceDto the primary resource DTO
-     * @param doc           the partially-built single-resource doc (no relationships yet)
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, dataSourceDto, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
      * @param <DATA_SOURCE_DTO> downstream DTO type
-     * @param <DOC>         concrete doc type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link RelationshipsPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            DOC doc,
-            SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return RelationshipsPreRetrievalPhase.doNothing();
     }
@@ -109,24 +87,14 @@ public interface SingleResourceVisitors {
      * Can be used to post-process the fully-built doc (e.g. anonymize fields)
      * or to replace it entirely.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param dataSourceDto the primary resource DTO
-     * @param doc           the fully-built single-resource doc (including relationships)
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, dataSourceDto, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
      * @param <DATA_SOURCE_DTO> downstream DTO type
-     * @param <DOC>         concrete doc type
+     * @param <ATTRIBUTES>     attributes type
      * @return a {@link RelationshipsPostRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            DOC doc,
-            SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx
     ) {
         return RelationshipsPostRetrievalPhase.doNothing();
     }

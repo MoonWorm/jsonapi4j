@@ -11,11 +11,10 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.plugin.*;
+import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
 import pro.api4.jsonapi4j.processor.single.resource.SingleResourceProcessor;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 
@@ -68,10 +67,8 @@ class SingleResourceProcessorPluginTests {
             public SingleResourceVisitors singleResourceVisitors() {
                 return new SingleResourceVisitors() {
                     @Override
-                    public <REQUEST> SingleResourceVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
-                            REQUEST request, OperationMeta operationMeta,
-                            SingleResourceJsonApiContext<REQUEST, ?, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> SingleResourceVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
+                            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return SingleResourceVisitors.DataPreRetrievalPhase.returnDoc(earlyDoc);
                     }
                 };
@@ -100,10 +97,8 @@ class SingleResourceProcessorPluginTests {
             public SingleResourceVisitors singleResourceVisitors() {
                 return new SingleResourceVisitors() {
                     @Override
-                    public <REQ> SingleResourceVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
-                            REQ request, OperationMeta operationMeta,
-                            SingleResourceJsonApiContext<REQ, ?, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> SingleResourceVisitors.DataPreRetrievalPhase<?> onDataPreRetrieval(
+                            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return SingleResourceVisitors.DataPreRetrievalPhase.mutatedRequest(mutatedRequest);
                     }
                 };
@@ -136,11 +131,9 @@ class SingleResourceProcessorPluginTests {
             public SingleResourceVisitors singleResourceVisitors() {
                 return new SingleResourceVisitors() {
                     @Override
-                    public <REQ, DST, DOC extends SingleResourceDoc<?>>
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
                     SingleResourceVisitors.RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-                            REQ request, OperationMeta operationMeta, DST dataSourceDto,
-                            DOC doc, SingleResourceJsonApiContext<REQ, DST, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return SingleResourceVisitors.RelationshipsPreRetrievalPhase.returnDoc(overrideDoc);
                     }
                 };
@@ -173,11 +166,9 @@ class SingleResourceProcessorPluginTests {
             public SingleResourceVisitors singleResourceVisitors() {
                 return new SingleResourceVisitors() {
                     @Override
-                    public <REQ, DST, DOC extends SingleResourceDoc<?>>
+                    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
                     SingleResourceVisitors.RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-                            REQ request, OperationMeta operationMeta, DST dataSourceDto,
-                            DOC doc, SingleResourceJsonApiContext<REQ, DST, ?> context,
-                            JsonApiPluginInfo pluginInfo) {
+                            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
                         return SingleResourceVisitors.RelationshipsPostRetrievalPhase.mutatedDoc(mutatedDoc);
                     }
                 };

@@ -123,7 +123,7 @@ public class FieldMaskingPlugin implements JsonApi4jPlugin {
 ```
 
 **Key points:**
-- `extractPluginInfoFromResource()` runs once at startup for each registered resource. It scans the attributes class for `@Masked` fields and returns a list of `MaskedFieldInfo`. This metadata is later available in visitors via `pluginInfo.getResourcePluginInfo()`.
+- `extractPluginInfoFromResource()` runs once at startup for each registered resource. It scans the attributes class for `@Masked` fields and returns a list of `MaskedFieldInfo`. This metadata is later available in visitors via `ctx.getPluginInfo().getResourcePluginInfo()`.
 - `singleResourceVisitors()` and `multipleResourcesVisitors()` return visitor implementations that handle the actual masking.
 
 ## Step 4: Implement the Visitors
@@ -138,17 +138,12 @@ Handles `GET /users/{id}` responses:
 class FieldMaskingSingleResourceVisitors implements SingleResourceVisitors {
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>>
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
     RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            DOC doc,
-            SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo) {
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
 
-        if (doc != null && doc.getData() != null) {
-            maskAttributes(doc.getData().getAttributes(), pluginInfo);
+        if (ctx.getDoc() != null && ctx.getDoc().getData() != null) {
+            maskAttributes(ctx.getDoc().getData().getAttributes(), ctx.getPluginInfo());
         }
         return RelationshipsPostRetrievalPhase.doNothing();
     }
@@ -191,19 +186,14 @@ Handles `GET /users` responses — applies the same masking to every resource in
 class FieldMaskingMultipleResourcesVisitors implements MultipleResourcesVisitors {
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO, DOC extends MultipleResourcesDoc<?>>
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES>
     RelationshipsPostRetrievalPhase<?> onRelationshipsPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse,
-            DOC doc,
-            MultipleResourcesJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo) {
+            MultipleResourcesVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
 
-        if (doc != null && doc.getData() != null) {
-            doc.getData().forEach(resourceObject ->
+        if (ctx.getDoc() != null && ctx.getDoc().getData() != null) {
+            ctx.getDoc().getData().forEach(resourceObject ->
                 FieldMaskingSingleResourceVisitors.maskAttributes(
-                    resourceObject.getAttributes(), pluginInfo
+                    resourceObject.getAttributes(), ctx.getPluginInfo()
                 )
             );
         }

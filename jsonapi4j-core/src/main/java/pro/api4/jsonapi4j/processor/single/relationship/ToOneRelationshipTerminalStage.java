@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors.DataPreRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.context.ToOneRelationshipVisitorContext;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.RelationshipProcessorContext;
@@ -53,10 +54,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, null, null)
                     );
                     if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -107,12 +105,7 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            dataSourceDto,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
                     );
                     if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -131,6 +124,19 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
     public ToOneRelationshipDoc toToOneRelationshipDoc() {
         return toToOneRelationshipDoc(ToOneRelationshipDoc::new);
+    }
+
+    private ToOneRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> buildCtx(
+            REQUEST request, PluginSettings plugin,
+            DATA_SOURCE_DTO dataSourceDto, ToOneRelationshipDoc doc) {
+        return ToOneRelationshipVisitorContext.<REQUEST, DATA_SOURCE_DTO>builder()
+                .request(request)
+                .operationMeta(plugin.getOperationMeta())
+                .pluginInfo(plugin.getInfo())
+                .jsonApiContext(jsonApiContext)
+                .dataSourceDto(dataSourceDto)
+                .doc(doc)
+                .build();
     }
 
     private DATA_SOURCE_DTO retrieveData(REQUEST req) {

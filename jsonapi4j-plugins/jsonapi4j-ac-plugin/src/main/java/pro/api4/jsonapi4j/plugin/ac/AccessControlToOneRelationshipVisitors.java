@@ -7,14 +7,13 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
-import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.context.ToOneRelationshipVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
-import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipJsonApiContext;
 
 import java.util.Optional;
 
@@ -31,29 +30,27 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
      * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
      */
     @Override
-    public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
-                                                                 OperationMeta operationMeta,
-                                                                 ToOneRelationshipJsonApiContext<REQUEST, ?> context,
-                                                                 JsonApiPluginInfo pluginInfo) {
+    public <REQUEST, DATA_SOURCE_DTO> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            ToOneRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx) {
 
-        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(pluginInfo, request);
+        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(ctx.getPluginInfo(), ctx.getRequest());
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(request, inboundAccessControlSettings)) {
-            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
+        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
-            if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
-                log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
+            if (ctx.getOperationMeta().getOperationType().getMethod() == OperationType.Method.GET) {
+                log.debug("Inbound Access is not allowed for a request {}, returning empty response", ctx.getRequest());
                 ToOneRelationshipDoc doc = new ToOneRelationshipDoc(
                         null,
-                        context.getTopLevelLinksResolver().resolve(request, null),
-                        context.getTopLevelMetaResolver().resolve(request, null)
+                        ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null),
+                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null)
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
-                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", ctx.getRequest());
                 throw new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
             }
 
@@ -62,24 +59,19 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
 
     @Override
     public <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            ToOneRelationshipDoc doc,
-            ToOneRelationshipJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
-            JsonApiPluginInfo pluginInfo
-    ) {
-        if (doc == null) {
+            ToOneRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx) {
+        if (ctx.getDoc() == null) {
             return DataPostRetrievalPhase.doNothing();
         }
 
+        ToOneRelationshipDoc doc = ctx.getDoc();
         ResourceIdentifierObject data = doc.getData();
 
         AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
                 accessControlEvaluator,
                 data,
                 data,
-                Optional.ofNullable(getOutboundAccessControlModel(pluginInfo))
+                Optional.ofNullable(getOutboundAccessControlModel(ctx.getPluginInfo()))
                         .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
                         .orElse(null)
         );
@@ -90,11 +82,11 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
 
         if (anonymizationResult.isFullyAnonymized()) {
             // top-level links
-            LinksObject docLinks = context.getTopLevelLinksResolver().resolve(request, null);
+            LinksObject docLinks = ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null);
             ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.LINKS_FIELD, docLinks);
 
             // top-level meta
-            Object docMeta = context.getTopLevelMetaResolver().resolve(request, null);
+            Object docMeta = ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null);
             ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD, docMeta);
         }
 

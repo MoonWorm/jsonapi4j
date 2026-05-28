@@ -6,13 +6,11 @@ import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
-import pro.api4.jsonapi4j.operation.OperationMeta;
 import pro.api4.jsonapi4j.operation.OperationType;
-import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
-import pro.api4.jsonapi4j.processor.single.resource.SingleResourceJsonApiContext;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
@@ -42,52 +40,45 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
      * </ul>
      */
     @Override
-    public <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(REQUEST request,
-                                                                 OperationMeta operationMeta,
-                                                                 SingleResourceJsonApiContext<REQUEST, ?, ?> context,
-                                                                 JsonApiPluginInfo pluginInfo) {
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
 
-        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(pluginInfo, request);
+        AccessControlModel inboundAccessControlSettings = getInboundAccessControlModel(ctx.getPluginInfo(), ctx.getRequest());
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(request, inboundAccessControlSettings)) {
-            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
+        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
-            if (operationMeta.getOperationType().getMethod() == OperationType.Method.GET) {
-                log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
+            if (ctx.getOperationMeta().getOperationType().getMethod() == OperationType.Method.GET) {
+                log.debug("Inbound Access is not allowed for a request {}, returning empty response", ctx.getRequest());
                 SingleResourceDoc<?> doc = new SingleResourceDoc<>(
                         null,
-                        context.getTopLevelLinksResolver().resolve(request, null),
-                        context.getTopLevelMetaResolver().resolve(request, null)
+                        ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null),
+                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null)
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
-                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", request);
+                log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", ctx.getRequest());
                 throw new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
             }
         }
     }
 
     @Override
-    public <REQUEST, DATA_SOURCE_DTO, DOC extends SingleResourceDoc<?>> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            DOC doc,
-            SingleResourceJsonApiContext<REQUEST, DATA_SOURCE_DTO, ?> context,
-            JsonApiPluginInfo pluginInfo
-    ) {
-        if (doc == null) {
+    public <REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> RelationshipsPreRetrievalPhase<?> onRelationshipsPreRetrieval(
+            SingleResourceVisitorContext<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> ctx) {
+        if (ctx.getDoc() == null) {
             return RelationshipsPreRetrievalPhase.doNothing();
         }
+        SingleResourceDoc<?> doc = ctx.getDoc();
         ResourceObject<?, ?> resource = doc.getData();
         AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                 accessControlEvaluator,
                 resource,
                 resource,
-                getOutboundAccessControlModel(pluginInfo, resource)
+                getOutboundAccessControlModel(ctx.getPluginInfo(), resource)
         );
 
         if (anonymizationResult.isNothingAnonymized()) {

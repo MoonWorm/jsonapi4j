@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors.DataPostRetrievalPhase;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors.DataPreRetrievalPhase;
+import pro.api4.jsonapi4j.plugin.context.ToManyRelationshipVisitorContext;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
@@ -57,10 +58,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
                 if (visitors != null) {
                     DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, null, null)
                     );
                     if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
                         //noinspection unchecked
@@ -126,12 +124,7 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
                 ToManyRelationshipVisitors visitors = plugin.getPlugin().toManyRelationshipVisitors();
                 if (visitors != null) {
                     DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            effectiveRequest,
-                            plugin.getOperationMeta(),
-                            paginationAwareResponse,
-                            doc,
-                            jsonApiContext,
-                            plugin.getInfo()
+                            buildCtx(effectiveRequest, plugin, paginationAwareResponse, doc)
                     );
                     if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
                         //noinspection unchecked
@@ -150,6 +143,19 @@ public class ToManyRelationshipsTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
     public ToManyRelationshipsDoc toToManyRelationshipsDoc() {
         return toToManyRelationshipsDoc(ToManyRelationshipsDoc::new);
+    }
+
+    private ToManyRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> buildCtx(
+            REQUEST request, PluginSettings plugin,
+            PaginationAwareResponse<DATA_SOURCE_DTO> paginationAwareResponse, ToManyRelationshipsDoc doc) {
+        return ToManyRelationshipVisitorContext.<REQUEST, DATA_SOURCE_DTO>builder()
+                .request(request)
+                .operationMeta(plugin.getOperationMeta())
+                .pluginInfo(plugin.getInfo())
+                .jsonApiContext(jsonApiContext)
+                .paginationAwareResponse(paginationAwareResponse)
+                .doc(doc)
+                .build();
     }
 
     private PaginationAwareResponse<DATA_SOURCE_DTO> retrieveData(REQUEST req) {

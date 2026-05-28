@@ -5,8 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.operation.OperationMeta;
-import pro.api4.jsonapi4j.processor.single.relationship.ToOneRelationshipJsonApiContext;
+import pro.api4.jsonapi4j.plugin.context.ToOneRelationshipVisitorContext;
 
 /**
  * Plugin visitor hooks for the to-one relationship processing pipeline.
@@ -25,18 +24,13 @@ public interface ToOneRelationshipVisitors {
     /**
      * Called before the relationship DTO is retrieved from the operation.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
+     * @param <DATA_SOURCE_DTO> downstream relationship DTO type
      * @return a {@link DataPreRetrievalPhase} describing the continuation behaviour
      */
-    default <REQUEST> DataPreRetrievalPhase<?> onDataPreRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            ToOneRelationshipJsonApiContext<REQUEST, ?> context,
-            JsonApiPluginInfo pluginInfo
+    default <REQUEST, DATA_SOURCE_DTO> DataPreRetrievalPhase<?> onDataPreRetrieval(
+            ToOneRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx
     ) {
         return DataPreRetrievalPhase.doNothing();
     }
@@ -44,23 +38,13 @@ public interface ToOneRelationshipVisitors {
     /**
      * Called after the relationship DTO has been retrieved and the {@link ToOneRelationshipDoc} is built.
      *
-     * @param request       the original request
-     * @param operationMeta metadata about the current operation
-     * @param dataSourceDto the relationship DTO returned by the operation
-     * @param doc           the built to-one relationship doc
-     * @param context       the processing context containing all configured resolvers
-     * @param pluginInfo    pre-extracted plugin-specific metadata
-     * @param <REQUEST>     request type
+     * @param ctx the visitor context (request, operationMeta, dataSourceDto, doc, jsonApiContext, pluginInfo)
+     * @param <REQUEST>        request type
      * @param <DATA_SOURCE_DTO> downstream relationship DTO type
      * @return a {@link DataPostRetrievalPhase} describing the continuation behaviour
      */
     default <REQUEST, DATA_SOURCE_DTO> DataPostRetrievalPhase<?> onDataPostRetrieval(
-            REQUEST request,
-            OperationMeta operationMeta,
-            DATA_SOURCE_DTO dataSourceDto,
-            ToOneRelationshipDoc doc,
-            ToOneRelationshipJsonApiContext<REQUEST, DATA_SOURCE_DTO> context,
-            JsonApiPluginInfo pluginInfo
+            ToOneRelationshipVisitorContext<REQUEST, DATA_SOURCE_DTO> ctx
     ) {
         return DataPostRetrievalPhase.doNothing();
     }
