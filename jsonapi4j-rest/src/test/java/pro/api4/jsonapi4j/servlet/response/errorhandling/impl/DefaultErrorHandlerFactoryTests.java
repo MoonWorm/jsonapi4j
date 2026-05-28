@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
+import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -157,7 +158,7 @@ class DefaultErrorHandlerFactoryTests {
     @Test
     void jsonApi4jException_returnsStatusFromException() {
         // given
-        var exception = new JsonApi4jException(403, DefaultErrorCodes.FORBIDDEN, "access denied");
+        var exception = new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "access denied");
         ErrorsDocSupplier<JsonApi4jException> supplier = getSupplier(JsonApi4jException.class);
 
         // when/then

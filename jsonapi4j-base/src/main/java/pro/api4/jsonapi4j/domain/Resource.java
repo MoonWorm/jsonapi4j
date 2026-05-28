@@ -56,12 +56,13 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-links">'links'</a>
+     * <a href="https://jsonapi.org/format/#document-links">{@code "links"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
-     * for a documents that have a single resource as their primary data ("data" member).
+     * for documents that have a single resource as their primary data ({@code "data"} member).
      * <p>
-     * By default, generates a links object with "self" member only:
+     * By default, returns {@link #NOT_IMPLEMENTED_LINKS_STUB} which causes the framework to
+     * generate a links object with a {@code "self"} member only:
      * {@snippet :
      * "links": {
      *     "self": "/users/5"
@@ -69,8 +70,8 @@ public interface Resource<RESOURCE_DTO> {
      * }
      *
      * @param request       the original JSON:API request
-     * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}
-     * @return an instance of {@link LinksObject}
+     * @param dataSourceDto an instance of the corresponding downstream DTO
+     * @return a {@link LinksObject} for the top-level document links
      */
     default LinksObject resolveTopLevelLinksForSingleResourceDoc(JsonApiRequest request,
                                                                  RESOURCE_DTO dataSourceDto) {
@@ -79,23 +80,24 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-links">'links'</a>
+     * <a href="https://jsonapi.org/format/#document-links">{@code "links"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
-     * for a documents that have an array of resources as their primary data ("data" member).
+     * for documents that have an array of resources as their primary data ({@code "data"} member).
      * <p>
-     * By default, generates a links object with "self" and "next" members if applicable:
+     * By default, returns {@link #NOT_IMPLEMENTED_LINKS_STUB} which causes the framework to
+     * generate a links object with {@code "self"} and {@code "next"} members if applicable:
      * {@snippet :
      * "links": {
      *     "self": "/users?page[cursor]=DoJu",
-     *     "next: "/users?page[cursor]=DoJw"
+     *     "next": "/users?page[cursor]=DoJw"
      * }
      * }
      *
-     * @param request        the original JSON:API request
-     * @param dataSourceDtos a list of the corresponding {@link RESOURCE_DTO}
-     * @param paginationContext  pagination context that contains some server-side info e.g. next cursor string
-     * @return an instance of {@link LinksObject}
+     * @param request           the original JSON:API request
+     * @param dataSourceDtos    a list of the downstream DTOs for the current page
+     * @param paginationContext pagination metadata (cursors, total counts)
+     * @return a {@link LinksObject} for the top-level document links
      */
     default LinksObject resolveTopLevelLinksForMultiResourcesDoc(JsonApiRequest request,
                                                                  List<RESOURCE_DTO> dataSourceDtos,
@@ -105,16 +107,16 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-meta">'meta'</a>
+     * <a href="https://jsonapi.org/format/#document-meta">{@code "meta"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
-     * for a documents that have a single resource as their primary data ("data" member).
+     * for documents that have a single resource as their primary data ({@code "data"} member).
      * <p>
-     * By default, generates a <code>null</code> meta.
+     * By default, returns {@code null} (no top-level meta).
      *
      * @param request       the original JSON:API request
-     * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}
-     * @return an instance of {@link LinksObject}
+     * @param dataSourceDto an instance of the corresponding downstream DTO
+     * @return an arbitrary meta object, or {@code null} to omit the top-level {@code "meta"} member
      */
     default Object resolveTopLevelMetaForSingleResourceDoc(JsonApiRequest request,
                                                            RESOURCE_DTO dataSourceDto) {
@@ -123,17 +125,18 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-meta">'meta'</a>
+     * <a href="https://jsonapi.org/format/#document-meta">{@code "meta"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-top-level">JSON:API Top Level Object</a>
-     * for a documents that have an array of resources as their primary data ("data" member).
+     * for documents that have an array of resources as their primary data ({@code "data"} member).
      * <p>
-     * By default, generates a <code>null</code> meta.
+     * By default, returns {@link #NOT_IMPLEMENTED_META_STUB} which causes the framework to
+     * omit the top-level {@code "meta"} member.
      *
-     * @param request        the original JSON:API request
-     * @param dataSourceDtos a list of the corresponding {@link RESOURCE_DTO}
-     * @param paginationContext  pagination context that contains some server-side info e.g. next cursor string
-     * @return an instance of {@link LinksObject}
+     * @param request           the original JSON:API request
+     * @param dataSourceDtos    a list of the downstream DTOs for the current page
+     * @param paginationContext pagination metadata (cursors, total counts)
+     * @return an arbitrary meta object, or {@code null} to omit the top-level {@code "meta"} member
      */
     default Object resolveTopLevelMetaForMultiResourcesDoc(JsonApiRequest request,
                                                            List<RESOURCE_DTO> dataSourceDtos,
@@ -143,11 +146,12 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-links">'links'</a>
+     * <a href="https://jsonapi.org/format/#document-links">{@code "links"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-resource-objects">JSON:API Resource Object</a>
      * <p>
-     * By default, generates a links object with a "self" member:
+     * By default, returns {@link #NOT_IMPLEMENTED_LINKS_STUB} which causes the framework to
+     * generate a links object with a {@code "self"} member:
      * {@snippet :
      * "links": {
      *    "self": "/users/5"
@@ -155,8 +159,8 @@ public interface Resource<RESOURCE_DTO> {
      * }
      *
      * @param request       the original JSON:API request
-     * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}
-     * @return an instance of {@link LinksObject}
+     * @param dataSourceDto an instance of the corresponding downstream DTO
+     * @return a {@link LinksObject} for the per-resource links
      */
     default LinksObject resolveResourceLinks(JsonApiRequest request,
                                              RESOURCE_DTO dataSourceDto) {
@@ -165,15 +169,15 @@ public interface Resource<RESOURCE_DTO> {
 
     /**
      * Customization point for the
-     * <a href="<a href="https://jsonapi.org/format/#document-meta">'meta'</a>
+     * <a href="https://jsonapi.org/format/#document-meta">{@code "meta"}</a>
      * member of the
      * <a href="https://jsonapi.org/format/#document-resource-objects">JSON:API Resource Object</a>
      * <p>
-     * By default, generates a <code>null</code> meta.
+     * By default, returns {@code null} (no per-resource meta).
      *
      * @param request       the original JSON:API request
-     * @param dataSourceDto an instance of the corresponding {@link RESOURCE_DTO}
-     * @return an instance of {@link LinksObject}
+     * @param dataSourceDto an instance of the corresponding downstream DTO
+     * @return an arbitrary meta object, or {@code null} to omit the per-resource {@code "meta"} member
      */
     default Object resolveResourceMeta(JsonApiRequest request,
                                        RESOURCE_DTO dataSourceDto) {

@@ -5,7 +5,11 @@ import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 
 /**
- * Can be explicitly thrown from the operation when the resource is not found in a downstream service.
+ * Signals that the requested resource does not exist in the downstream data source (HTTP 404).
+ * <p>
+ * Throw this from an operation implementation (e.g. {@code readById}, {@code updateResource})
+ * when the downstream service returns no result for the given identifier. The framework
+ * converts it to a JSON:API {@code ErrorsDoc} with a {@code 404 Not Found} status.
  */
 public class ResourceNotFoundException extends JsonApi4jException {
 

@@ -3,6 +3,15 @@ package pro.api4.jsonapi4j.domain;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Immutable value object that represents a JSON:API relationship name
+ * (e.g. {@code "citizenships"}, {@code "placeOfBirth"}).
+ * <p>
+ * Equality and ordering are case-insensitive. Instances are created by the framework from the
+ * {@code relationshipName()} value of the
+ * {@link pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship} annotation, and are used
+ * throughout the registry, operations, and request objects to identify the target relationship.
+ */
 @Getter
 @RequiredArgsConstructor
 public class RelationshipName implements Comparable<RelationshipName> {

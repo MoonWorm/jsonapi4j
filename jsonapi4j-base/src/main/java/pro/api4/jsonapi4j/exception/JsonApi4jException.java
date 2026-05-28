@@ -6,14 +6,27 @@ import lombok.EqualsAndHashCode;
 
 
 /**
- * Generic error for business logic.
+ * Base runtime exception for all JSON:API business-logic errors produced by the framework or
+ * by application operation implementations.
+ * <p>
+ * Carries the HTTP status code, a machine-readable {@link ErrorCode}, and a human-readable
+ * detail message. The framework's error handler chain converts instances (and subclasses) of
+ * this exception into proper JSON:API {@code ErrorsDoc} responses automatically.
+ *
+ * @see JsonApiRequestValidationException
+ * @see ResourceNotFoundException
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class JsonApi4jException extends RuntimeException {
 
+    /** The HTTP status code to send in the response (e.g. 400, 404, 500). */
     private final int httpStatus;
+
+    /** A machine-readable error code identifying the type of error. */
     private final ErrorCode errorCode;
+
+    /** A human-readable description of the specific error occurrence. */
     private final String detail;
 
     @Override

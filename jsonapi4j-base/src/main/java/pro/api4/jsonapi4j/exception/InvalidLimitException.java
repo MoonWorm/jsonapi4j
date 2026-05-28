@@ -5,7 +5,11 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 
 /**
- * Used by the framework. Also, can be explicitly thrown from the operation if needed but not recommended.
+ * Signals that the {@code page[limit]} query parameter value is invalid (HTTP 400).
+ * <p>
+ * Thrown automatically by the framework when the limit parameter cannot be parsed as a number.
+ * Can also be thrown explicitly from an operation, though that is rarely needed. Carries the
+ * raw limit value that was received.
  */
 @Getter
 public class InvalidLimitException extends JsonApiRequestValidationException {

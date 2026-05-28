@@ -3,6 +3,17 @@ package pro.api4.jsonapi4j.domain;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Immutable value object that represents a JSON:API resource type string (the {@code "type"} member).
+ * <p>
+ * Equality and ordering are case-insensitive, matching the JSON:API specification requirement
+ * that resource type names are case-sensitive by convention but that the framework
+ * treats them uniformly.
+ * <p>
+ * Instances are created by the framework from the {@code resourceType()} value of the
+ * {@link pro.api4.jsonapi4j.domain.annotation.JsonApiResource} annotation, and are used
+ * throughout the registry, operations, and request objects to identify the target resource.
+ */
 @Getter
 @RequiredArgsConstructor
 public class ResourceType implements Comparable<ResourceType> {

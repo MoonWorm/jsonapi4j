@@ -6,6 +6,20 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 
+/**
+ * Exception representing a client request validation failure (HTTP 400 Bad Request).
+ * <p>
+ * Thrown by the framework's built-in validators (e.g. for invalid pagination parameters,
+ * malformed payloads) and may also be thrown explicitly by operation implementations when
+ * incoming request data fails business-logic validation.
+ * <p>
+ * Carries an optional {@link pro.api4.jsonapi4j.operation.validation.ErrorSources.Source}
+ * that maps the error to the specific request location (JSON Pointer or query parameter name)
+ * as required by the JSON:API specification's error source format.
+ *
+ * @see CompositeJsonApiRequestValidationException
+ * @see pro.api4.jsonapi4j.operation.validation.ErrorSources
+ */
 @Getter
 public class JsonApiRequestValidationException extends JsonApi4jException {
 

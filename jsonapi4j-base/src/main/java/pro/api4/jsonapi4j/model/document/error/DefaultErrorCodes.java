@@ -1,5 +1,15 @@
 package pro.api4.jsonapi4j.model.document.error;
 
+/**
+ * Built-in {@link ErrorCode} constants covering the full range of errors produced by the
+ * framework's validation, processing, and HTTP layers.
+ * <p>
+ * These codes are used by the framework's built-in validators, error handlers, and
+ * exception types (e.g. {@link pro.api4.jsonapi4j.exception.JsonApiRequestValidationException},
+ * {@link pro.api4.jsonapi4j.exception.InvalidCursorException}), but are equally available
+ * for use in application operation implementations — there is no need to define custom
+ * {@link ErrorCode} enums for errors that are already covered here.
+ */
 public enum DefaultErrorCodes implements ErrorCode {
 
     GENERIC_REQUEST_ERROR("GENERIC_REQUEST_ERROR"),
@@ -33,14 +43,7 @@ public enum DefaultErrorCodes implements ErrorCode {
     UNSUPPORTED_MEDIA_TYPE("UNSUPPORTED_MEDIA_TYPE"),
     METHOD_NOT_SUPPORTED("METHOD_NOT_SUPPORTED"),
     NOT_FOUND("NOT_FOUND"),
-    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE"),
-
-    UNAUTHORIZED("UNAUTHORIZED"),
-    ACCESS_TOKEN_REVOKED("ACCESS_TOKEN_REVOKED"),
-    ACCESS_TOKEN_EXPIRED("ACCESS_TOKEN_EXPIRED"),
-    FORBIDDEN("FORBIDDEN"),
-    INSUFFICIENT_SCOPES("INSUFFICIENT_SCOPES"),
-    INSUFFICIENT_ACCESS_TIER("INSUFFICIENT_ACCESS_TIER");
+    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE");
 
     private final String code;
 

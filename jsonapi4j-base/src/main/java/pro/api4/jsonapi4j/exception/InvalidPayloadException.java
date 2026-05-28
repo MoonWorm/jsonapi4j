@@ -5,8 +5,11 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 
 /**
- * Can be explicitly thrown from the operation when an error happened during converting payload into a valid JSON:API
- * document.
+ * Signals that the request body could not be parsed or mapped to a valid JSON:API document (HTTP 400).
+ * <p>
+ * Thrown automatically by the framework when payload deserialization fails, or can be thrown
+ * explicitly from an operation when business-level payload validation fails. Carries the raw
+ * payload object that triggered the error (may be {@code null}).
  */
 @Getter
 public class InvalidPayloadException extends JsonApiRequestValidationException {

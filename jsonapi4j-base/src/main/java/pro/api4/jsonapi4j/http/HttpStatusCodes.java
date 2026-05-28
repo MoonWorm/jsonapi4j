@@ -2,6 +2,15 @@ package pro.api4.jsonapi4j.http;
 
 import lombok.Getter;
 
+/**
+ * Enumeration of HTTP status codes used and produced by the framework.
+ * <p>
+ * Each constant pairs a numeric {@link #getCode()} with a {@link #getDescription()} string
+ * that explains the status code's semantics in the context of a JSON:API API.
+ * The framework uses these constants for determining success response codes
+ * ({@link pro.api4.jsonapi4j.operation.OperationType#getHttpStatus()}) and for building
+ * error responses when exceptions are converted to JSON:API error documents.
+ */
 @Getter
 public enum HttpStatusCodes {
 
