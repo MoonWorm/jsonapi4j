@@ -7,6 +7,14 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Request mixin that exposes JSON:API sparse fieldsets query parameters.
+ *
+ * <p>Parses {@code fields[<type>]=<field>[,<field>]} parameters into a map of resource type
+ * to requested field names. When specified, only the listed attributes are included in the response.
+ *
+ * @see <a href="https://jsonapi.org/format/#fetching-sparse-fieldsets">JSON:API Sparse Fieldsets</a>
+ */
 public interface SparseFieldsetsAwareRequest {
 
     Pattern PATTERN = Pattern.compile("^fields\\[(.+)]$");

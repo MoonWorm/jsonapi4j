@@ -9,6 +9,16 @@ import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 
 import java.util.LinkedHashMap;
 
+/**
+ * Request mixin that provides access to the deserialized JSON:API request body.
+ *
+ * <p>Supports three payload shapes:
+ * <ul>
+ *   <li>{@link pro.api4.jsonapi4j.model.document.data.SingleResourceDoc} — for resource creation/update operations</li>
+ *   <li>{@link pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc} — for to-one relationship updates</li>
+ *   <li>{@link pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc} — for to-many relationship updates</li>
+ * </ul>
+ */
 public interface PayloadAwareRequest {
 
     @SuppressWarnings("rawtypes")

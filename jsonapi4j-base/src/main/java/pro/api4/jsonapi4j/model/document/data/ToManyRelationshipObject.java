@@ -7,6 +7,17 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 
 import java.util.List;
 
+/**
+ * JSON:API to-many relationship object containing a list of {@link ResourceIdentifierObject}s
+ * as its {@code "data"} member.
+ *
+ * <p>Represents relationships where a resource is linked to zero or more other resources,
+ * e.g. {@code "comments"} on an article.
+ *
+ * @see RelationshipObject
+ * @see ToOneRelationshipObject
+ * @see <a href="https://jsonapi.org/format/#document-resource-object-relationships">JSON:API Relationships</a>
+ */
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)

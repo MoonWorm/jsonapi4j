@@ -3,6 +3,12 @@ package pro.api4.jsonapi4j.request;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.operation.CreateResourceOperation;
 
+/**
+ * Request mixin that provides the target resource's type and id extracted from the URL path.
+ *
+ * <p>For example, in {@code GET /countries/NO} the resource type is {@code "countries"} and
+ * the resource id is {@code "NO"}.
+ */
 public interface ResourceAwareRequest {
 
     /**

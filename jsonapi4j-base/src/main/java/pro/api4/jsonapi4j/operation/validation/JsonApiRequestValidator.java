@@ -19,12 +19,43 @@ import java.util.function.Consumer;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
+/**
+ * Fluent builder for validating all parts of a {@link JsonApiRequest}: URL path segments,
+ * query parameters, HTTP headers, and request body.
+ *
+ * <p>Organizes validation into four configurable sections that are executed in order:
+ * <ol>
+ *   <li><b>Path</b> — resource type, resource id, relationship name</li>
+ *   <li><b>Parameters</b> — filters, include, sort, cursor, limit, offset, field sets, custom query params</li>
+ *   <li><b>Headers</b> — arbitrary HTTP headers</li>
+ *   <li><b>Body</b> — single resource documents, to-one and to-many relationship documents</li>
+ * </ol>
+ *
+ * <p>All errors are accumulated and thrown together via {@link ValidationErrorCollector}.
+ *
+ * <p>Usage example:
+ * {@snippet :
+ *   JsonApiRequestValidator.forRequest(request)
+ *       .path(p -> p.withResourceIdValidator(id -> id.isNotBlank().isUUID()))
+ *       .parameters(p -> p
+ *           .withFilterValidator("status", f -> f.isNotEmpty().hasSizeLessThanOrEqualTo(5))
+ *           .withLimitValidator(l -> l.isNotNull().isPositive().isLessThanOrEqualTo(100L)))
+ *       .singleResourceBody(b -> b
+ *           .withAttributesValidator(a -> a.isNotNull()))
+ *       .validate();
+ * }
+ *
+ * @see Validate
+ * @see ValidationErrorCollector
+ * @see ErrorSources
+ */
 public final class JsonApiRequestValidator {
 
     private JsonApiRequestValidator() {
 
     }
 
+    /** Creates a new request validation builder for the given request. */
     public static RequestValidationBuilder forRequest(JsonApiRequest request) {
         return new RequestValidationBuilder(request);
     }
@@ -64,24 +95,28 @@ public final class JsonApiRequestValidator {
             this.request = request;
         }
 
+        /** Configures path segment validators (resource type, resource id, relationship name). */
         public RequestValidationBuilder path(Consumer<PathValidationBuilder> configurator) {
             this.pathValidationState = new PathValidationBuilder();
             configurator.accept(this.pathValidationState);
             return this;
         }
 
+        /** Configures query parameter validators (filters, sort, include, pagination, etc.). */
         public RequestValidationBuilder parameters(Consumer<ParametersValidationBuilder> configurator) {
             this.parametersValidationState = new ParametersValidationBuilder();
             configurator.accept(this.parametersValidationState);
             return this;
         }
 
+        /** Configures HTTP header validators. */
         public RequestValidationBuilder headers(Consumer<HeadersValidationBuilder> configurator) {
             this.headersValidationState = new HeadersValidationBuilder();
             configurator.accept(this.headersValidationState);
             return this;
         }
 
+        /** Configures validators for a single-resource request body with raw {@link LinkedHashMap} attributes. */
         @SuppressWarnings({"unchecked", "rawtypes"})
         public RequestValidationBuilder singleResourceBody(
                 Consumer<SingleResourceDocValidationBuilder<LinkedHashMap>> configurator) {
@@ -89,6 +124,7 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        /** Configures validators for a single-resource request body with typed attributes. */
         public <ATTRIBUTES> RequestValidationBuilder singleResourceBody(
                 Class<ATTRIBUTES> attType,
                 Consumer<SingleResourceDocValidationBuilder<ATTRIBUTES>> configurator) {
@@ -96,6 +132,7 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        /** Configures validators for a to-one relationship request body. */
         public RequestValidationBuilder toOneRelationshipBody(
                 Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
             ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
@@ -104,6 +141,7 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        /** Configures validators for a to-many relationship request body. */
         public RequestValidationBuilder toManyRelationshipBody(
                 Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
             ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
@@ -120,6 +158,7 @@ public final class JsonApiRequestValidator {
             this.bodyValidation = builder::validate;
         }
 
+        /** Executes all configured validators and throws collected errors. */
         public void validate() {
             ValidationErrorCollector collector = new ValidationErrorCollector();
             if (pathValidationState != null) {
@@ -143,6 +182,7 @@ public final class JsonApiRequestValidator {
 
         private final Map<String, Consumer<StringValidationAssert>> headerValidators = new LinkedHashMap<>();
 
+        /** Registers a validator for the given HTTP header. */
         public HeadersValidationBuilder withHeaderValidator(String headerName, Consumer<StringValidationAssert> headerValidator) {
             this.headerValidators.put(headerName, headerValidator);
             return this;
@@ -172,46 +212,55 @@ public final class JsonApiRequestValidator {
         private final Map<String, Consumer<CollectionValidationAssert<String>>> fieldSetsValidators = new LinkedHashMap<>();
         private final Map<String, Consumer<CollectionValidationAssert<String>>> customQueryParamsValidators = new LinkedHashMap<>();
 
+        /** Registers a validator for the given named filter parameter. */
         public ParametersValidationBuilder withFilterValidator(String filterName, Consumer<CollectionValidationAssert<String>> filterValidator) {
             this.filterValidators.put(filterName, filterValidator);
             return this;
         }
 
+        /** Registers a validator for the entire filters map. */
         public ParametersValidationBuilder withFiltersValidator(Consumer<MapValidationAssert<String, List<String>>> filtersValidator) {
             this.filtersValidator = filtersValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code include} parameter values. */
         public ParametersValidationBuilder withIncludeValidator(Consumer<CollectionValidationAssert<String>> includeValidator) {
             this.includeValidator = includeValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code sort} parameter. */
         public ParametersValidationBuilder withSortValidator(Consumer<MapValidationAssert<String, SortAwareRequest.SortOrder>> sortValidator) {
             this.sortValidator = sortValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code page[cursor]} parameter. */
         public ParametersValidationBuilder withCursorValidator(Consumer<StringValidationAssert> cursorValidator) {
             this.cursorValidator = cursorValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code page[limit]} parameter. */
         public ParametersValidationBuilder withLimitValidator(Consumer<NumberValidationAssert<Long>> limitValidator) {
             this.limitValidator = limitValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code page[offset]} parameter. */
         public ParametersValidationBuilder withOffsetValidator(Consumer<NumberValidationAssert<Long>> offsetValidator) {
             this.offsetValidator = offsetValidator;
             return this;
         }
 
+        /** Registers a validator for the {@code fields[type]} sparse fieldsets parameter. */
         public ParametersValidationBuilder withFieldSetsValidator(String resourceType, Consumer<CollectionValidationAssert<String>> fieldSetsValidator) {
             this.fieldSetsValidators.put(resourceType, fieldSetsValidator);
             return this;
         }
 
+        /** Registers a validator for a custom query parameter. */
         public ParametersValidationBuilder withCustomQueryParamValidator(String paramName, Consumer<CollectionValidationAssert<String>> customQueryParamValidator) {
             this.customQueryParamsValidators.put(paramName, customQueryParamValidator);
             return this;
@@ -289,16 +338,19 @@ public final class JsonApiRequestValidator {
         private Consumer<StringValidationAssert> resourceIdValidator;
         private Consumer<RelationshipNameValidationAssert> relationshipNameValidator;
 
+        /** Registers a validator for the resource type path segment. */
         public PathValidationBuilder withResourceTypeValidator(Consumer<ResourceTypeValidationAssert> resourceTypeValidator) {
             this.resourceTypeValidator = resourceTypeValidator;
             return this;
         }
 
+        /** Registers a validator for the resource id path segment. */
         public PathValidationBuilder withResourceIdValidator(Consumer<StringValidationAssert> resourceIdValidator) {
             this.resourceIdValidator = resourceIdValidator;
             return this;
         }
 
+        /** Registers a validator for the relationship name path segment. */
         public PathValidationBuilder withRelationshipNameValidator(Consumer<RelationshipNameValidationAssert> relationshipNameValidator) {
             this.relationshipNameValidator = relationshipNameValidator;
             return this;
@@ -346,32 +398,38 @@ public final class JsonApiRequestValidator {
             this.singleResourceDoc = singleResourceDoc;
         }
 
+        /** Registers a validator for the top-level {@code data} object. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withDataValidator(
                 Consumer<ObjectValidationAssert<?, ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>>> dataValidator) {
             this.dataValidator = dataValidator;
             return this;
         }
 
+        /** Registers a validator for the resource id in the request body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withResourceIdValidator(Consumer<StringValidationAssert> resourceIdValidator) {
             this.resourceIdValidator = resourceIdValidator;
             return this;
         }
 
+        /** Registers a validator for the resource type in the request body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withResourceTypeValidator(Consumer<StringValidationAssert> resourceTypeValidator) {
             this.resourceTypeValidator = resourceTypeValidator;
             return this;
         }
 
+        /** Registers a validator for the resource attributes in the request body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withAttributesValidator(Consumer<ObjectValidationAssert<?, ATTRIBUTES>> attributesValidator) {
             this.attributesValidator = attributesValidator;
             return this;
         }
 
+        /** Registers a validator for the relationships map in the request body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withRelationshipsValidator(Consumer<MapValidationAssert<String, RelationshipObject>> relationshipsValidator) {
             this.relationshipsValidator = relationshipsValidator;
             return this;
         }
 
+        /** Configures validators for a to-one relationship within the resource body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withToOneRelationship(String relationshipName, Consumer<ToOneRelationshipObjectValidationBuilder> configurator) {
             ToOneRelationshipObjectValidationBuilder builder = new ToOneRelationshipObjectValidationBuilder();
             configurator.accept(builder);
@@ -379,6 +437,7 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
+        /** Configures validators for a to-many relationship within the resource body. */
         public SingleResourceDocValidationBuilder<ATTRIBUTES> withToManyRelationship(String relationshipName, Consumer<ToManyRelationshipObjectValidationBuilder> configurator) {
             ToManyRelationshipObjectValidationBuilder builder = new ToManyRelationshipObjectValidationBuilder();
             configurator.accept(builder);
@@ -386,13 +445,12 @@ public final class JsonApiRequestValidator {
             return this;
         }
 
-        @SuppressWarnings("unchecked")
         public void validate() {
             ValidationErrorCollector collector = new ValidationErrorCollector();
             var data = singleResourceDoc.getData();
             if (dataValidator != null) {
                 collector.collect(() -> dataValidator.accept(
-                        new ObjectValidationAssert<>((ResourceObject<ATTRIBUTES, LinkedHashMap<String, RelationshipObject>>) data,
+                        new ObjectValidationAssert<>(data,
                                 ErrorSources.pointer().data().toPointer())),
                         ErrorSources.pointer().data().toPointer());
             }
@@ -454,16 +512,19 @@ public final class JsonApiRequestValidator {
                 this.initPath = initPath;
             }
 
+            /** Registers a validator for the resource identifier's id. */
             public ToOneRelationshipObjectValidationBuilder withResourceIdValidator(Consumer<StringValidationAssert> resourceIdValidator) {
                 this.resourceIdValidator = resourceIdValidator;
                 return this;
             }
 
+            /** Registers a validator for the resource identifier's type. */
             public ToOneRelationshipObjectValidationBuilder withResourceTypeValidator(Consumer<StringValidationAssert> resourceTypeValidator) {
                 this.resourceTypeValidator = resourceTypeValidator;
                 return this;
             }
 
+            /** Registers a validator for the resource identifier's meta object. */
             public ToOneRelationshipObjectValidationBuilder withResourceIdentifierMetaValidator(Consumer<ObjectValidationAssert<?, Object>> metaValidator) {
                 this.metaValidator = metaValidator;
                 return this;
@@ -502,16 +563,19 @@ public final class JsonApiRequestValidator {
                 this.initPath = initPath;
             }
 
+            /** Registers a validator for each resource identifier's id. */
             public ToManyRelationshipObjectValidationBuilder withResourceIdValidator(Consumer<StringValidationAssert> resourceIdValidator) {
                 this.resourceIdValidator = resourceIdValidator;
                 return this;
             }
 
+            /** Registers a validator for each resource identifier's type. */
             public ToManyRelationshipObjectValidationBuilder withResourceTypeValidator(Consumer<StringValidationAssert> resourceTypeValidator) {
                 this.resourceTypeValidator = resourceTypeValidator;
                 return this;
             }
 
+            /** Registers a validator for each resource identifier's meta object. */
             public ToManyRelationshipObjectValidationBuilder withResourceIdentifierMetaValidator(Consumer<ObjectValidationAssert<?, Object>> metaValidator) {
                 this.metaValidator = metaValidator;
                 return this;

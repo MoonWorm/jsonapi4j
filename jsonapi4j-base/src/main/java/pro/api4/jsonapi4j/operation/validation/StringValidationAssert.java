@@ -1,12 +1,31 @@
 package pro.api4.jsonapi4j.operation.validation;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 
 import java.text.MessageFormat;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/**
+ * Fluent assertion class for validating {@link String} values in JSON:API requests.
+ *
+ * <p>Extends {@link ObjectValidationAssert} with string-specific constraints: blank/empty checks,
+ * length bounds, content matching, regex patterns, case checks, format validations (email, UUID,
+ * numeric, alphabetic), and enum membership.
+ *
+ * <p>Usage example:
+ * {@snippet :
+ *   Validate.assertThat(name)
+ *           .isNotBlank()
+ *           .hasLengthBetween(1, 100)
+ *           .matches("[a-zA-Z0-9_-]+");
+ * }
+ *
+ * @see Validate
+ * @see ObjectValidationAssert
+ */
 public class StringValidationAssert extends ObjectValidationAssert<StringValidationAssert, String> {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -19,6 +38,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Blank/empty ---
 
+    /** Asserts the value is blank (null, empty, or whitespace only). */
     public StringValidationAssert isBlank() {
         if (isSkipped()) return this;
         if (StringUtils.isNotBlank(actual)) {
@@ -27,6 +47,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value is not blank. */
     public StringValidationAssert isNotBlank() {
         if (isSkipped()) return this;
         if (StringUtils.isBlank(actual)) {
@@ -35,6 +56,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value is empty (null or zero-length). */
     public StringValidationAssert isEmpty() {
         if (isSkipped()) return this;
         if (actual != null && !actual.isEmpty()) {
@@ -43,6 +65,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value is not empty. */
     public StringValidationAssert isNotEmpty() {
         if (isSkipped()) return this;
         if (actual == null || actual.isEmpty()) {
@@ -53,6 +76,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Length ---
 
+    /** Asserts the value has exactly the given length. */
     public StringValidationAssert hasLength(int expected) {
         if (isSkipped()) return this;
         if (actual == null || actual.length() != expected) {
@@ -62,6 +86,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the length is strictly less than max. */
     public StringValidationAssert hasLengthLessThan(int max) {
         if (isSkipped()) return this;
         if (actual != null && actual.length() >= max) {
@@ -71,6 +96,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the length is at most max. */
     public StringValidationAssert hasLengthLessThanOrEqualTo(int max) {
         if (isSkipped()) return this;
         if (actual != null && actual.length() > max) {
@@ -80,6 +106,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the length is strictly greater than min. */
     public StringValidationAssert hasLengthGreaterThan(int min) {
         if (isSkipped()) return this;
         if (actual == null || actual.length() <= min) {
@@ -89,6 +116,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the length is at least min. */
     public StringValidationAssert hasLengthGreaterThanOrEqualTo(int min) {
         if (isSkipped()) return this;
         if (actual == null || actual.length() < min) {
@@ -98,6 +126,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the length is between min and max (inclusive). */
     public StringValidationAssert hasLengthBetween(int min, int max) {
         if (isSkipped()) return this;
         if (actual == null || actual.length() < min || actual.length() > max) {
@@ -109,6 +138,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Content ---
 
+    /** Asserts the value contains the given subsequence. */
     public StringValidationAssert contains(CharSequence s) {
         if (isSkipped()) return this;
         if (actual == null || !actual.contains(s)) {
@@ -118,6 +148,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value does not contain the given subsequence. */
     public StringValidationAssert doesNotContain(CharSequence s) {
         if (isSkipped()) return this;
         if (actual != null && actual.contains(s)) {
@@ -127,15 +158,17 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value contains the subsequence, ignoring case. */
     public StringValidationAssert containsIgnoringCase(CharSequence s) {
         if (isSkipped()) return this;
-        if (actual == null || !StringUtils.containsIgnoreCase(actual, s)) {
+        if (actual == null || !Strings.CI.contains(actual, s)) {
             fail(DefaultErrorCodes.VALUE_INVALID_FORMAT,
                     MessageFormat.format("value must contain ''{0}''", s));
         }
         return this;
     }
 
+    /** Asserts the value starts with the given prefix. */
     public StringValidationAssert startsWith(String prefix) {
         if (isSkipped()) return this;
         if (actual == null || !actual.startsWith(prefix)) {
@@ -145,6 +178,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value does not start with the given prefix. */
     public StringValidationAssert doesNotStartWith(String prefix) {
         if (isSkipped()) return this;
         if (actual != null && actual.startsWith(prefix)) {
@@ -154,6 +188,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value ends with the given suffix. */
     public StringValidationAssert endsWith(String suffix) {
         if (isSkipped()) return this;
         if (actual == null || !actual.endsWith(suffix)) {
@@ -163,6 +198,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value does not end with the given suffix. */
     public StringValidationAssert doesNotEndWith(String suffix) {
         if (isSkipped()) return this;
         if (actual != null && actual.endsWith(suffix)) {
@@ -174,6 +210,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Pattern ---
 
+    /** Asserts the value matches the given regex. */
     public StringValidationAssert matches(String regex) {
         if (isSkipped()) return this;
         if (actual == null || !actual.matches(regex)) {
@@ -183,6 +220,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value matches the given compiled pattern. */
     public StringValidationAssert matches(Pattern pattern) {
         if (isSkipped()) return this;
         if (actual == null || !pattern.matcher(actual).matches()) {
@@ -192,6 +230,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value does not match the given regex. */
     public StringValidationAssert doesNotMatch(String regex) {
         if (isSkipped()) return this;
         if (actual != null && actual.matches(regex)) {
@@ -203,6 +242,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Case ---
 
+    /** Asserts the value is all lowercase. */
     public StringValidationAssert isLowerCase() {
         if (isSkipped()) return this;
         if (actual == null || !actual.equals(actual.toLowerCase())) {
@@ -211,6 +251,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value is all uppercase. */
     public StringValidationAssert isUpperCase() {
         if (isSkipped()) return this;
         if (actual == null || !actual.equals(actual.toUpperCase())) {
@@ -221,6 +262,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Format ---
 
+    /** Asserts the value is a well-formed email address. */
     public StringValidationAssert isEmail() {
         if (isSkipped()) return this;
         if (actual == null || !EMAIL_PATTERN.matcher(actual).matches()) {
@@ -229,6 +271,7 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value is a valid UUID. */
     public StringValidationAssert isUUID() {
         if (isSkipped()) return this;
         if (actual == null || !UUID_PATTERN.matcher(actual).matches()) {
@@ -237,25 +280,28 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
         return this;
     }
 
+    /** Asserts the value contains only digits. */
     public StringValidationAssert isNumeric() {
         if (isSkipped()) return this;
-        if (actual == null || !StringUtils.isNumeric(actual)) {
+        if (!StringUtils.isNumeric(actual)) {
             fail(DefaultErrorCodes.VALUE_INVALID_FORMAT, "value must be numeric");
         }
         return this;
     }
 
+    /** Asserts the value contains only letters and digits. */
     public StringValidationAssert isAlphanumeric() {
         if (isSkipped()) return this;
-        if (actual == null || !StringUtils.isAlphanumeric(actual)) {
+        if (!StringUtils.isAlphanumeric(actual)) {
             fail(DefaultErrorCodes.VALUE_INVALID_FORMAT, "value must be alphanumeric");
         }
         return this;
     }
 
+    /** Asserts the value contains only letters. */
     public StringValidationAssert isAlphabetic() {
         if (isSkipped()) return this;
-        if (actual == null || !StringUtils.isAlpha(actual)) {
+        if (!StringUtils.isAlpha(actual)) {
             fail(DefaultErrorCodes.VALUE_INVALID_FORMAT, "value must be alphabetic");
         }
         return this;
@@ -263,11 +309,13 @@ public class StringValidationAssert extends ObjectValidationAssert<StringValidat
 
     // --- Enum ---
 
+    /** Asserts the value is one of the allowed values (case-insensitive). */
     public StringValidationAssert isOneOf(String... allowedValues) {
         if (isSkipped()) return this;
         return isOneOf(Set.of(allowedValues));
     }
 
+    /** Asserts the value is one of the allowed values (case-insensitive). */
     public StringValidationAssert isOneOf(Set<String> allowedValues) {
         if (isSkipped()) return this;
         for (String allowed : allowedValues) {

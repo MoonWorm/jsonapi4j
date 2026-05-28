@@ -7,6 +7,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Request mixin that exposes JSON:API filter query parameters.
+ *
+ * <p>Parses {@code filter[<name>]=<values>} parameters into a map of filter name to value list.
+ * For example, {@code GET /countries?filter[id]=NO,FI&filter[region]=europe} produces a map
+ * with keys {@code "id"} and {@code "region"}.
+ *
+ * @see <a href="https://jsonapi.org/format/#fetching-filtering">JSON:API Filtering</a>
+ */
 public interface FiltersAwareRequest {
 
     Pattern PATTERN = Pattern.compile("^filter\\[(.+)]$");

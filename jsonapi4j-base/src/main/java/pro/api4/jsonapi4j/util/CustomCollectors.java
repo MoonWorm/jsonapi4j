@@ -9,6 +9,13 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+/**
+ * Custom {@link java.util.stream.Collector} implementations used internally by the framework.
+ *
+ * <p>Provides collectors for producing insertion-ordered {@link java.util.LinkedHashMap} results
+ * and maps that support {@code null} values (which the standard {@link java.util.stream.Collectors#toMap}
+ * does not).
+ */
 public final class CustomCollectors {
 
     private CustomCollectors() {

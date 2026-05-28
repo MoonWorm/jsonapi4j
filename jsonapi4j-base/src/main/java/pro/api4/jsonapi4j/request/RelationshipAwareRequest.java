@@ -2,6 +2,12 @@ package pro.api4.jsonapi4j.request;
 
 import pro.api4.jsonapi4j.domain.RelationshipName;
 
+/**
+ * Request mixin that provides the target relationship name extracted from the URL path.
+ *
+ * <p>For example, in {@code GET /countries/NO/relationships/currencies} the relationship
+ * name is {@code "currencies"}.
+ */
 public interface RelationshipAwareRequest {
 
     /**

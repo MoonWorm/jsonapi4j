@@ -16,6 +16,13 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Internal reflection utilities for field access, annotation lookup, and class hierarchy traversal.
+ *
+ * <p>Used by the framework for reading/writing fields on downstream DTOs (e.g. during sparse
+ * fieldsets processing and access-control anonymization), discovering annotations on operations
+ * and resources, and introspecting class hierarchies in a CDI/Spring proxy-safe manner.
+ */
 public final class ReflectionUtils {
 
     private ReflectionUtils() {

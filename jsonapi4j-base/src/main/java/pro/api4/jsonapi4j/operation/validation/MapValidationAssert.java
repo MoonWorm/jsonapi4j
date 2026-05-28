@@ -5,6 +5,25 @@ import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import java.text.MessageFormat;
 import java.util.Map;
 
+/**
+ * Fluent assertion class for validating {@link Map} values in JSON:API requests.
+ *
+ * <p>Extends {@link ObjectValidationAssert} with map-specific constraints: empty/non-empty checks,
+ * size bounds, key/value presence, and entry-level assertions.
+ *
+ * <p>Usage example:
+ * {@snippet :
+ *   Validate.assertThat(request.getFilters())
+ *           .isNotEmpty()
+ *           .hasSizeLessThanOrEqualTo(5)
+ *           .containsKey("status");
+ * }
+ *
+ * @param <K> the key type
+ * @param <V> the value type
+ * @see Validate
+ * @see ObjectValidationAssert
+ */
 public class MapValidationAssert<K, V>
         extends ObjectValidationAssert<MapValidationAssert<K, V>, Map<K, V>> {
 
@@ -12,6 +31,7 @@ public class MapValidationAssert<K, V>
         super(actual, source);
     }
 
+    /** Asserts the map is empty. */
     public MapValidationAssert<K, V> isEmpty() {
         if (isSkipped()) return this;
         if (actual != null && !actual.isEmpty()) {
@@ -20,6 +40,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map is not empty. */
     public MapValidationAssert<K, V> isNotEmpty() {
         if (isSkipped()) return this;
         if (actual == null || actual.isEmpty()) {
@@ -28,6 +49,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map has exactly the given size. */
     public MapValidationAssert<K, V> hasSize(int expected) {
         if (isSkipped()) return this;
         if (actual == null || actual.size() != expected) {
@@ -37,6 +59,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map size is at most {@code max}. */
     public MapValidationAssert<K, V> hasSizeLessThanOrEqualTo(int max) {
         if (isSkipped()) return this;
         if (actual != null && actual.size() > max) {
@@ -46,6 +69,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map size is strictly less than {@code max}. */
     public MapValidationAssert<K, V> hasSizeLessThan(int max) {
         if (isSkipped()) return this;
         if (actual != null && actual.size() >= max) {
@@ -55,6 +79,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map size is strictly greater than {@code min}. */
     public MapValidationAssert<K, V> hasSizeGreaterThan(int min) {
         if (isSkipped()) return this;
         if (actual == null || actual.size() <= min) {
@@ -64,6 +89,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map contains the given key. */
     public MapValidationAssert<K, V> containsKey(K key) {
         if (isSkipped()) return this;
         if (actual == null || !actual.containsKey(key)) {
@@ -73,6 +99,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map does not contain the given key. */
     public MapValidationAssert<K, V> doesNotContainKey(K key) {
         if (isSkipped()) return this;
         if (actual != null && actual.containsKey(key)) {
@@ -82,6 +109,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map contains all given keys. */
     @SafeVarargs
     public final MapValidationAssert<K, V> containsKeys(K... keys) {
         if (isSkipped()) return this;
@@ -99,6 +127,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map contains the given value. */
     public MapValidationAssert<K, V> containsValue(V value) {
         if (isSkipped()) return this;
         if (actual == null || !actual.containsValue(value)) {
@@ -108,6 +137,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map contains the given key-value pair. */
     public MapValidationAssert<K, V> containsEntry(K key, V value) {
         if (isSkipped()) return this;
         if (actual == null || !actual.containsKey(key) || !value.equals(actual.get(key))) {
@@ -117,6 +147,7 @@ public class MapValidationAssert<K, V>
         return this;
     }
 
+    /** Asserts the map does not contain the given key-value pair. */
     public MapValidationAssert<K, V> doesNotContainEntry(K key, V value) {
         if (isSkipped()) return this;
         if (actual != null && actual.containsKey(key) && value.equals(actual.get(key))) {

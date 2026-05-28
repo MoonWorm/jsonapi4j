@@ -8,6 +8,13 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Request mixin that provides access to non-JSON:API (custom) query parameters.
+ *
+ * <p>Any query parameter that is not a recognized JSON:API parameter ({@code filter[*]},
+ * {@code sort}, {@code include}, {@code fields[*]}, {@code page[*]}) is treated as a custom
+ * parameter and made available through this interface.
+ */
 public interface CustomQueryParamsAwareRequest {
 
     /**

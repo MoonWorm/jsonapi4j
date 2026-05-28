@@ -2,6 +2,14 @@ package pro.api4.jsonapi4j.request;
 
 import java.util.List;
 
+/**
+ * Request mixin that exposes the JSON:API {@code include} query parameter for compound documents.
+ *
+ * <p>Parses {@code include=<relationship>[,<relationship>]} into a list of relationship names
+ * that should be added to the {@code "included"} member of the response document.
+ *
+ * @see <a href="https://jsonapi.org/format/#fetching-includes">JSON:API Inclusion of Related Resources</a>
+ */
 public interface IncludeAwareRequest {
 
     String INCLUDE_PARAM = "include";

@@ -21,6 +21,13 @@ import static pro.api4.jsonapi4j.request.PaginationAwareRequest.isJsonApiPaginat
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.extractResourceType;
 import static pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest.isJsonApiFieldsParam;
 
+/**
+ * Utility class for parsing raw HTTP request data into structured JSON:API request components.
+ *
+ * <p>Provides static methods to parse query parameters (filters, sort, includes, field sets,
+ * pagination, custom params), URL path segments (resource id), and content-type parameters
+ * (extensions, profiles) from their raw string representations.
+ */
 public final class JsonApiRequestParsingUtil {
 
     private static final Logger log = LoggerFactory.getLogger(JsonApiRequestParsingUtil.class);

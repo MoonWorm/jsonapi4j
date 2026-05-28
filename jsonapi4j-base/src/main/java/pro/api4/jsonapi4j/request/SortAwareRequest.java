@@ -2,6 +2,14 @@ package pro.api4.jsonapi4j.request;
 
 import java.util.Map;
 
+/**
+ * Request mixin that exposes the JSON:API {@code sort} query parameter.
+ *
+ * <p>Parses {@code sort=<field>[,<field>]} into an ordered map of field name to {@link SortOrder}.
+ * A leading {@code -} indicates descending order; {@code +} or no prefix indicates ascending.
+ *
+ * @see <a href="https://jsonapi.org/format/#fetching-sorting">JSON:API Sorting</a>
+ */
 public interface SortAwareRequest {
 
     String SORT_PARAM = "sort";

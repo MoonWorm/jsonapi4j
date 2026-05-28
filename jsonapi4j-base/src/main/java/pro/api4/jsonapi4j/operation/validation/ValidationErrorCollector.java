@@ -7,6 +7,19 @@ import pro.api4.jsonapi4j.exception.ValidationError;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Collects validation errors from multiple validation assertions and throws them as a single
+ * composite exception.
+ *
+ * <p>Instead of failing on the first validation error, this collector runs all validations and
+ * accumulates their errors. After all validations have been executed, {@link #throwIfErrors()}
+ * throws a single {@link pro.api4.jsonapi4j.exception.JsonApiRequestValidationException} (for one error)
+ * or a {@link pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException} (for multiple errors),
+ * enabling clients to receive all validation problems in one response.
+ *
+ * @see JsonApiRequestValidator
+ * @see ErrorSources
+ */
 public class ValidationErrorCollector {
 
     private final List<ValidationError> errors = new ArrayList<>();
@@ -31,6 +44,9 @@ public class ValidationErrorCollector {
         }
     }
 
+    /**
+     * Collects validation errors from the runnable, preserving the exception's original source.
+     */
     public void collect(Runnable runnable) {
         try {
             runnable.run();
@@ -41,10 +57,17 @@ public class ValidationErrorCollector {
         }
     }
 
+    /**
+     * Returns whether any validation errors have been collected.
+     */
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    /**
+     * Throws collected errors as a single exception, or
+     * {@link CompositeJsonApiRequestValidationException} for multiple.
+     */
     public void throwIfErrors() {
         if (errors.size() == 1) {
             ValidationError error = errors.getFirst();

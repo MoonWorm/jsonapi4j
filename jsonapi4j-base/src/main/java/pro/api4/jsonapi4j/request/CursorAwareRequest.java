@@ -3,6 +3,17 @@ package pro.api4.jsonapi4j.request;
 
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 
+/**
+ * Request mixin that exposes cursor-based pagination parameters
+ * as defined by the JSON:API {@code page[cursor]} query parameter.
+ *
+ * <p>The framework encourages cursor-based pagination by default. For limit-offset style,
+ * see {@link LimitOffsetAwareRequest}.
+ *
+ * @see <a href="https://jsonapi.org/format/#fetching-pagination">JSON:API Pagination</a>
+ * @see LimitOffsetAwareRequest
+ * @see PaginationAwareRequest
+ */
 public interface CursorAwareRequest {
 
     String CURSOR_PARAM = "page[cursor]";
