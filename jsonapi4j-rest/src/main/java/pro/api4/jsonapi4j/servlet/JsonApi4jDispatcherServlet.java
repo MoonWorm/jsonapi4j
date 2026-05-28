@@ -28,7 +28,6 @@ import pro.api4.jsonapi4j.servlet.response.ResponseStatus;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 
 import java.io.IOException;
 import java.net.URI;
@@ -91,7 +90,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             log.debug("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
             ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry = new JsonApi4jErrorHandlerFactoriesRegistry();
             errorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
-            errorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
             return errorHandlerFactoriesRegistry;
         }
         log.debug("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);

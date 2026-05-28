@@ -99,34 +99,27 @@ JsonApi4j also provides a hierarchy of built-in exceptions:
 - `JsonApi4jException` -- the root exception with `httpStatus`, `errorCode`, and `detail` fields
 - `ResourceNotFoundException` -- for missing resources (404)
 - `InvalidPayloadException` -- for bad request bodies (400)
-- `ConstraintViolationException` -- for validation failures (400)
 
 When any of these exceptions are thrown, JsonApi4j automatically formats the response as a JSON:API error document with the correct HTTP status code.
 
 ## Step 4: Validate Requests and Return Errors Early
 
-Do not wait until your service layer to discover that the input is invalid. Use JSR-380 (`@Valid`) annotations to validate request bodies at the controller level.
+Do not wait until your service layer to discover that the input is invalid. Validate request inputs early and return clear error messages.
+
+JsonApi4j provides a fluent Validation API for request validation. Use `JsonApiRequestValidator` to validate path segments, query parameters, headers, and request bodies with a chainable assertion syntax:
 
 ```java
-public class CreateUserRequest {
-
-    @NotNull(message = "Name is required")
-    private String name;
-
-    @Email(message = "Email must be valid")
-    private String email;
-
-    @Size(min = 8, message = "Password must be at least 8 characters")
-    private String password;
-}
+JsonApiRequestValidator.forRequest(request)
+    .parameters(p -> p
+        .withFilterValidator("name", filter -> filter.isNotEmpty())
+        .withLimitValidator(limit -> limit.isNotNull().isGreaterThan(0L)))
+    .singleResourceBody(UserAttributes.class, body -> body
+        .withAttributesValidator(att -> att.isNotNull())
+        .withResourceTypeValidator(type -> type.isNotBlank()))
+    .validate();
 ```
 
-When validation fails, return `400 Bad Request` with clear messages indicating which fields are invalid.
-
-JsonApi4j takes this further with built-in JSR-380 constraint violation mapping. Validation annotations are automatically mapped to JSON:API error codes:
-- `@NotNull` maps to `VALUE_IS_ABSENT`
-- `@Size` maps to `VALUE_TOO_LONG` or `ARRAY_LENGTH_TOO_LONG`
-- `@Pattern` maps to `VALUE_INVALID_FORMAT`
+Validation errors are automatically collected and returned as a JSON:API errors document with proper error codes and source pointers.
 
 ### Custom Error Handlers
 
@@ -187,7 +180,7 @@ Return generic error messages to clients and log the full exception details inte
 
 ### How should I handle validation errors in a REST API?
 
-Use JSR-380 annotations like `@NotNull`, `@Email`, and `@Size` on your request objects. Return `400 Bad Request` with clear per-field error messages when validation fails. JsonApi4j maps these violations to JSON:API error codes automatically.
+Validate request inputs early and return `400 Bad Request` with clear per-field error messages when validation fails. JsonApi4j provides a fluent Validation API that collects errors across validators and maps them to JSON:API error codes with proper source pointers automatically.
 
 ### Should I use the same JSON structure for all error responses?
 
@@ -227,7 +220,7 @@ Yes. A consistent error format makes your API predictable and easier for clients
       "name": "How should I handle validation errors in a REST API?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Use JSR-380 annotations like @NotNull, @Email, and @Size on your request objects. Return 400 Bad Request with clear per-field error messages when validation fails. JsonApi4j maps these violations to JSON:API error codes automatically."
+        "text": "Validate request inputs early and return 400 Bad Request with clear per-field error messages when validation fails. JsonApi4j provides a fluent Validation API that collects errors across validators and maps them to JSON:API error codes with proper source pointers automatically."
       }
     },
     {

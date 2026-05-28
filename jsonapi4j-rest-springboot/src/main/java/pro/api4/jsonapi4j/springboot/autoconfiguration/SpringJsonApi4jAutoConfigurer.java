@@ -32,7 +32,6 @@ import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAcPluginConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPluginConfig;
@@ -152,7 +151,6 @@ public class SpringJsonApi4jAutoConfigurer {
         JsonApi4jErrorHandlerFactoriesRegistry jsonapi4jErrorHandlerFactoriesRegistry
                 = new JsonApi4jErrorHandlerFactoriesRegistry();
         jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
-        jsonapi4jErrorHandlerFactoriesRegistry.registerAll(new Jsr380ErrorHandlers());
         errorHandlerFactoriesScanner.getErrorHandlerFactories()
                 .forEach(jsonapi4jErrorHandlerFactoriesRegistry::registerAll);
         return jsonapi4jErrorHandlerFactoriesRegistry;

@@ -25,7 +25,6 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRe
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.Jsr380ErrorHandlers;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.Comparator;
@@ -49,9 +48,6 @@ public class QuarkusJsonApi4jDefaultBeans {
 
         registry.registerAll(new DefaultErrorHandlerFactory());
         LOG.info("Default {} has been registered", DefaultErrorHandlerFactory.class.getSimpleName());
-
-        registry.registerAll(new Jsr380ErrorHandlers());
-        LOG.info("Default {} has been registered", Jsr380ErrorHandlers.class.getSimpleName());
 
         customErrorHandlerFactories.stream().forEach(f -> {
             registry.registerAll(f);

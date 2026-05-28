@@ -17,8 +17,7 @@ public interface Operation {
      * <p>
      * By default, no validation implemented.
      * <p>
-     * Must throw an exception if validation failed. Check DefaultErrorHandlerFactory, Jsr380ErrorHandlers,
-     * etc. for more details.
+     * Must throw an exception if validation failed. Check DefaultErrorHandlerFactory for more details.
      *
      * @param request incoming {@link JsonApiRequest}
      */

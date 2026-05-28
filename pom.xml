@@ -78,9 +78,6 @@
         <apache.commons-io.version>2.17.0</apache.commons-io.version>
         <guava.version>18.0</guava.version>
 
-        <!--validation-->
-        <jakarta.validation-api.version>3.1.1</jakarta.validation-api.version>
-
         <!--logging-->
         <logback-classic.version>1.2.9</logback-classic.version>
         <slf4j-api.version>1.7.32</slf4j-api.version>
@@ -165,13 +162,6 @@
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
                 <version>${tomcat-embed-core.version}</version>
-            </dependency>
-
-            <!--JSR-380-->
-            <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${jakarta.validation-api.version}</version>
             </dependency>
 
             <!--OAS-->

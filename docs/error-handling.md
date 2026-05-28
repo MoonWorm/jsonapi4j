@@ -116,59 +116,6 @@ When using `JsonApiRequestValidator.forRequest(request)`, the validator runs **a
 
 Each developer-provided validator lambda is atomic — if a lambda throws, the error is collected and the next validator runs. Errors within a single lambda are still fail-fast (e.g., a null check followed by a method call on the same value). This design prevents NPEs from interdependent checks while still collecting errors across independent validators.
 
-### Jsr380ErrorHandlers
-
-Optional. Can be added if needed since JSR-380 is de-facto one of the most common ways to validate input in Java applications. Handles `jakarta.validation.ConstraintViolationException` thrown when JSR-380 annotations on your models are violated. Each constraint violation becomes a separate `ErrorObject` in the response, all returned with HTTP 400.
-
-The constraint annotation determines the error code:
-
-| Annotation | Error Code |
-|-----------|------------|
-| `@NotNull` | `VALUE_IS_ABSENT` |
-| `@NotBlank` | `VALUE_EMPTY` |
-| `@Size` (on String/number) | `VALUE_TOO_LONG` |
-| `@Size` (on Collection) | `ARRAY_LENGTH_TOO_LONG` |
-| `@Pattern` | `VALUE_INVALID_FORMAT` |
-| `@Digits` | `VALUE_INVALID_FORMAT` |
-| `@Positive` | `VALUE_TOO_LOW` |
-| `@Max` | `VALUE_TOO_HIGH` |
-| Other annotations | `GENERIC_REQUEST_ERROR` |
-
-For example, an `UserAttributes` object with `@NotNull` and `@Size` constraints:
-
-```java
-public class UserAttributes {
-    @NotNull
-    private String name;
-
-    @Size(max = 100)
-    private String bio;
-}
-```
-
-If both constraints are violated, the response contains two errors:
-
-```json
-{
-  "errors": [
-    {
-      "id": "...",
-      "status": "400",
-      "code": "VALUE_IS_ABSENT",
-      "detail": "must not be null",
-      "source": { "parameter": "name" }
-    },
-    {
-      "id": "...",
-      "status": "400",
-      "code": "VALUE_TOO_LONG",
-      "detail": "size must be between 0 and 100",
-      "source": { "parameter": "bio" }
-    }
-  ]
-}
-```
-
 ## Error Codes
 
 Error codes are represented by the `ErrorCode` interface (single method: `toCode()`). The framework provides `DefaultErrorCodes` with 32 built-in codes organized by category:
@@ -279,7 +226,6 @@ public class MyErrorHandlerFactory implements ErrorHandlerFactory {
     <p>Register the factory on the <code>ErrorHandlerFactoriesRegistry</code> before the framework initializes, or set it as a <code>ServletContext</code> attribute.</p>
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">ErrorHandlerFactoriesRegistry</span> <span class="n">registry</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">JsonApi4jErrorHandlerFactoriesRegistry</span><span class="o">();</span>
 <span class="n">registry</span><span class="o">.</span><span class="na">registerAll</span><span class="o">(</span><span class="k">new</span> <span class="nc">DefaultErrorHandlerFactory</span><span class="o">());</span>
-<span class="n">registry</span><span class="o">.</span><span class="na">registerAll</span><span class="o">(</span><span class="k">new</span> <span class="nc">Jsr380ErrorHandlers</span><span class="o">());</span>
 <span class="n">registry</span><span class="o">.</span><span class="na">registerAll</span><span class="o">(</span><span class="k">new</span> <span class="nc">MyErrorHandlerFactory</span><span class="o">());</span>
 <span class="n">servletContext</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span>
     <span class="nc">JsonApi4jServletContainerInitializer</span><span class="o">.</span><span class="na">ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME</span><span class="o">,</span>
