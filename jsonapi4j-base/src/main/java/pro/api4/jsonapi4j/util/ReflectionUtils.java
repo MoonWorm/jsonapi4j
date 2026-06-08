@@ -241,7 +241,6 @@ public final class ReflectionUtils {
         }
         visited.add(clazz);
         for (Field field : clazz.getDeclaredFields()) {
-            field.setAccessible(true);
             String path = prefix.isEmpty()
                     ? field.getName()
                     : prefix + "." + field.getName();
@@ -260,7 +259,31 @@ public final class ReflectionUtils {
                 || Boolean.class.equals(clazz)
                 || Character.class.equals(clazz)
                 || Date.class.isAssignableFrom(clazz)
-                || clazz.isEnum();
+                || clazz.isEnum()
+                || isJdkType(clazz);
+    }
+
+    /**
+     * Treats platform (JDK) types as opaque leaves so traversal never descends into them. JDK value
+     * types such as {@code java.time.LocalDate}, {@code java.util.UUID} or {@code java.math.BigDecimal}
+     * carry no domain-meaningful field paths, and the module system forbids making their internal
+     * fields accessible (e.g. {@code java.base} does not open {@code java.time} to the unnamed module).
+     */
+    private static boolean isJdkType(Class<?> clazz) {
+        if (clazz.isArray()) {
+            return false;
+        }
+        Package pkg = clazz.getPackage();
+        if (pkg == null) {
+            return false;
+        }
+        String name = pkg.getName();
+        return name.startsWith("java.")
+                || name.startsWith("javax.")
+                || name.startsWith("jakarta.")
+                || name.startsWith("sun.")
+                || name.startsWith("com.sun.")
+                || name.startsWith("jdk.");
     }
 
     /**

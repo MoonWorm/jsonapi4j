@@ -44,6 +44,24 @@ public class ReflectionUtilsTests {
     }
 
     @Test
+    public void getAllFieldPaths_jdkValueTypeAttributes_treatedAsLeavesAndNotTraversed() {
+        // given - when
+        Set<String> paths = ReflectionUtils.getAllFieldPaths(JdkTypes.class);
+
+        // then - JDK value types are leaf paths; traversal must not descend into their internals
+        // (descending into e.g. java.time.LocalDate would throw InaccessibleObjectException)
+        assertThat(paths).isEqualTo(
+                Set.of(
+                        "localDate",
+                        "localDateTime",
+                        "instant",
+                        "uuid",
+                        "amount"
+                )
+        );
+    }
+
+    @Test
     public void setFieldPathValueThrowing_nullObject_checkResult() {
         // given
         Object object = null;
@@ -224,6 +242,14 @@ public class ReflectionUtilsTests {
     @Data
     public class Nested {
         Nested nested;
+    }
+
+    public class JdkTypes {
+        java.time.LocalDate localDate;
+        java.time.LocalDateTime localDateTime;
+        java.time.Instant instant;
+        java.util.UUID uuid;
+        java.math.BigDecimal amount;
     }
 
     public class PathsTraversal {
