@@ -130,7 +130,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
   ],
   "links": {
     "self": "/users",
+    "first": "/users",
     "next": "/users?page%5Bcursor%5D=DoJu"
+  },
+  "meta": {
+    "pagination.nextCursor": "DoJu"
   }
 }
 ```
