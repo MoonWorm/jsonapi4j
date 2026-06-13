@@ -62,6 +62,33 @@ public class ReflectionUtilsTests {
     }
 
     @Test
+    public void isJdkType_jdkPackages_returnTrue() {
+        assertThat(ReflectionUtils.isJdkType(String.class)).isTrue();
+        assertThat(ReflectionUtils.isJdkType(java.time.LocalDate.class)).isTrue();
+        assertThat(ReflectionUtils.isJdkType(java.util.UUID.class)).isTrue();
+        assertThat(ReflectionUtils.isJdkType(java.math.BigDecimal.class)).isTrue();
+        assertThat(ReflectionUtils.isJdkType(javax.security.auth.Subject.class)).isTrue();
+    }
+
+    @Test
+    public void isJdkType_customClass_returnsFalse() {
+        assertThat(ReflectionUtils.isJdkType(Nested.class)).isFalse();
+    }
+
+    @Test
+    public void isJdkType_arrays_returnFalse() {
+        assertThat(ReflectionUtils.isJdkType(String[].class)).isFalse();
+        assertThat(ReflectionUtils.isJdkType(int[].class)).isFalse();
+        assertThat(ReflectionUtils.isJdkType(Nested[].class)).isFalse();
+    }
+
+    @Test
+    public void isJdkType_nullPackage_returnsFalse() {
+        // primitives have no package
+        assertThat(ReflectionUtils.isJdkType(int.class)).isFalse();
+    }
+
+    @Test
     public void setFieldPathValueThrowing_nullObject_checkResult() {
         // given
         Object object = null;

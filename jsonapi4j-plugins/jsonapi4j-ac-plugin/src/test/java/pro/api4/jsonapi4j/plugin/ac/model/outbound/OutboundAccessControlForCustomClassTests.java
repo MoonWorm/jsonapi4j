@@ -79,6 +79,56 @@ public class OutboundAccessControlForCustomClassTests {
         assertThat(actualResult).isNotNull().isEqualTo(higherPrecedence);
     }
 
+    @Test
+    public void fromObjectClass_enumTypedField_doesNotRecurseIntoConstants_noStackOverflow() {
+        // given
+        ClassWithEnumField target = new ClassWithEnumField();
+
+        // when - must not throw StackOverflowError from recursing into the enum's self-referential constants
+        OutboundAccessControlForCustomClass actualResult
+                = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(target);
+
+        // then - the enum's own class-level access control is captured, but it is treated as a leaf
+        assertThat(actualResult).isNotNull();
+        assertThat(actualResult.getNested()).containsKey("status");
+        OutboundAccessControlForCustomClass statusAc = actualResult.getNested().get("status");
+        assertThat(statusAc.getClassLevel()).isNotNull();
+        assertThat(statusAc.getClassLevel().getRequiredScopes().getRequiredScopes()).isEqualTo(Set.of("Status"));
+        assertThat(statusAc.getNested()).isEmpty();
+    }
+
+    @Test
+    public void fromObjectClass_selfReferentialField_doesNotRecurseInfinitely_noStackOverflow() {
+        // given
+        SelfReferential target = new SelfReferential();
+
+        // when - a class referencing its own type must not blow the stack
+        OutboundAccessControlForCustomClass actualResult
+                = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(target);
+
+        // then
+        assertThat(actualResult).isNotNull();
+        assertThat(actualResult.getNested().get("child")).isNotNull();
+    }
+
+    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "Status"))
+    private enum Status {
+        ACTIVE, INACTIVE
+    }
+
+    @Data
+    private static class ClassWithEnumField {
+        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "status"))
+        private Status status;
+    }
+
+    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "SelfReferential"))
+    @Data
+    private static class SelfReferential {
+        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "child"))
+        private SelfReferential child;
+    }
+
     @AccessControl(scopes = @AccessControlScopes(requiredScopes = "TargetClass"))
     @Data
     private static class TargetClass extends ParentClass {

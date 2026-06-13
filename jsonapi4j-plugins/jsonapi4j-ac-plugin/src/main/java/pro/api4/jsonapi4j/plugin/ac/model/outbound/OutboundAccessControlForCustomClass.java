@@ -15,7 +15,9 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @EqualsAndHashCode
@@ -73,31 +75,51 @@ public class OutboundAccessControlForCustomClass {
     }
 
     private static Map<String, OutboundAccessControlForCustomClass> extractNestedRecursively(Class<?> clazz) {
+        return extractNestedRecursively(clazz, new HashSet<>());
+    }
+
+    private static Map<String, OutboundAccessControlForCustomClass> extractNestedRecursively(Class<?> clazz,
+                                                                                             Set<Class<?>> visited) {
         Map<String, OutboundAccessControlForCustomClass> result = new HashMap<>();
 
-        Map<String, Class<?>> fields = ReflectionUtils.fetchFieldTypes(clazz);
+        // Guard against self-referential / cyclic class graphs (e.g. a tree node referencing its own
+        // type) that would otherwise recurse until the stack overflows. Scoped to the current branch
+        // so diamond-shaped graphs are still fully explored.
+        if (!visited.add(clazz)) {
+            return result;
+        }
+        try {
+            Map<String, Class<?>> fields = ReflectionUtils.fetchFieldTypes(clazz);
 
-        fields.forEach((fieldName, fieldClass) -> {
-            if (!fieldClass.getPackageName().startsWith("java.")) {
-                AccessControlModel classLevelAccessControl
-                        = AccessControlModel.fromClassAnnotation(fieldClass);
-                Map<String, AccessControlModel> fieldLevelAccessControl
-                        = AccessControlModel.fromFieldsAnnotations(fieldClass);
-                Map<String, OutboundAccessControlForCustomClass> nested
-                        = extractNestedRecursively(fieldClass);
-                if (classLevelAccessControl != null
-                        || MapUtils.isNotEmpty(fieldLevelAccessControl)
-                        || MapUtils.isNotEmpty(nested)) {
-                    result.put(
-                            fieldName,
-                            OutboundAccessControlForCustomClass.builder()
-                                    .classLevel(classLevelAccessControl)
-                                    .fieldLevel(fieldLevelAccessControl)
-                                    .nested(nested).build()
-                    );
+            fields.forEach((fieldName, fieldClass) -> {
+                if (!ReflectionUtils.isJdkType(fieldClass)) {
+                    AccessControlModel classLevelAccessControl
+                            = AccessControlModel.fromClassAnnotation(fieldClass);
+                    Map<String, AccessControlModel> fieldLevelAccessControl
+                            = AccessControlModel.fromFieldsAnnotations(fieldClass);
+                    // Enums are value types: their compiler-generated constant fields are static and
+                    // self-referential (each constant is a field typed as the enum itself), so recursing
+                    // into them never terminates. Capture the enum's own class/field-level access control
+                    // but do not descend into its constants.
+                    Map<String, OutboundAccessControlForCustomClass> nested = fieldClass.isEnum()
+                            ? Collections.emptyMap()
+                            : extractNestedRecursively(fieldClass, visited);
+                    if (classLevelAccessControl != null
+                            || MapUtils.isNotEmpty(fieldLevelAccessControl)
+                            || MapUtils.isNotEmpty(nested)) {
+                        result.put(
+                                fieldName,
+                                OutboundAccessControlForCustomClass.builder()
+                                        .classLevel(classLevelAccessControl)
+                                        .fieldLevel(fieldLevelAccessControl)
+                                        .nested(nested).build()
+                        );
+                    }
                 }
-            }
-        });
+            });
+        } finally {
+            visited.remove(clazz);
+        }
 
         return result;
     }

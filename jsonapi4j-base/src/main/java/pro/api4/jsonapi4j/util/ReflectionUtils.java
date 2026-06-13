@@ -264,12 +264,17 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Treats platform (JDK) types as opaque leaves so traversal never descends into them. JDK value
-     * types such as {@code java.time.LocalDate}, {@code java.util.UUID} or {@code java.math.BigDecimal}
-     * carry no domain-meaningful field paths, and the module system forbids making their internal
-     * fields accessible (e.g. {@code java.base} does not open {@code java.time} to the unnamed module).
+     * Determines whether a type is a platform (JDK) type that field-graph traversals should treat as an
+     * opaque leaf rather than descending into. JDK value types such as {@code java.time.LocalDate},
+     * {@code java.util.UUID} or {@code java.math.BigDecimal} carry no domain-meaningful field structure,
+     * and the module system forbids making their internal fields accessible (e.g. {@code java.base} does
+     * not open {@code java.time} to the unnamed module, which otherwise yields an
+     * {@link java.lang.reflect.InaccessibleObjectException}).
+     *
+     * @param clazz target type
+     * @return {@code true} if the type belongs to a JDK package, {@code false} otherwise (including arrays)
      */
-    private static boolean isJdkType(Class<?> clazz) {
+    public static boolean isJdkType(Class<?> clazz) {
         if (clazz.isArray()) {
             return false;
         }
