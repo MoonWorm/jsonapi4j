@@ -269,14 +269,17 @@
     margin: 0;
     font-weight: 400;
   }
+}
 
-  code {
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    padding: 0.1em 0.4em;
-    border-radius: 4px;
-    font-size: 0.9em;
-  }
+// Override the theme's `.page__content :not(pre) > code` (specificity 0,1,2),
+// which otherwise forces a near-white background — making our white code text
+// invisible inside the dark band. Anchoring under .page__content wins on specificity.
+.page__content .dark-band code {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
 }
 
 // Framework stack cards
