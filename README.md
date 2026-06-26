@@ -199,6 +199,17 @@ Resolves `include` queries with multi-level relationship chaining (e.g., `includ
 | [Quarkus](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-quarkus-sampleapp) | Quarkus | Same domain, CDI-based integration                                     |
 | [Servlet](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) | Servlet API | Same domain, objects registration in Servlet Context                   |
 
+### AI-assisted development
+
+Building on JsonApi4j with an AI agent? Install the **[Claude Code plugin](./claude-code-plugin)** — it
+bundles a skill that knows how to design resources, relationships, operations, compound documents,
+validation, and tests with this framework:
+
+```
+/plugin marketplace add MoonWorm/jsonapi4j
+/plugin install jsonapi4j@jsonapi4j
+```
+
 ## Alternatives
 
 Looking for a JSON:API implementation for Java? Here's a quick guide:

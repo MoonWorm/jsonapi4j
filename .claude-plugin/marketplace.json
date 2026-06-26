@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jsonapi4j",
+  "description": "Claude Code plugin for building JSON:API backends with the jsonapi4j (pro.api4) Java framework — resources, relationships, operations, compound documents, validation, security, and testing.",
+  "owner": {
+    "name": "Aliaksei Taliuk"
+  },
+  "plugins": [
+    {
+      "name": "jsonapi4j",
+      "description": "How to design and build JSON:API-compliant backends with jsonapi4j (Spring Boot, Quarkus, Servlet) — resources, to-one/to-many relationships, operations, compound documents/includes, pagination, validation, access control, configuration, and RestAssured testing.",
+      "source": "./claude-code-plugin",
+      "category": "development",
+      "homepage": "https://api4.pro/"
+    }
+  ]
+}

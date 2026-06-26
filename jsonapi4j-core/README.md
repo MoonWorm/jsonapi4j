@@ -9,6 +9,7 @@ Core processing engine. Handles JSON:API request execution, resource/relationshi
 - `OperationsRegistry` — central registry of operations
 - `SingleResourceProcessor`, `MultipleResourcesProcessor` — resource document builders
 - `ToOneRelationshipProcessor`, `ToManyRelationshipsProcessor` — relationship document builders
+- `BatchToOneRelationshipProcessor`, `BatchToManyRelationshipsProcessor` — batch relationship resolution (N+1-efficient includes)
 
 ## Usage
 

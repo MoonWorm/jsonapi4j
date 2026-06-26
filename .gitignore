@@ -87,6 +87,4 @@ nb-configuration.xml
 HELP.md
 bin/
 
-.claude
-specs/
-CLAUDE.md
+.claude/
