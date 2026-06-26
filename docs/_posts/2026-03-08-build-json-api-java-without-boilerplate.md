@@ -100,23 +100,25 @@ The framework takes care of:
 
 Real APIs have relationships between resources. In a traditional approach, managing one-to-many and many-to-many relationships means writing custom serialization logic for nested JSON.
 
-With a declarative approach, you define relationships alongside your resources:
+With a declarative approach, you define relationships alongside your resources. A relationship only ever emits a resource identifier (`{type, id}`), so a lightweight ref — `OrderRef` (just the order id) — is usually all you need, rather than the full `OrderDto`. The type is your call (only the `id`/`type` are read), but a purpose-built ref is the recommended default:
 
 ```java
+public record OrderRef(String id) {}
+
 @JsonApiRelationship(
     relationshipName = "orders",
     parentResource = UserResource.class
 )
-public class UserOrdersRelationship implements ToManyRelationship<OrderDto> {
+public class UserOrdersRelationship implements ToManyRelationship<OrderRef> {
 
     @Override
-    public String resolveResourceIdentifierType(OrderDto dto) {
+    public String resolveResourceIdentifierType(OrderRef ref) {
         return "orders";
     }
 
     @Override
-    public String resolveResourceIdentifierId(OrderDto dto) {
-        return dto.getId();
+    public String resolveResourceIdentifierId(OrderRef ref) {
+        return ref.id();
     }
 }
 ```

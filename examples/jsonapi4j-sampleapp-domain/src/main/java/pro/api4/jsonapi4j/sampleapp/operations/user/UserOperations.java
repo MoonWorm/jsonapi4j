@@ -27,13 +27,16 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.principal.tier.TierAdmin;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef.RelationshipType;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +60,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
 
-    public static Map<String, RelationshipType> parseRelations(List<ResourceIdentifierObject> data) {
-        Map<String, RelationshipType> relations = new LinkedHashMap<>();
+    public static List<RelativeRef> parseRelations(List<ResourceIdentifierObject> data) {
+        List<RelativeRef> relations = new ArrayList<>();
         for (ResourceIdentifierObject ri : ListUtils.emptyIfNull(data)) {
-            parseRelationshipType(ri).ifPresent(rt -> relations.put(ri.getId(), rt));
+            parseRelationshipType(ri).ifPresent(rt -> relations.add(new RelativeRef(ri.getId(), rt)));
         }
         return relations;
     }
@@ -229,21 +232,22 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (relationships != null) {
             ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get(CITIZENSHIPS);
             if (citizenships != null) {
-                List<String> countryIds = citizenships.getData()
+                List<CountryRef> citizenshipRefs = citizenships.getData()
                         .stream()
                         .map(ResourceIdentifierObject::getId)
+                        .map(CountryRef::new)
                         .toList();
-                if (!countryIds.isEmpty()) {
-                    userDb.updateUserCitizenships(userId, countryIds);
+                if (!citizenshipRefs.isEmpty()) {
+                    userDb.updateUserCitizenships(userId, citizenshipRefs);
                 }
             }
             ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get(PLACE_OF_BIRTH);
             if (placeOfBirth != null) {
-                userDb.updateUserPlaceOfBirth(userId, placeOfBirth.getData().getId());
+                userDb.updateUserPlaceOfBirth(userId, new CountryRef(placeOfBirth.getData().getId()));
             }
             ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get(RELATIVES);
             if (relatives != null) {
-                Map<String, RelationshipType> relations = parseRelations(relatives.getData());
+                List<RelativeRef> relations = parseRelations(relatives.getData());
                 if (!relations.isEmpty()) {
                     userDb.updateUserRelatives(userId, relations);
                 }

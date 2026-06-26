@@ -58,7 +58,8 @@ public class UserResource implements Resource<UserDbEntity> {
    resource's own data**.
 2. **`ResourceOperations<DTO>`**: `readById`, `readPage` (+ `validateReadById` / `validateReadMultiple`);
    throw `ResourceNotFoundException` on a miss. Choose a pagination strategy for `readPage`.
-3. **Relationships**: `ToOne/ToManyRelationship<Ref>` returning **lightweight refs** (not heavy DTOs);
+3. **Relationships**: `ToOne/ToManyRelationship<Ref>` — **prefer lightweight refs** over heavy DTOs (any
+   type works; only `id`/`type`/meta are read, so it's your call);
    `*Operations` with `readOne`/`readMany` (+ `readOneForResource`/`readManyForResource` and/or batch
    ops to avoid N+1 on includes).
 4. **Security**: add your web framework's URL-prefix rule if the resource is public; layer the AC plugin

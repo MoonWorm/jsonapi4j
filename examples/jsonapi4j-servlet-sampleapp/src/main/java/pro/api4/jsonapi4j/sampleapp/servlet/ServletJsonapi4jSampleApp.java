@@ -94,8 +94,8 @@ public class ServletJsonapi4jSampleApp {
         CountriesClient countriesClient = new CountriesInMemoryClient();
         OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
                 .operation(new UserOperations(userDb))
-                .operation(new UserCitizenshipsOperations(countriesClient, userDb))
-                .operation(new UserPlaceOfBirthOperations(countriesClient, userDb))
+                .operation(new UserCitizenshipsOperations(userDb))
+                .operation(new UserPlaceOfBirthOperations(userDb))
                 .operation(new UserRelativesOperations(userDb))
                 .operation(new ReadCountryByIdOperation(countriesClient))
                 .operation(new ReadMultipleCountriesOperation(countriesClient))

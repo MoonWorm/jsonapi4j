@@ -92,20 +92,22 @@ JsonApi4j scans for these definitions at startup and generates the corresponding
 
 Real APIs rarely have isolated resources. Users have orders, orders have line items, and line items reference products. Defining these relationships manually in every controller is a major source of boilerplate.
 
-With JsonApi4j, relationships are declared as part of your resource model:
+With JsonApi4j, relationships are declared as part of your resource model. A relationship only ever emits a resource identifier (`{type, id}`), so a lightweight ref — `OrderRef` (just the order id) — is usually all you need, rather than the full `OrderDto`. The type is your call (only the `id`/`type` are read), but a purpose-built ref is the recommended default:
 
 ```java
+public record OrderRef(String id) {}
+
 @JsonApiRelationship(relationshipName = "orders", parentResource = UserResource.class)
-public class UserOrdersRelationship implements ToManyRelationship<OrderDto> {
+public class UserOrdersRelationship implements ToManyRelationship<OrderRef> {
 
     @Override
-    public String resolveResourceIdentifierType(OrderDto dto) {
+    public String resolveResourceIdentifierType(OrderRef ref) {
         return "orders";
     }
 
     @Override
-    public String resolveResourceIdentifierId(OrderDto dto) {
-        return dto.getId();
+    public String resolveResourceIdentifierId(OrderRef ref) {
+        return ref.id();
     }
 }
 ```

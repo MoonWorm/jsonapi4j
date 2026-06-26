@@ -62,8 +62,9 @@ It is a lean router, not a manual — it gives an agent the few things it can't 
 ### Why it matters
 
 The value isn't "the AI writes your API for you." It's that an agent equipped with this context produces
-**consistent, spec-compliant code that follows the framework's idioms** — relationship refs instead of
-heavy DTOs, includes wired through `cd.mapping`, N+1-safe resolution, and the correct test setup —
+**consistent, spec-compliant code that follows the framework's idioms** — lightweight relationship refs
+by default (while leaving room for fuller DTOs where they fit), includes wired through `cd.mapping`,
+N+1-safe resolution, and the correct test setup —
 rather than plausible-looking Java that fights the framework. Less review friction, fewer subtle bugs.
 
 ### Links

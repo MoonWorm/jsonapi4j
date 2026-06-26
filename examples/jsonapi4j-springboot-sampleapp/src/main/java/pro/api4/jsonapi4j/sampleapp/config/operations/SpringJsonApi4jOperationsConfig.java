@@ -30,19 +30,13 @@ public class SpringJsonApi4jOperationsConfig {
     }
 
     @Bean
-    public UserCitizenshipsOperations userCitizenshipsOperations(
-            CountriesClient countriesClient,
-            UserDb userDb
-    ) {
-        return new UserCitizenshipsOperations(countriesClient, userDb);
+    public UserCitizenshipsOperations userCitizenshipsOperations(UserDb userDb) {
+        return new UserCitizenshipsOperations(userDb);
     }
 
     @Bean
-    public UserPlaceOfBirthOperations userPlaceOfBirthOperations(
-            CountriesClient client,
-            UserDb userDb
-    ) {
-        return new UserPlaceOfBirthOperations(client, userDb);
+    public UserPlaceOfBirthOperations userPlaceOfBirthOperations(UserDb userDb) {
+        return new UserPlaceOfBirthOperations(userDb);
     }
 
     @Bean

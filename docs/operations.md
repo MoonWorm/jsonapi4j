@@ -40,7 +40,7 @@ Every relationship operation class must be annotated with `@JsonApiRelationshipO
 
 ```java
 @JsonApiRelationshipOperation(relationship = UserPlaceOfBirthRelationship.class)
-public class UserPlaceOfBirthOperations implements ToOneRelationshipOperations<UserDbEntity, DownstreamCountry> {
+public class UserPlaceOfBirthOperations implements ToOneRelationshipOperations<UserDbEntity, CountryRef> {
     // ...
 }
 ```
@@ -64,9 +64,10 @@ The default implementation calls `readOne(request)`, which typically makes a sep
 
 ```java
 @Override
-public DownstreamCountry readForResource(JsonApiRequest request, UserDbEntity user) {
-    // The user entity already holds the country — no need for a separate lookup
-    return user.getPlaceOfBirth();
+public CountryRef readForResource(JsonApiRequest request, UserDbEntity user) {
+    // The user entity already holds the country id — no separate lookup, and a relationship
+    // only needs the id to emit its linkage
+    return new CountryRef(user.getPlaceOfBirthCountryId());
 }
 ```
 
@@ -76,7 +77,7 @@ Same as To-One — annotate with `@JsonApiRelationshipOperation`:
 
 ```java
 @JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)
-public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, DownstreamCountry> {
+public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, CountryRef> {
     // ...
 }
 ```

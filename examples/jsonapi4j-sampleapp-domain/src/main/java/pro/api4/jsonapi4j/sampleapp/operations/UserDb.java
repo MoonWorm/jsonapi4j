@@ -1,8 +1,8 @@
 package pro.api4.jsonapi4j.sampleapp.operations;
 
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 
 import java.util.List;
 import java.util.Map;
@@ -27,31 +27,31 @@ public interface UserDb {
 
     void deleteUser(String userId);
 
-    List<String> getUserCitizenships(String userId);
+    List<CountryRef> getUserCitizenships(String userId);
 
-    Map<String, List<String>> getUsersCitizenships(Set<String> userIds);
+    Map<String, List<CountryRef>> getUsersCitizenships(Set<String> userIds);
 
-    void updateUserCitizenships(String userId, List<String> cca2s);
+    void updateUserCitizenships(String userId, List<CountryRef> citizenships);
 
-    void addUserCitizenships(String userId, List<String> cca2s);
+    void addUserCitizenships(String userId, List<CountryRef> citizenships);
 
-    void removeUserCitizenships(String userId, List<String> cca2s);
+    void removeUserCitizenships(String userId, List<CountryRef> citizenships);
 
-    List<UserRelationshipInfo> getUserRelatives(String userId);
+    List<RelativeRef> getUserRelatives(String userId);
 
-    Map<String, List<UserRelationshipInfo>> getUsersRelatives(Set<String> userIds);
+    Map<String, List<RelativeRef>> getUsersRelatives(Set<String> userIds);
 
-    void updateUserRelatives(String userId, Map<String, RelationshipType> relations);
+    void updateUserRelatives(String userId, List<RelativeRef> relatives);
 
-    void addUserRelatives(String userId, Map<String, RelationshipType> relations);
+    void addUserRelatives(String userId, List<RelativeRef> relatives);
 
     void removeUserRelatives(String userId, Set<String> relativeIds);
 
-    String getUserPlaceOfBirth(String userId);
+    CountryRef getUserPlaceOfBirth(String userId);
 
-    Map<String, String> getUsersPlaceOfBirth(Set<String> userIds);
+    Map<String, CountryRef> getUsersPlaceOfBirth(Set<String> userIds);
 
-    void updateUserPlaceOfBirth(String userId, String cca2);
+    void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth);
 
     DbPage<UserDbEntity> readAllUsers(String cursor);
 

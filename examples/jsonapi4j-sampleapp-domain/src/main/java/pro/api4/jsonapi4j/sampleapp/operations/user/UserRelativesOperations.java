@@ -15,8 +15,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 import pro.api4.jsonapi4j.util.CustomCollectors;
@@ -34,8 +33,8 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
         relationship = UserRelativesRelationship.class
 )
 public class UserRelativesOperations implements
-        ToManyRelationshipOperations<UserDbEntity, UserRelationshipInfo>,
-        BatchReadToManyRelationshipOperation<UserDbEntity, UserRelationshipInfo> {
+        ToManyRelationshipOperations<UserDbEntity, RelativeRef>,
+        BatchReadToManyRelationshipOperation<UserDbEntity, RelativeRef> {
 
     private final UserDb userDb;
 
@@ -54,7 +53,7 @@ public class UserRelativesOperations implements
             }
     )
     @Override
-    public PaginationAwareResponse<UserRelationshipInfo> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<RelativeRef> readMany(JsonApiRequest request) {
         return PaginationAwareResponse.inMemoryCursorAware(
                 userDb.getUserRelatives(request.getResourceId()),
                 request.getCursor(),
@@ -63,11 +62,11 @@ public class UserRelativesOperations implements
     }
 
     @Override
-    public Map<UserDbEntity, PaginationAwareResponse<UserRelationshipInfo>> readBatches(JsonApiRequest request,
+    public Map<UserDbEntity, PaginationAwareResponse<RelativeRef>> readBatches(JsonApiRequest request,
                                                                                         List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
-        Map<String, List<UserRelationshipInfo>> usersRelativesMap = userDb.getUsersRelatives(userIds);
+        Map<String, List<RelativeRef>> usersRelativesMap = userDb.getUsersRelatives(userIds);
         return usersRelativesMap.entrySet()
                 .stream()
                 .collect(
@@ -87,14 +86,14 @@ public class UserRelativesOperations implements
     @Override
     public void update(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
-        Map<String, RelationshipType> newRelations = UserOperations.parseRelations(payload.getData());
+        List<RelativeRef> newRelations = UserOperations.parseRelations(payload.getData());
         userDb.updateUserRelatives(request.getResourceId(), newRelations);
     }
 
     @Override
     public void add(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
-        Map<String, RelationshipType> newRelations = UserOperations.parseRelations(payload.getData());
+        List<RelativeRef> newRelations = UserOperations.parseRelations(payload.getData());
         userDb.addUserRelatives(request.getResourceId(), newRelations);
     }
 

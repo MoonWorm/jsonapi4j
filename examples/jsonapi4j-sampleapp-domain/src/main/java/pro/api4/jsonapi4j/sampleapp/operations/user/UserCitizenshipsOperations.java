@@ -16,17 +16,13 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship;
-import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
-import pro.api4.jsonapi4j.sampleapp.operations.country.ReadMultipleCountriesOperation;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,10 +41,9 @@ import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTR
 )
 @RequiredArgsConstructor
 public class UserCitizenshipsOperations implements
-        ToManyRelationshipOperations<UserDbEntity, DownstreamCountry>,
-        BatchReadToManyRelationshipOperation<UserDbEntity, DownstreamCountry> {
+        ToManyRelationshipOperations<UserDbEntity, CountryRef>,
+        BatchReadToManyRelationshipOperation<UserDbEntity, CountryRef> {
 
-    private final CountriesClient client;
     private final UserDb userDb;
 
     @OasOperationInfo(
@@ -66,43 +61,27 @@ public class UserCitizenshipsOperations implements
             }
     )
     @Override
-    public PaginationAwareResponse<DownstreamCountry> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<CountryRef> readMany(JsonApiRequest request) {
+        // Citizenship country ids are stored locally on the user — a relationship only emits
+        // {type, id}, so we return lightweight refs straight from the local store. The full country
+        // is fetched separately by CountryResource only when ?include=citizenships is requested.
         return PaginationAwareResponse.inMemoryCursorAware(
-                ReadMultipleCountriesOperation.readCountriesByIds(
-                        userDb.getUserCitizenships(request.getResourceId()),
-                        client
-                ),
+                userDb.getUserCitizenships(request.getResourceId()),
                 request.getCursor(),
                 2 // set limit to 2
         );
     }
 
     @Override
-    public Map<UserDbEntity, PaginationAwareResponse<DownstreamCountry>> readBatches(JsonApiRequest request,
-                                                                                     List<UserDbEntity> users) {
+    public Map<UserDbEntity, PaginationAwareResponse<CountryRef>> readBatches(JsonApiRequest request,
+                                                                              List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
-        Map<String, List<String>> usersCitizenshipsMap = userDb.getUsersCitizenships(userIds);
-        List<String> countryIds = usersCitizenshipsMap.values()
-                .stream()
-                .flatMap(Collection::stream)
-                .distinct()
-                .toList();
-        Map<String, DownstreamCountry> countries = ReadMultipleCountriesOperation.readCountriesByIds(countryIds, client)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        DownstreamCountry::getCca2,
-                        Collectors.collectingAndThen(
-                                Collectors.mapping(c -> c, Collectors.toList()),
-                                List::getFirst
-                        )
-                ));
+        Map<String, List<CountryRef>> usersCitizenshipsMap = userDb.getUsersCitizenships(userIds);
         return usersCitizenshipsMap.entrySet().stream().collect(
                 Collectors.toMap(
-                        userId -> usersGroupedById.get(userId.getKey()),
-                        e -> PaginationAwareResponse.inMemoryCursorAware(
-                                e.getValue().stream().map(countries::get).filter(Objects::nonNull).toList()
-                        )
+                        e -> usersGroupedById.get(e.getKey()),
+                        e -> PaginationAwareResponse.inMemoryCursorAware(e.getValue())
                 )
         );
     }
@@ -117,42 +96,45 @@ public class UserCitizenshipsOperations implements
     public void update(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
 
-        List<String> newCountryIds = ListUtils.emptyIfNull(payload.getData())
+        List<CountryRef> newCitizenships = ListUtils.emptyIfNull(payload.getData())
                 .stream()
                 .map(ResourceIdentifierObject::getId)
                 .map(String::toUpperCase)
                 .distinct()
+                .map(CountryRef::new)
                 .toList();
 
-        userDb.updateUserCitizenships(request.getResourceId(), newCountryIds);
+        userDb.updateUserCitizenships(request.getResourceId(), newCitizenships);
     }
 
     @Override
     public void add(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
 
-        List<String> countryIdsToAdd = ListUtils.emptyIfNull(payload.getData())
+        List<CountryRef> citizenshipsToAdd = ListUtils.emptyIfNull(payload.getData())
                 .stream()
                 .map(ResourceIdentifierObject::getId)
                 .map(String::toUpperCase)
                 .distinct()
+                .map(CountryRef::new)
                 .toList();
 
-        userDb.addUserCitizenships(request.getResourceId(), countryIdsToAdd);
+        userDb.addUserCitizenships(request.getResourceId(), citizenshipsToAdd);
     }
 
     @Override
     public void delete(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
 
-        List<String> countryIdsToRemove = ListUtils.emptyIfNull(payload.getData())
+        List<CountryRef> citizenshipsToRemove = ListUtils.emptyIfNull(payload.getData())
                 .stream()
                 .map(ResourceIdentifierObject::getId)
                 .map(String::toUpperCase)
                 .distinct()
+                .map(CountryRef::new)
                 .toList();
 
-        userDb.removeUserCitizenships(request.getResourceId(), countryIdsToRemove);
+        userDb.removeUserCitizenships(request.getResourceId(), citizenshipsToRemove);
     }
 
     @Override

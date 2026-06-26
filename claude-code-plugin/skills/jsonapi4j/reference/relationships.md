@@ -2,8 +2,10 @@
 
 A `Relationship<REF>` only ever produces a **resource identifier** (`{type, id}` + optional identifier
 meta) — it has no `resolveAttributes`. The full target resource is materialized **separately** by the
-target's own `Resource`, and (on `?include=`) by the Compound-Docs plugin fetching it over HTTP. So a
-relationship operation should return a **lightweight, purpose-built ref**, never a heavy DTO.
+target's own `Resource`, and (on `?include=`) by the Compound-Docs plugin fetching it over HTTP. `REF`
+can be **any** type, so the framework leaves the choice to you — it's flexible by design.
+
+The **recommended default** is a lightweight, purpose-built ref rather than a heavy DTO:
 
 ```java
 public record ShowRef(UUID id) {}      // identity only — what a linkage needs
@@ -15,6 +17,13 @@ public record SeasonRef(UUID id) {}
 - Avoids the partially-populated-DTO trap (a `new ShowDto()` with only `id` set is a silent-bug magnet).
 - If the identifier needs **meta** (edge data — see below), the ref carries those fields too — still far
   lighter than the full DTO.
+
+That said, it's a guideline, not a rule — weigh it against your situation. If you don't control the DTO
+you're handed (a downstream model, a shared entity), or you already hold the full object and reusing it
+keeps the code simpler with fewer models to maintain, passing that type as `REF` is perfectly valid —
+only its `id`/`type` (and any identifier meta) are read. Optimize for a purpose-built ref when the
+linkage path would otherwise do real work just to discard it; reach for the existing type when simplicity
+wins.
 
 ## To-one
 
@@ -88,7 +97,7 @@ Practical notes:
   interface — they share the `ReadTo*RelationshipOperation` supertype, so you add `readBatches` alongside
   `readMany`/`readOne`. The composite still serves the standalone `/relationships/x` endpoint; batch
   serves the collection-primary include. (Real example: `UserPlaceOfBirthOperations` implements
-  `ToOneRelationshipOperations<UserDbEntity, DownstreamCountry>` + `BatchReadToOneRelationshipOperation<…>`.)
+  `ToOneRelationshipOperations<UserDbEntity, CountryRef>` + `BatchReadToOneRelationshipOperation<…>`.)
 - Batch only fires for a **collection primary + include** — so the parent needs a `filter[id]`
   collection endpoint for it to trigger (a resource only ever read by id can never batch).
 - Don't bother batching a relationship that already resolves **in-house** (`readOneForResource` off the

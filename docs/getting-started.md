@@ -310,51 +310,55 @@ Each user can have multiple `citizenships`, which makes this a **to-many** relat
 
 To implement this, we'll create a class that implements the `ToManyRelationship` interface:
 
+A relationship only ever emits a resource identifier (`{type, id}`) — it never carries the related resource's attributes, and `RELATIONSHIP_DTO` can be any type since only the `id`/`type` are read. A purpose-built **lightweight ref** like `CountryRef` (just the country id) is the recommended default, so that's what we'll use here — though reusing a fuller DTO you already have is equally valid:
+
+```java
+public record CountryRef(String id) {}
+```
+
 ```java
 @JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
-public class UserCitizenshipsRelationship implements ToManyRelationship<DownstreamCountry> {
+public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
 
     @Override
-    public String resolveResourceIdentifierType(DownstreamCountry downstreamCountry) {
+    public String resolveResourceIdentifierType(CountryRef countryRef) {
         return "countries";
     }
 
     @Override
-    public String resolveResourceIdentifierId(DownstreamCountry downstreamCountry) {
-        return downstreamCountry.getCca2();
+    public String resolveResourceIdentifierId(CountryRef countryRef) {
+        return countryRef.id();
     }
 
 }
 ```
 
 * `@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)` -  defines the name of the relationship (`citizenships`). Also identifies which resource this relationship belongs to (`users`).
-* `ResourceType resolveResourceIdentifierType(DownstreamCountry downstreamCountry)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
-* `String resolveResourceIdentifierId(DownstreamCountry downstreamCountry)` - resolves the unique identifier of each related resource (e.g., the country's CCA2 code).
+* `ResourceType resolveResourceIdentifierType(CountryRef countryRef)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
+* `String resolveResourceIdentifierId(CountryRef countryRef)` - resolves the unique identifier of each related resource (the country's CCA2 code).
 
 ### 7. Add the Missing Relationship Operation
 
 The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.
 
-To do this, implement `ReadToManyRelationshipOperation<DownstreamCountry>` - this tells **JsonApi4j** how to find the related country resources (i.e., which passports or `citizenships` each user has).
+To do this, implement `ToManyRelationshipOperations<UserDbEntity, CountryRef>` - this tells **JsonApi4j** how to resolve the citizenship linkage: which countries (by id) each user holds passports from. Because the citizenship country ids are already stored on the user, this is a pure local lookup — no downstream call is needed just to emit `{type, id}`. The full country resource is materialized separately by the `countries` resource (step 8), and only when `?include=citizenships` is requested.
 
 ```java
 @JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)
-public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, DownstreamCountry> {
+public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, CountryRef> {
 
-    private final CountriesClient client;
     private final UserDb userDb;
 
-    public UserCitizenshipsOperations(CountriesClient client,
-                                      UserDb userDb) {
-        this.client = client;
+    public UserCitizenshipsOperations(UserDb userDb) {
         this.userDb = userDb;
     }
 
-
     @Override
-    public PaginationAwareResponse<DownstreamCountry> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<CountryRef> readMany(JsonApiRequest request) {
         return PaginationAwareResponse.inMemoryCursorAware(
-                client.readCountriesByIds(userDb.getUserCitizenships(request.getResourceId())),
+                userDb.getUserCitizenships(request.getResourceId()).stream()
+                        .map(CountryRef::new)
+                        .toList(),
                 request.getCursor(),
                 2 // set limit to 2
         );
@@ -364,25 +368,6 @@ public class UserCitizenshipsOperations implements ToManyRelationshipOperations<
 ```
 
 * `@JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)` uniquely identify which resource and relationship this operation belongs to (`users` and `citizenships` accordingly).
-
-* `CountriesClient` could be a Feign client representing a third-party API - for example, the [restcountries](https://restcountries.com/) service.
-For simplicity, let's keep it local for now and simulate its behavior with an in-memory implementation:
-
-```java
-public class CountriesClient {
-
-  private static final Map<String, DownstreamCountry> COUNTRIES = Map.of(
-          "NO", new DownstreamCountry("NO", new Name("Norway", "Kingdom of Norway"), "Europe"),
-          "FI", new DownstreamCountry("FI", new Name("Finland", "Republic of Finland"), "Europe"),
-          "US", new DownstreamCountry("US", new Name("United States", "United States of America"), "Americas")
-  );
-
-  public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
-    return countryIds.stream().filter(COUNTRIES::containsKey).map(COUNTRIES::get).toList();
-  }
-
-}
-```
 
 We also need to extend our existing `UserDb` to include information about which countries each user holds passports from (identified by their CCA2 codes).
 ```java
@@ -417,6 +402,24 @@ In order to support [JSON:API Compound Documents feature](https://jsonapi.org/fo
 
 While you could also implement an operation that reads a single resource by its `id`, this approach is less efficient because compound documents would be resolved sequentially, one by one, instead of using a single batch request via `filter[id]=x,y,z`.
 
+This is where the full country data is actually fetched. The `countries` resource pulls it from a `CountriesClient` — which could be a Feign client representing a third-party API such as the [restcountries](https://restcountries.com/) service. For simplicity, let's simulate it in-memory:
+
+```java
+public class CountriesClient {
+
+  private static final Map<String, DownstreamCountry> COUNTRIES = Map.of(
+          "NO", new DownstreamCountry("NO", new Name("Norway", "Kingdom of Norway"), "Europe"),
+          "FI", new DownstreamCountry("FI", new Name("Finland", "Republic of Finland"), "Europe"),
+          "US", new DownstreamCountry("US", new Name("United States", "United States of America"), "Americas")
+  );
+
+  public List<DownstreamCountry> readCountriesByIds(List<String> countryIds) {
+    return countryIds.stream().filter(COUNTRIES::containsKey).map(COUNTRIES::get).toList();
+  }
+
+}
+```
+
 ```java
 @JsonApiResourceOperation(resource = CountryResource.class)
 public class CountryOperations implements ResourceOperations<DownstreamCountry> {
@@ -437,7 +440,7 @@ public class CountryOperations implements ResourceOperations<DownstreamCountry> 
 
 * `@JsonApiResourceOperation(resource = CountryResource.class)` - identify which resource this operation belongs to (`countries`).
 
-* `readPage(JsonApiRequest request)` - delegates to the already implemented `readCountriesByIds(...)`. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.
+* `readPage(JsonApiRequest request)` - delegates to the in-memory `CountriesClient#readCountriesByIds(...)` defined above. For now, this operation only supports requests using `filter[id]=x,y,z`. Support for **read all** or additional filters (e.g., by **region**) can be added later if needed.
 
 This operation will be available under [/countries?filter[id]=NO,FI,US](http://localhost:8080/jsonapi/countries?filter[id]=NO,FI,US).
 

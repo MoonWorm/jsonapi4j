@@ -212,12 +212,12 @@ In the example below we've configured our entire `UserCitizenshipsRelationship` 
         scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
-public class UserCitizenshipsRelationship implements ToManyRelationship<DownstreamCountry> {
+public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
 
   @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
   @Override
   public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest,
-                                              DownstreamCountry downstreamCountry) {
+                                              CountryRef countryRef) {
     // ...
   }
 

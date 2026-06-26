@@ -73,7 +73,7 @@ This interface is used to define a **To-One relationship** between a JSON:API re
 Think of this relationship as a 1-to-1 edge in a graph, where one parent resource can reference a single related resource.
 
 Type parameter:
-* `RELATIONSHIP_DTO` - the internal data object or DTO representing the related resource (e.g., `DownstreamCountry`).
+* `RELATIONSHIP_DTO` - a reference to the related resource (e.g., `CountryRef`). A relationship only ever emits a resource identifier (`{type, id}` + optional identifier meta) — it has no `resolveAttributes` — and the full target resource is materialized separately by its own `Resource` (and, on `?include=`, by the Compound-Docs plugin). Because only the `id`/`type` (and optional meta) are read, `RELATIONSHIP_DTO` can be **any** type. A purpose-built lightweight ref is the **recommended default** — it keeps the linkage path cheap and avoids partially-populated DTOs — but it isn't required: if you don't control the type or you already hold a fuller object, reusing it is perfectly valid.
 
 #### Annotation
 
@@ -81,7 +81,7 @@ Every relationship must be annotated with `@JsonApiRelationship` to register it 
 
 ```java
 @JsonApiRelationship(relationshipName = "placeOfBirth", parentResource = UserResource.class)
-public class UserPlaceOfBirthRelationship implements ToOneRelationship<DownstreamCountry> {
+public class UserPlaceOfBirthRelationship implements ToOneRelationship<CountryRef> {
     // ...
 }
 ```
@@ -114,7 +114,7 @@ This interface is used to define a **To-Many relationship** between a JSON:API r
 Think of this relationship as a 1-to-N edge in a graph, where one parent resource can reference multiple related resources.
 
 Type parameter:
-* `RELATIONSHIP_DTO` - the internal data object or DTO representing each related resource (e.g., `DownstreamCountry`).
+* `RELATIONSHIP_DTO` - a reference to each related resource (e.g., `CountryRef`) — the same id-only ref recommended for `ToOneRelationship` (any type works; the lightweight ref is the default, not a requirement).
 
 #### Annotation
 
@@ -122,7 +122,7 @@ Same as ToOneRelationship — annotate with `@JsonApiRelationship`:
 
 ```java
 @JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
-public class UserCitizenshipsRelationship implements ToManyRelationship<DownstreamCountry> {
+public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
     // ...
 }
 ```

@@ -9,8 +9,8 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Secur
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CurrencyRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCurrencyWithCode;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.operations.CountriesClient;
@@ -24,7 +24,7 @@ import static pro.api4.jsonapi4j.sampleapp.operations.country.ReadCountryByIdOpe
         relationship = CountryCurrenciesRelationship.class
 )
 @RequiredArgsConstructor
-public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry, DownstreamCurrencyWithCode> {
+public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRelationshipOperation<DownstreamCountry, CurrencyRef> {
 
     private final CountriesClient client;
 
@@ -43,14 +43,14 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
             }
     )
     @Override
-    public PaginationAwareResponse<DownstreamCurrencyWithCode> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<CurrencyRef> readMany(JsonApiRequest request) {
         return PaginationAwareResponse.inMemoryCursorAware(
                 new ArrayList<>(
                         readCountryById(request.getResourceId(), client)
                                 .getCurrencies()
-                                .entrySet()
+                                .keySet()
                                 .stream()
-                                .map(e -> new DownstreamCurrencyWithCode(e.getKey(), e.getValue()))
+                                .map(CurrencyRef::new)
                                 .toList()
                 ),
                 request.getCursor()
@@ -58,13 +58,14 @@ public class ReadCountryCurrenciesRelationshipOperation implements ReadToManyRel
     }
 
     @Override
-    public PaginationAwareResponse<DownstreamCurrencyWithCode> readManyForResource(JsonApiRequest relationshipRequest,
-                                                                                   DownstreamCountry resourceDto) {
+    public PaginationAwareResponse<CurrencyRef> readManyForResource(JsonApiRequest relationshipRequest,
+                                                                    DownstreamCountry resourceDto) {
+        // The parent country already holds its currency codes — serve the refs straight off it, no fetch.
         return PaginationAwareResponse.inMemoryCursorAware(
                 new ArrayList<>(resourceDto.getCurrencies()
-                        .entrySet()
+                        .keySet()
                         .stream()
-                        .map(e -> new DownstreamCurrencyWithCode(e.getKey(), e.getValue()))
+                        .map(CurrencyRef::new)
                         .toList()
                 )
         );

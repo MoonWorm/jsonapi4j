@@ -5,9 +5,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserRelationshipInfo.RelationshipType;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef.RelationshipType;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,59 +22,59 @@ public class UserInMemoryDb implements UserDb {
     private static AtomicInteger ID_COUNTER;
 
     private final Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
-    private final Map<String, List<String>> userCitizenships = new ConcurrentHashMap<>();
-    private final Map<String, String> userPlaceOfBirth = new ConcurrentHashMap<>();
-    private final Map<String, List<UserRelationshipInfo>> userRalatives = new ConcurrentHashMap<>();
+    private final Map<String, List<CountryRef>> userCitizenships = new ConcurrentHashMap<>();
+    private final Map<String, CountryRef> userPlaceOfBirth = new ConcurrentHashMap<>();
+    private final Map<String, List<RelativeRef>> userRalatives = new ConcurrentHashMap<>();
 
     {
         users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789"));
-        userCitizenships.put("1", List.of("NO", "FI", "US"));
-        userPlaceOfBirth.put("1", "US");
+        userCitizenships.put("1", List.of(new CountryRef("NO"), new CountryRef("FI"), new CountryRef("US")));
+        userPlaceOfBirth.put("1", new CountryRef("US"));
         userRalatives.put(
                 "1",
                 List.of(
-                        new UserRelationshipInfo("2", RelationshipType.HUSBAND),
-                        new UserRelationshipInfo("3", RelationshipType.BROTHER)
+                        new RelativeRef("2", RelationshipType.HUSBAND),
+                        new RelativeRef("3", RelationshipType.BROTHER)
                 )
         );
 
         users.put("2", new UserDbEntity("2", "Jane", "Doe", "jane@doe.com", "222456789"));
-        userCitizenships.put("2", List.of("US"));
-        userPlaceOfBirth.put("2", "FI");
+        userCitizenships.put("2", List.of(new CountryRef("US")));
+        userPlaceOfBirth.put("2", new CountryRef("FI"));
         userRalatives.put(
                 "2",
                 List.of(
-                        new UserRelationshipInfo("1", RelationshipType.WIFE),
-                        new UserRelationshipInfo("4", RelationshipType.SON)
+                        new RelativeRef("1", RelationshipType.WIFE),
+                        new RelativeRef("4", RelationshipType.SON)
                 )
         );
 
         users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789"));
-        userCitizenships.put("3", List.of("US", "FI"));
-        userPlaceOfBirth.put("3", "NO");
+        userCitizenships.put("3", List.of(new CountryRef("US"), new CountryRef("FI")));
+        userPlaceOfBirth.put("3", new CountryRef("NO"));
         userRalatives.put("3", Collections.emptyList());
 
         users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789"));
-        userCitizenships.put("4", List.of("NO", "US"));
-        userPlaceOfBirth.put("4", "US");
+        userCitizenships.put("4", List.of(new CountryRef("NO"), new CountryRef("US")));
+        userPlaceOfBirth.put("4", new CountryRef("US"));
         userRalatives.put(
                 "4",
                 List.of(
-                        new UserRelationshipInfo("1", RelationshipType.FATHER),
-                        new UserRelationshipInfo("2", RelationshipType.MOTHER)
+                        new RelativeRef("1", RelationshipType.FATHER),
+                        new RelativeRef("2", RelationshipType.MOTHER)
                 )
         );
 
         users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789"));
-        userCitizenships.put("5", List.of("US"));
-        userPlaceOfBirth.put("5", "NO");
+        userCitizenships.put("5", List.of(new CountryRef("US")));
+        userPlaceOfBirth.put("5", new CountryRef("NO"));
         userRalatives.put(
                 "5",
                 List.of(
-                        new UserRelationshipInfo("1", RelationshipType.BROTHER),
-                        new UserRelationshipInfo("2", RelationshipType.DAUGHTER),
-                        new UserRelationshipInfo("3", RelationshipType.FATHER),
-                        new UserRelationshipInfo("4", RelationshipType.BROTHER)
+                        new RelativeRef("1", RelationshipType.BROTHER),
+                        new RelativeRef("2", RelationshipType.DAUGHTER),
+                        new RelativeRef("3", RelationshipType.FATHER),
+                        new RelativeRef("4", RelationshipType.BROTHER)
                 )
         );
 
@@ -144,38 +145,38 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public List<String> getUserCitizenships(String userId) {
+    public List<CountryRef> getUserCitizenships(String userId) {
         return userCitizenships.get(userId);
     }
 
     @Override
-    public List<UserRelationshipInfo> getUserRelatives(String userId) {
+    public List<RelativeRef> getUserRelatives(String userId) {
         return userRalatives.get(userId);
     }
 
     @Override
-    public void updateUserCitizenships(String userId, List<String> cca2s) {
-        userCitizenships.put(userId, cca2s);
+    public void updateUserCitizenships(String userId, List<CountryRef> citizenships) {
+        userCitizenships.put(userId, citizenships);
     }
 
     @Override
-    public void addUserCitizenships(String userId, List<String> cca2s) {
-        List<String> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
-        cca2s.stream()
-                .filter(cca2 -> !existing.contains(cca2))
+    public void addUserCitizenships(String userId, List<CountryRef> citizenships) {
+        List<CountryRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+        citizenships.stream()
+                .filter(citizenship -> !existing.contains(citizenship))
                 .forEach(existing::add);
         userCitizenships.put(userId, existing);
     }
 
     @Override
-    public void removeUserCitizenships(String userId, List<String> cca2s) {
-        List<String> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
-        existing.removeAll(cca2s);
+    public void removeUserCitizenships(String userId, List<CountryRef> citizenships) {
+        List<CountryRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+        existing.removeAll(citizenships);
         userCitizenships.put(userId, existing);
     }
 
     @Override
-    public Map<String, List<String>> getUsersCitizenships(Set<String> userIds) {
+    public Map<String, List<CountryRef>> getUsersCitizenships(Set<String> userIds) {
         return userIds.stream().collect(
                 Collectors.toMap(
                         userId -> userId,
@@ -185,7 +186,7 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public Map<String, List<UserRelationshipInfo>> getUsersRelatives(Set<String> userIds) {
+    public Map<String, List<RelativeRef>> getUsersRelatives(Set<String> userIds) {
         return userIds.stream().collect(
                 Collectors.toMap(
                         userId -> userId,
@@ -195,47 +196,45 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public void updateUserRelatives(String userId, Map<String, RelationshipType> relationsMap) {
-        List<UserRelationshipInfo> relations = relationsMap.entrySet()
+    public void updateUserRelatives(String userId, List<RelativeRef> relatives) {
+        List<RelativeRef> relations = ListUtils.emptyIfNull(relatives)
                 .stream()
-                .filter(e -> StringUtils.isNotBlank(e.getKey()))
-                .filter(e -> e.getValue() != null)
-                .map(e -> new UserRelationshipInfo(e.getKey(), e.getValue()))
+                .filter(r -> StringUtils.isNotBlank(r.getRelativeUserId()))
+                .filter(r -> r.getRelationshipType() != null)
                 .toList();
         userRalatives.put(userId, relations);
     }
 
     @Override
-    public void addUserRelatives(String userId, Map<String, RelationshipType> relationsMap) {
-        List<UserRelationshipInfo> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
-        Set<String> existingIds = existing.stream().map(UserRelationshipInfo::getRelativeUserId).collect(Collectors.toSet());
-        relationsMap.entrySet().stream()
-                .filter(e -> StringUtils.isNotBlank(e.getKey()) && e.getValue() != null)
-                .filter(e -> !existingIds.contains(e.getKey()))
-                .map(e -> new UserRelationshipInfo(e.getKey(), e.getValue()))
+    public void addUserRelatives(String userId, List<RelativeRef> relatives) {
+        List<RelativeRef> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
+        Set<String> existingIds = existing.stream().map(RelativeRef::getRelativeUserId).collect(Collectors.toSet());
+        ListUtils.emptyIfNull(relatives).stream()
+                .filter(r -> StringUtils.isNotBlank(r.getRelativeUserId()) && r.getRelationshipType() != null)
+                .filter(r -> !existingIds.contains(r.getRelativeUserId()))
                 .forEach(existing::add);
         userRalatives.put(userId, existing);
     }
 
     @Override
     public void removeUserRelatives(String userId, Set<String> relativeIds) {
-        List<UserRelationshipInfo> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
+        List<RelativeRef> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
         existing.removeIf(info -> relativeIds.contains(info.getRelativeUserId()));
         userRalatives.put(userId, existing);
     }
 
     @Override
-    public void updateUserPlaceOfBirth(String userId, String cca2) {
-        userPlaceOfBirth.put(userId, cca2);
+    public void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth) {
+        userPlaceOfBirth.put(userId, placeOfBirth);
     }
 
     @Override
-    public String getUserPlaceOfBirth(String userId) {
+    public CountryRef getUserPlaceOfBirth(String userId) {
         return userPlaceOfBirth.get(userId);
     }
 
     @Override
-    public Map<String, String> getUsersPlaceOfBirth(Set<String> userIds) {
+    public Map<String, CountryRef> getUsersPlaceOfBirth(Set<String> userIds) {
         return userIds.stream().collect(
                 CustomCollectors.toMapThatSupportsNullValues(
                         userId -> userId,
