@@ -7,6 +7,8 @@ header:
   actions:
     - label: "Get Started"
       url: /getting-started/
+    - label: "Browse Docs"
+      url: /documentation/
     - label: "View on GitHub"
       url: "https://github.com/MoonWorm/jsonapi4j"
     - label: "Maven Central"
@@ -36,6 +38,17 @@ feature_row_dx:
     excerpt: "No JPA or Hibernate required. Works with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
   - title: "Parallel Execution"
     excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
+
+feature_row_ai:
+  - title: "Official Claude Code Plugin"
+    excerpt: "Install the plugin and your AI agent instantly knows how to design resources, relationships, operations, compound documents, validation, and tests — right in your own project."
+    url: /ai-assisted-development/
+    btn_label: "Learn More"
+    btn_class: "btn--primary"
+  - title: "Works With Any AI Tool"
+    excerpt: "A committed `AGENTS.md` gives Claude Code, Cursor, GitHub Copilot, and Codex the same project context — build commands, conventions, and module map."
+  - title: "Knows the Idioms"
+    excerpt: "Not generic Java scaffolding — agents follow framework patterns: lightweight relationship refs, N+1-safe includes, `cd.mapping`, and the right testing setup."
 ---
 
 ## Choose Your Stack
@@ -73,6 +86,13 @@ feature_row_dx:
 {% include feature_row id="feature_row_advanced" %}
 
 {% include feature_row id="feature_row_dx" %}
+
+<div class="dark-band" markdown="0">
+  <h2>Built to Pair With Your AI Agent</h2>
+  <p class="dark-band__subtitle">An official Claude Code plugin and a cross-tool <code>AGENTS.md</code> — so your AI assistant builds spec-compliant APIs the framework's way. <a href="/ai-assisted-development/">Learn more →</a></p>
+</div>
+
+{% include feature_row id="feature_row_ai" %}
 
 <div class="pipeline-band" markdown="0">
   <h3>Request Processing Pipeline</h3>

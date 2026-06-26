@@ -1,6 +1,6 @@
 main:
   - title: "Documentation"
-    url: /introduction/
+    url: /documentation/
   - title: "Blog"
     url: /blog/
   - title: "Contact"
@@ -19,6 +19,10 @@ docs:
         url: /write-operations/
       - title: "Request/Response Examples"
         url: /request-response-examples/
+  - title: "AI-Assisted Development"
+    children:
+      - title: "AI-Assisted Development"
+        url: /ai-assisted-development/
   - title: "Framework Internals"
     children:
       - title: "Project Structure"
