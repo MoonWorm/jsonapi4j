@@ -6,12 +6,13 @@ jsonapi4j:
 
   cd:
     enabled: true
-    maxHops: 2
+    maxHops: 3
     cache:
       enabled: true
       maxSize: 100
+    # Map the CD-included types to the in-app counting downstream target (CacheTestController),
+    # so the tests can observe how many times each type is actually fetched over HTTP.
     mapping:
-      users: http://localhost:${server.port}${jsonapi4j.rootPath}
       countries: http://localhost:${server.port}/test-api
       currencies: http://localhost:${server.port}/test-api
   ac:

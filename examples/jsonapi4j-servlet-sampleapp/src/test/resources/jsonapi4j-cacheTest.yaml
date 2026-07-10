@@ -1,0 +1,19 @@
+rootPath: /jsonapi
+
+cd:
+  enabled: true
+  maxHops: 3
+  cache:
+    enabled: true
+    maxSize: 100
+  # Map the CD-included types to the in-app counting downstream target (CacheDownstreamServlet),
+  # so the tests can observe how many times each type is actually fetched over HTTP.
+  mapping:
+    countries: http://localhost:9595/test-api
+    currencies: http://localhost:9595/test-api
+ac:
+  enabled: false
+oas:
+  enabled: false
+sf:
+  enabled: false

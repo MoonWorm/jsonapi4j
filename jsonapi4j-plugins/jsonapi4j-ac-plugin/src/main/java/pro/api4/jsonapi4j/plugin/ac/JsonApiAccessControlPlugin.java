@@ -78,6 +78,11 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
     }
 
     @Override
+    public AcProperties configProperties() {
+        return acProperties;
+    }
+
+    @Override
     public int precedence() {
         return JsonApi4jPlugin.HIGH_PRECEDENCE;
     }

@@ -9,6 +9,10 @@ jsonapi4j:
   # JsonApi4j core settings
   rootPath: /jsonapi
 
+  # Meta API
+  meta:
+    enabled: true
+
   # CD Plugin
   cd:
     enabled: true
@@ -28,6 +32,10 @@ jsonapi4j:
     cache:
       enabled: true
       maxSize: 1000
+    # Only resource types served by a *different* service need an explicit base URL here. Same-app types — including
+    # the built-in meta types (state, plugins, resources, relationships, operations, config) — resolve automatically
+    # against the endpoint the request arrived on, so they need no mapping. These same-app entries are kept only as an
+    # illustrative example (they are equivalent to the auto-resolved default).
     mapping:
       users: http://localhost:${server.port}${jsonapi4j.root-path}
       countries: http://localhost:${server.port}${jsonapi4j.root-path}

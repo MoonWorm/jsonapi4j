@@ -6,8 +6,10 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultMetaProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultValidationProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.MetaProperties;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 
 import java.util.Optional;
@@ -15,7 +17,7 @@ import java.util.Optional;
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 
 @Singleton
-@ConfigMapping(prefix = "jsonapi4j", namingStrategy = VERBATIM)
+@ConfigMapping(prefix = JsonApi4jProperties.CONFIG_PREFIX, namingStrategy = VERBATIM)
 @ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
 public interface QuarkusJsonApi4jProperties {
 
@@ -30,6 +32,27 @@ public interface QuarkusJsonApi4jProperties {
      * Default JsonApi4j validator settings. Optional.
      */
     Optional<QuarkusValidationProperties> validation();
+
+    /**
+     * Built-in meta (live introspection) API settings. Optional.
+     */
+    Optional<QuarkusMetaProperties> meta();
+
+    interface QuarkusMetaProperties {
+
+        /**
+         * Whether the meta API ({@code /{rootPath}/state/this}) is enabled. Disabled by default.
+         */
+        @WithDefault(MetaProperties.DEFAULT_ENABLED)
+        boolean enabled();
+
+        default DefaultMetaProperties toJsonApi4jProperties() {
+            DefaultMetaProperties dmp = new DefaultMetaProperties();
+            dmp.setEnabled(enabled());
+            return dmp;
+        }
+
+    }
 
     interface QuarkusValidationProperties {
 
@@ -86,6 +109,7 @@ public interface QuarkusJsonApi4jProperties {
         DefaultJsonApi4jProperties properties = new DefaultJsonApi4jProperties();
         properties.setRootPath(rootPath());
         properties.setValidation(validation().map(QuarkusValidationProperties::toJsonApi4jProperties).orElse(new DefaultValidationProperties()));
+        properties.setMeta(meta().map(QuarkusMetaProperties::toJsonApi4jProperties).orElse(new DefaultMetaProperties()));
         return properties;
     }
 }

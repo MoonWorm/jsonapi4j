@@ -27,6 +27,7 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
@@ -35,13 +36,10 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.*;
 
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
-import static pro.api4.jsonapi4j.operation.ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.URL_COMPATIBLE_UNIQUE_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensions.X_OPERATION_PROPERTIES;
@@ -70,8 +68,7 @@ public class JsonApiOperationsCustomizer {
     }
 
     private void createAndRegisterOperations(Paths paths) {
-        operationsRegistry.getResourceTypesWithAnyOperationConfigured()
-                .stream()
+        OasResourceTypes.resourceTypesWithOperationsExcludingMeta(domainRegistry, operationsRegistry)
                 .sorted()
                 .forEach(resourceType -> {
                     createAndRegisterResourceOperations(paths, resourceType);

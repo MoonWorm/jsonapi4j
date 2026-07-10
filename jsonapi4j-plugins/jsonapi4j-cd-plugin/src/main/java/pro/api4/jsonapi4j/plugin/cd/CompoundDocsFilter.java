@@ -27,18 +27,24 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initO
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
+import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME;
 
 @Slf4j
 public class CompoundDocsFilter implements Filter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompoundDocsFilter.class);
 
-    private final CompoundDocsRequestSupplier requestSupplier = new CompoundDocsRequestSupplier();
+    private CompoundDocsRequestSupplier requestSupplier;
     private CompoundDocsResolver resolver;
 
     @Override
     public void init(FilterConfig filterConfig) {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
+
+        String rootPath = (String) filterConfig.getServletContext()
+                .getAttribute(COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME);
+
+        this.requestSupplier = new CompoundDocsRequestSupplier(rootPath);
 
         CompoundDocsProperties cdProperties = (CompoundDocsProperties) filterConfig.getServletContext()
                 .getAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);

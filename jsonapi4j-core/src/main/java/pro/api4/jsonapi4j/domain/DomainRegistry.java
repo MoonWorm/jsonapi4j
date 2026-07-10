@@ -6,16 +6,22 @@ import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
+import pro.api4.jsonapi4j.meta.domain.config.ConfigResource;
+import pro.api4.jsonapi4j.meta.domain.config.StateConfigRelationship;
+import pro.api4.jsonapi4j.meta.domain.operations.OperationsResource;
+import pro.api4.jsonapi4j.meta.domain.operations.StateOperationsRelationship;
+import pro.api4.jsonapi4j.meta.domain.plugins.PluginsResource;
+import pro.api4.jsonapi4j.meta.domain.plugins.StatePluginsRelationship;
+import pro.api4.jsonapi4j.meta.domain.relationships.RelationshipsResource;
+import pro.api4.jsonapi4j.meta.domain.relationships.StateRelationshipsRelationship;
+import pro.api4.jsonapi4j.meta.domain.resources.ResourcesResource;
+import pro.api4.jsonapi4j.meta.domain.resources.StateResourcesRelationship;
+import pro.api4.jsonapi4j.meta.domain.state.StateResource;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -32,6 +38,10 @@ public class DomainRegistry {
     private final Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass;
     private final Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass;
 
+    // Meta partition, derived once at construction (the registry is immutable). Empty when meta is disabled.
+    private final Set<ResourceType> metaResourceTypes;
+    private final Collection<RegisteredResource<Resource<?>>> metaResources;
+
     private DomainRegistry(
             Map<ResourceType, RegisteredResource<Resource<?>>> resources,
             Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships,
@@ -46,10 +56,31 @@ public class DomainRegistry {
         this.toManyRelationships = MapUtils.emptyIfNull(toManyRelationships);
         this.resourcesByClass = MapUtils.emptyIfNull(resourcesByClass);
         this.relationshipsByClass = MapUtils.emptyIfNull(relationshipsByClass);
+
+        this.metaResourceTypes = this.resources.keySet().stream()
+                .filter(MetaDomain::isMetaResource)
+                .collect(Collectors.toUnmodifiableSet());
+        this.metaResources = this.resources.entrySet().stream()
+                .filter(e -> this.metaResourceTypes.contains(e.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
     }
 
     public static DomainRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
         return new DomainRegistryBuilder(plugins);
+    }
+
+    public static DomainRegistryBuilder copy(List<JsonApi4jPlugin> plugins,
+                                             DomainRegistry domainRegistry) {
+        return new DomainRegistryBuilder(
+                plugins,
+                domainRegistry.resources,
+                domainRegistry.allRelationships,
+                domainRegistry.toOneRelationships,
+                domainRegistry.toManyRelationships,
+                domainRegistry.resourcesByClass,
+                domainRegistry.relationshipsByClass
+        );
     }
 
     public static DomainRegistry empty() {
@@ -77,6 +108,29 @@ public class DomainRegistry {
 
     public Set<ResourceType> getResourceTypes() {
         return Collections.unmodifiableSet(this.resources.keySet());
+    }
+
+    /**
+     * @return the built-in meta ("introspection") resources, or an empty collection when the meta API is disabled.
+     * A subset of {@link #getResources()}.
+     */
+    public Collection<RegisteredResource<Resource<?>>> getMetaResources() {
+        return this.metaResources;
+    }
+
+    /**
+     * @return the reserved resource types owned by the meta API, or an empty set when the meta API is disabled.
+     * A subset of {@link #getResourceTypes()}.
+     */
+    public Set<ResourceType> getMetaResourceTypes() {
+        return this.metaResourceTypes;
+    }
+
+    /**
+     * @return {@code true} if the built-in meta API resources are registered (i.e. meta is enabled).
+     */
+    public boolean isMetaEnabled() {
+        return !this.metaResourceTypes.isEmpty();
     }
 
     public ResourceType getResourceType(String resourceTypeStr) {
@@ -193,6 +247,24 @@ public class DomainRegistry {
         private final Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass;
         private final Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass;
 
+        private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins,
+                                      Map<ResourceType, RegisteredResource<Resource<?>>> resources,
+                                      Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships,
+                                      Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>>> toOneRelationships,
+                                      Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>>> toManyRelationships,
+                                      Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass,
+                                      Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass) {
+            this.plugins = plugins;
+
+            this.resources = new HashMap<>(resources);
+            this.allRelationships = new HashMap<>(allRelationships);
+            this.toOneRelationships = new HashMap<>(toOneRelationships);
+            this.toManyRelationships = new HashMap<>(toManyRelationships);
+
+            this.resourcesByClass = new HashMap<>(resourcesByClass);
+            this.relationshipsByClass = new HashMap<>(relationshipsByClass);
+        }
+
         private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins) {
             this.plugins = plugins;
 
@@ -286,6 +358,45 @@ public class DomainRegistry {
             );
         }
 
+        public DomainRegistryBuilder withMeta() {
+            assertNoReservedTypeCollision();
+
+            resources(
+                    Set.of(
+                            new StateResource(),
+                            new PluginsResource(),
+                            new ResourcesResource(),
+                            new RelationshipsResource(),
+                            new OperationsResource(),
+                            new ConfigResource()
+                    )
+            );
+
+            relationships(
+                    Set.of(
+                            new StatePluginsRelationship(),
+                            new StateResourcesRelationship(),
+                            new StateRelationshipsRelationship(),
+                            new StateOperationsRelationship(),
+                            new StateConfigRelationship()
+                    )
+            );
+
+            return this;
+        }
+
+        private void assertNoReservedTypeCollision() {
+            this.resources.keySet().stream()
+                    .filter(MetaDomain::isMetaResource)
+                    .findFirst()
+                    .ifPresent(rt -> {
+                        throw new DomainMisconfigurationException(MessageFormat.format(
+                                "Resource type ''{0}'' is reserved by the jsonapi4j meta API. " +
+                                        "Rename your resource or disable the meta API (jsonapi4j.meta.enabled=false).",
+                                rt.getType()));
+                    });
+        }
+
         public DomainRegistry build() {
             validateIntegrity();
             return new DomainRegistry(
@@ -363,4 +474,41 @@ public class DomainRegistry {
         }
     }
 
+    /**
+     * Reserved JSON:API resource types and relationship names used by the built-in introspection ("meta") API.
+     * <p>
+     * The meta API exposes the running application's configured state as real JSON:API resources, rooted at the
+     * singleton {@code state} resource (addressed as {@code /{rootPath}/state/this}). The collection types
+     * ({@code plugins}, {@code resources}, {@code relationships}, {@code operations}) and the singleton
+     * {@code config} resource are reachable as relationships of {@code state} (and includable via
+     * {@code ?include=...}).
+     * <p>
+     * These names are reserved: registering a host-app resource with one of them while the meta API is enabled
+     * is a misconfiguration and fails fast at startup.
+     */
+    public static final class MetaDomain {
+
+        public static final String SINGLETON_ID = "this";
+
+        public static final Set<String> META_RESOURCE_TYPES = Set.of(
+                StateResource.STATE,
+                PluginsResource.PLUGINS,
+                ResourcesResource.RESOURCES,
+                RelationshipsResource.RELATIONSHIPS,
+                OperationsResource.OPERATIONS,
+                ConfigResource.CONFIG
+        );
+
+        private MetaDomain() {
+        }
+
+        public static boolean isMetaResource(String type) {
+            return type != null && META_RESOURCE_TYPES.stream().anyMatch(reserved -> reserved.equalsIgnoreCase(type));
+        }
+
+        public static boolean isMetaResource(ResourceType type) {
+            return isMetaResource(type.getType());
+        }
+
+    }
 }

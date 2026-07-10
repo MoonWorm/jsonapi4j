@@ -1,6 +1,3 @@
-server:
-  port: 9393
-
 jsonapi4j:
   rootPath: /jsonapi
 

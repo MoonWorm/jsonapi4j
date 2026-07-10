@@ -35,6 +35,11 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
         this.oasProperties = oasProperties;
     }
 
+    @Override
+    public OasProperties configProperties() {
+        return oasProperties;
+    }
+
     private static OasOperationInfoModel findOnTheMethod(Class<?> operationType, String methodName) {
         return OasOperationInfoModel.fromAnnotation(
                 fetchAnnotationForMethod(

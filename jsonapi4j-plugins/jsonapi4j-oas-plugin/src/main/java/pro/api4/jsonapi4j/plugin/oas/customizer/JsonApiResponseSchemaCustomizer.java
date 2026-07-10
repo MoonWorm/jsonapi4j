@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.media.Schema;
 import lombok.Data;
 import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.NoLinkageMeta;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
@@ -74,8 +75,7 @@ public class JsonApiResponseSchemaCustomizer {
     }
 
     private void registerDataDocsSchemas(OpenAPI openApi) {
-        domainRegistry.getResources()
-                .stream()
+        OasResourceTypes.registeredResourcesExcludingMeta(domainRegistry)
                 .flatMap(resourceConfig -> generateSchemasForResource(resourceConfig).stream())
                 .sorted(Comparator.comparing(schema -> schema.getName()))
                 .forEach(s -> registerSchemaIfNotExists(s, openApi));

@@ -55,10 +55,10 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                     .includeParam(includes);
 
             if (config.getPropagation().contains(Propagation.FIELDS)) {
-                urlBuilder.fieldsParams(originalRequest.fieldSets());
+                urlBuilder.fieldsParams(originalRequest.getFieldSets());
             }
             if (config.getPropagation().contains(Propagation.CUSTOM_QUERY_PARAMS)) {
-                urlBuilder.queryParams(originalRequest.customQueryParams());
+                urlBuilder.queryParams(originalRequest.getCustomQueryParams());
             }
 
             String uri = urlBuilder.build();
@@ -67,7 +67,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
             if (config.getPropagation().contains(Propagation.HEADERS)) {
-                Map<String, String> headers = originalRequest.headers();
+                Map<String, String> headers = originalRequest.getHeaders();
                 if (headers != null) {
                     headers.forEach((header, value) -> {
                         if (!DISALLOWED_HEADERS.contains(header.toLowerCase())) {

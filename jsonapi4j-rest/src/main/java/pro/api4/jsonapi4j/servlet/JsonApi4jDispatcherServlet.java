@@ -56,6 +56,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         this.jsonApi4j = composeJsonApi4j(config.getServletContext());
 
+        log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
+
         this.errorHandlerFactory = composeErrorHandlerFactory(config.getServletContext());
 
         this.objectMapper = composeObjectMapper(config.getServletContext());
@@ -79,8 +81,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         JsonApi4j jsonApi4j = (JsonApi4j) context.getAttribute(JSONAPI4J_ATT_NAME);
         Validate.notNull(jsonApi4j, "JsonApi4j can't be null");
         log.debug("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
-        // print state
-        log.info(new JsonApi4jReportGenerator(jsonApi4j).generateStateReport());
         return jsonApi4j;
     }
 

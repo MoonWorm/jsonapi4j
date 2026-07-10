@@ -3,8 +3,8 @@ package pro.api4.jsonapi4j.plugin.sf.config;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
 
-import java.util.Collections;
 import java.util.Map;
 
 @NoArgsConstructor
@@ -27,21 +27,15 @@ public class DefaultSfProperties implements SfProperties {
     }
 
     public static SfProperties toSfProperties(Map<String, Object> jsonApi4jPropertiesRaw) {
-        Object sfPropertiesObject = jsonApi4jPropertiesRaw.get(SfProperties.SF_PROPERTY_NAME);
-        Map<String, Object> sfPropertiesRaw = Collections.emptyMap();
-        if (sfPropertiesObject instanceof Map sfPropertiesMap) {
-            //noinspection unchecked
-            sfPropertiesRaw = sfPropertiesMap;
-        }
         DefaultSfProperties sfProperties = new DefaultSfProperties();
-        Object enabledObject = sfPropertiesRaw.get("enabled");
-        if (enabledObject instanceof Boolean enabledBoolean) {
-            sfProperties.setEnabled(enabledBoolean);
-        }
-        Object requestedFieldsDontExistModeObject = sfPropertiesRaw.get("requestedFieldsDontExistMode");
-        if (requestedFieldsDontExistModeObject instanceof String requestedFieldsDontExistModeString) {
-            sfProperties.setRequestedFieldsDontExistMode(RequestedFieldsDontExistMode.valueOf(requestedFieldsDontExistModeString));
-        }
+        new RawConfigAccessor(jsonApi4jPropertiesRaw)
+                .section(SfProperties.SF_PROPERTY)
+                .ifPresent(sf -> {
+                    sf.boolValue(SfProperties.ENABLED_PROPERTY).ifPresent(sfProperties::setEnabled);
+                    sf.strValue(SfProperties.REQUESTED_FIELDS_DONT_EXIST_MODE_PROPERTY)
+                            .map(RequestedFieldsDontExistMode::valueOf)
+                            .ifPresent(sfProperties::setRequestedFieldsDontExistMode);
+                });
         return sfProperties;
     }
 

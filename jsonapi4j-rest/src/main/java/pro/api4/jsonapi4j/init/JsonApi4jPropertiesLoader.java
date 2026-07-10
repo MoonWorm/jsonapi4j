@@ -4,8 +4,7 @@ import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-
-import java.util.Map;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME;
 
@@ -84,7 +83,7 @@ public final class JsonApi4jPropertiesLoader {
      * @param servletContext
      * @return
      */
-    public static Map<String, Object> loadConfigAsMap(ServletContext servletContext) {
+    public static RawConfigAccessor loadRawConfig(ServletContext servletContext) {
         try {
             String path = System.getProperty("jsonapi4j.config");
             if (path == null) {
@@ -95,9 +94,9 @@ public final class JsonApi4jPropertiesLoader {
             }
             log.debug("Loading configuration from {}", path);
             if (path != null) {
-                return JsonApi4jConfigReader.readConfigAsMap(path);
+                return JsonApi4jConfigReader.readRawConfig(path);
             }
-            return JsonApi4jConfigReader.readConfigFromClasspathAsMap(
+            return JsonApi4jConfigReader.readRawConfigFromClasspath(
                     "jsonapi4j.yaml",
                     "jsonapi4j.json"
             );

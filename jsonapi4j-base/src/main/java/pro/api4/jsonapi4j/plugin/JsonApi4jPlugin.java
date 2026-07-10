@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin;
 
+import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.operation.Operation;
@@ -72,6 +73,17 @@ public interface JsonApi4jPlugin {
      */
     default int precedence() {
         return LOW_PRECEDENCE;
+    }
+
+    /**
+     * Exposes this plugin's effective, non-secret configuration so consumers (e.g. the built-in {@code config}
+     * meta resource) can compose it as a strict type under {@link PluginProperties#section()}. Override to return
+     * the plugin's bound {@code *Properties}; default returns {@code null} (contributes nothing).
+     *
+     * @return this plugin's configuration, or {@code null} when it exposes none
+     */
+    default PluginProperties configProperties() {
+        return null;
     }
 
     /**

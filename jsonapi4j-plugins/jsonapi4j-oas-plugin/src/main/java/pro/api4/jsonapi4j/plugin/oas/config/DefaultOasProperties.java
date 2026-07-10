@@ -5,11 +5,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 import pro.api4.jsonapi4j.principal.tier.TierPublic;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -338,20 +338,12 @@ public class DefaultOasProperties implements OasProperties {
     }
 
     public static OasProperties toOasProperties(Map<String, Object> jsonApi4jPropertiesRaw) {
-        Object oasPropertiesObject = jsonApi4jPropertiesRaw.get(OasProperties.OAS_PROPERTY_NAME);
-        Map<String, Object> oasPropertiesRaw = Collections.emptyMap();
-        if (oasPropertiesObject instanceof Map oasPropertiesMap) {
-            //noinspection unchecked
-            oasPropertiesRaw = oasPropertiesMap;
-        }
-        OasProperties oasProperties = new DefaultOasProperties();
-        if (!oasPropertiesRaw.isEmpty()) {
-            oasProperties = JsonApi4jConfigReader.convertToConfig(
-                    oasPropertiesRaw,
-                    DefaultOasProperties.class
-            );
-        }
-        return oasProperties;
+        return new RawConfigAccessor(jsonApi4jPropertiesRaw)
+                .section(OasProperties.OAS_PROPERTY)
+                .map(RawConfigAccessor::getProperties)
+                .filter(oas -> !oas.isEmpty())
+                .map(oas -> JsonApi4jConfigReader.convertToConfig(oas, DefaultOasProperties.class))
+                .orElseGet(DefaultOasProperties::new);
     }
 
 }

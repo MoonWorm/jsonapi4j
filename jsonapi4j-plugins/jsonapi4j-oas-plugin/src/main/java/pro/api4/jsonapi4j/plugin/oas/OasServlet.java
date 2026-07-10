@@ -44,21 +44,15 @@ public class OasServlet extends HttpServlet {
         super.init(config);
 
         rootPath = (String) config.getServletContext().getAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME);
-        Validate.notNull(rootPath);
+        Validate.notNull(rootPath, "rootPath property can't be null");
 
         oasProperties = (OasProperties) config.getServletContext().getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
-        Validate.notNull(oasProperties);
+        Validate.notNull(oasProperties, "oas property section can't be null");
 
         JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
-        if (jsonApi4j != null) {
-            this.domainRegistry = jsonApi4j.getDomainRegistry();
-            this.operationsRegistry = jsonApi4j.getOperationsRegistry();
-        } else {
-            domainRegistry = (DomainRegistry) config.getServletContext().getAttribute(DOMAIN_REGISTRY_ATT_NAME);
-            operationsRegistry = (OperationsRegistry) config.getServletContext().getAttribute(OPERATION_REGISTRY_ATT_NAME);
-        }
-        Validate.notNull(domainRegistry);
-        Validate.notNull(operationsRegistry);
+        Validate.notNull(jsonApi4j, "JsonApi4j must be assembled before the OAS servlet initializes");
+        domainRegistry = jsonApi4j.getDomainRegistry();
+        operationsRegistry = jsonApi4j.getOperationsRegistry();
     }
 
     @Override
@@ -74,10 +68,11 @@ public class OasServlet extends HttpServlet {
             writeCachedOasJsonToResponse(resp);
             return;
         }
+
         OpenAPI openAPI = new OpenAPI();
-        new CommonOpenApiCustomizer(oasProperties, operationsRegistry).customise(openAPI);
+        new CommonOpenApiCustomizer(oasProperties, domainRegistry, operationsRegistry).customise(openAPI);
         new JsonApiResponseSchemaCustomizer(domainRegistry, operationsRegistry).customise(openAPI);
-        new JsonApiRequestBodySchemaCustomizer(operationsRegistry).customise(openAPI);
+        new JsonApiRequestBodySchemaCustomizer(domainRegistry, operationsRegistry).customise(openAPI);
         new JsonApiOperationsCustomizer(
                 rootPath,
                 domainRegistry,

@@ -1,13 +1,14 @@
 package pro.api4.jsonapi4j.sampleapp.operations.cache;
 
 import org.springframework.stereotype.Component;
+import pro.api4.jsonapi4j.sampleapp.testsuite.CacheCompoundDocsTests.DownstreamInvocations;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
-public class InvocationTracker {
+public class InvocationTracker implements DownstreamInvocations {
 
     private final Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
 
@@ -16,12 +17,14 @@ public class InvocationTracker {
                 .incrementAndGet();
     }
 
-    public int getCount(String resourceType) {
+    @Override
+    public int count(String resourceType) {
         AtomicInteger counter = counters.get(resourceType);
         return counter != null ? counter.get() : 0;
     }
 
-    public void resetAll() {
+    @Override
+    public void reset() {
         counters.clear();
     }
 

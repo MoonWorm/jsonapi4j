@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
+import pro.api4.jsonapi4j.util.BaseUrls;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +34,7 @@ class JsonApiUrlBuilder {
     private final List<String> queryParams = new ArrayList<>();
 
     private JsonApiUrlBuilder(URI baseUri) {
-        String uri = baseUri.toString();
-        this.basePath = uri.endsWith("/") ? uri.substring(0, uri.length() - 1) : uri;
+        this.basePath = BaseUrls.stripTrailingSlash(baseUri.toString());
     }
 
     /**

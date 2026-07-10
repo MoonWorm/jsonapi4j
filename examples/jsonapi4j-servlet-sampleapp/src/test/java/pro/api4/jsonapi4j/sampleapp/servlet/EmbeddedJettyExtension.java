@@ -10,6 +10,8 @@ import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 
 import java.util.List;
 
+import static pro.api4.jsonapi4j.sampleapp.servlet.ServletJsonapi4jSampleApp.*;
+
 /**
  * JUnit 5 extension that starts an embedded Jetty server with the full JsonApi4j stack
  * before each test class and stops it after. This gives each test class a fresh server
@@ -40,8 +42,9 @@ public class EmbeddedJettyExtension implements BeforeAllCallback, AfterAllCallba
         JsonApi4jServletContainerInitializer jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
 
         List<JsonApi4jPlugin> plugins = ServletJsonapi4jSampleApp.initPlugins(handler.getServletContext());
-        ServletJsonapi4jSampleApp.initDomainRegistry(plugins, handler.getServletContext());
-        ServletJsonapi4jSampleApp.initOperationRegistry(plugins, handler.getServletContext());
+        initMetaContext(plugins, handler.getServletContext());
+        initDomainRegistry(plugins, handler.getServletContext());
+        initOperationRegistry(plugins, handler.getServletContext());
 
         jsonApi4jInitializer.onStartup(null, handler.getServletContext());
 

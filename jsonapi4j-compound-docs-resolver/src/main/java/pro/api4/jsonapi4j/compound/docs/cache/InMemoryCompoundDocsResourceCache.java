@@ -84,6 +84,15 @@ public class InMemoryCompoundDocsResourceCache extends AbstractCompoundDocsResou
     }
 
     /**
+     * Removes all entries from the cache. Primarily useful for tests and administrative
+     * invalidation where a fresh cache is required.
+     */
+    public void clear() {
+        store.clear();
+        log.debug("Cache cleared");
+    }
+
+    /**
      * Stores a resource in the cache. Only called when directives are cacheable
      * (enforced by {@link AbstractCompoundDocsResourceCache#put}).
      *

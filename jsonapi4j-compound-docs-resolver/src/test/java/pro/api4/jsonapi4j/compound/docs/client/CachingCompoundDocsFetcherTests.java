@@ -47,10 +47,10 @@ class CachingCompoundDocsFetcherTests {
     private JsonApi4jCompoundDocsApiHttpClient httpClient;
 
     @Mock
-    private CompoundDocsRequest mockRequest;
+    private CompoundDocsResolverConfig mockConfig;
 
     @Mock
-    private CompoundDocsResolverConfig mockConfig;
+    private CompoundDocsRequest mockRequest;
 
     private InMemoryCompoundDocsResourceCache cache;
     private ExecutorService executor;
@@ -381,7 +381,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_fieldsPropagationEnabled_cacheKeyIncludesFields() {
         when(mockConfig.getPropagation()).thenReturn(List.of(Propagation.FIELDS));
-        when(mockRequest.fieldSets()).thenReturn(Map.of("countries", List.of("name", "code")));
+        when(mockRequest.getFieldSets()).thenReturn(Map.of("countries", List.of("name", "code")));
 
         when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new HttpFetchResult(

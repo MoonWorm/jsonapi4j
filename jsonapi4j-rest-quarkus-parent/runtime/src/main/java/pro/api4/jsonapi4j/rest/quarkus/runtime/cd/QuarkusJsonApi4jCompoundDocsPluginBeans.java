@@ -26,9 +26,9 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    JsonApiCompoundDocsPlugin jsonApiCdPlugin() {
+    JsonApiCompoundDocsPlugin jsonApiCdPlugin(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
         LOG.info("CD Plugin Enabled. Composing {}...", JsonApiCompoundDocsPlugin.class.getSimpleName());
-        return new JsonApiCompoundDocsPlugin();
+        return new JsonApiCompoundDocsPlugin(cdProperties.toCdProperties());
     }
 
     @Produces

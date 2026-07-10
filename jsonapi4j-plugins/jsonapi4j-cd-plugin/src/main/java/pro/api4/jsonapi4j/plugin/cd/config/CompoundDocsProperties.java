@@ -2,12 +2,18 @@ package pro.api4.jsonapi4j.plugin.cd.config;
 
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.config.PluginProperties;
 
 import java.util.*;
 
-public interface CompoundDocsProperties {
+public interface CompoundDocsProperties extends PluginProperties {
 
-    String CD_PROPERTY_NAME = "cd";
+    String CD_PROPERTY = "cd";
+
+    @Override
+    default String section() {
+        return CD_PROPERTY;
+    }
 
     String DEFAULT_ENABLED = "false";
     String DEFAULT_MAX_HOPS = "2";

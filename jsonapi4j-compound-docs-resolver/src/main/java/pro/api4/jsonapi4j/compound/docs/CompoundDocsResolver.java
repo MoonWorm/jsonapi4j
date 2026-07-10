@@ -97,7 +97,6 @@ public class CompoundDocsResolver {
         if (compoundDocsRequest.isProcessable()) {
             return resolveCompoundDocsInternal(
                     originalJsonApiResponse,
-                    compoundDocsRequest.includes(),
                     compoundDocsRequest,
                     () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
             );
@@ -110,9 +109,9 @@ public class CompoundDocsResolver {
                                                                          String relationshipName) throws ErrorJsonApiResponseException {
         if (compoundDocsRequest.isProcessable()) {
             List<String> effectiveOriginalRequestIncludes =
-                    compoundDocsRequest.includes() == null ?
+                    compoundDocsRequest.getIncludes() == null ?
                             Collections.emptyList() :
-                            compoundDocsRequest.includes()
+                            compoundDocsRequest.getIncludes()
                                     .stream()
                                     .filter(i -> i.startsWith(relationshipName))
                                     .toList();
@@ -131,7 +130,7 @@ public class CompoundDocsResolver {
                                                                        Set<String> requestIncludes,
                                                                        CompoundDocsRequest originalRequest,
                                                                        Map<String, String> metaHeaders) {
-        DomainSettings domainSettings = resolveDomainSettings(resourceType);
+        DomainSettings domainSettings = resolveDomainSettings(resourceType, originalRequest.getSelfBaseUrl());
         return CompletableFuture.supplyAsync(
                 () -> fetcher.fetch(
                         domainSettings,
@@ -145,6 +144,13 @@ public class CompoundDocsResolver {
                 executorService
         );
     }
+
+    private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
+                                                           CompoundDocsRequest request,
+                                                           Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
+        return resolveCompoundDocsInternal(originalJsonApiResponse, request.getIncludes(), request, parseResultSupplier);
+    }
+
 
     private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
                                                           List<String> effectiveRequestIncludes,
@@ -234,9 +240,9 @@ public class CompoundDocsResolver {
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
     }
 
-    private DomainSettings resolveDomainSettings(String resourceType) {
+    private DomainSettings resolveDomainSettings(String resourceType, String selfBaseUrl) {
         try {
-            DomainSettings settings = domainSettingsResolver.resolveDomainSettings(resourceType);
+            DomainSettings settings = domainSettingsResolver.resolveDomainSettings(resourceType, selfBaseUrl);
             if (settings == null) {
                 throw new NullPointerException("DomainSettingsResolver returned null DomainSettings");
             }

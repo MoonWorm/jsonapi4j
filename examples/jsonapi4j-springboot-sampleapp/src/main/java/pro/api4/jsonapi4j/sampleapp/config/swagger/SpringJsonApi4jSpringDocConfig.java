@@ -18,16 +18,21 @@ import pro.api4.jsonapi4j.sampleapp.config.swagger.customizers.*;
         havingValue = "true",
         matchIfMissing = true
 )
-@ConditionalOnClass(value = { JsonApiOasPlugin.class })
+@ConditionalOnClass(value = {JsonApiOasPlugin.class})
 @Configuration
 public class SpringJsonApi4jSpringDocConfig {
 
     @Bean
     public OpenApiCustomizer openApiCustomizer(
             OasProperties oasProperties,
+            DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry
     ) {
-        return new CommonOpenApiCustomizer(oasProperties, operationsRegistry);
+        return new CommonOpenApiCustomizer(
+                oasProperties,
+                domainRegistry,
+                operationsRegistry
+        );
     }
 
     @Bean
@@ -53,8 +58,11 @@ public class SpringJsonApi4jSpringDocConfig {
     }
 
     @Bean
-    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(OperationsRegistry operationsRegistry) {
-        return new JsonApiRequestBodySchemaCustomizer(operationsRegistry);
+    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(
+            DomainRegistry domainRegistry,
+            OperationsRegistry operationsRegistry
+    ) {
+        return new JsonApiRequestBodySchemaCustomizer(domainRegistry, operationsRegistry);
     }
 
     @Bean

@@ -1,17 +1,21 @@
 package pro.api4.jsonapi4j.domain;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
+import pro.api4.jsonapi4j.meta.domain.plugins.PluginsResource;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static pro.api4.jsonapi4j.domain.DomainRegistry.MetaDomain.META_RESOURCE_TYPES;
 
 public class DomainRegistryTests {
 
@@ -141,6 +145,49 @@ public class DomainRegistryTests {
         assertThatThrownBy(() -> sut.getToManyRelationshipStrict(new ResourceType("foo"), new RelationshipName("to1"))).isInstanceOf(DomainMisconfigurationException.class);
         assertThatThrownBy(() -> sut.getToManyRelationshipStrict(new ResourceType("foo"), new RelationshipName("smth_else"))).isInstanceOf(DomainMisconfigurationException.class);
         assertThatThrownBy(() -> sut.getToManyRelationshipStrict(new ResourceType("bar"), new RelationshipName("smth_else"))).isInstanceOf(DomainMisconfigurationException.class);
+    }
+
+    @Test
+    void metaEnabled_exposesReservedResourcesAsAStrictSubset() {
+        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
+                .withMeta()
+                .build();
+
+        assertThat(sut.isMetaEnabled()).isTrue();
+        assertThat(sut.getMetaResourceTypes().stream().map(ResourceType::getType).collect(Collectors.toSet()))
+                .isEqualTo(META_RESOURCE_TYPES);
+        assertThat(sut.getResourceTypes()).containsAll(sut.getMetaResourceTypes());
+        assertThat(sut.getResources()).containsAll(sut.getMetaResources());
+    }
+
+    @Test
+    void metaEnabled_tryingToAddReservedMetaType() {
+        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+                .resource(new TestResourceWithReservedMetaName())
+                .withMeta()
+                .build()
+        ).isInstanceOf(DomainMisconfigurationException.class)
+                .hasMessage("Resource type 'plugins' is reserved by the jsonapi4j meta API. " +
+                        "Rename your resource or disable the meta API (jsonapi4j.meta.enabled=false).");
+    }
+
+    @Test
+    void metaDisabled_metaAccessorsAreEmpty() {
+        DomainRegistry domain = DomainRegistry.builder(Collections.emptyList()).build();
+
+        assertThat(domain.isMetaEnabled()).isFalse();
+        assertThat(domain.getMetaResources()).isEmpty();
+        assertThat(domain.getMetaResourceTypes()).isEmpty();
+    }
+
+    @JsonApiResource(resourceType = PluginsResource.PLUGINS)
+    private static class TestResourceWithReservedMetaName implements Resource<String> {
+
+        @Override
+        public String resolveResourceId(String dataSourceDto) {
+            return UUID.randomUUID().toString();
+        }
+
     }
 
     private static class TestResourceWithoutAnnotation implements Resource<String> {

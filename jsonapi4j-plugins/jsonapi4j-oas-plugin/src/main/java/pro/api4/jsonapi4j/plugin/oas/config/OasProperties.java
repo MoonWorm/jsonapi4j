@@ -1,14 +1,20 @@
 package pro.api4.jsonapi4j.plugin.oas.config;
 
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
 import java.util.List;
 import java.util.Map;
 
-public interface OasProperties {
+public interface OasProperties extends PluginProperties {
 
-    String OAS_PROPERTY_NAME = "oas";
+    String OAS_PROPERTY = "oas";
+
+    @Override
+    default String section() {
+        return OAS_PROPERTY;
+    }
 
     String DEFAULT_ENABLED = "true";
     String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.DEFAULT_ROOT_PATH + "/oas";

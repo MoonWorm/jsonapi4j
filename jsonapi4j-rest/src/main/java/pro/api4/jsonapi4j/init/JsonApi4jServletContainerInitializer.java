@@ -14,8 +14,10 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -44,12 +46,14 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_ATT_NAME = "jsonApi4j";
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String VALIDATOR_ATT_NAME = "jsonApi4jValidator";
+    public static final String VALIDATOR_FACTORY_ATT_NAME = "jsonApi4jValidatorFactory";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
     public static final String PLUGINS_ATT_NAME = "jsonapi4jPlugins";
     public static final String ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME = "jsonapi4jErrorHandlerFactoriesRegistry";
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
+    public static final String META_CONTEXT_ATT_NAME = "jsonapi4jMetaContext";
 
     public static ExecutorService initExecutorService(ServletContext servletContext) {
         ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
@@ -61,20 +65,28 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return es;
     }
 
-    public static JsonApiBuildInRequestValidator initValidator(ServletContext servletContext, DomainRegistry domainRegistry) {
-        JsonApiBuildInRequestValidator validator = (JsonApiBuildInRequestValidator) servletContext.getAttribute(VALIDATOR_ATT_NAME);
-        if (validator == null) {
-            log.warn("JsonApi4jValidator not found in servlet context. Setting a default one ({}).", DefaultJsonApiBuildInRequestValidator.class.getSimpleName());
-            ObjectMapper objectMapper = initObjectMapper(servletContext);
-            JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
-            validator = DefaultJsonApiBuildInRequestValidator.builder()
-                    .objectMapper(objectMapper)
-                    .properties(properties.validation())
-                    .domainRegistry(domainRegistry)
-                    .build();
-            servletContext.setAttribute(VALIDATOR_ATT_NAME, validator);
+    public static JsonApiBuildInRequestValidatorFactory initValidatorFactory(ServletContext servletContext) {
+        JsonApiBuildInRequestValidatorFactory factory =
+                (JsonApiBuildInRequestValidatorFactory) servletContext.getAttribute(VALIDATOR_FACTORY_ATT_NAME);
+        if (factory != null) {
+            return factory;
         }
-        return validator;
+        // Back-compat: honor a host-set ready validator instance. Note it validates against whatever registry it was
+        // built with, so it will not see the meta-augmented resource/relationship types.
+        JsonApiBuildInRequestValidator validator = (JsonApiBuildInRequestValidator) servletContext.getAttribute(VALIDATOR_ATT_NAME);
+        if (validator != null) {
+            return domainRegistry -> validator;
+        }
+        log.warn("JsonApi4jValidatorFactory not found in servlet context. Setting a default one ({}).", DefaultJsonApiBuildInRequestValidator.class.getSimpleName());
+        ObjectMapper objectMapper = initObjectMapper(servletContext);
+        JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
+        factory = domainRegistry -> DefaultJsonApiBuildInRequestValidator.builder()
+                .objectMapper(objectMapper)
+                .properties(properties.validation())
+                .domainRegistry(domainRegistry)
+                .build();
+        servletContext.setAttribute(VALIDATOR_FACTORY_ATT_NAME, factory);
+        return factory;
     }
 
     public static DomainRegistry initDomainRegistry(ServletContext servletContext) {
@@ -148,13 +160,16 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
             List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
             ExecutorService executorService = initExecutorService(servletContext);
-            JsonApiBuildInRequestValidator validator = initValidator(servletContext, domainRegistry);
+            JsonApiBuildInRequestValidatorFactory validatorFactory = initValidatorFactory(servletContext);
+            // if meta context is null = meta feature is disabled
+            MetaContext metaContext = (MetaContext) servletContext.getAttribute(META_CONTEXT_ATT_NAME);
             jsonApi4j = JsonApi4j.builder()
                     .domainRegistry(domainRegistry)
                     .operationsRegistry(operationsRegistry)
                     .plugins(plugins)
                     .executor(executorService)
-                    .validator(validator)
+                    .validatorFactory(validatorFactory)
+                    .meta(metaContext)
                     .build();
             servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
         }

@@ -283,7 +283,7 @@ public class CachingCompoundDocsFetcher {
         if (!config.getPropagation().contains(Propagation.FIELDS)) {
             return Collections.emptySet();
         }
-        Map<String, List<String>> fieldSets = originalRequest.fieldSets();
+        Map<String, List<String>> fieldSets = originalRequest.getFieldSets();
         if (fieldSets == null || !fieldSets.containsKey(resourceType)) {
             return Collections.emptySet();
         }

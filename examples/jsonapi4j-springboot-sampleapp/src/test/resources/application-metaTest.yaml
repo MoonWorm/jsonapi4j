@@ -1,0 +1,17 @@
+server:
+  port: 9393
+
+jsonapi4j:
+  rootPath: /jsonapi
+
+  meta:
+    enabled: true
+
+  cd:
+    enabled: true
+  ac:
+    enabled: false
+  oas:
+    enabled: false
+  sf:
+    enabled: false

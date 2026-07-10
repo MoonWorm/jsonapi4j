@@ -52,7 +52,7 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
     }
 
     private static OasProperties readOasProperties(ServletContext servletContext) {
-        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
+        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadRawConfig(servletContext).getProperties();
         return DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw);
     }
 

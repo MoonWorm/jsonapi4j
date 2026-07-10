@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import lombok.Data;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
@@ -16,6 +18,7 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 @Data
 public class JsonApiRequestBodySchemaCustomizer {
 
+    private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
     public void customise(OpenAPI openApi) {
@@ -23,8 +26,7 @@ public class JsonApiRequestBodySchemaCustomizer {
     }
 
     private void registerCreateAndUpdateOperationPayloadSchemas(OpenAPI openApi) {
-        operationsRegistry.getResourceTypesWithAnyOperationConfigured()
-                .stream()
+        OasResourceTypes.resourceTypesWithOperationsExcludingMeta(domainRegistry, operationsRegistry)
                 .sorted()
                 .forEach(resourceType -> {
                     registerPayloadSchemas(operationsRegistry.getRegisteredCreateResourceOperation(resourceType, false), openApi);

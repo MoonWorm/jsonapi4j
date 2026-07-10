@@ -53,13 +53,14 @@ public class JsonApi4jConfigReader {
         }
     }
 
-    public static Map<String, Object> readConfigAsMap(String path) throws IOException {
+    public static RawConfigAccessor readRawConfig(String path) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream(path)) {
             if (is == null) {
                 throw new IOException("Resource not found: " + path);
             }
-            return getObjectMapper(path).readValue(is, new TypeReference<>() {
+            Map<String, Object> raw = getObjectMapper(path).readValue(is, new TypeReference<>() {
             });
+            return new RawConfigAccessor(raw);
         }
     }
 
@@ -83,25 +84,22 @@ public class JsonApi4jConfigReader {
         }
     }
 
-    public static Map<String, Object> readConfigFromClasspathAsMap(JsonApi4jProperties properties) {
-        return JsonApi4jConfigReader.getJsonObjectMapper().convertValue(properties, new TypeReference<>() {
-        });
-    }
-
-    public static Map<String, Object> readConfigFromClasspathAsMap(String configNameYaml,
-                                                                   String configNameJson) throws IOException {
+    public static RawConfigAccessor readRawConfigFromClasspath(String configNameYaml,
+                                                               String configNameJson) throws IOException {
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameYaml)) {
             if (is != null) {
-                return JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, new TypeReference<>() {
+                Map<String, Object> raw = JsonApi4jConfigReader.getYamlObjectMapper().readValue(is, new TypeReference<>() {
                 });
+                return new RawConfigAccessor(raw);
             }
         }
         try (InputStream is = JsonApi4jConfigReader.class.getResourceAsStream("/" + configNameJson)) {
             if (is == null) {
                 throw new IllegalStateException("No configuration file found");
             }
-            return JsonApi4jConfigReader.getJsonObjectMapper().readValue(is, new TypeReference<>() {
+            Map<String, Object> raw = JsonApi4jConfigReader.getJsonObjectMapper().readValue(is, new TypeReference<>() {
             });
+            return new RawConfigAccessor(raw);
         }
     }
 

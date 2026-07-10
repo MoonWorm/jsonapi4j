@@ -1,5 +1,8 @@
 package pro.api4.jsonapi4j.compound.docs;
 
+import lombok.Data;
+import org.apache.commons.lang3.Validate;
+
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -8,74 +11,58 @@ import java.util.regex.Pattern;
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 /**
- * Narrowed version of the request that has information needed for compound docs resolution logic.
+ * Narrowed, immutable view of the incoming request carrying the information needed for compound docs resolution.
+ *
+ * <p>All components except {@link #getIncludes()} are required (validated at construction). {@code includes} is
+ * intentionally nullable — it is {@code null} when the request carries no {@code include} query param, in which case
+ * the document is not processable ({@link #isProcessable()}).
+ *
  */
-public interface CompoundDocsRequest {
+@Data
+public final class CompoundDocsRequest {
 
-    Pattern RELATIONSHIP_OPERATION_URL_PATTERN = Pattern.compile("/[^/]+/[^/]+/relationships/([^/]+)");
+    private static final Pattern RELATIONSHIP_OPERATION_URL_PATTERN = Pattern.compile("/[^/]+/[^/]+/relationships/([^/]+)");
 
-    /**
-     * @return HTTP method, e.g. <code>GET</code>, <code>POST</code>
-     */
-    String method();
+    private final List<String> includes;
+    private final Map<String, List<String>> fieldSets;
+    private final Map<String, String> headers;
+    private final Map<String, List<String>> customQueryParams;
+    private final String selfBaseUrl;
+    private final String relationshipNameFromRequestUri;
 
-    /**
-     * JSON:API-specific 'include' query param that tells which nested related resources is supposed to be included.
-     * This query param is in fact controlling the Compound Docs resolution logic.
-     * <p>
-     * For example: <code>include=placeOfBirth.currencies,relatives</code>
-     * <p>
-     * There is no need to specify lower level includes if they are already included in any higher-level, for
-     * example: there is no need to explicitly request for <code>placeOfBirth</code> if
-     * <code>placeOfBirth.currencies</code> is already requested.
-     *
-     * @return list of 'includes' query param values
-     */
-    List<String> includes();
+    private String relativePath;
+    private boolean processable;
 
-    /**
-     * JSON:API-specific 'Sparse Fieldsets' query params are propagated during the Compound Docs resolution process to guarantee that only requested
-     * fields are returned across all included resources.
-     * <p>
-     * For example: <code>fields[users]=name,age&fields[countries]=region</code>
-     *
-     * @return dictionary; resource type is used as a key, list of fields - as a value
-     */
-    Map<String, List<String>> fieldSets();
-
-    /**
-     * @return map of all headers of the original HTTP request.
-     */
-    Map<String, String> headers();
-
-    /**
-     * Should return the relative path of the incoming HTTP request - excluding protocol part and domain name.
-     * <p>
-     * For example:
-     * <p>
-     * <code>POST /some/path.html HTTP/1.1</code> -> <code>/some/path.html</code>
-     * <p>
-     * <code>GET http://foo.bar/a.html HTTP/1.0</code> -> <code>/a.html</code>
-     * <p>
-     * <code>HEAD /xyz?a=b HTTP/1.1</code> -> <code>/xyz</code>
-     *
-     * @return a <code>String</code> representing a relative path of the URI
-     */
-    String relativePath();
-
-    /**
-     * @return all non JSON:API specific query params (user custom query params)
-     */
-    Map<String, List<String>> customQueryParams();
-
-    default boolean isProcessable() {
-        return "GET".equals(method())
-                && !Boolean.parseBoolean(headers().get(X_DISABLE_COMPOUND_DOCS.getName()))
-                && includes() != null && !includes().isEmpty();
+    public CompoundDocsRequest(String method,
+                               List<String> includes,
+                               Map<String, List<String>> fieldSets,
+                               Map<String, String> headers,
+                               String relativePath,
+                               Map<String, List<String>> customQueryParams,
+                               String selfBaseUrl) {
+        Validate.notBlank(method, "method must not be blank");
+        Validate.notNull(fieldSets, "fieldSets must not be null");
+        Validate.notNull(headers, "headers must not be null");
+        Validate.notBlank(relativePath, "relativePath must not be blank");
+        Validate.notNull(customQueryParams, "customQueryParams must not be null");
+        Validate.notBlank(selfBaseUrl, "selfBaseUrl must not be blank");
+        this.includes = includes;
+        this.fieldSets = fieldSets;
+        this.headers = headers;
+        this.customQueryParams = customQueryParams;
+        this.selfBaseUrl = selfBaseUrl;
+        this.relationshipNameFromRequestUri = getRelationshipNameFromRequestUri(relativePath);
+        this.processable = calculateProcessable(method, headers, includes);
     }
 
-    default String getRelationshipNameFromRequestUri() {
-        Matcher matcher = RELATIONSHIP_OPERATION_URL_PATTERN.matcher(relativePath());
+    private boolean calculateProcessable(String method, Map<String, String> headers, List<String> includes) {
+        return "GET".equals(method)
+                && !Boolean.parseBoolean(headers.get(X_DISABLE_COMPOUND_DOCS.getName()))
+                && includes != null && !includes.isEmpty();
+    }
+
+    private String getRelationshipNameFromRequestUri(String relativePath) {
+        Matcher matcher = RELATIONSHIP_OPERATION_URL_PATTERN.matcher(relativePath);
         if (matcher.find()) {
             try {
                 return matcher.group(1);

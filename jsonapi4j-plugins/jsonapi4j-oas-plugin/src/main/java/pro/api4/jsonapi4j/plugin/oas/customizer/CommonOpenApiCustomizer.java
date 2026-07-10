@@ -3,6 +3,8 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.OAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
@@ -35,6 +37,7 @@ import static java.util.stream.Collectors.toMap;
 public class CommonOpenApiCustomizer {
 
     private final OasProperties oasProperties;
+    private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
     public void customise(OpenAPI openApi) {
@@ -131,8 +134,7 @@ public class CommonOpenApiCustomizer {
     }
 
     private void enrichTags(OpenAPI openApi) {
-        List<Tag> jsonApiTags = operationsRegistry.getResourceTypesWithAnyOperationConfigured()
-                .stream()
+        List<Tag> jsonApiTags = OasResourceTypes.resourceTypesWithOperationsExcludingMeta(domainRegistry, operationsRegistry)
                 .map(OasOperationInfoUtil::resolveOperationTag)
                 .sorted()
                 .map(t -> new Tag().name(t))

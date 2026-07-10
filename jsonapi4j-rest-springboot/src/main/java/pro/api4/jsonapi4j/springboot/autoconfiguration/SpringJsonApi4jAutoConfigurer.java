@@ -6,6 +6,7 @@ import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -16,11 +17,13 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
@@ -42,6 +45,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static pro.api4.jsonapi4j.config.JsonApi4jProperties.CONFIG_PREFIX;
+import static pro.api4.jsonapi4j.config.JsonApi4jProperties.META_PROPERTY;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.EXECUTOR_SERVICE_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME;
@@ -49,7 +54,7 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONA
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.VALIDATOR_ATT_NAME;
+import static pro.api4.jsonapi4j.meta.context.MetaContext.Integration.SPRING;
 
 @Configuration
 @Import(value = {
@@ -90,16 +95,23 @@ public class SpringJsonApi4jAutoConfigurer {
         return plugins == null ? Collections.emptyList() : plugins;
     }
 
+    @ConditionalOnProperty(prefix = CONFIG_PREFIX + "." + META_PROPERTY, name = "enabled", havingValue = "true")
+    @ConditionalOnMissingBean(MetaContext.class)
+    @Bean
+    public MetaContext jsonApi4jMetaContext(JsonApi4jProperties properties, List<JsonApi4jPlugin> defaultPlugins) {
+        return MetaContext.of(MetaConfigComposer.compose(properties, defaultPlugins), SPRING);
+    }
+
     @ConditionalOnMissingBean(DomainRegistry.class)
     @Bean
     public DomainRegistry jsonApi4jDomainRegistry(
             List<JsonApi4jPlugin> defaultPlugins,
             SpringContextJsonApi4jDomainScanner domainScanner
     ) {
-        return DomainRegistry.builder(defaultPlugins)
+        DomainRegistry.DomainRegistryBuilder builder = DomainRegistry.builder(defaultPlugins)
                 .resources(domainScanner.getResources())
-                .relationships(domainScanner.getRelationships())
-                .build();
+                .relationships(domainScanner.getRelationships());
+        return builder.build();
     }
 
     @ConditionalOnMissingBean(OperationsRegistry.class)
@@ -126,14 +138,16 @@ public class SpringJsonApi4jAutoConfigurer {
             OperationsRegistry operationsRegistry,
             List<JsonApi4jPlugin> defaultPlugins,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
-            JsonApiBuildInRequestValidator validator
+            JsonApiBuildInRequestValidatorFactory validatorFactory,
+            ObjectProvider<MetaContext> metaContextProvider
     ) {
         return JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .plugins(defaultPlugins)
                 .executor(jsonApiExecutorService)
-                .validator(validator)
+                .validatorFactory(validatorFactory)
+                .meta(metaContextProvider.getIfAvailable())
                 .build();
     }
 
@@ -156,14 +170,13 @@ public class SpringJsonApi4jAutoConfigurer {
         return jsonapi4jErrorHandlerFactoriesRegistry;
     }
 
-    @ConditionalOnMissingBean(JsonApiBuildInRequestValidator.class)
+    @ConditionalOnMissingBean(JsonApiBuildInRequestValidatorFactory.class)
     @Bean
-    public JsonApiBuildInRequestValidator jsonApi4jValidator(
+    public JsonApiBuildInRequestValidatorFactory jsonApi4jValidatorFactory(
             JsonApi4jProperties properties,
-            @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
-            DomainRegistry domainRegistry
+            @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper
     ) {
-        return DefaultJsonApiBuildInRequestValidator.builder()
+        return domainRegistry -> DefaultJsonApiBuildInRequestValidator.builder()
                 .properties(properties.validation())
                 .objectMapper(objectMapper)
                 .domainRegistry(domainRegistry)
@@ -177,7 +190,6 @@ public class SpringJsonApi4jAutoConfigurer {
             @Qualifier("jsonApi4jObjectMapper") ObjectMapper objectMapper,
             ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry,
             @Qualifier("jsonApi4jExecutorService") ExecutorService executorService,
-            JsonApiBuildInRequestValidator jsonApiBuildInRequestValidator,
             PrincipalResolver jsonApi4jPrincipalResolver
     ) {
         return servletContext -> {
@@ -186,8 +198,6 @@ public class SpringJsonApi4jAutoConfigurer {
             servletContext.setAttribute(OBJECT_MAPPER_ATT_NAME, objectMapper);
             servletContext.setAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME, errorHandlerFactoriesRegistry);
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, executorService);
-            servletContext.setAttribute(VALIDATOR_ATT_NAME, jsonApiBuildInRequestValidator);
-
             servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, jsonApi4jPrincipalResolver);
         };
     }

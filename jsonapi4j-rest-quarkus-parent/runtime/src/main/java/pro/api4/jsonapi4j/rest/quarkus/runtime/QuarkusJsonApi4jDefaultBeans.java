@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.rest.quarkus.runtime;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
+import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
@@ -9,11 +10,14 @@ import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
+import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
+import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
+import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperation;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
@@ -27,12 +31,14 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFa
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+
+import static pro.api4.jsonapi4j.config.JsonApi4jProperties.CONFIG_PREFIX;
+import static pro.api4.jsonapi4j.config.JsonApi4jProperties.META_PROPERTY;
+import static pro.api4.jsonapi4j.meta.context.MetaContext.Integration.QUARKUS;
 
 @Singleton
 public class QuarkusJsonApi4jDefaultBeans {
@@ -70,11 +76,10 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Produces
     @Singleton
     @DefaultBean
-    JsonApiBuildInRequestValidator jsonApi4jValidator(QuarkusJsonApi4jProperties properties,
-                                                      @Named("jsonApi4jObjectMapper") ObjectMapper objectMapper,
-                                                      DomainRegistry domainRegistry) {
-        LOG.info("Composing JsonApi4jValidator {}...", JsonApiBuildInRequestValidator.class.getSimpleName());
-        return DefaultJsonApiBuildInRequestValidator.builder()
+    JsonApiBuildInRequestValidatorFactory jsonApi4jValidatorFactory(QuarkusJsonApi4jProperties properties,
+                                                                    @Named("jsonApi4jObjectMapper") ObjectMapper objectMapper) {
+        LOG.info("Composing JsonApi4jValidatorFactory {}...", JsonApiBuildInRequestValidatorFactory.class.getSimpleName());
+        return domainRegistry -> DefaultJsonApiBuildInRequestValidator.builder()
                 .properties(properties.validation().map(QuarkusJsonApi4jProperties.QuarkusValidationProperties::toJsonApi4jProperties).orElse(null))
                 .objectMapper(objectMapper)
                 .domainRegistry(domainRegistry)
@@ -113,6 +118,19 @@ public class QuarkusJsonApi4jDefaultBeans {
                 result.stream().map(p -> p.getClass().getSimpleName()).collect(Collectors.joining(", "))
         );
         return result;
+    }
+
+    @IfBuildProperty(name = CONFIG_PREFIX + "." + META_PROPERTY + ".enabled", stringValue = "true")
+    @Produces
+    @Singleton
+    @DefaultBean
+    MetaContext jsonApi4jMetaContext(List<JsonApi4jPlugin> plugins, QuarkusJsonApi4jProperties rootProperties) {
+        MetaContext context = MetaContext.of(
+                MetaConfigComposer.compose(rootProperties.toJsonApi4jProperties(), plugins),
+                QUARKUS
+        );
+        LOG.info("Composing {} (meta API enabled)", MetaRuntime.class.getSimpleName());
+        return context;
     }
 
     @Produces
@@ -158,14 +176,16 @@ public class QuarkusJsonApi4jDefaultBeans {
                         OperationsRegistry operationsRegistry,
                         List<JsonApi4jPlugin> plugins,
                         @Named("jsonApi4jExecutorService") ExecutorService executorService,
-                        JsonApiBuildInRequestValidator validator) {
+                        JsonApiBuildInRequestValidatorFactory validatorFactory,
+                        Instance<MetaContext> metaContext) {
         LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
                 .plugins(plugins)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .executor(executorService)
-                .validator(validator)
+                .validatorFactory(validatorFactory)
+                .meta(metaContext.isResolvable() ? metaContext.get() : null)
                 .build();
     }
 

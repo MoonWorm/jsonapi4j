@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.sampleapp.config.swagger.customizers;
 
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
 
 public class JsonApiResponseSchemaCustomizer implements OpenApiCustomizer {
 

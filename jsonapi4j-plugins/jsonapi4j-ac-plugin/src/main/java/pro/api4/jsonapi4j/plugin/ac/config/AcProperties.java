@@ -1,10 +1,18 @@
 package pro.api4.jsonapi4j.plugin.ac.config;
 
-public interface AcProperties {
+import pro.api4.jsonapi4j.config.PluginProperties;
 
-    String AC_PROPERTY_NAME = "ac";
+public interface AcProperties extends PluginProperties {
+
+    String AC_PROPERTY = "ac";
+    String ENABLED_PROPERTY = "enabled";
 
     String DEFAULT_ENABLED = "true";
+
+    @Override
+    default String section() {
+        return AC_PROPERTY;
+    }
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);

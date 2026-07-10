@@ -4,7 +4,6 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import pro.api4.jsonapi4j.sampleapp.CompoundDocsTestProfile;
-import pro.api4.jsonapi4j.sampleapp.testsuite.CompoundDocsOperationsTests;
 import pro.api4.jsonapi4j.sampleapp.testsuite.SparseFieldsetsOperationsTests;
 
 @QuarkusTest

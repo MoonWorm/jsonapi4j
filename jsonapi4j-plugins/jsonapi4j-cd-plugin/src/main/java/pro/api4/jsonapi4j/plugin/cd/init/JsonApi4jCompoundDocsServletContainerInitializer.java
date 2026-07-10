@@ -98,7 +98,7 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
     }
 
     private static CompoundDocsProperties readCdProperties(ServletContext servletContext) {
-        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadConfigAsMap(servletContext);
+        Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadRawConfig(servletContext).getProperties();
         return DefaultCompoundDocsProperties.toCdProperties(jsonApi4jPropertiesRaw);
     }
 

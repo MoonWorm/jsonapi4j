@@ -1,21 +1,28 @@
 package pro.api4.jsonapi4j;
 
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.domain.DomainRegistryReportGenerator;
-import pro.api4.jsonapi4j.domain.RegisteredRelationship;
-import pro.api4.jsonapi4j.domain.RelationshipName;
-import pro.api4.jsonapi4j.domain.ResourceType;
+import lombok.RequiredArgsConstructor;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
+import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.domain.DomainRegistry.MetaDomain;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
+import pro.api4.jsonapi4j.meta.domain.config.ConfigResource;
+import pro.api4.jsonapi4j.meta.domain.operations.OperationsResource;
+import pro.api4.jsonapi4j.meta.domain.plugins.PluginsResource;
+import pro.api4.jsonapi4j.meta.domain.relationships.RelationshipsResource;
+import pro.api4.jsonapi4j.meta.domain.resources.ResourcesResource;
+import pro.api4.jsonapi4j.meta.domain.state.StateResource;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistryReportGenerator;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 
-import java.text.MessageFormat;
 import java.util.List;
+
+import static pro.api4.jsonapi4j.domain.DomainRegistry.MetaDomain.isMetaResource;
 
 public class JsonApi4jReportGenerator {
 
     private static final String BANNER = """
-
+            
                    ██                               ███              ██     ████  ███    \s
                    ██                              █████                   █████         \s
                    ██  ██████▒ ███████  ███████   ███ ██   ████████  ██   ██ ███   ██    \s
@@ -24,16 +31,22 @@ public class JsonApi4jReportGenerator {
               ███████  ███████ ███████  ██▒  ███ ██    ███ ████████  ██      ███   ██    \s
                                                            ███                    ███    \s
                                                             ██                   ███     \s
-
+            
             """;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final List<JsonApi4jPlugin> plugins;
+    private final MetaHelper metaHelper;
 
+    /**
+     * @param jsonApi4j the assembled framework instance. When its {@link JsonApi4j#getMetaContext() meta context} is
+     *                  present (meta enabled), the report is enriched with live introspection URLs per section.
+     */
     public JsonApi4jReportGenerator(JsonApi4j jsonApi4j) {
         this.domainRegistry = jsonApi4j.getDomainRegistry();
         this.operationsRegistry = jsonApi4j.getOperationsRegistry();
         this.plugins = jsonApi4j.getPlugins();
+        this.metaHelper = new MetaHelper(jsonApi4j.getMetaContext());
     }
 
     /**
@@ -47,14 +60,32 @@ public class JsonApi4jReportGenerator {
      * @return formatted state summary
      */
     public String generateStateReport() {
-        return MessageFormat.format(
-                "\n{0}{1}\n{2}\n{3}\n{4}",
-                BANNER,
-                generatePluginsReport(),
-                new DomainRegistryReportGenerator(domainRegistry).generateStateReport(),
-                new OperationsRegistryReportGenerator(operationsRegistry).generateStateReport(),
-                generateCrossDomainAndOperationsReport()
-        );
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n").append(BANNER);
+        sb.append(metaHelper.generateFullMetaInfoHeader());
+        sb.append(generatePluginsReport());
+        sb.append("\n").append(new DomainRegistryReportGenerator(
+                domainRegistry, metaHelper.domainHeaderLinks()).generateStateReport());
+        sb.append("\n").append(new OperationsRegistryReportGenerator(
+                operationsRegistry, this::isMetaType, metaHelper.operationsHeaderLink()).generateStateReport());
+        sb.append(generateConfigSectionReport());
+        sb.append(generateCrossDomainAndOperationsReport());
+        return sb.toString();
+    }
+
+    /**
+     * Whether the given resource type belongs to the built-in meta API. Such types are surfaced only via the live
+     * introspection links, never mixed into the host's domain sections. Always {@code false} when the meta API is
+     * disabled/absent, so legacy output is unchanged.
+     */
+    private boolean isMetaType(ResourceType resourceType) {
+        return metaHelper.metaEnabled() && isMetaResource(resourceType);
+    }
+
+    private String generateConfigSectionReport() {
+        return metaHelper.metaEnabled()
+                ? "\n--- Config ---  (" + metaHelper.configHeaderLink() + ")\n"
+                : "";
     }
 
     private String generatePluginsReport() {
@@ -63,7 +94,9 @@ public class JsonApi4jReportGenerator {
                 .filter(JsonApi4jPlugin::enabled)
                 .map(JsonApi4jPlugin::pluginName)
                 .toList();
-        sb.append("\n--- Plugins (").append(enabledPlugins.size()).append(") ---\n");
+        sb.append("\n--- Plugins (").append(enabledPlugins.size()).append(") ---")
+                .append(metaHelper.metaEnabled() ? "  (" + metaHelper.metaResourceUrl(PluginsResource.PLUGINS) + ")" : "")
+                .append("\n");
         if (enabledPlugins.isEmpty()) {
             sb.append("  (none)\n");
         } else {
@@ -76,11 +109,13 @@ public class JsonApi4jReportGenerator {
         StringBuilder sb = new StringBuilder();
         List<ResourceType> resourcesWithoutOperations = domainRegistry.getResourceTypes()
                 .stream()
+                .filter(rt -> !isMetaType(rt))
                 .filter(rt -> !operationsRegistry.isAnyResourceOperationConfigured(rt))
                 .toList();
         List<RelationshipName> toOneRelationshipsWithoutOperations = domainRegistry.getResourceTypes()
                 .stream()
                 .flatMap(rt -> domainRegistry.getToOneRelationships(rt).stream())
+                .filter(rel -> !isMetaType(rel.getParentResourceType()))
                 .filter(rel -> !operationsRegistry.isAnyToOneRelationshipOperationConfigured(
                         rel.getParentResourceType(),
                         rel.getRelationshipName())
@@ -91,6 +126,7 @@ public class JsonApi4jReportGenerator {
         List<RelationshipName> toManyRelationshipsWithoutOperations = domainRegistry.getResourceTypes()
                 .stream()
                 .flatMap(rt -> domainRegistry.getToManyRelationships(rt).stream())
+                .filter(rel -> !isMetaType(rel.getParentResourceType()))
                 .filter(rel -> !operationsRegistry.isAnyToManyRelationshipOperationConfigured(
                         rel.getParentResourceType(),
                         rel.getRelationshipName())
@@ -118,6 +154,73 @@ public class JsonApi4jReportGenerator {
             }
         }
         return sb.toString();
+    }
+
+    @RequiredArgsConstructor
+    private static class MetaHelper {
+
+        /**
+         * The {@code jsonapi4j.cd} config subtree and its {@code enabled} flag. These belong to the Compound Docs plugin
+         * (which core cannot depend on), so they are referenced here as plain config keys read from the effective snapshot.
+         */
+        private static final String CD_SECTION = "cd";
+        private static final String CD_ENABLED_KEY = "enabled";
+        private final MetaContext metaContext;
+
+        boolean metaEnabled() {
+            return metaContext != null;
+        }
+
+        String generateFullMetaInfoHeader() {
+            if (metaContext == null) {
+                return "";
+            }
+            if (!compoundDocsEnabled()) {
+                String stateUrl = metaUrl("/" + StateResource.STATE + "/" + MetaDomain.SINGLETON_ID);
+                return "\nLive introspection: " + stateUrl
+                        + "\n  Note: one-request `?include=...` compound documents require the Compound Docs plugin"
+                        + " (jsonapi4j.cd.enabled=true); query the per-section links below directly instead.\n";
+            }
+            String everything = String.join(",",
+                    PluginsResource.PLUGINS,
+                    ResourcesResource.RESOURCES,
+                    RelationshipsResource.RELATIONSHIPS,
+                    OperationsResource.OPERATIONS,
+                    ConfigResource.CONFIG);
+            String stateUrl = metaUrl("/" + StateResource.STATE + "/" + MetaDomain.SINGLETON_ID
+                    + "?include=" + everything);
+            return "\nLive introspection: " + stateUrl + "\n";
+        }
+
+        String metaResourceUrl(String type) {
+            return metaUrl("/" + type);
+        }
+
+        String domainHeaderLinks() {
+            return metaContext != null
+                    ? "(" + metaResourceUrl(ResourcesResource.RESOURCES) + ")  (" + metaResourceUrl(RelationshipsResource.RELATIONSHIPS) + ")"
+                    : "";
+        }
+
+        String operationsHeaderLink() {
+            return metaContext != null ? "(" + metaResourceUrl(OperationsResource.OPERATIONS) + ")" : "";
+        }
+
+        String configHeaderLink() {
+            return metaUrl("/" + ConfigResource.CONFIG + "/" + MetaDomain.SINGLETON_ID);
+        }
+
+        private String metaUrl(String pathAndQuery) {
+            return metaContext.getRootPath() + pathAndQuery;
+        }
+
+        private boolean compoundDocsEnabled() {
+            return new RawConfigAccessor(metaContext.getConfig())
+                    .section(CD_SECTION)
+                    .flatMap(cd -> cd.boolValue(CD_ENABLED_KEY))
+                    .orElse(false);
+        }
+
     }
 
 }

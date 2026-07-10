@@ -6,6 +6,7 @@ import lombok.Setter;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
 
 import java.util.Collections;
 import java.util.List;
@@ -48,20 +49,12 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     }
 
     public static CompoundDocsProperties toCdProperties(Map<String, Object> jsonApi4jPropertiesRaw) {
-        Object cdPropertiesObject = jsonApi4jPropertiesRaw.get(CompoundDocsProperties.CD_PROPERTY_NAME);
-        Map<String, Object> cdPropertiesRaw = Collections.emptyMap();
-        if (cdPropertiesObject instanceof Map cdPropertiesMap) {
-            //noinspection unchecked
-            cdPropertiesRaw = cdPropertiesMap;
-        }
-        CompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
-        if (!cdPropertiesRaw.isEmpty()) {
-            cdProperties = JsonApi4jConfigReader.convertToConfig(
-                    cdPropertiesRaw,
-                    DefaultCompoundDocsProperties.class
-            );
-        }
-        return cdProperties;
+        return new RawConfigAccessor(jsonApi4jPropertiesRaw)
+                .section(CompoundDocsProperties.CD_PROPERTY)
+                .map(RawConfigAccessor::getProperties)
+                .filter(cd -> !cd.isEmpty())
+                .map(cd -> JsonApi4jConfigReader.convertToConfig(cd, DefaultCompoundDocsProperties.class))
+                .orElseGet(DefaultCompoundDocsProperties::new);
     }
 
     @Override

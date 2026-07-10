@@ -34,8 +34,8 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 public class SpringJsonApi4jCompoundDocsConfig {
 
     @Bean
-    public JsonApiCompoundDocsPlugin jsonApiCompoundDocsPlugin() {
-        return new JsonApiCompoundDocsPlugin();
+    public JsonApiCompoundDocsPlugin jsonApiCompoundDocsPlugin(CompoundDocsProperties cdProperties) {
+        return new JsonApiCompoundDocsPlugin(cdProperties);
     }
 
     @ConditionalOnMissingBean(DomainSettingsResolver.class)

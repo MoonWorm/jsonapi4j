@@ -26,7 +26,7 @@ class DomainRegistryReportGeneratorTests {
         String report = new DomainRegistryReportGenerator(registry).generateStateReport();
 
         // then
-        assertThat(report).contains("Resources (0)");
+        assertThat(report).contains("Domain (0)");
     }
 
     // --- Resources ---
@@ -40,7 +40,7 @@ class DomainRegistryReportGeneratorTests {
         String report = new DomainRegistryReportGenerator(registry).generateStateReport();
 
         // then
-        assertThat(report).contains("Resources (1)");
+        assertThat(report).contains("Domain (1)");
         assertThat(report).contains("users");
     }
 
@@ -53,7 +53,7 @@ class DomainRegistryReportGeneratorTests {
         String report = new DomainRegistryReportGenerator(registry).generateStateReport();
 
         // then
-        assertThat(report).contains("Resources (2)");
+        assertThat(report).contains("Domain (2)");
         assertThat(report).contains("users");
         assertThat(report).contains("countries");
     }

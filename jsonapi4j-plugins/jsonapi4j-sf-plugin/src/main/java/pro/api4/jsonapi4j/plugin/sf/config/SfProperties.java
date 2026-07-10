@@ -1,11 +1,21 @@
 package pro.api4.jsonapi4j.plugin.sf.config;
 
-public interface SfProperties {
+import pro.api4.jsonapi4j.config.PluginProperties;
 
-    String SF_PROPERTY_NAME = "sf";
+public interface SfProperties extends PluginProperties {
+
+    String SF_PROPERTY = "sf";
+
+    String ENABLED_PROPERTY = "enabled";
+    String REQUESTED_FIELDS_DONT_EXIST_MODE_PROPERTY = "requestedFieldsDontExistMode";
 
     String DEFAULT_SF_ENABLED = "true";
     String DEFAULT_REQUESTED_FIELDS_DONT_EXIST_MODE = "SPARSE_ALL_FIELDS";
+
+    @Override
+    default String section() {
+        return SF_PROPERTY;
+    }
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_SF_ENABLED);

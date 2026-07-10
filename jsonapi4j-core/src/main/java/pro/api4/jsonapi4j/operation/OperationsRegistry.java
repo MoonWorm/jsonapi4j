@@ -6,6 +6,19 @@ import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.meta.context.MetaRuntime;
+import pro.api4.jsonapi4j.meta.operation.MetaIntrospector;
+import pro.api4.jsonapi4j.meta.operation.config.ConfigOperations;
+import pro.api4.jsonapi4j.meta.operation.config.StateConfigRelationshipOperations;
+import pro.api4.jsonapi4j.meta.operation.operations.OperationsOperations;
+import pro.api4.jsonapi4j.meta.operation.operations.StateOperationsRelationshipOperations;
+import pro.api4.jsonapi4j.meta.operation.plugins.PluginsOperations;
+import pro.api4.jsonapi4j.meta.operation.plugins.StatePluginsRelationshipOperations;
+import pro.api4.jsonapi4j.meta.operation.relationships.RelationshipsOperations;
+import pro.api4.jsonapi4j.meta.operation.relationships.StateRelationshipsRelationshipOperations;
+import pro.api4.jsonapi4j.meta.operation.resources.ResourcesOperations;
+import pro.api4.jsonapi4j.meta.operation.resources.StateResourcesRelationshipOperations;
+import pro.api4.jsonapi4j.meta.operation.state.StateOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
@@ -68,6 +81,11 @@ public class OperationsRegistry {
 
     public static OperationsRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
         return new OperationsRegistryBuilder(plugins);
+    }
+
+    public static OperationsRegistryBuilder copy(List<JsonApi4jPlugin> plugins,
+                                                 OperationsRegistry operationsRegistry) {
+        return new OperationsRegistryBuilder(plugins, operationsRegistry);
     }
 
     public static OperationsRegistry empty() {
@@ -450,6 +468,27 @@ public class OperationsRegistry {
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
         }
 
+        private OperationsRegistryBuilder(List<JsonApi4jPlugin> plugins,
+                                          OperationsRegistry operationsRegistry) {
+            this.plugins = plugins;
+
+            this.readResourceByIdOperations = new HashMap<>(operationsRegistry.readResourceByIdOperations);
+            this.readMultipleResourcesOperations = new HashMap<>(operationsRegistry.readMultipleResourcesOperations);
+            this.createResourceOperations = new HashMap<>(operationsRegistry.createResourceOperations);
+            this.updateResourceOperations = new HashMap<>(operationsRegistry.updateResourceOperations);
+            this.deleteResourceOperations = new HashMap<>(operationsRegistry.deleteResourceOperations);
+
+            this.readToOneRelationshipOperations = new HashMap<>(operationsRegistry.readToOneRelationshipOperations);
+            this.readToManyRelationshipOperations = new HashMap<>(operationsRegistry.readToManyRelationshipOperations);
+            this.updateToOneRelationshipOperations = new HashMap<>(operationsRegistry.updateToOneRelationshipOperations);
+            this.updateToManyRelationshipOperations = new HashMap<>(operationsRegistry.updateToManyRelationshipOperations);
+            this.addToManyRelationshipOperations = new HashMap<>(operationsRegistry.addToManyRelationshipOperations);
+            this.deleteToManyRelationshipOperations = new HashMap<>(operationsRegistry.deleteToManyRelationshipOperations);
+
+            this.resourceTypesWithAnyOperationConfigured = new HashSet<>(operationsRegistry.resourceTypesWithAnyOperationConfigured);
+            this.relationshipNamesWithAnyOperationConfigured = new HashMap<>(operationsRegistry.relationshipNamesWithAnyOperationConfigured);
+        }
+
         public OperationsRegistryBuilder operations(ResourceOperations<?> operations) {
             return this.operation(operations);
         }
@@ -602,6 +641,25 @@ public class OperationsRegistry {
         public OperationsRegistryBuilder operations(Set<? extends ResourceOperation> operations) {
             Validate.notNull(operations, "operations can't be null");
             operations.forEach(this::operation);
+            return this;
+        }
+
+        public OperationsRegistryBuilder withMeta(MetaRuntime metaRuntime) {
+            if (metaRuntime == null) {
+                return this;
+            }
+            MetaIntrospector introspector = new MetaIntrospector(metaRuntime);
+            operation(new StateOperations(introspector));
+            operation(new PluginsOperations(introspector));
+            operation(new ResourcesOperations(introspector));
+            operation(new RelationshipsOperations(introspector));
+            operation(new OperationsOperations(introspector));
+            operation(new ConfigOperations(introspector));
+            operation(new StatePluginsRelationshipOperations(introspector));
+            operation(new StateResourcesRelationshipOperations(introspector));
+            operation(new StateRelationshipsRelationshipOperations(introspector));
+            operation(new StateOperationsRelationshipOperations(introspector));
+            operation(new StateConfigRelationshipOperations(introspector));
             return this;
         }
 

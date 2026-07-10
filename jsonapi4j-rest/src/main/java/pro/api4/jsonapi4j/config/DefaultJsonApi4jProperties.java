@@ -14,6 +14,7 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 
     private String rootPath;
     private DefaultValidationProperties validation = new DefaultValidationProperties();
+    private DefaultMetaProperties meta = new DefaultMetaProperties();
 
     @Override
     public String rootPath() {
@@ -23,6 +24,24 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
     @Override
     public ValidationProperties validation() {
         return validation;
+    }
+
+    @Override
+    public MetaProperties meta() {
+        return meta;
+    }
+
+    @Getter
+    @Setter
+    public static class DefaultMetaProperties implements MetaProperties {
+
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
+
+        @Override
+        public boolean enabled() {
+            return this.enabled;
+        }
+
     }
 
     @Getter
