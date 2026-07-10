@@ -1,36 +1,31 @@
 package pro.api4.jsonapi4j.operation;
 
-import pro.api4.jsonapi4j.domain.ResourceType;
-
-import java.util.function.Predicate;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
 
 public class OperationsRegistryReportGenerator {
 
+    private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private final Predicate<ResourceType> excludeResourceType;
     private final String headerSuffix;
 
-    public OperationsRegistryReportGenerator(OperationsRegistry operationsRegistry) {
-        this(operationsRegistry, resourceType -> false);
-    }
-
-    public OperationsRegistryReportGenerator(OperationsRegistry operationsRegistry,
-                                             Predicate<ResourceType> excludeResourceType) {
-        this(operationsRegistry, excludeResourceType, "");
+    public OperationsRegistryReportGenerator(DomainRegistry domainRegistry,
+                                             OperationsRegistry operationsRegistry) {
+        this(domainRegistry, operationsRegistry, "");
     }
 
     /**
-     * @param operationsRegistry  the operations registry to summarize
-     * @param excludeResourceType predicate selecting resource types to omit from this section (e.g. the
-     *                            built-in meta API types, which are reported separately)
-     * @param headerSuffix        text appended after the {@code --- Operations ---} header (e.g. a live
-     *                            introspection link); empty for no suffix
+     * @param domainRegistry     supplies the built-in meta API resource types (via
+     *                           {@link DomainRegistry#getMetaResourceTypes()}) to omit from this section — they are
+     *                           reported separately
+     * @param operationsRegistry the operations registry to summarize
+     * @param headerSuffix       text appended after the {@code --- Operations ---} header (e.g. a live
+     *                           introspection link); empty for no suffix
      */
-    public OperationsRegistryReportGenerator(OperationsRegistry operationsRegistry,
-                                             Predicate<ResourceType> excludeResourceType,
+    public OperationsRegistryReportGenerator(DomainRegistry domainRegistry,
+                                             OperationsRegistry operationsRegistry,
                                              String headerSuffix) {
+        this.domainRegistry = domainRegistry;
         this.operationsRegistry = operationsRegistry;
-        this.excludeResourceType = excludeResourceType;
         this.headerSuffix = headerSuffix == null ? "" : headerSuffix;
     }
 
@@ -46,7 +41,7 @@ public class OperationsRegistryReportGenerator {
                 .append("\n");
         operationsRegistry.getResourceTypesWithAnyOperationConfigured()
                 .stream()
-                .filter(rt -> !excludeResourceType.test(rt))
+                .filter(rt -> !domainRegistry.getMetaResourceTypes().contains(rt))
                 .sorted()
                 .forEach(rt -> {
                     String type = rt.getType();

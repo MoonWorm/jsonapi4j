@@ -32,6 +32,10 @@ feature_row_advanced:
     excerpt: "Declarative, annotation-driven authorization — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
   - title: "Runtime Introspection"
     excerpt: "An opt-in [Meta API](/meta-api/) exposes your live API's resources, relationships, operations, plugins, and effective configuration as machine-readable JSON:API — always in sync with the running service."
+  - title: "Built-in Validation"
+    excerpt: "Structural [request validation](/validation/) out of the box — `filter`, `include`, `sort`, and pagination limits — plus a fluent Validation API for your own domain rules. No JSR-380 dependency."
+  - title: "Pagination, Filtering & Sorting"
+    excerpt: "Cursor or limit/offset [pagination](/pagination/) with automatic `first`/`prev`/`next`/`last` links, plus [filtering and sorting](/filtering-and-sorting/) through standard `filter[...]` and `sort` parameters — parsed and validated for you."
 
 feature_row_dx:
   - title: "Minimal Boilerplate"

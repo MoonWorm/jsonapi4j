@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.operation;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 
@@ -16,6 +17,12 @@ class OperationsRegistryReportGeneratorTests {
     private static final ResourceType USERS = new ResourceType("users");
     private static final RelationshipName CITIZENSHIPS = new RelationshipName("citizenships");
 
+    private static DomainRegistry domainRegistryWithoutMeta() {
+        DomainRegistry domainRegistry = mock(DomainRegistry.class);
+        when(domainRegistry.getMetaResourceTypes()).thenReturn(Collections.emptySet());
+        return domainRegistry;
+    }
+
     // --- Empty registry ---
 
     @Test
@@ -24,7 +31,7 @@ class OperationsRegistryReportGeneratorTests {
         OperationsRegistry registry = OperationsRegistry.empty();
 
         // when
-        String report = new OperationsRegistryReportGenerator(registry).generateStateReport();
+        String report = new OperationsRegistryReportGenerator(domainRegistryWithoutMeta(), registry).generateStateReport();
 
         // then
         assertThat(report).contains("--- Operations ---");
@@ -42,7 +49,7 @@ class OperationsRegistryReportGeneratorTests {
         when(registry.getRelationshipNamesWithAnyOperationConfigured(USERS)).thenReturn(Collections.emptySet());
 
         // when
-        String report = new OperationsRegistryReportGenerator(registry).generateStateReport();
+        String report = new OperationsRegistryReportGenerator(domainRegistryWithoutMeta(), registry).generateStateReport();
 
         // then
         assertThat(report).contains("users:");
@@ -61,7 +68,7 @@ class OperationsRegistryReportGeneratorTests {
         when(registry.getRelationshipNamesWithAnyOperationConfigured(USERS)).thenReturn(Collections.emptySet());
 
         // when
-        String report = new OperationsRegistryReportGenerator(registry).generateStateReport();
+        String report = new OperationsRegistryReportGenerator(domainRegistryWithoutMeta(), registry).generateStateReport();
 
         // then
         assertThat(report).contains("GET /users/{id}");
@@ -81,7 +88,7 @@ class OperationsRegistryReportGeneratorTests {
         when(registry.isRelationshipOperationConfigured(USERS, CITIZENSHIPS, OperationType.READ_TO_MANY_RELATIONSHIP)).thenReturn(true);
 
         // when
-        String report = new OperationsRegistryReportGenerator(registry).generateStateReport();
+        String report = new OperationsRegistryReportGenerator(domainRegistryWithoutMeta(), registry).generateStateReport();
 
         // then
         assertThat(report).contains("GET /users/{id}/relationships/citizenships");

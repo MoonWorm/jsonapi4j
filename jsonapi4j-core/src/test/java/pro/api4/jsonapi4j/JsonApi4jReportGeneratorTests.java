@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.Integration;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
@@ -90,7 +91,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void metaEnabled_rendersRelativeLinksDistributedAcrossSections() {
         // given — Compound Docs enabled, so the one-request ?include=… link resolves
-        MetaContext metaContext = MetaContext.of(metaConfig(true), MetaContext.Integration.SPRING);
+        MetaContext metaContext = MetaContext.of(metaConfig(true), Integration.SPRING);
         JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext);
 
         // when
@@ -110,7 +111,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void metaEnabled_compoundDocsDisabled_rendersBareStateLinkWithNote() {
         // given — meta on, but Compound Docs off: ?include=… would be a no-op
-        MetaContext metaContext = MetaContext.of(metaConfig(false), MetaContext.Integration.SPRING);
+        MetaContext metaContext = MetaContext.of(metaConfig(false), Integration.SPRING);
         JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext);
 
         // when
@@ -144,7 +145,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void metaEnabled_excludesMetaFromDomainAndOperationsSections() {
         // given — a JsonApi4j whose only registered components are the built-in meta ones (Compound Docs enabled)
-        MetaContext metaContext = MetaContext.of(metaConfig(true), MetaContext.Integration.SPRING);
+        MetaContext metaContext = MetaContext.of(metaConfig(true), Integration.SPRING);
         DomainRegistry domainRegistry = DomainRegistry.builder(Collections.emptyList()).build();
         OperationsRegistry operationsRegistry = OperationsRegistry.builder(Collections.emptyList()).build();
         JsonApi4j jsonApi4j = JsonApi4j.builder()

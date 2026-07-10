@@ -54,7 +54,7 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONA
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
-import static pro.api4.jsonapi4j.meta.context.MetaContext.Integration.SPRING;
+import static pro.api4.jsonapi4j.config.Integration.SPRING;
 
 @Configuration
 @Import(value = {

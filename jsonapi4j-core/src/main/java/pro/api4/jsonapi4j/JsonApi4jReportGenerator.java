@@ -67,7 +67,7 @@ public class JsonApi4jReportGenerator {
         sb.append("\n").append(new DomainRegistryReportGenerator(
                 domainRegistry, metaHelper.domainHeaderLinks()).generateStateReport());
         sb.append("\n").append(new OperationsRegistryReportGenerator(
-                operationsRegistry, this::isMetaType, metaHelper.operationsHeaderLink()).generateStateReport());
+                domainRegistry, operationsRegistry, metaHelper.operationsHeaderLink()).generateStateReport());
         sb.append(generateConfigSectionReport());
         sb.append(generateCrossDomainAndOperationsReport());
         return sb.toString();

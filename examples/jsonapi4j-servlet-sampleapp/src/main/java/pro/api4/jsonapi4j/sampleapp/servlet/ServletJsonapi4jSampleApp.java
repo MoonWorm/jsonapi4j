@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
-import static pro.api4.jsonapi4j.meta.context.MetaContext.Integration.SERVLET;
+import static pro.api4.jsonapi4j.config.Integration.SERVLET;
 
 public class ServletJsonapi4jSampleApp {
 

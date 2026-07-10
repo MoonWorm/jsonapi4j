@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.config.JsonApi4jProperties.CONFIG_PREFIX;
 import static pro.api4.jsonapi4j.config.JsonApi4jProperties.META_PROPERTY;
-import static pro.api4.jsonapi4j.meta.context.MetaContext.Integration.QUARKUS;
+import static pro.api4.jsonapi4j.config.Integration.QUARKUS;
 
 @Singleton
 public class QuarkusJsonApi4jDefaultBeans {

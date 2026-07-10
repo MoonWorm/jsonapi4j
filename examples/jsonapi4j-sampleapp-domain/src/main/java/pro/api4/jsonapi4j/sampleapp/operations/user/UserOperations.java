@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.config.RawConfigAccessor;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
@@ -69,14 +70,13 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     public static Optional<RelationshipType> parseRelationshipType(ResourceIdentifierObject ri) {
-        Object meta = ri.getMeta();
-        if (meta instanceof Map<?, ?> m) {
-            Object relationshipTypeObj = m.get(RELATIONSHIP_TYPE_META_KEY);
-            if (relationshipTypeObj instanceof String relationshipType && StringUtils.isNotBlank(relationshipType)) {
-                return Optional.of(RelationshipType.valueOf(relationshipType.toUpperCase()));
-            }
+        if (!(ri.getMeta() instanceof Map<?, ?> m)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> meta = (Map<String, Object>) m;
+        return new RawConfigAccessor(meta).strValue(RELATIONSHIP_TYPE_META_KEY)
+                .map(relationshipType -> RelationshipType.valueOf(relationshipType.toUpperCase()));
     }
 
     public static void validateRelationsMeta(Object meta) {
