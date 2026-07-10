@@ -46,6 +46,8 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - **Sparse Fieldsets**. Supports `fields[TYPE]=field1,field2` to return only requested attributes per resource type, reducing payload size and improving response efficiency for client-driven data selection.
 
+- **Runtime introspection.** An opt-in [Meta API](/meta-api/) exposes the running application's resources, relationships, operations, active plugins, and effective configuration as machine-readable JSON:API — useful for self-documentation, governance, and debugging.
+
 - **Declarative approach with minimal boilerplate.** Simply define your domain models (resources and relationships), supported operations, and authorization rules - the framework handles the rest.
 
 ## Sample Apps

@@ -30,6 +30,8 @@ feature_row_advanced:
     excerpt: "Multi-level `include` queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level."
   - title: "Fine-Grained Access Control"
     excerpt: "Declarative, annotation-driven authorization — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
+  - title: "Runtime Introspection"
+    excerpt: "An opt-in [Meta API](/meta-api/) exposes your live API's resources, relationships, operations, plugins, and effective configuration as machine-readable JSON:API — always in sync with the running service."
 
 feature_row_dx:
   - title: "Minimal Boilerplate"

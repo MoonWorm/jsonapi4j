@@ -32,6 +32,9 @@ Extend the [request processing pipeline](https://api4.pro/request-processing-pip
 ### ⚡ Built for Performance
 Concurrent relationship resolution, parallel compound document fetching, and support for virtual threads (Project Loom). Designed for production throughput from day one.
 
+### 🔎 Runtime Introspection
+An opt-in [Meta API](https://api4.pro/meta-api/) exposes your live API's resources, relationships, operations, plugins, and effective configuration as machine-readable JSON:API — always in sync with the running service.
+
 ## Why JsonApi4j?
 
 ### 🏛️ One Standard, Every Service

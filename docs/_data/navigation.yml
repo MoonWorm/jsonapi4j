@@ -43,6 +43,8 @@ docs:
         url: /error-handling/
       - title: "Configuration"
         url: /configuration/
+      - title: "Meta API"
+        url: /meta-api/
   - title: "Plugins"
     children:
       - title: "Plugin System"

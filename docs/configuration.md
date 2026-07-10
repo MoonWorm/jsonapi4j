@@ -20,6 +20,9 @@ JsonApi4j is configured differently depending on your web framework. All three i
     <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">jsonapi4j</span><span class="pi">:</span>
   <span class="na">rootPath</span><span class="pi">:</span> <span class="s">/jsonapi</span>
 
+  <span class="na">meta</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+
   <span class="na">validation</span><span class="pi">:</span>
     <span class="na">maxNumberFilterParams</span><span class="pi">:</span> <span class="m">5</span>
     <span class="na">maxElementsInFilterParam</span><span class="pi">:</span> <span class="m">20</span>
@@ -57,6 +60,8 @@ JsonApi4j is configured differently depending on your web framework. All three i
     <p><strong>application.properties:</strong></p>
     <div class="language-properties highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="py">jsonapi4j.rootPath</span>=<span class="s">/jsonapi</span>
 
+<span class="py">jsonapi4j.meta.enabled</span>=<span class="s">true</span>
+
 <span class="py">jsonapi4j.validation.maxNumberFilterParams</span>=<span class="s">5</span>
 <span class="py">jsonapi4j.validation.maxElementsInFilterParam</span>=<span class="s">20</span>
 <span class="py">jsonapi4j.validation.resourceIdMaxLength</span>=<span class="s">64</span>
@@ -78,13 +83,16 @@ JsonApi4j is configured differently depending on your web framework. All three i
 <span class="py">jsonapi4j.oas.enabled</span>=<span class="s">true</span>
 <span class="py">jsonapi4j.oas.info.title</span>=<span class="s">My API</span>
 <span class="py">jsonapi4j.oas.info.version</span>=<span class="s">1.0.0</span></code></pre></div></div>
-    <p>Quarkus uses Smallrye Config for property resolution. Lists use indexed syntax: <code>jsonapi4j.cd.propagation[0]=FIELDS</code>. All JsonApi4j CDI beans use <code>@DefaultBean</code>, so you can override them with your own <code>@Produces</code> methods.</p>
+    <p>Quarkus uses Smallrye Config for property resolution. List-valued properties accept both comma-separated (<code>jsonapi4j.cd.propagation=FIELDS,CUSTOM_QUERY_PARAMS,HEADERS</code>) and indexed (<code>jsonapi4j.cd.propagation[0]=FIELDS</code>) syntax — both bind to the same list, and the <a href="/meta-api/">Meta API</a> <code>config</code> resource renders either form identically as a JSON array. The same holds for Spring Boot's relaxed binding. All JsonApi4j CDI beans use <code>@DefaultBean</code>, so you can override them with your own <code>@Produces</code> methods.</p>
   </div>
 
   <div id="cfg-servlet" class="tab-panel">
     <p>For plain Servlet applications, JsonApi4j loads configuration from a YAML or JSON file. No framework-specific property binding is used.</p>
     <p><strong>jsonapi4j.yaml</strong> (on the classpath):</p>
     <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">rootPath</span><span class="pi">:</span> <span class="s">/jsonapi</span>
+
+<span class="na">meta</span><span class="pi">:</span>
+  <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
 
 <span class="na">validation</span><span class="pi">:</span>
   <span class="na">maxNumberFilterParams</span><span class="pi">:</span> <span class="m">5</span>
@@ -137,6 +145,7 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 | Property | Default | Description |
 |----------|---------|-------------|
 | `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. |
+| `jsonapi4j.meta.enabled` | `false` | Enables the built-in [Meta API](/meta-api/) — a runtime introspection endpoint exposing the app's resources, relationships, operations, plugins, and effective config. Opt-in. |
 
 ## Validation Properties
 
