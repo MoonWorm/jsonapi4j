@@ -25,11 +25,11 @@ feature_row_main:
   
 feature_row_advanced:
   - title: "Pluggable Architecture"
-    excerpt: "Hook into the request pipeline with the visitor-based Plugin System. Ships with **Access Control**, **Sparse Fieldsets**, **OpenAPI**, and **Compound Documents** plugins."
+    excerpt: "Hook into the request pipeline with the visitor-based [Plugin System](/plugins/). Ships with [Access Control](/access-control-plugin/), [Sparse Fieldsets](/sparse-fieldsets-plugin/), [OpenAPI](/openapi-plugin/), and [Compound Documents](/compound-docs-plugin/) plugins."
   - title: "Compound Documents"
-    excerpt: "Multi-level `include` queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level."
+    excerpt: "Multi-level [`include`](/compound-docs/) queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level via the [Compound Documents plugin](/compound-docs-plugin/)."
   - title: "Fine-Grained Access Control"
-    excerpt: "Declarative, annotation-driven authorization — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
+    excerpt: "Declarative, annotation-driven authorization via the [Access Control plugin](/access-control-plugin/) — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
   - title: "Runtime Introspection"
     excerpt: "An opt-in [Meta API](/meta-api/) exposes your live API's resources, relationships, operations, plugins, and effective configuration as machine-readable JSON:API — always in sync with the running service."
   - title: "Built-in Validation"
@@ -39,11 +39,11 @@ feature_row_advanced:
 
 feature_row_dx:
   - title: "Minimal Boilerplate"
-    excerpt: "Define resources, relationships, and operations — the framework automatically generates JSON:API documents, pagination links, error responses, and many more."
+    excerpt: "Define [resources, relationships, and operations](/domain/) — the framework automatically generates JSON:API documents, [pagination links](/pagination/), [error responses](/error-handling/), and many more."
   - title: "Persistence/Data Source Agnostic"
-    excerpt: "No JPA or Hibernate required. Works with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
+    excerpt: "No JPA or Hibernate required. Your [operations](/operations/) work with SQL, NoSQL, REST clients, in-memory stores, or any data source you bring."
   - title: "Parallel Execution"
-    excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for maximum throughput."  
+    excerpt: "Relationship resolution, compound document fetching, and batch operations run concurrently. Supports virtual threads (Project Loom) for [maximum throughput](/performance/)."  
 
 feature_row_ai:
   - title: "Official Claude Code Plugin"
