@@ -49,9 +49,33 @@ JSON:API error codes (e.g. `@NotNull` → `VALUE_IS_ABSENT`, `@Size` → `VALUE_
    the prefix rule, so a new public resource needs its own `permitAll` line.
 2. **jsonapi4j AC plugin** (`@AccessControl`) is *field-level / ownership* gating layered on top — hide
    sensitive attributes, owner-only fields, OAuth2 scope requirements, automatic anonymization.
-   Implement a `PrincipalResolver` to map the authenticated principal (e.g. a JWT `sub`) to your
-   internal user id. **AC ownership does not by itself turn a cross-user read into a 403** — without an
-   owner-gated field it returns 200 with full attributes (see `known-behaviors.md`).
+   A `PrincipalResolver` maps the authenticated caller to the principal. **AC ownership does not by itself
+   turn a cross-user read into a 403** — without an owner-gated field it returns 200 with full attributes
+   (see `known-behaviors.md`).
+
+### Picking a PrincipalResolver — don't hand-roll one
+
+Four ship with the framework; write your own only for non-JWT, non-header schemes (API keys, mTLS, sessions):
+
+| Resolver | Reads from | Verifies? |
+|---|---|---|
+| `DefaultPrincipalResolver` (active by default) | `X-Authenticated-*` headers | upstream gateway |
+| `JwtPrincipalResolver` | `Authorization: Bearer` | **no — decodes only** |
+| `SpringSecurityPrincipalResolver` | `SecurityContextHolder` | yes, Spring Security |
+| `QuarkusJwtPrincipalResolver` | injected `JsonWebToken` | yes, Quarkus OIDC |
+
+The three JWT resolvers are **opt-in** — declare one as a `@Bean` / `@Produces` and it replaces the default.
+All share `ClaimsPrincipalMapper`: `sub` for user id, `scope` with `scp` fallback (space-delimited string
+*or* array), dotted paths for nested claims (`realm_access.roles`), literal-name-first so Auth0 namespaced
+claims (`https://acme.com/roles`) still resolve.
+
+**Two traps worth flagging to users:**
+- **Access tier has no standard JWT claim.** Unless you pass an explicit tier claim
+  (`withAccessTierClaim("access_tier", registry)`), the tier is `null` and *every* `@AccessControl(tier=…)`
+  operation is denied — the usual cause of "everything 403s after switching to JWT".
+- **`JwtPrincipalResolver` never validates the token.** Only use it behind a gateway or security layer that
+  rejects invalid tokens; otherwise a forged token yields an authenticated admin. Prefer the Spring/Quarkus
+  resolvers, which cannot produce a principal from an unverified token.
 
 ```java
 @AccessControl(authenticated = Authenticated.AUTHENTICATED)
@@ -73,4 +97,4 @@ public class UserAttributes {
   `.../operations/user/UserPlaceOfBirthOperations.java` (`forRequest(...)` validation + `@AccessControl`)
 - Tests: `.../operations/SpringAccessControlOperationsTests.java` (+ Quarkus/Servlet)
 - Docs: https://api4.pro/validation/ · https://api4.pro/error-handling/ ·
-  https://api4.pro/access-control-plugin/
+  https://api4.pro/access-control-plugin/ · https://api4.pro/principal-resolution/

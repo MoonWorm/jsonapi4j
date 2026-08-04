@@ -219,6 +219,35 @@ servletContext.setAttribute(JsonApi4jServletContainerInitializer.PRINCIPAL_RESOL
 
 See the [servlet sample app](https://github.com/MoonWorm/jsonapi4j/tree/main/examples/jsonapi4j-servlet-sampleapp) for a complete example.
 
+### Overriding the PrincipalResolver
+
+`PrincipalResolver` is the bean most applications end up overriding, because it decides who the caller is.
+The default reads `X-Authenticated-*` headers; declaring your own bean replaces it through the same
+mechanisms shown above.
+
+**Spring Boot** — read claims Spring Security has already verified:
+
+```java
+@Bean
+public PrincipalResolver jsonapi4jPrincipalResolver(AccessTierRegistry accessTierRegistry) {
+    return SpringSecurityPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry);
+}
+```
+
+**Quarkus** — read claims Quarkus OIDC has already verified:
+
+```java
+@Produces
+@Singleton
+public PrincipalResolver principalResolver(JsonWebToken jwt, AccessTierRegistry accessTierRegistry) {
+    return QuarkusJwtPrincipalResolver.withAccessTierClaim(jwt, "access_tier", accessTierRegistry);
+}
+```
+
+Both are opt-in, so an existing header-based setup keeps working untouched after an upgrade. See
+[Principal Resolution](/principal-resolution/) for the full set of resolvers, claim mapping, and the
+security trade-offs between them.
+
 For a complete configuration example with all plugins enabled, see the sample application configs:
 - [Spring Boot application.yaml](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml)
 - [Quarkus application.properties](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties)

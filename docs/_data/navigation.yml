@@ -43,6 +43,8 @@ docs:
         url: /error-handling/
       - title: "Configuration"
         url: /configuration/
+      - title: "Principal Resolution"
+        url: /principal-resolution/
       - title: "Meta API"
         url: /meta-api/
   - title: "Plugins"

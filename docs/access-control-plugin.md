@@ -85,7 +85,15 @@ By default, the plugin uses the `DefaultPrincipalResolver`, which relies on the 
 2. `X-Authenticated-Client-Access-Tier` - defines the principal's access tier. By default, the framework supports the following values: **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN**, and **ROOT_ADMIN**. Custom tiers can be registered by implementing the `AccessTierRegistry` interface.
 3. `X-Authenticated-User-Granted-Scopes` - specifies the OAuth2 scopes granted to the client by the user. This should be a space-separated string.
 
-You can also implement a custom `PrincipalResolver` to define how the framework retrieves principal-related information from incoming HTTP requests.
+This is not the only option. JsonApi4j also ships resolvers that build the principal from a JWT — either by
+decoding the `Authorization` header directly, or by reading claims Spring Security or Quarkus OIDC have
+already verified — and you can implement `PrincipalResolver` yourself for anything else. See
+[Principal Resolution](/principal-resolution/) for the full list, how to choose between them, and how to map
+your provider's claims.
+
+If you use tier requirements together with a JWT resolver, note that **you must name the claim that carries
+the tier** — JWT defines no standard one, and an unresolved tier denies every tier-guarded operation. This
+is covered in [Access tiers need an explicit claim](/principal-resolution/#access-tiers-need-an-explicit-claim).
 
 The resolved principal context is then used by the framework during both **inbound** and **outbound** access control evaluations.
 
