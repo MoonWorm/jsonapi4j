@@ -36,9 +36,10 @@ public class JwtPrincipalResolver implements PrincipalResolver {
     public static final String DEFAULT_AUTHORIZATION_HEADER_NAME = "Authorization";
 
     /**
-     * Request attribute under which the decoded claims are cached for the duration of the request.
+     * Request attribute under which the decoded claims are cached, so that the four resolver calls made
+     * per request by {@code PrincipalResolvingFilter} decode the token once.
      */
-    public static final String CLAIMS_REQUEST_ATT_NAME = "pro.api4.jsonapi4j.principal.jwt-claims";
+    static final String CLAIMS_REQUEST_ATT_NAME = "pro.api4.jsonapi4j.principal.jwt-claims";
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final int JWT_PAYLOAD_SEGMENT = 1;

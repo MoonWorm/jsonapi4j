@@ -58,6 +58,20 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!-- JUnit.
+                 MUST stay declared before quarkus-bom: when two imported BOMs manage the same artifact,
+                 the first import wins. quarkus-bom ships JUnit Platform 6.x, while the root pom pins
+                 Jupiter to ${junit-jupiter-api.version}; that combination fails at test discovery with
+                 NoSuchMethodError on org.junit.platform.commons.util.ReflectionUtils.returnsVoid. -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter-api.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Quarkus -->
             <dependency>
                 <groupId>io.quarkus</groupId>
@@ -66,6 +80,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-arc-deployment</artifactId>
