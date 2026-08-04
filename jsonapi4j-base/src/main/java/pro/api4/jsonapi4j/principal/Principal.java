@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.principal;
 
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -39,5 +40,16 @@ public interface Principal {
      * @return set of scope strings, never {@code null} (may be empty)
      */
     Set<String> authenticatedClientScopes();
+
+    /**
+     * Returns custom attributes carried by the authenticated principal.
+     * A JWT token usually carries additional claims (e.g. user email, expiration date, etc) that can be
+     * parsed here and read back from the currently logged in principal via
+     * {@link AuthenticatedPrincipalContextHolder}, or used for ABAC evaluations in the
+     * Access Control plugin. Can be missing for server-to-server auth flows.
+     *
+     * @return attributes keyed by name, never {@code null} (may be empty)
+     */
+    Map<String, Object> attributes();
 
 }

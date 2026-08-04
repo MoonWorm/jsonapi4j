@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.principal;
 
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -55,6 +56,11 @@ public class AuthenticatedPrincipalContextHolder {
             public Set<String> authenticatedClientScopes() {
                 return principal.authenticatedClientScopes();
             }
+
+            @Override
+            public Map<String, Object> attributes() {
+                return principal.attributes();
+            }
         };
     }
 
@@ -89,8 +95,18 @@ public class AuthenticatedPrincipalContextHolder {
     }
 
     /**
-     * Returns the current principal as an {@link Optional}, or an empty {@link Optional}
+     * Returns the authenticated user-specific claims (e.g. email, expiration date, etc), or an empty {@link Optional}
      * if no principal is set.
+     *
+     * @return optional user-specific claims
+     */
+    public static Optional<Map<String, Object>> getAttributes() {
+        return Optional.ofNullable(PRINCIPAL.get()).map(Principal::attributes);
+    }
+
+    /**
+     * Returns the current principal as an {@link Optional}, or an empty {@link Optional}
+     * if no principal is set or for server-to-server auth flows.
      *
      * @return optional principal
      */

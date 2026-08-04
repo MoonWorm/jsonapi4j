@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
@@ -32,12 +33,14 @@ public class PrincipalResolvingFilter implements Filter {
         AccessTier accessTierName = resolver.resolveAccessTier(servletRequest);
         Set<String> scopes = resolver.resolveScopes(servletRequest);
         String userId = resolver.resolveUserId(servletRequest);
+        Map<String, Object> attributes = resolver.resolveAttributes(servletRequest);
 
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
                         accessTierName,
                         scopes,
-                        userId
+                        userId,
+                        attributes
                 )
         );
 
