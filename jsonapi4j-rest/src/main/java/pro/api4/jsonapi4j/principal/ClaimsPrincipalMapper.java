@@ -45,6 +45,13 @@ public class ClaimsPrincipalMapper {
      */
     public static final String FALLBACK_SCOPES_CLAIM = "scp";
 
+    /**
+     * Claim carrying the access tier. JWT standardizes no such claim, so this is a jsonapi4j convention:
+     * configure your identity provider to emit it, or name your own claim. Pass {@code null} as the access
+     * tier claim to disable tier resolution entirely.
+     */
+    public static final String DEFAULT_ACCESS_TIER_CLAIM = "access_tier";
+
     private static final String CLAIM_PATH_SEPARATOR = "\\.";
 
     private final String userIdClaim;
@@ -53,11 +60,10 @@ public class ClaimsPrincipalMapper {
     private final AccessTierRegistry accessTierRegistry;
 
     /**
-     * Creates a mapper using the standard claim names and the default access tier registry.
-     * Access tiers are not resolved, since no JWT claim carries them by convention.
+     * Creates a mapper using the default claim names and the default access tier registry.
      */
     public ClaimsPrincipalMapper() {
-        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, null, new DefaultAccessTierRegistry());
+        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, DEFAULT_ACCESS_TIER_CLAIM, new DefaultAccessTierRegistry());
     }
 
     /**
@@ -78,6 +84,30 @@ public class ClaimsPrincipalMapper {
         this.scopesClaim = scopesClaim;
         this.accessTierClaim = accessTierClaim;
         this.accessTierRegistry = accessTierRegistry;
+    }
+
+    /**
+     * Creates a mapper with explicit claim names for userId and scopes. Not setting anything for access tier.
+     *
+     * @param userIdClaim        claim holding the user id, e.g. {@code sub} or {@code oid}
+     * @param scopesClaim        claim holding the granted scopes, accepted either as a space-delimited
+     *                           string or as an array of strings
+     */
+    public ClaimsPrincipalMapper(String userIdClaim,
+                                 String scopesClaim) {
+        this(userIdClaim, scopesClaim, null, null);
+    }
+
+    /**
+     * Creates a mapper with default claim names except for access tier claim.
+     *
+     * @param accessTierClaim    claim holding the access tier name, resolved through
+     *                           {@code accessTierRegistry}; {@code null} disables access tier resolution
+     * @param accessTierRegistry registry used to look up the tier name found in {@code accessTierClaim}
+     */
+    public ClaimsPrincipalMapper(String accessTierClaim,
+                                 AccessTierRegistry accessTierRegistry) {
+        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, accessTierClaim, accessTierRegistry);
     }
 
     /**

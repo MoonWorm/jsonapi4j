@@ -151,8 +151,22 @@ class ClaimsPrincipalMapperTests {
     // --- access tier ---
 
     @Test
-    void doesNotResolveAccessTierWhenNoClaimIsConfigured() {
-        assertThat(mapper.resolveAccessTier(Map.of("access_tier", "ADMIN"))).isNull();
+    void resolvesAccessTierFromTheDefaultClaim() {
+        AccessTier tier = mapper.resolveAccessTier(Map.of("access_tier", "ADMIN"));
+
+        assertThat(tier).isNotNull();
+        assertThat(tier.getName()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void doesNotResolveAccessTierWhenTierResolutionIsDisabled() {
+        ClaimsPrincipalMapper noTierMapper = new ClaimsPrincipalMapper(
+                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
+                ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
+                null,
+                new DefaultAccessTierRegistry());
+
+        assertThat(noTierMapper.resolveAccessTier(Map.of("access_tier", "ADMIN"))).isNull();
     }
 
     @Test

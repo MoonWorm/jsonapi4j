@@ -70,9 +70,12 @@ All share `ClaimsPrincipalMapper`: `sub` for user id, `scope` with `scp` fallbac
 claims (`https://acme.com/roles`) still resolve.
 
 **Two traps worth flagging to users:**
-- **Access tier has no standard JWT claim.** Unless you pass an explicit tier claim
-  (`withAccessTierClaim("access_tier", registry)`), the tier is `null` and *every* `@AccessControl(tier=…)`
-  operation is denied — the usual cause of "everything 403s after switching to JWT".
+- **Access tier has no standard JWT claim.** jsonapi4j reads `access_tier` by convention, but no IdP emits
+  it by default — configure the IdP to include it, or point the resolver at your own claim
+  (`withAccessTierClaim("https://acme.com/tier", registry)`). If the claim is absent from the token the tier
+  is `null` and *every* `@AccessControl(tier=…)` operation is denied — the usual cause of "everything 403s
+  after switching to JWT". The AC plugin logs a WARN once per process when an *authenticated* principal is
+  denied while carrying no tier at all, which is the signature of this misconfiguration.
 - **`JwtPrincipalResolver` never validates the token.** Only use it behind a gateway or security layer that
   rejects invalid tokens; otherwise a forged token yields an authenticated admin. Prefer the Spring/Quarkus
   resolvers, which cannot produce a principal from an unverified token.

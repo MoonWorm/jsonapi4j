@@ -133,19 +133,37 @@ public PrincipalResolver principalResolver(JsonWebToken jwt, AccessTierRegistry 
 ### Access tiers need an explicit claim
 
 **This is the most common cause of unexpected 403s after switching to a JWT resolver.** JWT defines no
-standard claim for access tiers, so tier resolution is **off unless you name a claim**. With no tier claim
-configured, every principal resolves a `null` tier, and every operation guarded by
-`@AccessControl(tier = …)` is denied — even for a perfectly valid, fully authenticated token.
+standard claim for access tiers. JsonApi4j reads `access_tier` by convention, but no identity provider emits
+that claim on its own — you have to configure your IdP to include it, or point the resolver at whichever
+claim you already use. If the claim is missing from the token, every principal resolves a `null` tier, and
+every operation guarded by `@AccessControl(tier = …)` is denied, even for a perfectly valid token.
 {: .notice--warning}
 
-Name the claim that carries your tier, and register the tier values through `AccessTierRegistry`:
+Point the resolver at the claim that carries your tier, and register the tier values through
+`AccessTierRegistry`:
 
 ```java
-SpringSecurityPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry);
+SpringSecurityPrincipalResolver.withAccessTierClaim("https://api4.pro/tier", accessTierRegistry);
 ```
 
-If the claim is present but its value is not registered, the registry's default tier (`PUBLIC`) is used
-instead. Scopes and user id have sensible standard defaults and need no configuration; tiers never can.
+Passing `null` as the access tier claim disables tier resolution altogether. Do that only when your
+application declares no tier requirements.
+
+When a request is denied because the caller authenticated successfully but carries no tier at all — as
+opposed to holding a tier that is merely too low — the Access Control plugin says so once per process:
+
+```
+WARN  Access denied: an access tier of 'ADMIN' or higher is required, but the authenticated principal
+      carries no access tier at all. The configured PrincipalResolver resolved none — when using a JWT
+      resolver, check that issued tokens actually carry the configured access tier claim.
+```
+
+Anonymous callers never trigger it: having no tier is the expected state for them, and denying them is the
+point of the requirement.
+
+If the claim is present but its value is not a registered tier, the registry's default tier (`PUBLIC`) is
+used — untrusted input lands on least privilege rather than most. Scopes and user id have standard defaults
+that work out of the box; tiers never can.
 
 ### Claim mapping
 
@@ -155,7 +173,7 @@ The defaults follow the registered JWT claims, and every name is configurable:
 |---|---|---|
 | `authenticatedUserId()` | `sub` | RFC 7519. Override for providers that prefer `oid` or `email`. |
 | `authenticatedClientScopes()` | `scope`, falling back to `scp` | See shapes below. |
-| `authenticatedClientAccessTier()` | *none* | Must be named explicitly — see above. |
+| `authenticatedClientAccessTier()` | `access_tier` | A jsonapi4j convention, not a standard — see above. |
 | `attributes()` | all claims | Exposed as an unmodifiable map. |
 
 **Scope shapes.** Providers disagree, so both accepted forms are handled automatically:

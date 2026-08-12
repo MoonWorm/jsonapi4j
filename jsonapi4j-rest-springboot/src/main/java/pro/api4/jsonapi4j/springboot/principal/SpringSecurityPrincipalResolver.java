@@ -70,8 +70,6 @@ public class SpringSecurityPrincipalResolver implements PrincipalResolver {
     public static SpringSecurityPrincipalResolver withAccessTierClaim(String accessTierClaim,
                                                                       AccessTierRegistry accessTierRegistry) {
         return new SpringSecurityPrincipalResolver(new ClaimsPrincipalMapper(
-                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
-                ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
                 accessTierClaim,
                 accessTierRegistry
         ));

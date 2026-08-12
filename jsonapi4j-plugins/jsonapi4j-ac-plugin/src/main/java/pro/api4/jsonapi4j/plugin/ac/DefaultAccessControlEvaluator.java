@@ -21,11 +21,13 @@ import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
 
     private final AccessTierRegistry accessTierRegistry;
+    private final AtomicBoolean missingAccessTierReported = new AtomicBoolean();
 
     public DefaultAccessControlEvaluator(AccessTierRegistry accessTierRegistry) {
         this.accessTierRegistry = accessTierRegistry;
@@ -138,8 +140,50 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
             throw new IllegalArgumentException("Invalid value is set for an AccessTier: " + ac.getRequiredAccessTier());
         }
         Optional<AccessTier> actualAccessTier = AuthenticatedPrincipalContextHolder.getAccessTier();
-        return actualAccessTier
-                .filter(accessTier -> accessTier.compareTo(expectedAccessTier) >= 0)
+        if (actualAccessTier.isEmpty()) {
+            reportMissingAccessTier(expectedAccessTier);
+            return false;
+        }
+        return actualAccessTier.get().compareTo(expectedAccessTier) >= 0;
+    }
+
+    /**
+     * Reports a principal that passed authentication but carries no access tier at all.
+     * <p>
+     * Such a principal fails every access tier requirement no matter which tier is asked for, which almost
+     * always means the configured {@code PrincipalResolver} produces no tier — a JWT resolver whose tier
+     * claim is absent from the tokens being issued, most commonly. It is reported once per process at
+     * {@code WARN}, and on every occurrence at {@code DEBUG}.
+     *
+     * @param expectedAccessTier the tier the denied requirement asked for
+     */
+    private void reportMissingAccessTier(AccessTier expectedAccessTier) {
+        if (!isMissingAccessTierMisconfiguration()) {
+            return;
+        }
+        String message = "Access denied: an access tier of '{}' or higher is required, but the "
+                + "authenticated principal carries no access tier at all. The configured PrincipalResolver "
+                + "resolved none — when using a JWT resolver, check that issued tokens actually carry the "
+                + "configured access tier claim. See https://api4.pro/principal-resolution/";
+        if (missingAccessTierReported.compareAndSet(false, true)) {
+            log.warn(message, expectedAccessTier.getName());
+        } else {
+            log.debug(message, expectedAccessTier.getName());
+        }
+    }
+
+    /**
+     * Distinguishes a misconfigured principal from an ordinary anonymous one.
+     * <p>
+     * An anonymous caller legitimately has no access tier, and denying it is the point of the requirement.
+     * A caller that authenticated successfully and still has no tier is a configuration problem.
+     *
+     * @return {@code true} if the current principal is authenticated yet has no access tier
+     */
+    boolean isMissingAccessTierMisconfiguration() {
+        return AuthenticatedPrincipalContextHolder.getAccessTier().isEmpty()
+                && AuthenticatedPrincipalContextHolder.getAuthenticatedUserId()
+                .filter(StringUtils::isNotBlank)
                 .isPresent();
     }
 

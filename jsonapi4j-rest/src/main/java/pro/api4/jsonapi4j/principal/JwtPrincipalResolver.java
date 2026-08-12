@@ -93,8 +93,6 @@ public class JwtPrincipalResolver implements PrincipalResolver {
     public static JwtPrincipalResolver withAccessTierClaim(String accessTierClaim,
                                                            AccessTierRegistry accessTierRegistry) {
         return new JwtPrincipalResolver(new ClaimsPrincipalMapper(
-                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
-                ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
                 accessTierClaim,
                 accessTierRegistry
         ));

@@ -74,8 +74,6 @@ public class QuarkusJwtPrincipalResolver implements PrincipalResolver {
                                                                   String accessTierClaim,
                                                                   AccessTierRegistry accessTierRegistry) {
         return new QuarkusJwtPrincipalResolver(jwt, new ClaimsPrincipalMapper(
-                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
-                ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
                 accessTierClaim,
                 accessTierRegistry
         ));
