@@ -69,6 +69,14 @@ class AccessControlScopesModelTests {
                     .hasMessageContaining("at least one non-blank scope");
         }
 
+        @Test
+        void fromAnnotation_builtModel_clauseNamesRejectMutation() {
+            AccessControlScopesModel actualResult = modelOf(SingleClauseResource.class);
+
+            assertThatThrownBy(() -> actualResult.getGroups().getFirst().getScopes().clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
     }
 
     @Nested

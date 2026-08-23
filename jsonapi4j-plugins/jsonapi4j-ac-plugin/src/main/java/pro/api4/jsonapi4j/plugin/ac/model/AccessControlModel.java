@@ -6,17 +6,14 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -29,11 +26,41 @@ import static java.util.Collections.unmodifiableMap;
 @Builder(access = AccessLevel.PACKAGE)
 public class AccessControlModel {
 
-    private AccessControlAuthenticatedModel authenticated;
-    private AccessControlEntitlementsModel requiredEntitlements;
-    private AccessControlScopesModel requiredScopes;
-    private AccessControlOwnershipModel requiredOwnership;
-    private AccessControlPolicyModel requiredPolicy;
+    /**
+     * Class-level requirements, computed once per class.
+     * <p>
+     * Annotations cannot change while the JVM runs, so the model derived from a class is valid for that
+     * class's lifetime. {@link ClassValue} keys the cache weakly, so an entry is collected together with the
+     * class it describes and nothing pins an application classloader.
+     */
+    private static final ClassValue<Optional<AccessControlModel>> FROM_CLASS_ANNOTATION = new ClassValue<>() {
+        @Override
+        protected Optional<AccessControlModel> computeValue(Class<?> clazz) {
+            return Optional.ofNullable(fromAnnotation(ReflectionUtils.findAnnotationForClass(clazz, AccessControl.class)));
+        }
+    };
+
+    /**
+     * Field-level requirements, computed once per class. Cached for the same reason as
+     * {@link #FROM_CLASS_ANNOTATION}, and holding an unmodifiable map so the shared value cannot be altered
+     * by a caller.
+     */
+    private static final ClassValue<Map<String, AccessControlModel>> FROM_FIELDS_ANNOTATIONS = new ClassValue<>() {
+        @Override
+        protected Map<String, AccessControlModel> computeValue(Class<?> clazz) {
+            Map<String, AccessControlModel> accessControlModelPerField = new HashMap<>();
+            ReflectionUtils.fetchAnnotationForFields(clazz, AccessControl.class)
+                    .forEach((fieldName, accessControl) ->
+                            accessControlModelPerField.put(fieldName, fromAnnotation(accessControl)));
+            return unmodifiableMap(accessControlModelPerField);
+        }
+    };
+
+    private final AccessControlAuthenticatedModel authenticated;
+    private final AccessControlEntitlementsModel requiredEntitlements;
+    private final AccessControlScopesModel requiredScopes;
+    private final AccessControlOwnershipModel requiredOwnership;
+    private final AccessControlPolicyModel requiredPolicy;
 
     public static AccessControlModel fromAnnotation(AccessControl annotation) {
         if (annotation == null) {
@@ -53,32 +80,33 @@ public class AccessControlModel {
                 .build();
     }
 
+    /**
+     * Returns the field-level requirements declared on the given type, keyed by field name.
+     * <p>
+     * Cached per class like {@link #fromClassAnnotation(Class)}, and for the same reason: the scan walks the
+     * type's whole field hierarchy, and it is run at every node of the outbound class-graph descent.
+     *
+     * @param clazz the type to read
+     * @return the requirements per field, unmodifiable and empty when the type declares none
+     */
     public static Map<String, AccessControlModel> fromFieldsAnnotations(Class<?> clazz) {
         Validate.notNull(clazz, "type must not be null");
-        Map<String, AccessControl> accessControlAnnotationPerField
-                = ReflectionUtils.fetchAnnotationForFields(clazz, AccessControl.class);
-        Map<String, AccessControlModel> accessControlModelPerField = new HashMap<>();
-        accessControlAnnotationPerField.forEach((fieldName, accessControl) -> {
-            AccessControlAuthenticatedModel authenticatedModel = AccessControlAuthenticatedModel.fromValue(accessControl.authenticated());
-            AccessControlEntitlementsModel entitlementsModel = AccessControlEntitlementsModel.fromAnnotation(accessControl.entitlements());
-            AccessControlScopesModel scopesModel = AccessControlScopesModel.fromAnnotation(accessControl.scopes());
-            AccessControlOwnershipModel ownershipModel = AccessControlOwnershipModel.fromAnnotation(accessControl.ownership());
-            AccessControlPolicyModel policyModel = AccessControlPolicyModel.fromAnnotation(accessControl.policy());
-            accessControlModelPerField.put(fieldName, AccessControlModel.builder()
-                    .authenticated(authenticatedModel)
-                    .requiredEntitlements(entitlementsModel)
-                    .requiredScopes(scopesModel)
-                    .requiredOwnership(ownershipModel)
-                    .requiredPolicy(policyModel)
-                    .build());
-        });
-        return unmodifiableMap(accessControlModelPerField);
+        return FROM_FIELDS_ANNOTATIONS.get(clazz);
     }
 
+    /**
+     * Returns the class-level requirements declared on the given type, or {@code null} when it declares none.
+     * <p>
+     * Cached per class: the reflective annotation scan runs once and every later call is a lookup. The result
+     * is wrapped in an {@link Optional} internally so that "no annotation" is cached as explicitly as a
+     * requirement is.
+     *
+     * @param clazz the type to read
+     * @return the requirements, or {@code null} when the type declares none
+     */
     public static AccessControlModel fromClassAnnotation(Class<?> clazz) {
         Validate.notNull(clazz, "type must not be null");
-        AccessControl annotation = ReflectionUtils.findAnnotationForClass(clazz, AccessControl.class);
-        return fromAnnotation(annotation);
+        return FROM_CLASS_ANNOTATION.get(clazz).orElse(null);
     }
 
     public static AccessControlModel merge(AccessControlModel lowerPrecedence,

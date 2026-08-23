@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -21,10 +22,10 @@ import java.util.Set;
 @Builder(access = AccessLevel.PACKAGE)
 public class EntitlementsGroupModel {
 
-    private Set<String> entitlements;
+    private final Set<String> entitlements;
 
     @Builder.Default
-    private Mode mode = Mode.ANY_OF;
+    private final Mode mode = Mode.ANY_OF;
 
     /**
      * Builds the model for a single {@code @EntitlementsGroup} clause, rejecting clauses that can never be
@@ -65,6 +66,21 @@ public class EntitlementsGroupModel {
             case ANY_OF -> entitlements.stream().anyMatch(heldEntitlements::contains);
             case NONE_OF -> entitlements.stream().noneMatch(heldEntitlements::contains);
         };
+    }
+
+    /**
+     * Copies the given names defensively, preserving declaration order.
+     * <p>
+     * The model is cached and shared for the lifetime of the class it describes, so handing out — or holding
+     * on to — a caller's mutable set would let one caller alter the requirement for every later request.
+     */
+    public static class EntitlementsGroupModelBuilder {
+        public EntitlementsGroupModelBuilder entitlements(Set<String> entitlements) {
+            this.entitlements = entitlements == null
+                    ? null
+                    : Collections.unmodifiableSet(new LinkedHashSet<>(entitlements));
+            return this;
+        }
     }
 
     public enum Mode {

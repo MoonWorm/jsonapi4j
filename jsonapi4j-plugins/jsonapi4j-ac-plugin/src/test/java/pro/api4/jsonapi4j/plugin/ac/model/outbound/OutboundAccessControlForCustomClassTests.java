@@ -1,7 +1,9 @@
 package pro.api4.jsonapi4j.plugin.ac.model.outbound;
 
 import lombok.Data;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
@@ -9,6 +11,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class OutboundAccessControlForCustomClassTests {
 
@@ -110,6 +113,66 @@ public class OutboundAccessControlForCustomClassTests {
         // then
         assertThat(actualResult).isNotNull();
         assertThat(actualResult.getNested().get("child")).isNotNull();
+    }
+
+    @Nested
+    class Caching {
+
+        @Test
+        void fromClassAnnotationsOf_sameClassTwice_returnsTheSameInstance() {
+            OutboundAccessControlForCustomClass first
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(new TargetClass());
+            OutboundAccessControlForCustomClass second
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(new TargetClass());
+
+            assertThat(second).isSameAs(first);
+        }
+
+        @Test
+        void fromClassAnnotationsOf_sameResourceClassDifferentAttributesClass_returnsDifferentInstances() {
+            // given - one ResourceObject class carrying two different attributes types
+            OutboundAccessControlForCustomClass withTarget
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(resourceObjectOf(new TargetClass()));
+            OutboundAccessControlForCustomClass withNestedB
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(resourceObjectOf(new NestedClassB()));
+
+            // then - attributes requirements must not leak from one attributes type to the other
+            assertThat(withNestedB).isNotSameAs(withTarget);
+            assertThat(withTarget.getNested().get(ResourceObject.ATTRIBUTES_FIELD).getClassLevel()
+                    .getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("TargetClass"));
+            assertThat(withNestedB.getNested().get(ResourceObject.ATTRIBUTES_FIELD).getClassLevel()
+                    .getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("NestedClassB"));
+        }
+
+        @Test
+        void fromClassAnnotationsOf_resourceObjectWithoutAttributes_doesNotThrow() {
+            OutboundAccessControlForCustomClass actualResult
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(resourceObjectOf(null));
+
+            assertThat(actualResult).isNotNull();
+            assertThat(actualResult.getNested()).doesNotContainKey(ResourceObject.ATTRIBUTES_FIELD);
+        }
+
+        @Test
+        void fromClassAnnotationsOf_nullObject_returnsNull() {
+            assertThat(OutboundAccessControlForCustomClass.fromClassAnnotationsOf(null)).isNull();
+        }
+
+        @Test
+        void fromClassAnnotationsOf_cachedResult_nestedMapsRejectMutation() {
+            OutboundAccessControlForCustomClass actualResult
+                    = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(new TargetClass());
+
+            assertThatThrownBy(() -> actualResult.getNested().clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+            assertThatThrownBy(() -> actualResult.getNested().get("t2").getNested().clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        private ResourceObject<Object, Object> resourceObjectOf(Object attributes) {
+            return new ResourceObject<>("1", null, "things", attributes, null, null, null);
+        }
+
     }
 
     @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("Status")))

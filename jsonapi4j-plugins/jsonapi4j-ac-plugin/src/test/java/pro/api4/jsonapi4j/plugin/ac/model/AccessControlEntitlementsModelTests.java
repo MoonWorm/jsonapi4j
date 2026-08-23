@@ -84,6 +84,14 @@ class AccessControlEntitlementsModelTests {
                     .hasMessageContaining("at least one non-blank entitlement");
         }
 
+        @Test
+        void fromAnnotation_builtModel_clauseNamesRejectMutation() {
+            AccessControlEntitlementsModel actualResult = modelOf(TwoClausesResource.class);
+
+            assertThatThrownBy(() -> actualResult.getGroups().getFirst().getEntitlements().clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
     }
 
     @Nested

@@ -31,28 +31,76 @@ public class OutboundAccessControlForCustomClass {
     private final Map<String, AccessControlModel> fieldLevel;
     private final Map<String, OutboundAccessControlForCustomClass> nested;
 
+    /**
+     * Outbound requirements per class, computed once and reused.
+     * <p>
+     * The scan reads no instance values — only the object's class and, for a {@link ResourceObject}, its
+     * attributes class — so the result is a pure function of that pair. The two levels are nested
+     * {@link ClassValue}s rather than a map keyed on a class pair so that neither class is strongly held: an
+     * entry is collected together with the classes it describes, which matters because the outer key is a
+     * framework class while the inner is an application one.
+     * <p>
+     * Only this entry point is cached. {@code extractNestedRecursively} descends into nested classes and is
+     * deliberately left uncached, so no lookup can re-enter the cache it is currently populating.
+     */
+    private static final ClassValue<ClassValue<OutboundAccessControlForCustomClass>> BY_CLASS =
+            new ClassValue<>() {
+                @Override
+                protected ClassValue<OutboundAccessControlForCustomClass> computeValue(Class<?> objectClass) {
+                    return new ClassValue<>() {
+                        @Override
+                        protected OutboundAccessControlForCustomClass computeValue(Class<?> attributesClass) {
+                            return build(objectClass, attributesClass == NoAttributes.class ? null : attributesClass);
+                        }
+                    };
+                }
+            };
+
+    /**
+     * Stands in for "this object carries no attributes", so the cache key is never null.
+     */
+    private static final class NoAttributes {
+    }
+
+    /**
+     * Reads the outbound requirements declared on the given object's class.
+     * <p>
+     * Results are cached per class, so a page of resources of one type performs a single class-graph scan
+     * rather than one per item. A consequence worth knowing: an {@code AccessPolicy} declared on an
+     * attributes class is now instantiated once for the process rather than once per request, which is what
+     * {@code AccessPolicy} already documents. Policies must be stateless and thread-safe.
+     *
+     * @param object the object whose class declares the requirements
+     * @return the requirements, or {@code null} when {@code object} is {@code null}
+     */
     public static OutboundAccessControlForCustomClass fromClassAnnotationsOf(Object object) {
         if (object == null) {
             return null;
         }
-        Class<?> clazz = object.getClass();
+        Class<?> attributesClass = NoAttributes.class;
+        if (object instanceof ResourceObject<?, ?> resourceObject && resourceObject.getAttributes() != null) {
+            attributesClass = resourceObject.getAttributes().getClass();
+        }
+        return BY_CLASS.get(object.getClass()).get(attributesClass);
+    }
+
+    private static OutboundAccessControlForCustomClass build(Class<?> clazz, Class<?> attributesClass) {
         AccessControlModel classLevelAccessControl
                 = AccessControlModel.fromClassAnnotation(clazz);
         Map<String, AccessControlModel> fieldLevelAccessControl
                 = AccessControlModel.fromFieldsAnnotations(clazz);
         Map<String, OutboundAccessControlForCustomClass> nested
-                = extractNestedRecursively(clazz);
+                = new HashMap<>(extractNestedRecursively(clazz));
 
         // Resolve attributes real type at runtime against constructed object.
         // Otherwise, always resolved as Class<Object> when use reflection API for Type.
-        if (object instanceof ResourceObject<?, ?> resourceObject) {
-            Class<?> attClazz = resourceObject.getAttributes().getClass();
+        if (attributesClass != null) {
             AccessControlModel attClassLevelAccessControl
-                    = AccessControlModel.fromClassAnnotation(attClazz);
+                    = AccessControlModel.fromClassAnnotation(attributesClass);
             Map<String, AccessControlModel> attFieldLevelAccessControl
-                    = AccessControlModel.fromFieldsAnnotations(attClazz);
+                    = AccessControlModel.fromFieldsAnnotations(attributesClass);
             Map<String, OutboundAccessControlForCustomClass> attNested
-                    = extractNestedRecursively(attClazz);
+                    = extractNestedRecursively(attributesClass);
             if (attClassLevelAccessControl != null
                     || MapUtils.isNotEmpty(attFieldLevelAccessControl)
                     || MapUtils.isNotEmpty(attNested)) {
@@ -61,7 +109,7 @@ public class OutboundAccessControlForCustomClass {
                         OutboundAccessControlForCustomClass.builder()
                                 .classLevel(attClassLevelAccessControl)
                                 .fieldLevel(attFieldLevelAccessControl)
-                                .nested(attNested)
+                                .nested(Collections.unmodifiableMap(attNested))
                                 .build()
                 );
             }
@@ -112,7 +160,7 @@ public class OutboundAccessControlForCustomClass {
                                 OutboundAccessControlForCustomClass.builder()
                                         .classLevel(classLevelAccessControl)
                                         .fieldLevel(fieldLevelAccessControl)
-                                        .nested(nested).build()
+                                        .nested(Collections.unmodifiableMap(nested)).build()
                         );
                     }
                 }

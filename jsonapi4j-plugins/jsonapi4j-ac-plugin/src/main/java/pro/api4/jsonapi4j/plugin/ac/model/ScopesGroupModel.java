@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -21,10 +22,10 @@ import java.util.Set;
 @Builder(access = AccessLevel.PACKAGE)
 public class ScopesGroupModel {
 
-    private Set<String> scopes;
+    private final Set<String> scopes;
 
     @Builder.Default
-    private Mode mode = Mode.ALL_OF;
+    private final Mode mode = Mode.ALL_OF;
 
     /**
      * Builds the model for a single {@code @ScopesGroup} clause, rejecting clauses that can never be
@@ -65,6 +66,21 @@ public class ScopesGroupModel {
             case ANY_OF -> scopes.stream().anyMatch(grantedScopes::contains);
             case NONE_OF -> scopes.stream().noneMatch(grantedScopes::contains);
         };
+    }
+
+    /**
+     * Copies the given names defensively, preserving declaration order.
+     * <p>
+     * The model is cached and shared for the lifetime of the class it describes, so handing out — or holding
+     * on to — a caller's mutable set would let one caller alter the requirement for every later request.
+     */
+    public static class ScopesGroupModelBuilder {
+        public ScopesGroupModelBuilder scopes(Set<String> scopes) {
+            this.scopes = scopes == null
+                    ? null
+                    : Collections.unmodifiableSet(new LinkedHashSet<>(scopes));
+            return this;
+        }
     }
 
     public enum Mode {

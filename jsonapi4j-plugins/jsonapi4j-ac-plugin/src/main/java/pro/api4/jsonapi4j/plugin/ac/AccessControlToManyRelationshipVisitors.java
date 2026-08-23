@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.context.ToManyRelationshipVisitorContext;
@@ -78,6 +79,11 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                         dto -> ctx.getJsonApiContext().getResourceTypeAndIdResolver().resolveTypeAndId(dto),
                         dto -> dto
                 ));
+        OutboundAccessControlForCustomClass outboundRequirements
+                = Optional.ofNullable(getOutboundAccessControlModel(ctx.getPluginInfo()))
+                .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
+                .orElse(null);
+
         List<DATA_SOURCE_DTO> nonAnonymizedDtos = new ArrayList<>();
         List<ResourceIdentifierObject> anonymizedData = new ArrayList<>();
         for (ResourceIdentifierObject resourceIdentifierObject : data) {
@@ -85,9 +91,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                     accessControlEvaluator,
                     resourceIdentifierObject,
                     DefaultAccessControlContext.outbound(ctx, resourceIdentifierObject),
-                    Optional.ofNullable(getOutboundAccessControlModel(ctx.getPluginInfo()))
-                            .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
-                            .orElse(null)
+                    outboundRequirements
             );
 
             if (anonymizationResult.isNothingAnonymized()) {
