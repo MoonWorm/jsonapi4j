@@ -20,6 +20,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
@@ -219,7 +220,7 @@ public class SingleResourceProcessorAccessControlTests {
 
     @AccessControl(
             entitlements = @AccessControlEntitlements(@EntitlementsGroup(PARTNER)),
-            scopes = @AccessControlScopes(requiredScopes = {"groups.write"}),
+            scopes = @AccessControlScopes(@ScopesGroup({"groups.write"})),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     @Data
@@ -229,7 +230,7 @@ public class SingleResourceProcessorAccessControlTests {
 
         @AccessControl(
                 entitlements = @AccessControlEntitlements(@EntitlementsGroup(ROOT_ADMIN)),
-                scopes = @AccessControlScopes(requiredScopes = {"groups.read"}),
+                scopes = @AccessControlScopes(@ScopesGroup({"groups.read"})),
                 ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
         )
         private final String firstName;
@@ -265,7 +266,7 @@ public class SingleResourceProcessorAccessControlTests {
 
     @AccessControl(
             entitlements = @AccessControlEntitlements(@EntitlementsGroup(PUBLIC)),
-            scopes = @AccessControlScopes(requiredScopes = {"users.read"}),
+            scopes = @AccessControlScopes(@ScopesGroup({"users.read"})),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     public static class JsonApiResourceObjectWithRelationships extends ResourceObject<Attributes, Relationships> {

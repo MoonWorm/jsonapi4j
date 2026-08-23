@@ -12,9 +12,9 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlOwnershipModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlPolicyModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
+import pro.api4.jsonapi4j.plugin.ac.model.ScopesGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.model.EntitlementsGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
-import pro.api4.jsonapi4j.plugin.ac.scope.ScopesUtils;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
@@ -303,40 +303,20 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
                 .isPresent();
     }
 
-    private boolean evaluateScopes(AccessControlScopesModel ac) {
-        if (ac == null) {
+    private boolean evaluateScopes(AccessControlScopesModel expectedScopes) {
+        if (expectedScopes == null) {
             return true;
         }
-        String expectedScopesExpression = ac.getRequiredScopesExpression();
-        Set<String> expectedScopes = ac.getRequiredScopes();
-        Set<String> actualScopes = AuthenticatedPrincipalContextHolder.getScopes().orElse(null);
-
-        // no scopes requirements
-        if (StringUtils.isBlank(expectedScopesExpression) && CollectionUtils.isEmpty(expectedScopes)) {
+        Set<String> grantedScopes = AuthenticatedPrincipalContextHolder.getScopes().orElse(Set.of());
+        if (expectedScopes.isSatisfiedBy(grantedScopes)) {
             return true;
         }
-
-        // no info about the current request's Scopes
-        if (CollectionUtils.isEmpty(actualScopes)) {
-            reportMissingScopes(ac);
-            return false;
-        }
-
-        boolean satisfied;
-        if (StringUtils.isNotBlank(expectedScopesExpression)) {
-            // scopes expression has higher priority
-            satisfied = ScopesUtils.matches(actualScopes, expectedScopesExpression);
+        if (grantedScopes.isEmpty()) {
+            reportMissingScopes(expectedScopes);
         } else {
-            // list of scopes has lower priority
-            satisfied = ScopesUtils.matches(
-                    actualScopes,
-                    ScopesUtils.toScopesExpression(expectedScopes)
-            );
+            reportUnsatisfiedScopes(expectedScopes, grantedScopes);
         }
-        if (!satisfied) {
-            reportUnsatisfiedScopes(ac, actualScopes);
-        }
-        return satisfied;
+        return false;
     }
 
     /**
@@ -347,9 +327,9 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
      * absent from the tokens being issued, most commonly. It is reported once per process at {@code WARN},
      * and on every occurrence at {@code DEBUG}.
      *
-     * @param ac the scopes requirement that was denied
+     * @param expectedScopes the scopes requirement that was denied
      */
-    private void reportMissingScopes(AccessControlScopesModel ac) {
+    private void reportMissingScopes(AccessControlScopesModel expectedScopes) {
         if (!isMissingScopesMisconfiguration()) {
             return;
         }
@@ -358,9 +338,9 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
                 + "that issued tokens actually carry the configured scopes claim. "
                 + "See https://api4.pro/principal-resolution/";
         if (missingScopesReported.compareAndSet(false, true)) {
-            log.warn(message, describeScopesRequirement(ac));
+            log.warn(message, describeScopesRequirement(expectedScopes));
         } else {
-            log.debug(message, describeScopesRequirement(ac));
+            log.debug(message, describeScopesRequirement(expectedScopes));
         }
     }
 
@@ -374,28 +354,43 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
      * @param ac           the scopes requirement that was not satisfied
      * @param actualScopes the scopes the principal actually carries
      */
-    private void reportUnsatisfiedScopes(AccessControlScopesModel ac, Set<String> actualScopes) {
+    private void reportUnsatisfiedScopes(AccessControlScopesModel expectedScopes, Set<String> grantedScopes) {
         if (!log.isDebugEnabled()) {
             return;
         }
         log.debug("Access denied: {} is required, but the authenticated principal carries {}. "
+                        + "Scope names are matched exactly — check both sides for typos. "
                         + "See https://api4.pro/access-control-plugin/",
-                describeScopesRequirement(ac),
-                describeNames(actualScopes));
+                describeScopesRequirement(expectedScopes),
+                describeNames(grantedScopes));
     }
 
     /**
-     * Renders a scopes requirement, e.g. {@code scopes [users.read, users.write]} or
-     * {@code scopes expression 'users.read AND users.write'}.
+     * Renders a scopes requirement, e.g. {@code scopes ALL_OF[ALL_OF[users.read, users.write]]}, prefixed by
+     * a declared {@code description}.
      *
-     * @param ac the requirement to describe
+     * @param expectedScopes the requirement to describe
      * @return human-readable description
      */
-    static String describeScopesRequirement(AccessControlScopesModel ac) {
-        if (StringUtils.isNotBlank(ac.getRequiredScopesExpression())) {
-            return String.format("scopes expression '%s'", ac.getRequiredScopesExpression());
-        }
-        return String.format("scopes %s", describeNames(ac.getRequiredScopes()));
+    static String describeScopesRequirement(AccessControlScopesModel expectedScopes) {
+        String structure = String.format("scopes %s%s",
+                expectedScopes.getMode(),
+                expectedScopes.getGroups().stream()
+                        .map(DefaultAccessControlEvaluator::describeScopesGroup)
+                        .collect(Collectors.joining(", ", "[", "]")));
+        return StringUtils.isBlank(expectedScopes.getDescription())
+                ? structure
+                : String.format("'%s' (%s)", expectedScopes.getDescription(), structure);
+    }
+
+    /**
+     * Renders a single clause of a scopes requirement, e.g. {@code ALL_OF[users.read, users.write]}.
+     *
+     * @param group the clause to describe
+     * @return human-readable description
+     */
+    static String describeScopesGroup(ScopesGroupModel group) {
+        return String.format("%s%s", group.getMode(), describeNames(group.getScopes()));
     }
 
     /**

@@ -6,11 +6,12 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @EqualsAndHashCode
@@ -20,26 +21,62 @@ import java.util.Set;
 @Builder(access = AccessLevel.PACKAGE)
 public class AccessControlScopesModel {
 
-    private Set<String> requiredScopes;
-    private String requiredScopesExpression;
+    @Builder.Default
+    private List<ScopesGroupModel> groups = List.of();
 
+    @Builder.Default
+    private Mode mode = Mode.ALL_OF;
+
+    private String description;
+
+    /**
+     * Builds the model for an {@code @AccessControlScopes} requirement.
+     *
+     * @param annotation the annotation to read
+     * @return the model, or {@code null} when the annotation declares no clauses at all
+     */
     static AccessControlScopesModel fromAnnotation(AccessControlScopes annotation) {
-        if (annotation == null
-                || (!isRequiredScopesExpressionDefined(annotation.requiredScopesExpression()) && !isRequiredScopesDefined(annotation.requiredScopes()))) {
+        if (annotation == null || annotation.value().length == 0) {
             return null;
         }
         return AccessControlScopesModel.builder()
-                .requiredScopes(isRequiredScopesDefined(annotation.requiredScopes()) ? Set.of(annotation.requiredScopes()) : Collections.emptySet())
-                .requiredScopesExpression(isRequiredScopesExpressionDefined(annotation.requiredScopesExpression()) ? annotation.requiredScopesExpression() : null)
+                .description(StringUtils.trimToNull(annotation.description()))
+                .groups(Arrays.stream(annotation.value()).map(ScopesGroupModel::fromAnnotation).toList())
+                .mode(Mode.from(annotation.mode()))
                 .build();
     }
 
-    private static boolean isRequiredScopesExpressionDefined(String requiredScopesExpression) {
-        return StringUtils.isNotBlank(requiredScopesExpression) && !AccessControlScopes.NOT_SET.equals(requiredScopesExpression);
+    /**
+     * Decides whether the scopes granted to a caller satisfy this requirement, by combining the clauses with
+     * {@link #getMode()}.
+     *
+     * @param grantedScopes the scopes the caller was granted, never {@code null}
+     * @return {@code true} when the requirement is satisfied
+     */
+    public boolean isSatisfiedBy(Set<String> grantedScopes) {
+        if (CollectionUtils.isEmpty(groups)) {
+            return true;
+        }
+        return switch (mode) {
+            case ALL_OF -> groups.stream().allMatch(g -> g.isSatisfiedBy(grantedScopes));
+            case ANY_OF -> groups.stream().anyMatch(g -> g.isSatisfiedBy(grantedScopes));
+            case NONE_OF -> groups.stream().noneMatch(g -> g.isSatisfiedBy(grantedScopes));
+        };
     }
 
-    private static boolean isRequiredScopesDefined(String[] requiredScopes) {
-        return requiredScopes != null && !Arrays.equals(new String[]{AccessControlScopes.NOT_SET}, requiredScopes);
+    public enum Mode {
+
+        ALL_OF,
+        ANY_OF,
+        NONE_OF;
+
+        static Mode from(AccessControlScopes.Mode mode) {
+            return switch (mode) {
+                case ALL_OF -> ALL_OF;
+                case ANY_OF -> ANY_OF;
+                case NONE_OF -> NONE_OF;
+            };
+        }
     }
 
 }

@@ -55,7 +55,9 @@ public class AccessControlModelTests {
                 .requiredEntitlements(AccessControlEntitlementsModel.builder()
                         .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
                         .build())
-                .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
+                .requiredScopes(AccessControlScopesModel.builder()
+                        .groups(List.of(ScopesGroupModel.builder().scopes(Set.of("bla")).build()))
+                        .build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
 
@@ -71,11 +73,8 @@ public class AccessControlModelTests {
         assertThat(result.getRequiredEntitlements()).isNotNull();
         assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
                 .isEqualTo(Set.of(ADMIN));
-        assertThat(result.getRequiredScopes())
-                .isNotNull()
-                .extracting(AccessControlScopesModel::getRequiredScopesExpression)
-                .isEqualTo("bla bla");
-        assertThat(result.getRequiredScopes().getRequiredScopes()).isNull();
+        assertThat(result.getRequiredScopes()).isNotNull();
+        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)
@@ -91,7 +90,9 @@ public class AccessControlModelTests {
                 .requiredEntitlements(AccessControlEntitlementsModel.builder()
                         .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
                         .build())
-                .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
+                .requiredScopes(AccessControlScopesModel.builder()
+                        .groups(List.of(ScopesGroupModel.builder().scopes(Set.of("bla")).build()))
+                        .build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
 
@@ -109,11 +110,8 @@ public class AccessControlModelTests {
         assertThat(result.getRequiredEntitlements()).isNotNull();
         assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
                 .isEqualTo(Set.of(ADMIN));
-        assertThat(result.getRequiredScopes())
-                .isNotNull()
-                .extracting(AccessControlScopesModel::getRequiredScopesExpression)
-                .isEqualTo("bla bla");
-        assertThat(result.getRequiredScopes().getRequiredScopes()).isNull();
+        assertThat(result.getRequiredScopes()).isNotNull();
+        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)
@@ -129,7 +127,9 @@ public class AccessControlModelTests {
                 .requiredEntitlements(AccessControlEntitlementsModel.builder()
                         .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
                         .build())
-                .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
+                .requiredScopes(AccessControlScopesModel.builder()
+                        .groups(List.of(ScopesGroupModel.builder().scopes(Set.of("bla")).build()))
+                        .build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdExtractor(ResourceIdFromUrlPathExtractor.class).build())
                 .build();
 
@@ -138,7 +138,9 @@ public class AccessControlModelTests {
                 .requiredEntitlements(AccessControlEntitlementsModel.builder()
                         .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ROOT_ADMIN)).build()))
                         .build())
-                .requiredScopes(AccessControlScopesModel.builder().requiredScopes(Set.of("bla", "bla2")).build())
+                .requiredScopes(AccessControlScopesModel.builder()
+                        .groups(List.of(ScopesGroupModel.builder().scopes(Set.of("bla", "bla2")).build()))
+                        .build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
 
@@ -155,8 +157,7 @@ public class AccessControlModelTests {
         assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
                 .isEqualTo(Set.of(ROOT_ADMIN));
         assertThat(result.getRequiredScopes()).isNotNull();
-        assertThat(result.getRequiredScopes().getRequiredScopes()).isEqualTo(Set.of("bla", "bla2"));
-        assertThat(result.getRequiredScopes().getRequiredScopesExpression()).isNull();
+        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla", "bla2"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)

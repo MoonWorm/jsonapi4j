@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
@@ -36,7 +37,7 @@ import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTR
 )
 @AccessControl(
         authenticated = Authenticated.AUTHENTICATED,
-        scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
+        scopes = @AccessControlScopes(@ScopesGroup({"users.citizenships.read"})),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
 @RequiredArgsConstructor

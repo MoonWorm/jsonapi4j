@@ -43,7 +43,6 @@
         <maven.compiler.release>23</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <spring-expression.version>6.2.2</spring-expression.version>
     </properties>
 
     <dependencies>
@@ -52,13 +51,6 @@
             <groupId>pro.api4</groupId>
             <artifactId>jsonapi4j-base</artifactId>
             <version>${revision}</version>
-        </dependency>
-
-        <!-- SPeL is used for Scopes expressions -->
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-expression</artifactId>
-            <version>${spring-expression.version}</version>
         </dependency>
 
         <!-- Apache commons -->

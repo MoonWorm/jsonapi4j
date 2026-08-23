@@ -111,8 +111,7 @@ public class AccessControlModel {
         AccessControlScopesModel scopes = winning(
                 higherPrecedence, lowerPrecedence,
                 AccessControlModel::getRequiredScopes,
-                s -> CollectionUtils.isNotEmpty(s.getRequiredScopes())
-                        || StringUtils.isNotBlank(s.getRequiredScopesExpression())
+                s -> true
         );
         if (scopes != null) {
             resultBuilder.requiredScopes(scopes);

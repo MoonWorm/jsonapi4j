@@ -72,7 +72,7 @@ However, you can configure and enforce access control rules for either or both s
 There are five types of access control requirements, which can be combined in any way as needed:
 * **Authentication requirement** - verifies whether the request is made on behalf of an authenticated client or user. This can be used to restrict anonymous access.
 * **Entitlement requirement** - verifies whether the client or user holds a given entitlement. Entitlements are plain, unordered labels that your application defines and your principal source supplies - any string works. `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as ready-made constants, but they carry no built-in ranking. See more details below.
-* **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token.
+* **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token. Declared with the same two-level clause structure as entitlements. See more details below.
 * **Ownership requirement** - ensures that the requested resource belongs to the client or user making the request. This is typically used for APIs where users are only allowed to view their own data, but not others'.
 * **Policy requirement** - decides the rule in code, for anything the four declarative forms cannot express - reading the caller's attributes, branching on the operation being performed, or comparing the caller against the resource being returned. See more details below.
 
@@ -150,6 +150,40 @@ DEBUG Access denied: 'internal support staff, or a partner integration'
       (ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER, PUBLIC]]) is required,
       but the authenticated principal carries [PARTNER].
 ```
+
+#### Scopes Use the Same Structure
+
+Scopes are declared exactly like entitlements — `@ScopesGroup` clauses combined by
+`@AccessControlScopes`, with the same three modes. Matching is by exact name.
+
+```java
+@AccessControl(scopes = @AccessControlScopes(
+        description = "read access to profiles, or full admin access",
+        mode = AccessControlScopes.Mode.ANY_OF,
+        value = {
+                @ScopesGroup({"users.read", "profiles.read"}),
+                @ScopesGroup("admin.full")
+        }))
+```
+
+which reads as *(`users.read` and `profiles.read`) or `admin.full`*. The simple case stays short:
+
+```java
+@AccessControl(scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")))
+```
+
+| Clause mode | Satisfied when the caller was granted |
+|-------------|---------------------------------------|
+| `ALL_OF` (default) | **all** of the listed scopes |
+| `ANY_OF` | **at least one** of the listed scopes |
+| `NONE_OF` | **none** of the listed scopes — e.g. deny anything holding a `readonly` scope |
+
+The clause default is `ALL_OF` rather than entitlements' `ANY_OF`, because a scope requirement normally asks
+for every scope it lists.
+
+For rules this cannot express — weighing scopes together with the operation, the resource, or the caller's
+attributes — use a [policy](#policies-deciding-access-in-code); it reads the granted scopes from
+`context.principal().authenticatedClientScopes()`.
 
 #### Where to Place `@AccessControl`
 

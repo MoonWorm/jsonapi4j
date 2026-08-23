@@ -4,6 +4,7 @@ import lombok.Data;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 
 import java.util.Set;
 
@@ -22,41 +23,41 @@ public class OutboundAccessControlForCustomClassTests {
         assertThat(actualResult).isNotNull();
         assertThat(actualResult.getClassLevel()).isNotNull();
         assertThat(actualResult.getClassLevel().getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getClassLevel().getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("TargetClass"));
+        assertThat(actualResult.getClassLevel().getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("TargetClass"));
         assertThat(actualResult.getFieldLevel()).isNotNull().isNotEmpty().hasSize(5);
         assertThat(actualResult.getFieldLevel().get("CONSTANT_1")).isNotNull();
         assertThat(actualResult.getFieldLevel().get("CONSTANT_1").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getFieldLevel().get("CONSTANT_1").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("CONSTANT_1"));
+        assertThat(actualResult.getFieldLevel().get("CONSTANT_1").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("CONSTANT_1"));
         assertThat(actualResult.getFieldLevel().get("CONSTANT_2")).isNotNull();
         assertThat(actualResult.getFieldLevel().get("CONSTANT_2").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getFieldLevel().get("CONSTANT_2").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("CONSTANT_2"));
+        assertThat(actualResult.getFieldLevel().get("CONSTANT_2").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("CONSTANT_2"));
         assertThat(actualResult.getFieldLevel().get("p1")).isNotNull();
         assertThat(actualResult.getFieldLevel().get("p1").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getFieldLevel().get("p1").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("p1"));
+        assertThat(actualResult.getFieldLevel().get("p1").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("p1"));
         assertThat(actualResult.getFieldLevel().get("t1")).isNotNull();
         assertThat(actualResult.getFieldLevel().get("t1").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getFieldLevel().get("t1").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("t1"));
+        assertThat(actualResult.getFieldLevel().get("t1").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("t1"));
         assertThat(actualResult.getFieldLevel().get("t2")).isNotNull();
         assertThat(actualResult.getFieldLevel().get("t2").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getFieldLevel().get("t2").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("t2"));
+        assertThat(actualResult.getFieldLevel().get("t2").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("t2"));
         assertThat(actualResult.getNested()).isNotNull().isNotEmpty().hasSize(2);
         assertThat(actualResult.getNested().get("CONSTANT_2")).isNotNull();
         assertThat(actualResult.getNested().get("CONSTANT_2").getClassLevel()).isNotNull();
         assertThat(actualResult.getNested().get("CONSTANT_2").getClassLevel().getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getNested().get("CONSTANT_2").getClassLevel().getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("NestedClassA"));
+        assertThat(actualResult.getNested().get("CONSTANT_2").getClassLevel().getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("NestedClassA"));
         assertThat(actualResult.getNested().get("CONSTANT_2").getFieldLevel()).isNotEmpty().hasSize(1);
         assertThat(actualResult.getNested().get("CONSTANT_2").getFieldLevel().get("a1")).isNotNull();
         assertThat(actualResult.getNested().get("CONSTANT_2").getFieldLevel().get("a1").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getNested().get("CONSTANT_2").getFieldLevel().get("a1").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("a1"));
+        assertThat(actualResult.getNested().get("CONSTANT_2").getFieldLevel().get("a1").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("a1"));
         assertThat(actualResult.getNested().get("CONSTANT_2").getNested()).isEmpty();
         assertThat(actualResult.getNested().get("t2")).isNotNull();
         assertThat(actualResult.getNested().get("t2").getClassLevel()).isNotNull();
         assertThat(actualResult.getNested().get("t2").getClassLevel().getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getNested().get("t2").getClassLevel().getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("NestedClassB"));
+        assertThat(actualResult.getNested().get("t2").getClassLevel().getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("NestedClassB"));
         assertThat(actualResult.getNested().get("t2").getFieldLevel()).isNotEmpty().hasSize(1);
         assertThat(actualResult.getNested().get("t2").getFieldLevel().get("b1")).isNotNull();
         assertThat(actualResult.getNested().get("t2").getFieldLevel().get("b1").getRequiredScopes()).isNotNull();
-        assertThat(actualResult.getNested().get("t2").getFieldLevel().get("b1").getRequiredScopes().getRequiredScopes()).isNotNull().isEqualTo(Set.of("b1"));
+        assertThat(actualResult.getNested().get("t2").getFieldLevel().get("b1").getRequiredScopes().getGroups().getFirst().getScopes()).isNotNull().isEqualTo(Set.of("b1"));
         assertThat(actualResult.getNested().get("t2").getNested()).isEmpty();
     }
 
@@ -93,7 +94,7 @@ public class OutboundAccessControlForCustomClassTests {
         assertThat(actualResult.getNested()).containsKey("status");
         OutboundAccessControlForCustomClass statusAc = actualResult.getNested().get("status");
         assertThat(statusAc.getClassLevel()).isNotNull();
-        assertThat(statusAc.getClassLevel().getRequiredScopes().getRequiredScopes()).isEqualTo(Set.of("Status"));
+        assertThat(statusAc.getClassLevel().getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("Status"));
         assertThat(statusAc.getNested()).isEmpty();
     }
 
@@ -111,62 +112,62 @@ public class OutboundAccessControlForCustomClassTests {
         assertThat(actualResult.getNested().get("child")).isNotNull();
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "Status"))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("Status")))
     private enum Status {
         ACTIVE, INACTIVE
     }
 
     @Data
     private static class ClassWithEnumField {
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "status"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("status")))
         private Status status;
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "SelfReferential"))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("SelfReferential")))
     @Data
     private static class SelfReferential {
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "child"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("child")))
         private SelfReferential child;
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "TargetClass"))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("TargetClass")))
     @Data
     private static class TargetClass extends ParentClass {
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "CONSTANT_1"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("CONSTANT_1")))
         private static final int CONSTANT_1 = 0;
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "CONSTANT_2"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("CONSTANT_2")))
         private static final NestedClassA CONSTANT_2 = new NestedClassA("foo");
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "t1"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("t1")))
         private String t1;
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "t2"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("t2")))
         private NestedClassB t2;
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "NestedClassA"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("NestedClassA")))
         @Data
         private static class NestedClassA {
-            @AccessControl(scopes = @AccessControlScopes(requiredScopes = "a1"))
+            @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("a1")))
             private final String a1;
         }
 
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "ParentClass"))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("ParentClass")))
     @Data
     private static class ParentClass {
 
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "p1"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("p1")))
         private String p1;
 
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = "NestedClassB"))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("NestedClassB")))
     @Data
     private static class NestedClassB {
-        @AccessControl(scopes = @AccessControlScopes(requiredScopes = "b1"))
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("b1")))
         private String b1;
     }
 

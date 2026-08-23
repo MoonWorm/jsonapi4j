@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.sampleapp.domain.user;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
@@ -20,7 +21,7 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
-            scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
+            scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     @Schema(description = "User's credit card number", example = "123456789", requiredMode = REQUIRED)

@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
+import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlPolicy;
 import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
@@ -404,23 +405,23 @@ class DefaultAccessControlEvaluatorTests {
         }
 
         @Test
-        void describeScopesRequirement_scopesList_rendersSortedScopes() {
+        void describeScopesRequirement_singleClause_rendersModeAndSortedScopes() {
             AccessControlScopesModel requirement = AccessControlModel
                     .fromClassAnnotation(ScopesListResource.class)
                     .getRequiredScopes();
 
             assertThat(DefaultAccessControlEvaluator.describeScopesRequirement(requirement))
-                    .isEqualTo("scopes [users.read, users.write]");
+                    .isEqualTo("scopes ALL_OF[ALL_OF[users.read, users.write]]");
         }
 
         @Test
-        void describeScopesRequirement_scopesExpression_rendersExpression() {
+        void describeScopesRequirement_descriptionDeclared_quotedAheadOfStructure() {
             AccessControlScopesModel requirement = AccessControlModel
-                    .fromClassAnnotation(ScopesExpressionResource.class)
+                    .fromClassAnnotation(DescribedScopesResource.class)
                     .getRequiredScopes();
 
             assertThat(DefaultAccessControlEvaluator.describeScopesRequirement(requirement))
-                    .isEqualTo("scopes expression 'users.read AND users.write'");
+                    .isEqualTo("'read access to profiles' (scopes ANY_OF[ALL_OF[profiles.read]])");
         }
 
         private AccessControlEntitlementsModel requirementOf(Class<?> annotatedResource) {
@@ -487,12 +488,15 @@ class DefaultAccessControlEvaluatorTests {
     private static class TypoEntitlementResource {
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopes = {"users.write", "users.read"}))
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup({"users.write", "users.read"})))
     private static class ScopesListResource {
     }
 
-    @AccessControl(scopes = @AccessControlScopes(requiredScopesExpression = "users.read AND users.write"))
-    private static class ScopesExpressionResource {
+    @AccessControl(scopes = @AccessControlScopes(
+            mode = AccessControlScopes.Mode.ANY_OF,
+            description = "read access to profiles",
+            value = @ScopesGroup("profiles.read")))
+    private static class DescribedScopesResource {
     }
 
     @AccessControl
