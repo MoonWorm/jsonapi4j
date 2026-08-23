@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
@@ -47,7 +48,7 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+        if (accessControlEvaluator.evaluateInboundRequirements(DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings)) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
@@ -77,7 +78,7 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
         AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                 accessControlEvaluator,
                 resource,
-                resource,
+                DefaultAccessControlContext.outbound(ctx, resource),
                 getOutboundAccessControlModel(ctx.getPluginInfo(), resource)
         );
 

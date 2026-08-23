@@ -4,11 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
+import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAuthenticatedModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlEntitlementsModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlOwnershipModel;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlPolicyModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.plugin.ac.model.EntitlementsGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
@@ -30,23 +32,24 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
     private final AtomicBoolean missingScopesReported = new AtomicBoolean();
 
     @Override
-    public <REQUEST> boolean evaluateInboundRequirements(REQUEST request,
-                                                         AccessControlModel accessControlModel) {
+    public boolean evaluateInboundRequirements(AccessControlContext context,
+                                               AccessControlModel accessControlModel) {
 
         if (accessControlModel == null) {
             return true;
         }
 
-        String ownerId = getOwnerIdFromRequest(accessControlModel, request);
+        String ownerId = getOwnerIdFromRequest(accessControlModel, context.request());
 
         return checkIsAuthenticated(accessControlModel.getAuthenticated())
                 && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
                 && evaluateScopes(accessControlModel.getRequiredScopes())
-                && evaluateOwnership(ownerId);
+                && evaluateOwnership(ownerId)
+                && evaluatePolicy(accessControlModel.getRequiredPolicy(), context);
     }
 
     @Override
-    public boolean evaluateOutboundRequirements(Object resourceObject,
+    public boolean evaluateOutboundRequirements(AccessControlContext context,
                                                 AccessControlModel accessControlModel) {
         if (accessControlModel == null) {
             return true;
@@ -54,7 +57,57 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         return checkIsAuthenticated(accessControlModel.getAuthenticated())
                 && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
                 && evaluateScopes(accessControlModel.getRequiredScopes())
-                && evaluateOwnershipAgainstResourceObject(resourceObject, accessControlModel.getRequiredOwnership());
+                && evaluateOwnershipAgainstResourceObject(context.resource().orElse(null),
+                        accessControlModel.getRequiredOwnership())
+                && evaluatePolicy(accessControlModel.getRequiredPolicy(), context);
+    }
+
+    /**
+     * Evaluates a declared {@code AccessPolicy}, last of all the requirements: it is application code and the
+     * most expensive to run, so the cheap declarative checks get to deny first.
+     *
+     * @param expectedPolicy the policy requirement, or {@code null} when none is declared
+     * @param context        everything the policy may decide against
+     * @return {@code true} when no policy is declared or the declared one allows it
+     */
+    private boolean evaluatePolicy(AccessControlPolicyModel expectedPolicy, AccessControlContext context) {
+        if (expectedPolicy == null) {
+            return true;
+        }
+        if (expectedPolicy.isSatisfiedBy(context)) {
+            return true;
+        }
+        reportUnsatisfiedPolicy(expectedPolicy);
+        return false;
+    }
+
+    /**
+     * Explains a policy denial. Reported at {@code DEBUG} for the same reason as the other ordinary denials:
+     * on any endpoint that restricts access this is business as usual.
+     *
+     * @param expectedPolicy the policy that denied access
+     */
+    private void reportUnsatisfiedPolicy(AccessControlPolicyModel expectedPolicy) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        log.debug("Access denied: {} denied the request. "
+                        + "See https://api4.pro/access-control-plugin/",
+                describePolicyRequirement(expectedPolicy));
+    }
+
+    /**
+     * Renders a policy requirement for a log line, e.g. {@code policy com.acme.SameTenantPolicy}, prefixed by
+     * a declared {@code description} so that a denial reads as the reason rather than only a class name.
+     *
+     * @param expectedPolicy the requirement to describe
+     * @return human-readable description
+     */
+    static String describePolicyRequirement(AccessControlPolicyModel expectedPolicy) {
+        String structure = String.format("policy %s", expectedPolicy.getPolicy().getClass().getName());
+        return StringUtils.isBlank(expectedPolicy.getDescription())
+                ? structure
+                : String.format("'%s' (%s)", expectedPolicy.getDescription(), structure);
     }
 
     private boolean evaluateOwnershipAgainstResourceObject(Object resourceObject,
@@ -80,9 +133,9 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         }
     }
 
-    private <REQUEST> String getOwnerIdFromRequest(AccessControlModel accessControlModel,
-                                                   REQUEST request) {
-        OwnerIdExtractor<REQUEST> ownerIdExtractor = getOwnerIdExtractor(accessControlModel);
+    private String getOwnerIdFromRequest(AccessControlModel accessControlModel,
+                                        Object request) {
+        OwnerIdExtractor<Object> ownerIdExtractor = getOwnerIdExtractor(accessControlModel);
         return ownerIdExtractor == null ? null : ownerIdExtractor.fromRequest(request);
     }
 
@@ -202,8 +255,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
     }
 
     /**
-     * Renders a requirement for a log line, e.g. {@code ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER]]}, or
-     * the policy class name when one decides the requirement instead.
+     * Renders a requirement for a log line, e.g. {@code ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER]]}.
      * <p>
      * A declared {@code description} is quoted ahead of the structure, so a denial reads as the reason the
      * requirement exists rather than only as the entitlements it names.
@@ -212,9 +264,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
      * @return human-readable description
      */
     static String describeRequirement(AccessControlEntitlementsModel expectedEntitlements) {
-        String structure = expectedEntitlements.getPolicy() != null
-                ? String.format("policy %s", expectedEntitlements.getPolicy().getClass().getName())
-                : String.format("%s%s",
+        String structure = String.format("%s%s",
                 expectedEntitlements.getMode(),
                 expectedEntitlements.getGroups().stream()
                         .map(DefaultAccessControlEvaluator::describeGroup)

@@ -7,9 +7,14 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
-import pro.api4.jsonapi4j.plugin.ac.entitlement.EntitlementsPolicy;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlPolicy;
+import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.context.Stage;
+import pro.api4.jsonapi4j.plugin.ac.policy.AccessPolicy;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlEntitlementsModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlPolicyModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
@@ -36,6 +41,11 @@ class DefaultAccessControlEvaluatorTests {
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(null);
     }
 
+    private void givenPrincipalWithAttributes(Map<String, Object> attributes, String... entitlements) {
+        AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
+                new DefaultPrincipal(List.of(entitlements), Set.of(), USER_ID, attributes));
+    }
+
     private void givenPrincipalWithEntitlements(String... entitlements) {
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(List.of(entitlements), Set.of(), USER_ID, Map.of()));
@@ -43,7 +53,7 @@ class DefaultAccessControlEvaluatorTests {
 
     private boolean evaluateInbound(Class<?> annotatedResource) {
         AccessControlModel model = AccessControlModel.fromClassAnnotation(annotatedResource);
-        return sut.evaluateInboundRequirements(new Object(), model);
+        return sut.evaluateInboundRequirements(DefaultAccessControlContext.inboundForRequest(new Object()), model);
     }
 
     @Nested
@@ -154,20 +164,6 @@ class DefaultAccessControlEvaluatorTests {
         }
 
         @Test
-        void evaluateInboundRequirements_policyDeclaredAndSatisfied_accessGranted() {
-            givenPrincipalWithEntitlements(PARTNER);
-
-            assertThat(evaluateInbound(PolicyResource.class)).isTrue();
-        }
-
-        @Test
-        void evaluateInboundRequirements_policyDeclaredAndUnsatisfied_accessDenied() {
-            givenPrincipalWithEntitlements(PUBLIC);
-
-            assertThat(evaluateInbound(PolicyResource.class)).isFalse();
-        }
-
-        @Test
         void evaluateInboundRequirements_callerCarriesNoEntitlements_accessDenied() {
             // given
             AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
@@ -183,6 +179,93 @@ class DefaultAccessControlEvaluatorTests {
             givenPrincipalWithEntitlements(NO_ACCESS);
 
             assertThat(evaluateInbound(NoEntitlementsResource.class)).isTrue();
+        }
+
+    }
+
+    @Nested
+    class PolicyEvaluation {
+
+        @Test
+        void evaluateInboundRequirements_policySatisfied_accessGranted() {
+            givenPrincipalWithAttributes(Map.of("status", "active"));
+
+            assertThat(evaluateInbound(ActiveStatusPolicyResource.class)).isTrue();
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyUnsatisfied_accessDenied() {
+            givenPrincipalWithAttributes(Map.of("status", "suspended"));
+
+            assertThat(evaluateInbound(ActiveStatusPolicyResource.class)).isFalse();
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyReadsAttributesOfAnonymousCaller_accessDenied() {
+            // no principal at all — the context still hands the policy an empty attributes map
+            assertThat(evaluateInbound(ActiveStatusPolicyResource.class)).isFalse();
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyDeniesEvenWhenEntitlementsPass_accessDenied() {
+            // every requirement must hold; a policy can veto what the declarative ones allowed
+            givenPrincipalWithAttributes(Map.of("status", "suspended"), ADMIN);
+
+            assertThat(evaluateInbound(EntitlementsAndPolicyResource.class)).isFalse();
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyAllowsButEntitlementsFail_accessDenied() {
+            givenPrincipalWithAttributes(Map.of("status", "active"), PUBLIC);
+
+            assertThat(evaluateInbound(EntitlementsAndPolicyResource.class)).isFalse();
+        }
+
+        @Test
+        void evaluateInboundRequirements_bothPolicyAndEntitlementsPass_accessGranted() {
+            givenPrincipalWithAttributes(Map.of("status", "active"), ADMIN);
+
+            assertThat(evaluateInbound(EntitlementsAndPolicyResource.class)).isTrue();
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyBranchingOnStage_seesInbound() {
+            givenPrincipalWithEntitlements(ADMIN);
+
+            assertThat(evaluateInbound(InboundOnlyPolicyResource.class)).isTrue();
+        }
+
+        @Test
+        void evaluateOutboundRequirements_policyBranchingOnStage_seesOutbound() {
+            givenPrincipalWithEntitlements(ADMIN);
+
+            AccessControlContext outbound = DefaultAccessControlContext.outboundForResource(null);
+
+            assertThat(sut.evaluateOutboundRequirements(
+                    outbound,
+                    AccessControlModel.fromClassAnnotation(InboundOnlyPolicyResource.class))).isFalse();
+        }
+
+        @Test
+        void describePolicyRequirement_descriptionDeclared_quotedAheadOfClassName() {
+            AccessControlPolicyModel requirement = AccessControlModel
+                    .fromClassAnnotation(DescribedPolicyResource.class)
+                    .getRequiredPolicy();
+
+            assertThat(DefaultAccessControlEvaluator.describePolicyRequirement(requirement))
+                    .startsWith("'caller must be an active tenant' (policy ")
+                    .contains("ActiveStatusPolicy");
+        }
+
+        @Test
+        void describePolicyRequirement_noDescription_namesThePolicyClassOnly() {
+            AccessControlPolicyModel requirement = AccessControlModel
+                    .fromClassAnnotation(ActiveStatusPolicyResource.class)
+                    .getRequiredPolicy();
+
+            assertThat(DefaultAccessControlEvaluator.describePolicyRequirement(requirement))
+                    .startsWith("policy ")
+                    .contains("ActiveStatusPolicy");
         }
 
     }
@@ -313,13 +396,6 @@ class DefaultAccessControlEvaluatorTests {
         }
 
         @Test
-        void describeRequirement_policyDeclared_namesThePolicyClass() {
-            assertThat(DefaultAccessControlEvaluator.describeRequirement(requirementOf(PolicyResource.class)))
-                    .contains("policy")
-                    .contains("AdminOrPartnerPolicy");
-        }
-
-        @Test
         void describeRequirement_entitlementsDifferingOnlyByTypo_bothRenderedInFull() {
             assertThat(DefaultAccessControlEvaluator.describeRequirement(requirementOf(TypoEntitlementResource.class)))
                     .isEqualTo("ALL_OF[ANY_OF[ADMNI]]")
@@ -407,19 +483,8 @@ class DefaultAccessControlEvaluatorTests {
     private static class DescribedResource {
     }
 
-    @AccessControl(entitlements = @AccessControlEntitlements(policy = AdminOrPartnerPolicy.class))
-    private static class PolicyResource {
-    }
-
     @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup("ADMNI")))
     private static class TypoEntitlementResource {
-    }
-
-    public static class AdminOrPartnerPolicy implements EntitlementsPolicy {
-        @Override
-        public boolean isSatisfiedBy(List<String> entitlements) {
-            return entitlements.contains(ADMIN) || entitlements.contains(PARTNER);
-        }
     }
 
     @AccessControl(scopes = @AccessControlScopes(requiredScopes = {"users.write", "users.read"}))
@@ -432,6 +497,40 @@ class DefaultAccessControlEvaluatorTests {
 
     @AccessControl
     private static class NoEntitlementsResource {
+    }
+
+    @AccessControl(policy = @AccessControlPolicy(ActiveStatusPolicy.class))
+    private static class ActiveStatusPolicyResource {
+    }
+
+    @AccessControl(policy = @AccessControlPolicy(
+            value = ActiveStatusPolicy.class,
+            description = "caller must be an active tenant"))
+    private static class DescribedPolicyResource {
+    }
+
+    @AccessControl(
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)),
+            policy = @AccessControlPolicy(ActiveStatusPolicy.class))
+    private static class EntitlementsAndPolicyResource {
+    }
+
+    @AccessControl(policy = @AccessControlPolicy(InboundOnlyPolicy.class))
+    private static class InboundOnlyPolicyResource {
+    }
+
+    public static class ActiveStatusPolicy implements AccessPolicy {
+        @Override
+        public boolean isSatisfiedBy(AccessControlContext context) {
+            return "active".equals(context.principal().attributes().get("status"));
+        }
+    }
+
+    public static class InboundOnlyPolicy implements AccessPolicy {
+        @Override
+        public boolean isSatisfiedBy(AccessControlContext context) {
+            return context.stage() == Stage.INBOUND;
+        }
     }
 
 }

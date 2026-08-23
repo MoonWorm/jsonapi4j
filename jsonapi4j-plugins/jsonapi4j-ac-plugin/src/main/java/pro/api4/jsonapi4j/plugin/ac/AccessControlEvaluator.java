@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.plugin.ac;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
@@ -20,14 +22,14 @@ import java.util.stream.Stream;
 @Slf4j
 public abstract class AccessControlEvaluator implements InboundAccessControlEvaluator, OutboundAccessControlEvaluator {
 
-    public static <REQUEST, DATA> DATA retrieveDataIfAllowed(AccessControlEvaluator accessControlEvaluator,
-                                                             REQUEST request,
-                                                             Supplier<DATA> dataSupplier,
-                                                             AccessControlModel inboundAccessControlSettings) {
+    public static <DATA> DATA retrieveDataIfAllowed(AccessControlEvaluator accessControlEvaluator,
+                                                    AccessControlContext context,
+                                                    Supplier<DATA> dataSupplier,
+                                                    AccessControlModel inboundAccessControlSettings) {
         if (accessControlEvaluator != null) {
             // retrieve downstream data if allowed
             return accessControlEvaluator.retrieveDataIfAllowed(
-                    request,
+                    context,
                     dataSupplier,
                     inboundAccessControlSettings
             );
@@ -39,13 +41,13 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
     public static <T> AnonymizationResult<T> anonymizeObjectIfNeeded(
             AccessControlEvaluator accessControlEvaluator,
             T targetObject,
-            Object resourceObject,
+            AccessControlContext context,
             OutboundAccessControlForCustomClass outboundAccessControlSettings
     ) {
         if (accessControlEvaluator != null) {
             return accessControlEvaluator.anonymizeObjectIfNeeded(
                     targetObject,
-                    resourceObject,
+                    context,
                     outboundAccessControlSettings
             );
         } else {
@@ -62,32 +64,32 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         }
     }
 
-    public <REQUEST, DATA> DATA retrieveDataIfAllowed(REQUEST request,
-                                                      Supplier<DATA> dataSupplier,
-                                                      AccessControlModel inboundAccessControlRequirements) {
+    public <DATA> DATA retrieveDataIfAllowed(AccessControlContext context,
+                                             Supplier<DATA> dataSupplier,
+                                             AccessControlModel inboundAccessControlRequirements) {
         if (inboundAccessControlRequirements == null
-                || evaluateInboundRequirements(request, inboundAccessControlRequirements)
+                || evaluateInboundRequirements(context, inboundAccessControlRequirements)
         ) {
-            log.debug("Inbound Access is allowed for a request {}. Proceeding...", request);
+            log.debug("Inbound Access is allowed for a request {}. Proceeding...", context.request());
             return dataSupplier.get();
         } else {
-            log.debug("Inbound Access is not allowed for a request {}, returning empty response", request);
+            log.debug("Inbound Access is not allowed for a request {}, returning empty response", context.request());
             return null;
         }
     }
 
     public <T> AnonymizationResult<T> anonymizeObjectIfNeeded(
             T targetObject,
-            Object resourceObject,
+            AccessControlContext context,
             OutboundAccessControlForCustomClass outboundAccessControlSettings
     ) {
-        return anonymizeObjectIfNeeded("", targetObject, resourceObject, outboundAccessControlSettings);
+        return anonymizeObjectIfNeeded("", targetObject, context, outboundAccessControlSettings);
     }
 
     private <T> AnonymizationResult<T> anonymizeObjectIfNeeded(
             String fieldPath,
             T targetObject,
-            Object resourceObject,
+            AccessControlContext context,
             OutboundAccessControlForCustomClass outboundAccessControlSettings
     ) {
         if (targetObject == null || outboundAccessControlSettings == null) {
@@ -99,7 +101,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
             );
         }
         boolean isFullyAnonymized = !evaluateOutboundRequirements(
-                resourceObject,
+                context,
                 outboundAccessControlSettings.getClassLevel()
         );
         if (isFullyAnonymized) {
@@ -110,7 +112,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         log.debug("Access to the entire {} is allowed, proceeding...", targetObject);
         Set<String> targetObjectAnonymizedFields = anonymizeFields(
                 targetObject,
-                resourceObject,
+                context,
                 outboundAccessControlSettings.getFieldLevel()
         );
         log.debug(
@@ -127,7 +129,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                         AnonymizationResult<Object> anonymizationResult = anonymizeObjectIfNeeded(
                                 fieldName,
                                 nestedTargetObject,
-                                resourceObject,
+                                context,
                                 nestedOutboundAccessControlSettings
                         );
                         if (anonymizationResult.isFullyAnonymized()) {
@@ -153,7 +155,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
 
     private Set<String> anonymizeFields(
             Object targetObject,
-            Object resourceObject,
+            AccessControlContext context,
             Map<String, AccessControlModel> fieldLevelAcSettings
     ) {
         Set<String> anonymizedFields = new HashSet<>();
@@ -163,7 +165,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                 Object fieldValue = ReflectionUtils.getFieldValueThrowing(targetObject, fieldName);
                 if (fieldValue != null) {
                     AccessControlModel fieldAcInfo = e.getValue();
-                    if (!evaluateOutboundRequirements(resourceObject, fieldAcInfo)) {
+                    if (!evaluateOutboundRequirements(context, fieldAcInfo)) {
                         anonymizeField(targetObject, fieldName);
                         anonymizedFields.add(fieldName);
                     }

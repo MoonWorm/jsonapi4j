@@ -33,6 +33,7 @@ public class AccessControlModel {
     private AccessControlEntitlementsModel requiredEntitlements;
     private AccessControlScopesModel requiredScopes;
     private AccessControlOwnershipModel requiredOwnership;
+    private AccessControlPolicyModel requiredPolicy;
 
     public static AccessControlModel fromAnnotation(AccessControl annotation) {
         if (annotation == null) {
@@ -42,11 +43,13 @@ public class AccessControlModel {
         AccessControlEntitlementsModel entitlementsModel = AccessControlEntitlementsModel.fromAnnotation(annotation.entitlements());
         AccessControlScopesModel scopesModel = AccessControlScopesModel.fromAnnotation(annotation.scopes());
         AccessControlOwnershipModel ownershipModel = AccessControlOwnershipModel.fromAnnotation(annotation.ownership());
+        AccessControlPolicyModel policyModel = AccessControlPolicyModel.fromAnnotation(annotation.policy());
         return builder()
                 .authenticated(authenticatedModel)
                 .requiredEntitlements(entitlementsModel)
                 .requiredScopes(scopesModel)
                 .requiredOwnership(ownershipModel)
+                .requiredPolicy(policyModel)
                 .build();
     }
 
@@ -60,11 +63,13 @@ public class AccessControlModel {
             AccessControlEntitlementsModel entitlementsModel = AccessControlEntitlementsModel.fromAnnotation(accessControl.entitlements());
             AccessControlScopesModel scopesModel = AccessControlScopesModel.fromAnnotation(accessControl.scopes());
             AccessControlOwnershipModel ownershipModel = AccessControlOwnershipModel.fromAnnotation(accessControl.ownership());
+            AccessControlPolicyModel policyModel = AccessControlPolicyModel.fromAnnotation(accessControl.policy());
             accessControlModelPerField.put(fieldName, AccessControlModel.builder()
                     .authenticated(authenticatedModel)
                     .requiredEntitlements(entitlementsModel)
                     .requiredScopes(scopesModel)
                     .requiredOwnership(ownershipModel)
+                    .requiredPolicy(policyModel)
                     .build());
         });
         return unmodifiableMap(accessControlModelPerField);
@@ -119,6 +124,14 @@ public class AccessControlModel {
         );
         if (ownership != null) {
             resultBuilder.requiredOwnership(ownership);
+        }
+        AccessControlPolicyModel policy = winning(
+                higherPrecedence, lowerPrecedence,
+                AccessControlModel::getRequiredPolicy,
+                p -> true
+        );
+        if (policy != null) {
+            resultBuilder.requiredPolicy(policy);
         }
         return resultBuilder.build();
     }

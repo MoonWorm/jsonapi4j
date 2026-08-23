@@ -248,6 +248,73 @@ Both are opt-in, so an existing header-based setup keeps working untouched after
 [Principal Resolution](/principal-resolution/) for the full set of resolvers, claim mapping, and the
 security trade-offs between them.
 
+### Overriding the AccessControlEvaluator
+
+`AccessControlEvaluator` decides every access control requirement for the whole application. The default,
+`DefaultAccessControlEvaluator`, evaluates `authenticated`, `entitlements`, `scopes`, `ownership` and
+`policy` — each must pass.
+
+**Reach for a policy first.** A single rule that the declarative requirements cannot express belongs in an
+[`AccessPolicy`](/access-control-plugin/#policies-deciding-access-in-code) on the one annotation that needs
+it. Replacing the evaluator makes you responsible for *all five* requirement types on *every* annotated
+element in the application, which is rarely what you want:
+
+```java
+@AccessControl(policy = @AccessControlPolicy(MyRule.class))   // one rule, one place
+```
+
+Replace the evaluator only when you are changing how evaluation *itself* works — decisions delegated to an
+external authorization service, an audit record for every decision, or caching.
+
+**Extend the default rather than starting from scratch**, so the requirements you are not changing keep
+working:
+
+```java
+public class AuditingAccessControlEvaluator extends DefaultAccessControlEvaluator {
+
+    @Override
+    public boolean evaluateInboundRequirements(AccessControlContext context,
+                                               AccessControlModel accessControlModel) {
+        boolean allowed = super.evaluateInboundRequirements(context, accessControlModel);
+        auditLog.record(context.principal().authenticatedUserId(), context.operation(), allowed);
+        return allowed;
+    }
+}
+```
+
+**Spring Boot** — the default is `@ConditionalOnMissingBean`, so your bean wins:
+
+```java
+@Bean
+public AccessControlEvaluator jsonapi4jAccessControlEvaluator() {
+    return new AuditingAccessControlEvaluator();
+}
+```
+
+**Quarkus** — the default is a `@DefaultBean`, so your producer takes precedence:
+
+```java
+@Produces
+@Singleton
+public AccessControlEvaluator accessControlEvaluator() {
+    return new AuditingAccessControlEvaluator();
+}
+```
+
+**Servlet** — unlike `PrincipalResolver`, the evaluator is not read from a `ServletContext` attribute. Pass it
+to the plugin when you build the plugin list:
+
+```java
+new JsonApiAccessControlPlugin(
+        new AuditingAccessControlEvaluator(),
+        DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
+)
+```
+
+Both evaluation methods receive an
+[`AccessControlContext`](/access-control-plugin/#what-a-policy-can-see) carrying the principal, the operation,
+the request and — outbound — the resource being emitted.
+
 For a complete configuration example with all plugins enabled, see the sample application configs:
 - [Spring Boot application.yaml](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml)
 - [Quarkus application.properties](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties)

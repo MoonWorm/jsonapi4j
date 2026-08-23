@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
-import pro.api4.jsonapi4j.plugin.ac.entitlement.EntitlementsPolicy;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 
 import java.util.List;
@@ -88,50 +87,7 @@ class AccessControlEntitlementsModelTests {
     }
 
     @Nested
-    class PolicyDeclaration {
-
-        @Test
-        void fromAnnotation_policyDeclared_modelCarriesAnInstance() {
-            AccessControlEntitlementsModel actualResult = modelOf(PolicyResource.class);
-
-            assertThat(actualResult.getPolicy()).isInstanceOf(AdminPolicy.class);
-            assertThat(actualResult.getGroups()).isEmpty();
-        }
-
-        @Test
-        void fromAnnotation_policyDeclared_instantiatedOncePerModel() {
-            // the instance is created while the model is built, not per evaluation
-            AccessControlEntitlementsModel actualResult = modelOf(PolicyResource.class);
-
-            assertThat(actualResult.getPolicy()).isSameAs(actualResult.getPolicy());
-        }
-
-        @Test
-        void fromAnnotation_policyAndClausesBothDeclared_throwsMisconfiguration() {
-            assertThatThrownBy(() -> modelOf(PolicyAndClausesResource.class))
-                    .isInstanceOf(AccessControlMisconfigurationException.class)
-                    .hasMessageContaining("Declare one or the other");
-        }
-
-        @Test
-        void fromAnnotation_policyWithoutNoArgConstructor_throwsMisconfiguration() {
-            assertThatThrownBy(() -> modelOf(UninstantiablePolicyResource.class))
-                    .isInstanceOf(AccessControlMisconfigurationException.class)
-                    .hasMessageContaining("no-argument constructor");
-        }
-
-    }
-
-    @Nested
     class Matching {
-
-        @Test
-        void isSatisfiedBy_policyDeclared_delegatesToPolicy() {
-            AccessControlEntitlementsModel sut = modelOf(PolicyResource.class);
-
-            assertThat(sut.isSatisfiedBy(List.of("ADMIN"))).isTrue();
-            assertThat(sut.isSatisfiedBy(List.of("PARTNER"))).isFalse();
-        }
 
         @Test
         void isSatisfiedBy_anyOfClauses_onlyOneClauseNeedsToHold() {
@@ -184,39 +140,6 @@ class AccessControlEntitlementsModelTests {
 
     @AccessControl
     private static class NoRequirementResource {
-    }
-
-    @AccessControl(entitlements = @AccessControlEntitlements(policy = AdminPolicy.class))
-    private static class PolicyResource {
-    }
-
-    @AccessControl(entitlements = @AccessControlEntitlements(
-            policy = AdminPolicy.class,
-            value = @EntitlementsGroup("ADMIN")))
-    private static class PolicyAndClausesResource {
-    }
-
-    @AccessControl(entitlements = @AccessControlEntitlements(policy = UninstantiablePolicy.class))
-    private static class UninstantiablePolicyResource {
-    }
-
-    public static class AdminPolicy implements EntitlementsPolicy {
-        @Override
-        public boolean isSatisfiedBy(List<String> entitlements) {
-            return entitlements.contains("ADMIN");
-        }
-    }
-
-    public static class UninstantiablePolicy implements EntitlementsPolicy {
-
-        public UninstantiablePolicy(String required) {
-            // no no-arg constructor on purpose
-        }
-
-        @Override
-        public boolean isSatisfiedBy(List<String> entitlements) {
-            return true;
-        }
     }
 
 }

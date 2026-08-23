@@ -1,6 +1,6 @@
 # jsonapi4j-ac-plugin
 
-Access Control plugin. Enforces fine-grained security rules during JSON:API request processing — per-field anonymization based on authentication, entitlement, OAuth2 scopes, and resource ownership.
+Access Control plugin. Enforces fine-grained security rules during JSON:API request processing — per-field anonymization based on authentication, entitlements, OAuth2 scopes, resource ownership, and custom policies.
 
 ## Features
 

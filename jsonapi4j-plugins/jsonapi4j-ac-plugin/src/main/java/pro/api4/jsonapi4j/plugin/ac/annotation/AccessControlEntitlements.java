@@ -1,8 +1,5 @@
 package pro.api4.jsonapi4j.plugin.ac.annotation;
 
-import pro.api4.jsonapi4j.plugin.ac.entitlement.EntitlementsPolicy;
-import pro.api4.jsonapi4j.plugin.ac.entitlement.NoOpEntitlementsPolicy;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -25,26 +22,27 @@ import java.lang.annotation.Target;
  * which reads as {@code (ADMIN and SUPPORT) or (PARTNER and PUBLIC)}.
  * <p>
  * Two levels is the limit — Java annotations cannot nest arbitrarily. For anything deeper, or for rules that
- * count matches or consider more than entitlements, declare a {@link #policy()} instead: it is ordinary code
- * with no structural limit. A requirement declares either clauses or a policy, never both.
+ * count matches or consider more than entitlements, declare an
+ * {@link pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlPolicy} instead: it is ordinary code with no
+ * structural limit.
  *
  * @see EntitlementsGroup
- * @see EntitlementsPolicy
+ * @see pro.api4.jsonapi4j.plugin.ac.policy.AccessPolicy
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface AccessControlEntitlements {
 
     /**
-     * Returns the clauses making up this requirement, combined by {@link #mode()}. Empty when a
-     * {@link #policy()} is declared instead.
+     * Returns the clauses making up this requirement, combined by {@link #mode()}. Must not be empty — omit
+     * the annotation entirely to declare no entitlement requirement.
      *
      * @return the requirement's clauses
      */
     EntitlementsGroup[] value() default {};
 
     /**
-     * Returns how {@link #value()} clauses are combined. Ignored when a {@link #policy()} is declared.
+     * Returns how {@link #value()} clauses are combined.
      *
      * @return combining mode, {@link Mode#ALL_OF} by default — every clause must be satisfied
      */
@@ -57,14 +55,6 @@ public @interface AccessControlEntitlements {
      * @return the requirement's description, empty when not set
      */
     String description() default "";
-
-    /**
-     * Returns a policy deciding this requirement in code, for rules the two-level declarative form cannot
-     * express. Replaces {@link #value()} rather than adding to it; declaring both is a misconfiguration.
-     *
-     * @return the policy type, {@link NoOpEntitlementsPolicy} when no policy is declared
-     */
-    Class<? extends EntitlementsPolicy> policy() default NoOpEntitlementsPolicy.class;
 
     /**
      * How a set of clauses is combined into one decision. Mirrors {@link EntitlementsGroup.Mode}, one level up.

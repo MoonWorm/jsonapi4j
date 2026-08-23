@@ -3,14 +3,10 @@ package pro.api4.jsonapi4j.filter.principal;
 import jakarta.servlet.*;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
-import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
 

@@ -69,11 +69,12 @@ Access control rules can be defined for:
 By default, **JsonApi4j** does not enforce any access control (i.e., all requests are allowed).
 However, you can configure and enforce access control rules for either or both stages - inbound and outbound - depending on your security and data exposure requirements.
 
-There are four types of access control requirements, which can be combined in any way as needed:
+There are five types of access control requirements, which can be combined in any way as needed:
 * **Authentication requirement** - verifies whether the request is made on behalf of an authenticated client or user. This can be used to restrict anonymous access.
 * **Entitlement requirement** - verifies whether the client or user holds a given entitlement. Entitlements are plain, unordered labels that your application defines and your principal source supplies - any string works. `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as ready-made constants, but they carry no built-in ranking. See more details below.
 * **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token.
 * **Ownership requirement** - ensures that the requested resource belongs to the client or user making the request. This is typically used for APIs where users are only allowed to view their own data, but not others'.
+* **Policy requirement** - decides the rule in code, for anything the four declarative forms cannot express - reading the caller's attributes, branching on the operation being performed, or comparing the caller against the resource being returned. See more details below.
 
 If any of the specified requirements are not met, the corresponding section - or the entire object - will be anonymized.
 
@@ -100,7 +101,7 @@ The resolved principal context is then used by the framework during both **inbou
 ### Setting Access Requirements
 
 There is one annotation that defines all access control requirements in one place — `@AccessControl`.
-It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `entitlements`, and `ownership`.
+It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `entitlements`, `ownership`, and `policy`.
 
 #### Entitlements Are Unordered Labels
 
@@ -150,33 +151,6 @@ DEBUG Access denied: 'internal support staff, or a partner integration'
       but the authenticated principal carries [PARTNER].
 ```
 
-#### Policies: When Two Levels Aren't Enough
-
-Two levels is the limit, because Java annotations cannot nest arbitrarily. For deeper rules — or ones that
-count matches, or weigh something other than entitlements — point the requirement at a class instead:
-
-```java
-public class InternalPartnerPolicy implements EntitlementsPolicy {
-
-    @Override
-    public boolean isSatisfiedBy(List<String> held) {
-        return (held.contains(ADMIN) || held.contains(ROOT_ADMIN))
-                && held.contains(PARTNER)
-                && !held.contains(NO_ACCESS);
-    }
-
-}
-```
-
-```java
-@AccessControl(entitlements = @AccessControlEntitlements(policy = InternalPartnerPolicy.class))
-```
-
-A policy is ordinary code: unlimited nesting, unit-testable without a running app, and reusable across as
-many annotations as you like. It **replaces** the clauses rather than adding to them — declaring both is
-rejected at startup. Instances are created once when the access control model is built, so a policy must be
-stateless, thread-safe, and expose a public no-argument constructor.
-
 #### Where to Place `@AccessControl`
 
 | Target | Placement | Effect when requirements are not met |
@@ -200,6 +174,76 @@ The `ownership` setting works differently depending on the evaluation stage:
 | **Outbound** (post-retrieval) | `ownerIdFieldPath` | A field path pointing to the owner ID in the JSON:API response (e.g. `"id"`) |
 
 Review the examples below to get a better grasp of how and where to declare your access requirements.
+
+### Policies: Deciding Access in Code
+
+Each declarative requirement has a fixed shape — `authenticated` is a flag, `entitlements` is two levels of
+name matching, `scopes` is an expression, `ownership` is an id comparison. When a rule doesn't fit any of
+them, write it as code:
+
+```java
+public class SameTenantPolicy implements AccessPolicy {
+
+    @Override
+    public boolean isSatisfiedBy(AccessControlContext context) {
+        Object callerTenant = context.principal().attributes().get("tenant");
+        return callerTenant != null
+                && context.operation().getOperationType() != OperationType.DELETE_RESOURCE;
+    }
+
+}
+```
+
+```java
+@AccessControl(policy = @AccessControlPolicy(
+        value = SameTenantPolicy.class,
+        description = "caller's tenant must be set, and may not delete"))
+```
+
+A policy is ordinary code — unlimited nesting, unit-testable without a running app, and reusable across as
+many annotations as you like. It is combined with the other requirements exactly as they are combined with
+each other: **every declared requirement must pass**. It runs last, after the cheaper declarative checks have
+had their chance to deny.
+
+Instances are created once when the access control model is built, so a policy must be stateless,
+thread-safe, and expose a public no-argument constructor. A class that cannot be constructed fails at startup
+rather than on the first request that reaches it.
+
+#### What a policy can see
+
+`AccessControlContext` follows the vocabulary shared by XACML, AWS Cedar and AWS IAM — who is asking, what
+they are doing, to what, and under what circumstances:
+
+| Accessor | Dimension | Notes |
+|---|---|---|
+| `principal()` | subject | Never `null`; `attributes()` is where a JWT-claims resolver puts its claims |
+| `operation()` | action | `OperationType`, `ResourceType`, `RelationshipName` |
+| `resource()` | object | Present outbound only — the resource being emitted |
+| `resource(Class)` | object | The same, narrowed to a type; empty rather than throwing if it is something else |
+| `request()` | environment | Headers, filters, includes |
+| `stage()` | — | `INBOUND` before data is fetched, `OUTBOUND` before it is sent |
+
+`operation()` is the dimension no other requirement can reach: it lets a rule turn on *what the caller is
+doing* rather than *who they are* — "internal bookkeeping is visible on a single-resource lookup, but never
+in a list response".
+
+Because `attributes()` is populated by whichever `PrincipalResolver` is configured, a policy is also the
+natural place to act on JWT claims. See [Principal Resolution](/principal-resolution/) for how claims get
+there — note the header-based `DefaultPrincipalResolver` leaves `attributes()` empty.
+
+#### A policy, or a different evaluator?
+
+A policy changes the decision for **one annotated element**. `AccessControlEvaluator` — the bean that runs
+every requirement — changes it for the **whole application**, and replacing it makes you responsible for all
+five requirement types everywhere.
+
+So reach for a policy when the *rule* is unusual, and replace the evaluator only when *evaluation itself* is:
+decisions delegated to an external authorization service, an audit record written for every decision, or
+caching. Extend `DefaultAccessControlEvaluator` rather than starting from scratch, so the requirements you
+are not changing keep working.
+
+See [Overriding the AccessControlEvaluator](/configuration/#overriding-the-accesscontrolevaluator) for the
+per-framework wiring.
 
 ### Examples
 
@@ -318,3 +362,9 @@ If you're working with the `jsonapi4j-core` module directly (without the REST la
 | Property name          | Default value | Description                            |
 |------------------------|---------------|----------------------------------------|
 | `jsonapi4j.ac.enabled` | `true`          | Enables/Disables Access Control plugin |
+
+### Related
+
+* [Principal Resolution](/principal-resolution/) — where the principal a requirement is evaluated against comes from
+* [Configuration](/configuration/) — registering custom beans per framework
+* [Request Processing Pipeline](/request-processing-pipeline/) — where inbound and outbound evaluation happen

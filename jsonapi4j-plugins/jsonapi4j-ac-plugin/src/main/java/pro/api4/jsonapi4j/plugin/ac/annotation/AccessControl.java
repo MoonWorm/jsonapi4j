@@ -17,5 +17,7 @@ public @interface AccessControl {
 
     AccessControlOwnership ownership() default @AccessControlOwnership();
 
+    AccessControlPolicy policy() default @AccessControlPolicy();
+
 
 }

@@ -70,6 +70,11 @@ All share `ClaimsPrincipalMapper`: `sub` for user id, `scope` with `scp` fallbac
 claims (`https://acme.com/roles`) still resolve.
 
 **Two traps worth flagging to users:**
+- **Anything the declarative forms can't express goes in a policy.** `@AccessControl(policy =
+  @AccessControlPolicy(MyPolicy.class))` where `MyPolicy implements AccessPolicy` — it receives an
+  `AccessControlContext` carrying `principal()` (including `attributes()`), `operation()`, `resource()` and
+  `request()`. It is the only requirement that can branch on *what the caller is doing* rather than who they
+  are. Every declared requirement must pass; the policy runs last.
 - **Entitlements have no standard JWT claim.** jsonapi4j reads `entitlements` by convention, but no IdP emits
   it by default — configure the IdP to include it, or point the resolver at your own claim
   (`withEntitlementsClaim("https://acme.com/entitlements")`). If the claim is absent from the token the entitlement

@@ -17,7 +17,7 @@ Each module is published as a separate artifact in Maven Central.
 
 ### Plugin Modules
 
-- [jsonapi4j-ac-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-ac-plugin) — **Access Control** — fine-grained, annotation-driven authorization with per-field anonymization based on authentication, entitlement, OAuth2 scopes, and resource ownership.
+- [jsonapi4j-ac-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-ac-plugin) — **Access Control** — fine-grained, annotation-driven authorization with per-field anonymization based on authentication, entitlements, OAuth2 scopes, resource ownership, and custom policies.
 - [jsonapi4j-cd-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-cd-plugin) — **Compound Documents** — integrates the compound docs resolver into the plugin pipeline, enabling `include` query parameter support.
 - [jsonapi4j-sf-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-sf-plugin) — **Sparse Fieldsets** — supports `fields[TYPE]=field1,field2` to return only requested attributes per resource type.
 - [jsonapi4j-oas-plugin](https://github.com/MoonWorm/jsonapi4j/tree/main/jsonapi4j-plugins/jsonapi4j-oas-plugin) — **OpenAPI Specification** — automatically generates an OpenAPI spec from registered resources, relationships, and operations.

@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
+import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -42,7 +43,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+        if (accessControlEvaluator.evaluateInboundRequirements(DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings)) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
@@ -82,7 +83,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
             AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                     accessControlEvaluator,
                     resourceObject,
-                    resourceObject,
+                    DefaultAccessControlContext.outbound(ctx, resourceObject),
                     getOutboundAccessControlModel(ctx.getPluginInfo(), resourceObject)
             );
 

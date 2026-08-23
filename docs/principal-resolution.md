@@ -21,7 +21,7 @@ A `Principal` carries four things:
 | `authenticatedUserId()` | Identifies the caller. Also used for ownership checks. |
 | `authenticatedClientEntitlements()` | Unordered entitlement labels (`PUBLIC`, `ADMIN`, …). |
 | `authenticatedClientScopes()` | Fine-grained OAuth2 scopes. |
-| `attributes()` | Everything else the token carried — email, tenant, expiry — for ABAC rules. |
+| `attributes()` | Everything else the token carried — email, tenant, expiry. Read by [access control policies](/access-control-plugin/#policies-deciding-access-in-code). |
 
 Read the current principal anywhere in your code through `AuthenticatedPrincipalContextHolder`:
 

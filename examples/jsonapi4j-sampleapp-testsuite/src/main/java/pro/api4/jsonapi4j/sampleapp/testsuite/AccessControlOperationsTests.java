@@ -513,4 +513,33 @@ public abstract class AccessControlOperationsTests {
                 .body("data", not(hasKey("meta")));
     }
 
+    @Test
+    public void test_resourceMeta_policyDeniesOnListOperation_metaHidden() {
+        // entitlements are fully satisfied, but the policy allows meta only on a single-user lookup
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(200)
+                .body("data", hasSize(2))
+                .body("data[0]", not(hasKey("meta")))
+                .body("data[1]", not(hasKey("meta")));
+    }
+
+    @Test
+    public void test_resourceMeta_policyAllowsOnSingleLookup_metaVisible() {
+        // same caller, same entitlements — only the operation differs
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.meta.internalUserRef", equalTo("internal-1"));
+    }
+
 }

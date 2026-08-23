@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.ac;
 
+import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 
 public interface OutboundAccessControlEvaluator {
@@ -12,16 +13,17 @@ public interface OutboundAccessControlEvaluator {
      *     <li>Check whether user is authenticated</li>
      *     <li>Check the client holds the required entitlements</li>
      *     <li>Check if client got permission to access user data via OAuth2 scopes mechanism</li>
-     *     <li>Check if data owned by a user initiated the request (resourceObject is used as a source of the current owner id)</li>
+     *     <li>Check if data owned by a user initiated the request (the resource is used as a source of the current owner id)</li>
+     *     <li>Check the declared {@code AccessPolicy} allows it</li>
      * </ul>
      *
-     * @param resourceObject     JSON:API Resource or Resource Identifier object reference. This model is used as
-     *                           a root reference for looking for the owner ID. This ID will be compared with Principal ID.
+     * @param context            everything the requirements are decided against — the caller, the operation,
+     *                           the resource being emitted, and the stage
      * @param accessControlModel Access Control requirements that should be evaluated
      * @return <code>true</code> if passed, <code>false</code> - otherwise
      */
     boolean evaluateOutboundRequirements(
-            Object resourceObject,
+            AccessControlContext context,
             AccessControlModel accessControlModel
     );
 

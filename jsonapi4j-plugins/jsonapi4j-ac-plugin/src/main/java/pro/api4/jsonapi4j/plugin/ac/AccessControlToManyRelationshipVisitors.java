@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
+import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.context.ToManyRelationshipVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -43,7 +44,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(ctx.getRequest(), inboundAccessControlSettings)) {
+        if (accessControlEvaluator.evaluateInboundRequirements(DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings)) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
@@ -83,7 +84,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
             AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
                     accessControlEvaluator,
                     resourceIdentifierObject,
-                    resourceIdentifierObject,
+                    DefaultAccessControlContext.outbound(ctx, resourceIdentifierObject),
                     Optional.ofNullable(getOutboundAccessControlModel(ctx.getPluginInfo()))
                             .map(OutboundAccessControlForJsonApiResourceIdentifier::toOutboundRequirementsForCustomClass)
                             .orElse(null)
