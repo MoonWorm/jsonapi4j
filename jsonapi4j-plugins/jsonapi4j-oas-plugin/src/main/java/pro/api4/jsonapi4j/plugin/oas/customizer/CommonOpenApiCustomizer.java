@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static pro.api4.jsonapi4j.plugin.oas.OasSecuritySchemaExtensions.X_SCOPES_REQUIRED_ACCESS_TIER_EXTENSION;
+import static pro.api4.jsonapi4j.plugin.oas.OasSecuritySchemaExtensions.X_SCOPES_REQUIRED_ENTITLEMENTS_EXTENSION;
 import static java.util.stream.Collectors.toMap;
 
 @Data
@@ -221,12 +221,12 @@ public class CommonOpenApiCustomizer {
         if (oauth2GrantFlow.scopes() != null && !oauth2GrantFlow.scopes().isEmpty()) {
             Map<String, Object> extensions = new LinkedHashMap<>();
             extensions.put(
-                    X_SCOPES_REQUIRED_ACCESS_TIER_EXTENSION,
+                    X_SCOPES_REQUIRED_ENTITLEMENTS_EXTENSION,
                     oauth2GrantFlow.scopes().stream()
                             .collect(
                                     toMap(
                                             OasProperties.OAuth2Scope::name,
-                                            OasProperties.OAuth2Scope::requiredAccessTier
+                                            OasProperties.OAuth2Scope::requiredEntitlements
                                     )
                             )
             );

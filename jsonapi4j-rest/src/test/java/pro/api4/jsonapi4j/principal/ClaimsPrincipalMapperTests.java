@@ -1,8 +1,6 @@
 package pro.api4.jsonapi4j.principal;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ClaimsPrincipalMapperTests {
 
-    private static final String TIER_CLAIM = "https://api4.pro/access_tier";
+    private static final String ENTITLEMENTS_CLAIM = "https://api4.pro/entitlements";
 
     private final ClaimsPrincipalMapper mapper = new ClaimsPrincipalMapper();
 
@@ -31,7 +29,7 @@ class ClaimsPrincipalMapperTests {
     @Test
     void resolvesUserIdFromCustomClaim() {
         ClaimsPrincipalMapper oidMapper = new ClaimsPrincipalMapper(
-                "oid", ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM, null, new DefaultAccessTierRegistry());
+                "oid", ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM, null);
 
         assertThat(oidMapper.resolveUserId(Map.of("sub", "ignored", "oid", "azure-id"))).isEqualTo("azure-id");
     }
@@ -71,7 +69,7 @@ class ClaimsPrincipalMapperTests {
     @Test
     void doesNotFallBackToScpWhenScopesClaimIsCustomized() {
         ClaimsPrincipalMapper customMapper = new ClaimsPrincipalMapper(
-                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM, "permissions", null, new DefaultAccessTierRegistry());
+                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM, "permissions", null);
 
         assertThat(customMapper.resolveScopes(Map.of("scp", "read"))).isNull();
         assertThat(customMapper.resolveScopes(Map.of("permissions", "read"))).containsExactly("read");
@@ -100,8 +98,8 @@ class ClaimsPrincipalMapperTests {
         ClaimsPrincipalMapper keycloakMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 "realm_access.roles",
-                null,
-                new DefaultAccessTierRegistry());
+                null
+        );
 
         Map<String, Object> claims = Map.of("realm_access", Map.of("roles", List.of("read", "write")));
 
@@ -113,8 +111,8 @@ class ClaimsPrincipalMapperTests {
         ClaimsPrincipalMapper keycloakMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 "resource_access.jsonapi4j.roles",
-                null,
-                new DefaultAccessTierRegistry());
+                null
+        );
 
         Map<String, Object> claims = Map.of(
                 "resource_access", Map.of("jsonapi4j", Map.of("roles", List.of("admin"))));
@@ -127,8 +125,8 @@ class ClaimsPrincipalMapperTests {
         ClaimsPrincipalMapper auth0Mapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 "https://api4.pro/roles",
-                null,
-                new DefaultAccessTierRegistry());
+                null
+        );
 
         Map<String, Object> claims = Map.of("https://api4.pro/roles", List.of("read", "write"));
 
@@ -140,72 +138,58 @@ class ClaimsPrincipalMapperTests {
         ClaimsPrincipalMapper keycloakMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 "realm_access.roles",
-                null,
-                new DefaultAccessTierRegistry());
+                null
+        );
 
         assertThat(keycloakMapper.resolveScopes(Map.of("realm_access", "not-an-object"))).isNull();
         assertThat(keycloakMapper.resolveScopes(Map.of("realm_access", Map.of("other", "x")))).isNull();
         assertThat(keycloakMapper.resolveScopes(Map.of("sub", "user-42"))).isNull();
     }
 
-    // --- access tier ---
+    // --- entitlements ---
 
     @Test
-    void resolvesAccessTierFromTheDefaultClaim() {
-        AccessTier tier = mapper.resolveAccessTier(Map.of("access_tier", "ADMIN"));
+    void resolvesEntitlementsFromTheDefaultClaim() {
+        List<String> entitlements = mapper.resolveEntitlements(Map.of("entitlements", "ADMIN"));
 
-        assertThat(tier).isNotNull();
-        assertThat(tier.getName()).isEqualTo("ADMIN");
+        assertThat(entitlements).isNotNull().isNotEmpty();
+        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
     }
 
     @Test
-    void doesNotResolveAccessTierWhenTierResolutionIsDisabled() {
-        ClaimsPrincipalMapper noTierMapper = new ClaimsPrincipalMapper(
+    void doesNotResolveEntitlementsWhenResolutionIsDisabled() {
+        ClaimsPrincipalMapper noEntitlementsMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
-                null,
-                new DefaultAccessTierRegistry());
+                null
+        );
 
-        assertThat(noTierMapper.resolveAccessTier(Map.of("access_tier", "ADMIN"))).isNull();
+        assertThat(noEntitlementsMapper.resolveEntitlements(Map.of("entitlements", "ADMIN"))).isNull();
     }
 
     @Test
-    void resolvesAccessTierFromConfiguredClaim() {
-        ClaimsPrincipalMapper tierMapper = new ClaimsPrincipalMapper(
+    void resolvesEntitlementsFromConfiguredClaim() {
+        ClaimsPrincipalMapper entitlementsMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
-                TIER_CLAIM,
-                new DefaultAccessTierRegistry());
+                ENTITLEMENTS_CLAIM
+        );
 
-        AccessTier tier = tierMapper.resolveAccessTier(Map.of(TIER_CLAIM, "ADMIN"));
+        List<String> entitlements = entitlementsMapper.resolveEntitlements(Map.of(ENTITLEMENTS_CLAIM, "ADMIN"));
 
-        assertThat(tier).isNotNull();
-        assertThat(tier.getName()).isEqualTo("ADMIN");
+        assertThat(entitlements).isNotNull().isNotEmpty();
+        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
     }
 
     @Test
-    void fallsBackToDefaultTierForUnknownTierName() {
-        ClaimsPrincipalMapper tierMapper = new ClaimsPrincipalMapper(
+    void returnsNullEntitlementsWhenConfiguredClaimIsAbsent() {
+        ClaimsPrincipalMapper entitlementsMapper = new ClaimsPrincipalMapper(
                 ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
                 ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
-                TIER_CLAIM,
-                new DefaultAccessTierRegistry());
+                ENTITLEMENTS_CLAIM
+        );
 
-        AccessTier tier = tierMapper.resolveAccessTier(Map.of(TIER_CLAIM, "NOT_A_REGISTERED_TIER"));
-
-        assertThat(tier).isNotNull();
-        assertThat(tier.getName()).isEqualTo("PUBLIC");
-    }
-
-    @Test
-    void returnsNullAccessTierWhenConfiguredClaimIsAbsent() {
-        ClaimsPrincipalMapper tierMapper = new ClaimsPrincipalMapper(
-                ClaimsPrincipalMapper.DEFAULT_USER_ID_CLAIM,
-                ClaimsPrincipalMapper.DEFAULT_SCOPES_CLAIM,
-                TIER_CLAIM,
-                new DefaultAccessTierRegistry());
-
-        assertThat(tierMapper.resolveAccessTier(Map.of("sub", "user-42"))).isNull();
+        assertThat(entitlementsMapper.resolveEntitlements(Map.of("sub", "user-42"))).isNull();
     }
 
     // --- attributes ---
@@ -236,7 +220,7 @@ class ClaimsPrincipalMapperTests {
     void toleratesNullClaims() {
         assertThat(mapper.resolveUserId(null)).isNull();
         assertThat(mapper.resolveScopes(null)).isNull();
-        assertThat(mapper.resolveAccessTier(null)).isNull();
+        assertThat(mapper.resolveEntitlements(null)).isNull();
     }
 
 }

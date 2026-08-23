@@ -35,6 +35,22 @@ mvn -pl <module> test -Dtest=SomeClassTests#methodName  # single test method
   behavior is identical across every integration.
 - CI builds on push to `main` and on PRs; `docs/**`-only changes are skipped via `paths-ignore`.
 
+### Writing tests
+
+Tests are organized by **unit under test**, never by scenario:
+
+- **One class per unit under test**, named `<ClassUnderTest>Tests`, in that class's package. Group
+  scenarios with `@Nested` inner classes — not with extra top-level classes. Shared fixtures,
+  `@AfterEach` cleanup, and helpers live on the outer class. See `JsonApiRequestValidatorTests`,
+  `DefaultAccessControlEvaluatorTests`.
+- **Name the subject `sut`:** `private final Foo sut = new Foo();`.
+- **Method names are `methodUnderTest_condition_expectation`** — `merge_twoEqual_resultIsTheSame`,
+  `enabled_disabledProperties_returnsFalse`. The name is the documentation.
+- **No comments.** No `@Nested` Javadoc, no `// --- section ---` banners. Exception: `// given` /
+  `// when` / `// then` markers when a section runs past 2-3 lines (`// when - then` when the call
+  under test sits inside the assertion). A one-line setup plus one assertion gets nothing.
+- **One given/when/then cycle per test.** Two setup→assert cycles in one method means two tests.
+
 ## Module map
 
 Dependency direction flows downward; pick the integration module that matches the host stack.

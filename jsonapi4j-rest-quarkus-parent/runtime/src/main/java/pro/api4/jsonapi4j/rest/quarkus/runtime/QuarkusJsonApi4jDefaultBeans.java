@@ -23,8 +23,6 @@ import pro.api4.jsonapi4j.operation.ResourceOperation;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
@@ -89,17 +87,9 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Produces
     @Singleton
     @DefaultBean
-    AccessTierRegistry accessTierRegistry() {
-        LOG.info("Composing {}...", AccessTierRegistry.class.getSimpleName());
-        return new DefaultAccessTierRegistry();
-    }
-
-    @Produces
-    @Singleton
-    @DefaultBean
-    PrincipalResolver principalResolver(AccessTierRegistry accessTierRegistry) {
+    PrincipalResolver principalResolver() {
         LOG.info("Composing {}...", PrincipalResolver.class.getSimpleName());
-        return new DefaultPrincipalResolver(accessTierRegistry);
+        return new DefaultPrincipalResolver();
     }
 
     @Produces

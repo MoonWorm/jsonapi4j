@@ -7,7 +7,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import pro.api4.jsonapi4j.sampleapp.testsuite.AccessControlOperationsTests;
 
-import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_ACCESS_TIER_HEADER_NAME;
+import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_ENTITLEMENTS_HEADER_NAME;
 import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_SCOPES_HEADER_NAME;
 import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME;
 
@@ -21,7 +21,7 @@ public class SpringAccessControlOperationsTests extends AccessControlOperationsT
         super(
                 jsonApiRootPath,
                 appPort,
-                DEFAULT_ACCESS_TIER_HEADER_NAME,
+                DEFAULT_ENTITLEMENTS_HEADER_NAME,
                 DEFAULT_SCOPES_HEADER_NAME,
                 DEFAULT_USER_ID_HEADER_NAME
         );

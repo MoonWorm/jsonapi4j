@@ -138,6 +138,8 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                                 return e.getValue().resolveRequestedData(request, dto);
                                             } catch (ResourceNotFoundException nfe) {
                                                 return createToManyRelationshipsWithEmptyData(e.getKey(), request, dto);
+                                            } finally {
+                                                AuthenticatedPrincipalContextHolder.clear();
                                             }
                                         }, executor);
                                     })
@@ -159,6 +161,8 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                                 return e.getValue().resolveRequestedData(request, dto);
                                             } catch (ResourceNotFoundException nfe) {
                                                 return createToOneRelationshipWithNullData(e.getKey(), request, dto);
+                                            } finally {
+                                                AuthenticatedPrincipalContextHolder.clear();
                                             }
                                         }, executor);
                                     })
@@ -177,10 +181,14 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                     return CompletableFuture.supplyAsync(
                                             () -> {
                                                 AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(principalCopy);
-                                                log.debug("Batch processing of '{}' To-Many relationship", e.getKey());
-                                                Map<DATA_SOURCE_DTO, ToManyRelationshipObject> result
-                                                        = new HashMap<>(e.getValue().resolveRequestedData(request, dtos));
-                                                return unmodifiableMap(result);
+                                                try {
+                                                    log.debug("Batch processing of '{}' To-Many relationship", e.getKey());
+                                                    Map<DATA_SOURCE_DTO, ToManyRelationshipObject> result
+                                                            = new HashMap<>(e.getValue().resolveRequestedData(request, dtos));
+                                                    return unmodifiableMap(result);
+                                                } finally {
+                                                    AuthenticatedPrincipalContextHolder.clear();
+                                                }
                                             },
                                             executor
                                     );
@@ -197,12 +205,16 @@ public class MultipleResourcesJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, A
                                     return CompletableFuture.supplyAsync(
                                             () -> {
                                                 AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(principalCopy);
-                                                log.debug("Batch processing of '{}' To-One relationship", e.getKey());
-                                                Map<DATA_SOURCE_DTO, ToOneRelationshipObject> resolvedResult
-                                                        = e.getValue().resolveRequestedData(request, dtos);
-                                                Map<DATA_SOURCE_DTO, ToOneRelationshipObject> result
-                                                        = new HashMap<>(resolvedResult);
-                                                return unmodifiableMap(result);
+                                                try {
+                                                    log.debug("Batch processing of '{}' To-One relationship", e.getKey());
+                                                    Map<DATA_SOURCE_DTO, ToOneRelationshipObject> resolvedResult
+                                                            = e.getValue().resolveRequestedData(request, dtos);
+                                                    Map<DATA_SOURCE_DTO, ToOneRelationshipObject> result
+                                                            = new HashMap<>(resolvedResult);
+                                                    return unmodifiableMap(result);
+                                                } finally {
+                                                    AuthenticatedPrincipalContextHolder.clear();
+                                                }
                                             },
                                             executor
                                     );

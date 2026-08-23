@@ -1,6 +1,6 @@
 # jsonapi4j-ac-plugin
 
-Access Control plugin. Enforces fine-grained security rules during JSON:API request processing — per-field anonymization based on authentication, access tier, OAuth2 scopes, and resource ownership.
+Access Control plugin. Enforces fine-grained security rules during JSON:API request processing — per-field anonymization based on authentication, entitlement, OAuth2 scopes, and resource ownership.
 
 ## Features
 
@@ -23,5 +23,5 @@ See [Access Control Plugin docs](https://api4.pro/access-control-plugin/) for de
 [Principal Resolution](https://api4.pro/principal-resolution/) for how the principal is resolved from
 headers or a JWT.
 
-> **Using tier requirements with a JWT?** JWT has no standard access tier claim — name yours explicitly, or
-> every `@AccessControl(tier = …)` operation is denied.
+> **Using entitlement requirements with a JWT?** JWT has no standard entitlements claim — name yours explicitly, or
+> every `@AccessControl(entitlements = …)` operation is denied.

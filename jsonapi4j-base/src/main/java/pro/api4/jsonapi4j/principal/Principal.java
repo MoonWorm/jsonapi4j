@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.principal;
 
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,13 +24,19 @@ public interface Principal {
     String authenticatedUserId();
 
     /**
-     * Returns the access tier assigned to the authenticated client.
-     * Access tiers are used by the Access Control plugin to enforce coarse-grained
-     * authorization rules (e.g. {@code PUBLIC}, {@code INTERNAL}, {@code ADMIN}).
+     * Returns the entitlements held by the authenticated client — opaque labels naming what the client may
+     * reach (e.g. {@code PUBLIC}, {@code PARTNER}, {@code ADMIN}), used by the Access Control plugin to
+     * enforce coarse-grained authorization rules.
      *
-     * @return the client's {@link AccessTier}, never {@code null} for authenticated requests
+     * <p>Returned as a {@link List} so that the order and multiplicity the principal source produced are
+     * preserved: how they are interpreted is the evaluator's decision, not this contract's. The plugin's
+     * default evaluator matches them by exact name as an unordered set — holding {@code ADMIN} satisfies a
+     * requirement for {@code ADMIN} and nothing else, with no entitlement outranking another — but a custom
+     * evaluator is free to read significance into the ordering.
+     *
+     * @return the client's entitlements, never {@code null} for authenticated requests (may be empty)
      */
-    AccessTier authenticatedClientAccessTier();
+    List<String> authenticatedClientEntitlements();
 
     /**
      * Returns the set of OAuth2/custom scopes granted to the authenticated client.

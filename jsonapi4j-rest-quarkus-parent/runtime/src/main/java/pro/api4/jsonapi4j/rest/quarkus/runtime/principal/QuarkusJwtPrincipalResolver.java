@@ -3,13 +3,13 @@ package pro.api4.jsonapi4j.rest.quarkus.runtime.principal;
 import jakarta.servlet.ServletRequest;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import pro.api4.jsonapi4j.principal.ClaimsPrincipalMapper;
+import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 import pro.api4.jsonapi4j.principal.Principal;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,8 +25,8 @@ import java.util.Set;
  * <pre>{@code
  * @Produces
  * @Singleton
- * PrincipalResolver principalResolver(JsonWebToken jwt, AccessTierRegistry accessTierRegistry) {
- *     return QuarkusJwtPrincipalResolver.withAccessTierClaim(jwt, "access_tier", accessTierRegistry);
+ * PrincipalResolver principalResolver(JsonWebToken jwt) {
+ *     return QuarkusJwtPrincipalResolver.withEntitlementsClaim(jwt, "entitlements");
  * }
  * }</pre>
  * Requires {@code quarkus-oidc} or {@code quarkus-smallrye-jwt} on the application classpath, and the
@@ -43,7 +43,7 @@ public class QuarkusJwtPrincipalResolver implements PrincipalResolver {
     private final ClaimsPrincipalMapper claimsMapper;
 
     /**
-     * Creates a resolver mapping the standard claim names, without access tier resolution.
+     * Creates a resolver mapping the standard claim names, without entitlements resolution.
      *
      * @param jwt the injected request-scoped token
      */
@@ -63,40 +63,26 @@ public class QuarkusJwtPrincipalResolver implements PrincipalResolver {
     }
 
     /**
-     * Convenience factory for the common case of resolving access tiers from an application-specific claim.
+     * Convenience factory for the common case of resolving entitlements from an application-specific claim.
      *
-     * @param jwt                the injected request-scoped token
-     * @param accessTierClaim    claim holding the access tier name, optionally a dotted path
-     * @param accessTierRegistry registry used to resolve the tier name
-     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given tier claim
+     * @param jwt             the injected request-scoped token
+     * @param entitlementsClaim claim holding the entitlements, optionally a dotted path
+     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given entitlements claim
      */
-    public static QuarkusJwtPrincipalResolver withAccessTierClaim(JsonWebToken jwt,
-                                                                  String accessTierClaim,
-                                                                  AccessTierRegistry accessTierRegistry) {
-        return new QuarkusJwtPrincipalResolver(jwt, new ClaimsPrincipalMapper(
-                accessTierClaim,
-                accessTierRegistry
-        ));
+    public static QuarkusJwtPrincipalResolver withEntitlementsClaim(JsonWebToken jwt,
+                                                                  String entitlementsClaim) {
+        return new QuarkusJwtPrincipalResolver(jwt, new ClaimsPrincipalMapper(entitlementsClaim));
     }
 
     @Override
-    public AccessTier resolveAccessTier(ServletRequest servletRequest) {
-        return claimsMapper.resolveAccessTier(resolveClaims());
-    }
-
-    @Override
-    public Set<String> resolveScopes(ServletRequest servletRequest) {
-        return claimsMapper.resolveScopes(resolveClaims());
-    }
-
-    @Override
-    public String resolveUserId(ServletRequest servletRequest) {
-        return claimsMapper.resolveUserId(resolveClaims());
-    }
-
-    @Override
-    public Map<String, Object> resolveAttributes(ServletRequest servletRequest) {
-        return claimsMapper.resolveAttributes(resolveClaims());
+    public Principal resolvePrincipal(ServletRequest servletRequest) {
+        Map<String, Object> claims = resolveClaims();
+        return new DefaultPrincipal(
+                claimsMapper.resolveEntitlements(claims),
+                claimsMapper.resolveScopes(claims),
+                claimsMapper.resolveUserId(claims),
+                claimsMapper.resolveAttributes(claims)
+        );
     }
 
     /**

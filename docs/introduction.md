@@ -37,7 +37,7 @@ Whether you're standardizing your organization's API layer or building a new ser
 
 - **Pluggable architecture.** The [Plugin System](/plugins/) provides an extension mechanism for **JsonApi4j** that allows developers to hook into the [request processing pipeline](/request-processing-pipeline/) and enrich JSON:API behavior without modifying core logic. Out of the box, it provides the following plugins: [Access Control](/access-control-plugin/), [OpenAPI](/openapi-plugin/), [Sparse Fieldsets](/sparse-fieldsets-plugin/), and [Compound Documents](/compound-docs-plugin/). You can also [build your own](/custom-plugin/).
 
-- **Flexible authentication and authorization model.** Supports fine-grained access control — including per-field data anonymization based on access tier, user scopes, and resource ownership — via the [Access Control plugin](/access-control-plugin/).
+- **Flexible authentication and authorization model.** Supports fine-grained access control — including per-field data anonymization based on entitlement, user scopes, and resource ownership — via the [Access Control plugin](/access-control-plugin/).
 
 - **Parallel and concurrent execution.** The framework parallelizes every operation that can safely run concurrently — from [relationship resolution](/request-processing-pipeline/#6-fetch-relationship-data-parallel) to compound document processing — and supports advanced concurrency optimizations, including virtual threads.
 

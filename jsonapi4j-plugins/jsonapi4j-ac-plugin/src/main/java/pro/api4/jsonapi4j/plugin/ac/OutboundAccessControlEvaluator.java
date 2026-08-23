@@ -10,7 +10,7 @@ public interface OutboundAccessControlEvaluator {
      * Evaluations include (if requested):
      * <ul>
      *     <li>Check whether user is authenticated</li>
-     *     <li>Check clients access tier matching the required one</li>
+     *     <li>Check the client holds the required entitlements</li>
      *     <li>Check if client got permission to access user data via OAuth2 scopes mechanism</li>
      *     <li>Check if data owned by a user initiated the request (resourceObject is used as a source of the current owner id)</li>
      * </ul>

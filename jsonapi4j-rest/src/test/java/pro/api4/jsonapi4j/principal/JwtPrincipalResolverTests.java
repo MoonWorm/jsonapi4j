@@ -5,12 +5,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,13 +17,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class JwtPrincipalResolverTests {
 
-    private static final String TIER_CLAIM = "access_tier";
+    private static final String ENTITLEMENTS_CLAIM = "entitlements";
 
     private final JwtPrincipalResolver resolver = new JwtPrincipalResolver();
 
@@ -62,8 +62,8 @@ class JwtPrincipalResolverTests {
         givenAuthorizationHeader("Bearer " + jwtWithPayload(
                 "{\"sub\":\"user-42\",\"scope\":\"read write\"}"));
 
-        assertThat(resolver.resolveUserId(request)).isEqualTo("user-42");
-        assertThat(resolver.resolveScopes(request)).containsExactlyInAnyOrder("read", "write");
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("user-42");
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).containsExactlyInAnyOrder("read", "write");
     }
 
     @Test
@@ -71,7 +71,7 @@ class JwtPrincipalResolverTests {
         givenAuthorizationHeader("Bearer " + jwtWithPayload(
                 "{\"sub\":\"user-42\",\"email\":\"user@api4.pro\",\"exp\":1893456000}"));
 
-        assertThat(resolver.resolveAttributes(request))
+        assertThat(resolver.resolvePrincipal(request).attributes())
                 .containsEntry("sub", "user-42")
                 .containsEntry("email", "user@api4.pro")
                 .containsEntry("exp", 1893456000);
@@ -82,34 +82,33 @@ class JwtPrincipalResolverTests {
         givenAuthorizationHeader("Bearer " + jwtWithPayload(
                 "{\"sub\":\"user-42\",\"realm_access\":{\"roles\":[\"admin\"]}}"));
 
-        assertThat(resolver.resolveAttributes(request)).containsKey("realm_access");
+        assertThat(resolver.resolvePrincipal(request).attributes()).containsKey("realm_access");
     }
 
     @Test
     void acceptsTokenWithoutBase64Padding() {
         givenAuthorizationHeader("Bearer " + jwtWithPayload("{\"sub\":\"a\"}"));
 
-        assertThat(resolver.resolveUserId(request)).isEqualTo("a");
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("a");
     }
 
     @Test
     void isCaseInsensitiveAboutTheBearerPrefix() {
         givenAuthorizationHeader("bearer " + jwtWithPayload("{\"sub\":\"user-42\"}"));
 
-        assertThat(resolver.resolveUserId(request)).isEqualTo("user-42");
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("user-42");
     }
 
     @Test
-    void resolvesAccessTierFromConfiguredClaim() {
-        JwtPrincipalResolver tierResolver =
-                JwtPrincipalResolver.withAccessTierClaim(TIER_CLAIM, new DefaultAccessTierRegistry());
+    void resolvesEntitlementsFromConfiguredClaim() {
+        JwtPrincipalResolver entitlementsResolver =
+                JwtPrincipalResolver.withEntitlementsClaim(ENTITLEMENTS_CLAIM);
         givenAuthorizationHeader("Bearer " + jwtWithPayload(
-                "{\"sub\":\"user-42\",\"access_tier\":\"ADMIN\"}"));
+                "{\"sub\":\"user-42\",\"entitlements\":\"ADMIN\"}"));
 
-        AccessTier tier = tierResolver.resolveAccessTier(request);
-
-        assertThat(tier).isNotNull();
-        assertThat(tier.getName()).isEqualTo("ADMIN");
+        List<String> entitlements = entitlementsResolver.resolvePrincipal(request).authenticatedClientEntitlements();
+        assertThat(entitlements).isNotNull().hasSize(1);
+        assertThat(entitlements.getFirst()).isNotNull().isEqualTo("ADMIN");
     }
 
     @Test
@@ -119,23 +118,26 @@ class JwtPrincipalResolverTests {
         when(request.getHeader("X-Forwarded-Access-Token"))
                 .thenReturn("Bearer " + jwtWithPayload("{\"sub\":\"gateway-user\"}"));
 
-        assertThat(customResolver.resolveUserId(request)).isEqualTo("gateway-user");
+        assertThat(customResolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("gateway-user");
     }
 
-    // --- caching ---
-
     @Test
-    void decodesTheTokenOnlyOncePerRequest() {
+    void resolvePrincipal_oneCall_readsTheTokenOnce() {
         givenAuthorizationHeader("Bearer " + jwtWithPayload(
                 "{\"sub\":\"user-42\",\"scope\":\"read\"}"));
 
-        resolver.resolveUserId(request);
-        resolver.resolveScopes(request);
-        resolver.resolveAccessTier(request);
-        resolver.resolveAttributes(request);
+        resolver.resolvePrincipal(request);
 
         verify(request, times(1)).getHeader("Authorization");
-        verify(request, times(1)).setAttribute(eq(JwtPrincipalResolver.CLAIMS_REQUEST_ATT_NAME), any());
+    }
+
+    @Test
+    void resolvePrincipal_neverWritesToTheRequest() {
+        givenAuthorizationHeader("Bearer " + jwtWithPayload("{\"sub\":\"user-42\"}"));
+
+        resolver.resolvePrincipal(request);
+
+        verify(request, never()).setAttribute(any(), any());
     }
 
     // --- absent or malformed tokens ---
@@ -144,10 +146,10 @@ class JwtPrincipalResolverTests {
     void resolvesNothingWhenAuthorizationHeaderIsAbsent() {
         givenAuthorizationHeader(null);
 
-        assertThat(resolver.resolveUserId(request)).isNull();
-        assertThat(resolver.resolveScopes(request)).isNull();
-        assertThat(resolver.resolveAccessTier(request)).isNull();
-        assertThat(resolver.resolveAttributes(request)).isEmpty();
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientEntitlements()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
     }
 
     @ParameterizedTest
@@ -164,17 +166,17 @@ class JwtPrincipalResolverTests {
     void resolvesNothingForUnusableAuthorizationHeaders(String headerValue) {
         givenAuthorizationHeader(headerValue);
 
-        assertThat(resolver.resolveUserId(request)).isNull();
-        assertThat(resolver.resolveScopes(request)).isNull();
-        assertThat(resolver.resolveAttributes(request)).isEmpty();
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
     }
 
     @Test
     void resolvesNothingWhenPayloadIsNotAJsonObject() {
         givenAuthorizationHeader("Bearer " + jwtWithPayload("\"just-a-string\""));
 
-        assertThat(resolver.resolveUserId(request)).isNull();
-        assertThat(resolver.resolveAttributes(request)).isEmpty();
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
     }
 
 }

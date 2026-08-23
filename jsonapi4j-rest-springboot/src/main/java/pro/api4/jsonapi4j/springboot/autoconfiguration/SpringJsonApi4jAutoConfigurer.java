@@ -28,8 +28,6 @@ import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
@@ -65,18 +63,10 @@ import static pro.api4.jsonapi4j.config.Integration.SPRING;
 @ComponentScan(basePackages = {"pro.api4.jsonapi4j.springboot.autoconfiguration"})
 public class SpringJsonApi4jAutoConfigurer {
 
-    @ConditionalOnMissingBean(AccessTierRegistry.class)
-    @Bean
-    public AccessTierRegistry jsonapi4jAccessTierRegistry() {
-        return new DefaultAccessTierRegistry();
-    }
-
     @ConditionalOnMissingBean(PrincipalResolver.class)
     @Bean
-    public PrincipalResolver jsonapi4jPrincipalResolver(
-            AccessTierRegistry accessTierRegistry
-    ) {
-        return new DefaultPrincipalResolver(accessTierRegistry);
+    public PrincipalResolver jsonapi4jPrincipalResolver() {
+        return new DefaultPrincipalResolver();
     }
 
     @Bean

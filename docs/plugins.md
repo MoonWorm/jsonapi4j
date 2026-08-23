@@ -25,7 +25,7 @@ JsonApi4j ships with four plugins. Each is a separate dependency — add only wh
 
 | Plugin | Artifact | Description |
 |--------|----------|-------------|
-| [Access Control](/access-control-plugin/) | `jsonapi4j-ac-plugin` | Annotation-driven authorization with per-field anonymization based on authentication, access tier, OAuth2 scopes, and resource ownership |
+| [Access Control](/access-control-plugin/) | `jsonapi4j-ac-plugin` | Annotation-driven authorization with per-field anonymization based on authentication, entitlement, OAuth2 scopes, and resource ownership |
 | [OpenAPI](/openapi-plugin/) | `jsonapi4j-oas-plugin` | Auto-generates an OpenAPI specification from your declared domain |
 | [Sparse Fieldsets](/sparse-fieldsets-plugin/) | `jsonapi4j-sf-plugin` | Implements `fields[type]` filtering to return only requested attributes |
 | [Compound Documents](/compound-docs-plugin/) | `jsonapi4j-cd-plugin` | Resolves `include` queries with multi-level relationship chaining and parallel batch fetching |

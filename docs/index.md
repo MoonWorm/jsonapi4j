@@ -29,7 +29,7 @@ feature_row_advanced:
   - title: "Compound Documents"
     excerpt: "Multi-level [`include`](/compound-docs/) queries with parallel batch resolution, built-in caching, and Cache-Control aggregation. Deployable at the application or API Gateway level via the [Compound Documents plugin](/compound-docs-plugin/)."
   - title: "Fine-Grained Access Control"
-    excerpt: "Declarative, annotation-driven authorization via the [Access Control plugin](/access-control-plugin/) — per-field anonymization based on access tier, OAuth2 scopes, and resource ownership. No changes to core logic."
+    excerpt: "Declarative, annotation-driven authorization via the [Access Control plugin](/access-control-plugin/) — per-field anonymization based on entitlement, OAuth2 scopes, and resource ownership. No changes to core logic."
   - title: "Runtime Introspection"
     excerpt: "An opt-in [Meta API](/meta-api/) exposes your live API's resources, relationships, operations, plugins, and effective configuration as machine-readable JSON:API — always in sync with the running service."
   - title: "Built-in Validation"

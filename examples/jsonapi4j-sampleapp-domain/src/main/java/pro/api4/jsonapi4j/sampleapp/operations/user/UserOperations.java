@@ -17,7 +17,8 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
+import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
@@ -25,7 +26,6 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
-import pro.api4.jsonapi4j.principal.tier.TierAdmin;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
@@ -48,6 +48,7 @@ import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.fo
 import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
@@ -255,7 +256,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         }
     }
 
-    @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
+    @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
     @OasOperationInfo(
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,

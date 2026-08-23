@@ -16,13 +16,13 @@ import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
+import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
-import pro.api4.jsonapi4j.principal.tier.*;
 import pro.api4.jsonapi4j.processor.IdAndType;
 import pro.api4.jsonapi4j.processor.resolvers.AttributesResolver;
 import pro.api4.jsonapi4j.processor.single.SingleDataItemSupplier;
@@ -35,12 +35,16 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.NO_ACCESS;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PARTNER;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PUBLIC;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ROOT_ADMIN;
 import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
 
 @ExtendWith(MockitoExtension.class)
 public class SingleResourceProcessorAccessControlTests {
 
-    private static final AccessControlEvaluator AC_EVALUATOR = new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry());
+    private static final AccessControlEvaluator AC_EVALUATOR = new DefaultAccessControlEvaluator();
     private static final DefaultAcProperties AC_PROPERTIES = new DefaultAcProperties();
     static {
         AC_PROPERTIES.setEnabled(true);
@@ -64,12 +68,12 @@ public class SingleResourceProcessorAccessControlTests {
     @Mock
     private AttributesResolver<Dto, Attributes> attributesResolver;
 
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - resource level
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - resource level (fields?)
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - att level
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - att fields
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - relationships level
-    // TEST: Access Control (User, AccessTier, Scope, ownership) - relationships field level
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - resource level
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - resource level (fields?)
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - att level
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - att fields
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - relationships level
+    // TEST: Access Control (User, Entitlements, Scope, ownership) - relationships field level
     // ??? batch for Multi Rel Proc tests ???
 
     @Test
@@ -77,7 +81,7 @@ public class SingleResourceProcessorAccessControlTests {
         // given
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
-                        new TierNoAccess(),
+                        List.of(NO_ACCESS),
                         Set.of("users.read", "roles.read", "roles.write", "groups.read", "groups.write"),
                         ID
                 )
@@ -117,7 +121,7 @@ public class SingleResourceProcessorAccessControlTests {
         // given
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
-                        new TierPublic(),
+                        List.of(PUBLIC),
                         Set.of("users.read", "roles.read", "roles.write", "groups.read", "groups.write"),
                         ID
                 )
@@ -163,7 +167,7 @@ public class SingleResourceProcessorAccessControlTests {
         // given
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
-                        new TierPartner(),
+                        List.of(PARTNER),
                         Set.of("users.read", "roles.read", "roles.write", "groups.read", "groups.write"),
                         "3123123123"
                 )
@@ -214,7 +218,7 @@ public class SingleResourceProcessorAccessControlTests {
     }
 
     @AccessControl(
-            tier = @AccessControlAccessTier(TierPartner.PARTNER_ACCESS_TIER),
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(PARTNER)),
             scopes = @AccessControlScopes(requiredScopes = {"groups.write"}),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
@@ -224,14 +228,14 @@ public class SingleResourceProcessorAccessControlTests {
         private final String id;
 
         @AccessControl(
-                tier = @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER),
+                entitlements = @AccessControlEntitlements(@EntitlementsGroup(ROOT_ADMIN)),
                 scopes = @AccessControlScopes(requiredScopes = {"groups.read"}),
                 ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
         )
         private final String firstName;
 
         @AccessControl(
-                tier = @AccessControlAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER)
+                entitlements = @AccessControlEntitlements(@EntitlementsGroup(ROOT_ADMIN))
         )
         private final String lastName;
 
@@ -260,7 +264,7 @@ public class SingleResourceProcessorAccessControlTests {
     }
 
     @AccessControl(
-            tier = @AccessControlAccessTier(TierPublic.PUBLIC_TIER),
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(PUBLIC)),
             scopes = @AccessControlScopes(requiredScopes = {"users.read"}),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )

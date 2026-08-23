@@ -71,7 +71,7 @@ However, you can configure and enforce access control rules for either or both s
 
 There are four types of access control requirements, which can be combined in any way as needed:
 * **Authentication requirement** - verifies whether the request is made on behalf of an authenticated client or user. This can be used to restrict anonymous access.
-* **Access tier requirement** - verifies whether the client or user belongs to a specific access tier or group. The recommended default set of tiers includes: Root Admin, Admin, Partner, Internal, and Public. This structure helps organize access policies by predefined privilege levels. You don't need to use all tiers - just rely on the ones that fit your needs. It's also possible to define a custom set of access tiers. See more details below.
+* **Entitlement requirement** - verifies whether the client or user holds a given entitlement. Entitlements are plain, unordered labels that your application defines and your principal source supplies - any string works. `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as ready-made constants, but they carry no built-in ranking. See more details below.
 * **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token.
 * **Ownership requirement** - ensures that the requested resource belongs to the client or user making the request. This is typically used for APIs where users are only allowed to view their own data, but not others'.
 
@@ -82,7 +82,7 @@ If any of the specified requirements are not met, the corresponding section - or
 By default, the plugin uses the `DefaultPrincipalResolver`, which relies on the following HTTP headers to resolve the current authentication context:
 
 1. `X-Authenticated-User-Id` - identifies whether the request is sent on behalf of an authenticated client or user. Considered authenticated if the value is not null or blank. Also used for ownership checks.
-2. `X-Authenticated-Client-Access-Tier` - defines the principal's access tier. By default, the framework supports the following values: **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN**, and **ROOT_ADMIN**. Custom tiers can be registered by implementing the `AccessTierRegistry` interface.
+2. `X-Authenticated-Client-Entitlements` - defines the principal's entitlements, as a space-separated list. Any string works; `DefaultEntitlements` ships **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants purely for convenience.
 3. `X-Authenticated-User-Granted-Scopes` - specifies the OAuth2 scopes granted to the client by the user. This should be a space-separated string.
 
 This is not the only option. JsonApi4j also ships resolvers that build the principal from a JWT — either by
@@ -91,16 +91,91 @@ already verified — and you can implement `PrincipalResolver` yourself for anyt
 [Principal Resolution](/principal-resolution/) for the full list, how to choose between them, and how to map
 your provider's claims.
 
-If you use tier requirements together with a JWT resolver, note that **you must name the claim that carries
-the tier** — JWT defines no standard one, and an unresolved tier denies every tier-guarded operation. This
-is covered in [Access tiers need an explicit claim](/principal-resolution/#access-tiers-need-an-explicit-claim).
+If you use entitlement requirements together with a JWT resolver, note that **you must name the claim that carries
+the entitlement** — JWT defines no standard one, and an unresolved entitlement denies every entitlement-guarded operation. This
+is covered in [Entitlements need an explicit claim](/principal-resolution/#entitlements-need-an-explicit-claim).
 
 The resolved principal context is then used by the framework during both **inbound** and **outbound** access control evaluations.
 
 ### Setting Access Requirements
 
 There is one annotation that defines all access control requirements in one place — `@AccessControl`.
-It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `tier`, and `ownership`.
+It encapsulates rules for all currently supported dimensions: `authenticated`, `scopes`, `entitlements`, and `ownership`.
+
+#### Entitlements Are Unordered Labels
+
+Entitlements are matched by name, not by rank. A principal holding `ADMIN` does **not** satisfy a requirement for
+`PUBLIC` — it satisfies a requirement for `ADMIN` and nothing else. Grant a principal every entitlement it needs
+rather than expecting a "higher" one to cover the others.
+
+A requirement is built from `@EntitlementsGroup` clauses. Each clause quantifies over entitlement names:
+
+| Clause mode | Satisfied when the caller holds |
+|-------------|---------------------------------|
+| `ANY_OF` (default) | **at least one** of the listed entitlements |
+| `ALL_OF` | **all** of the listed entitlements |
+| `NONE_OF` | **none** of the listed entitlements |
+
+`@AccessControlEntitlements` then quantifies over the clauses, using the same three modes — `ALL_OF` by
+default. That gives two levels:
+
+```java
+@AccessControl(entitlements = @AccessControlEntitlements(
+        description = "internal support staff, or a partner integration",
+        mode = AccessControlEntitlements.Mode.ANY_OF,
+        value = {
+                @EntitlementsGroup(value = {ADMIN, SUPPORT}, mode = EntitlementsGroup.Mode.ALL_OF),
+                @EntitlementsGroup(value = {PARTNER, PUBLIC}, mode = EntitlementsGroup.Mode.ALL_OF)
+        }))
+```
+
+which reads as *(`ADMIN` and `SUPPORT`) or (`PARTNER` and `PUBLIC`)*.
+
+The simple case stays short — a single clause with the default `ANY_OF`:
+
+```java
+@AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
+```
+
+Omit `entitlements` entirely to declare no requirement. An empty `@EntitlementsGroup({})` is rejected at
+startup, so a requirement that can never be satisfied fails on boot rather than silently denying every
+request.
+
+**`description`** is optional and quoted back when access is denied, so a log line explains *why* the
+requirement exists rather than only naming entitlements:
+
+```
+DEBUG Access denied: 'internal support staff, or a partner integration'
+      (ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER, PUBLIC]]) is required,
+      but the authenticated principal carries [PARTNER].
+```
+
+#### Policies: When Two Levels Aren't Enough
+
+Two levels is the limit, because Java annotations cannot nest arbitrarily. For deeper rules — or ones that
+count matches, or weigh something other than entitlements — point the requirement at a class instead:
+
+```java
+public class InternalPartnerPolicy implements EntitlementsPolicy {
+
+    @Override
+    public boolean isSatisfiedBy(List<String> held) {
+        return (held.contains(ADMIN) || held.contains(ROOT_ADMIN))
+                && held.contains(PARTNER)
+                && !held.contains(NO_ACCESS);
+    }
+
+}
+```
+
+```java
+@AccessControl(entitlements = @AccessControlEntitlements(policy = InternalPartnerPolicy.class))
+```
+
+A policy is ordinary code: unlimited nesting, unit-testable without a running app, and reusable across as
+many annotations as you like. It **replaces** the clauses rather than adding to them — declaring both is
+rejected at startup. Instances are created once when the access control model is built, so a policy must be
+stateless, thread-safe, and expose a public no-argument constructor.
 
 #### Where to Place `@AccessControl`
 
@@ -130,16 +205,18 @@ Review the examples below to get a better grasp of how and where to declare your
 
 #### Example 1: Inbound Access Control
 
-Let's allow new user creation only for authenticated clients with the `ADMIN` access tier.
+Let's allow new user creation only for authenticated clients with the `ADMIN` entitlement.
 
 In this case, we'll use the `@AccessControl` annotation to enforce the access rule at the operation level.
 
 ```java
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
+
 public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     @AccessControl(
             authenticated = Authenticated.AUTHENTICATED,
-            tier = @AccessControlAccessTier(ADMIN_ACCESS_TIER)
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN))
     )
     @Override
     public UserDbEntity create(JsonApiRequest request) {
@@ -169,7 +246,7 @@ public class UserAttributes {
     @AccessControl(
             authenticated = Authenticated.AUTHENTICATED,
             scopes = @AccessControlScopes(requiredScopes = {"users.sensitive.read"}),
-            tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER),
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     private final String creditCardNumber;
@@ -189,13 +266,13 @@ Here is the list of available places where you can place `@AccessControl` annota
 3. For `Resource#resolveResourceLinks(...)` method to control access just for resource `links` section.
 4. For `Resource#resolveResourceMeta(...)` method to control access just for resource `meta` section.
 
-In the example below we've configured our entire `UserResource` in a way it's visible only for authenticated users while its `meta` section is only visible for clients with **ADMIN** access tier:
+In the example below we've configured our entire `UserResource` in a way it's visible only for authenticated users while its `meta` section is only visible for clients with **ADMIN** entitlement:
 
 ```java
 @AccessControl(authenticated = Authenticated.AUTHENTICATED)
 public class UserResource implements Resource<UserDbEntity> {
 
-  @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
+  @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
   @Override
   public Object resolveResourceMeta(JsonApiRequest request, UserDbEntity dataSourceDto) {
       // ...
@@ -212,7 +289,7 @@ Here is the list of available places where you can place `@AccessControl` annota
 1. On top of the `Relationship` declaration - in order to control access to the entire JSON:API Resource Identifier Object
 2. For `Relationship#resolveResourceIdentifierMeta(...)` method to control access just for resource identifier `meta` section.
 
-In the example below we've configured our entire `UserCitizenshipsRelationship` in a way this relationship is visible only for authenticated users that have been granted 'users.citizenships.read' scope for a client. Moreover, `ownership` setting requires a user to be an owner; thus, this information is only visible for a user it belongs to. And finally, lets expose its `meta` section for clients with **ADMIN** access tier only:
+In the example below we've configured our entire `UserCitizenshipsRelationship` in a way this relationship is visible only for authenticated users that have been granted 'users.citizenships.read' scope for a client. Moreover, `ownership` setting requires a user to be an owner; thus, this information is only visible for a user it belongs to. And finally, lets expose its `meta` section for clients with **ADMIN** entitlement only:
 
 ```java
 @AccessControl(
@@ -222,7 +299,7 @@ In the example below we've configured our entire `UserCitizenshipsRelationship` 
 )
 public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
 
-  @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
+  @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
   @Override
   public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest,
                                               CountryRef countryRef) {

@@ -3,35 +3,31 @@ package pro.api4.jsonapi4j.plugin.ac;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.util.ReflectionUtils;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
-import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAccessTierModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAuthenticatedModel;
+import pro.api4.jsonapi4j.plugin.ac.model.AccessControlEntitlementsModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlOwnershipModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
+import pro.api4.jsonapi4j.plugin.ac.model.EntitlementsGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
-import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.plugin.ac.scope.ScopesUtils;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
+import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
+import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
 
-    private final AccessTierRegistry accessTierRegistry;
-    private final AtomicBoolean missingAccessTierReported = new AtomicBoolean();
-
-    public DefaultAccessControlEvaluator(AccessTierRegistry accessTierRegistry) {
-        this.accessTierRegistry = accessTierRegistry;
-    }
+    private final AtomicBoolean missingEntitlementsReported = new AtomicBoolean();
+    private final AtomicBoolean missingScopesReported = new AtomicBoolean();
 
     @Override
     public <REQUEST> boolean evaluateInboundRequirements(REQUEST request,
@@ -44,7 +40,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         String ownerId = getOwnerIdFromRequest(accessControlModel, request);
 
         return checkIsAuthenticated(accessControlModel.getAuthenticated())
-                && evaluateAccessTier(accessControlModel.getRequiredAccessTier())
+                && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
                 && evaluateScopes(accessControlModel.getRequiredScopes())
                 && evaluateOwnership(ownerId);
     }
@@ -56,7 +52,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
             return true;
         }
         return checkIsAuthenticated(accessControlModel.getAuthenticated())
-                && evaluateAccessTier(accessControlModel.getRequiredAccessTier())
+                && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
                 && evaluateScopes(accessControlModel.getRequiredScopes())
                 && evaluateOwnershipAgainstResourceObject(resourceObject, accessControlModel.getRequiredOwnership());
     }
@@ -114,7 +110,14 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
     private boolean evaluateOwnership(String currentResourceOwnerId) {
         String authenticatedUserId = AuthenticatedPrincipalContextHolder.getAuthenticatedUserId().orElse(null);
         if (currentResourceOwnerId != null) {
-            return currentResourceOwnerId.equals(authenticatedUserId);
+            boolean satisfied = currentResourceOwnerId.equals(authenticatedUserId);
+            if (!satisfied && log.isDebugEnabled()) {
+                log.debug("Access denied: ownership of the target resource is required, but it is owned by "
+                                + "'{}' while the authenticated user is '{}'. "
+                                + "See https://api4.pro/access-control-plugin/",
+                        currentResourceOwnerId, authenticatedUserId);
+            }
+            return satisfied;
         }
         return true;
     }
@@ -126,62 +129,125 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         ) {
             return true;
         }
-        return AuthenticatedPrincipalContextHolder.getAuthenticatedUserId().isPresent();
+        boolean satisfied = AuthenticatedPrincipalContextHolder.getAuthenticatedUserId().isPresent();
+        if (!satisfied && log.isDebugEnabled()) {
+            log.debug("Access denied: an authenticated principal is required, but the request carries none. "
+                    + "See https://api4.pro/principal-resolution/");
+        }
+        return satisfied;
     }
 
-    private boolean evaluateAccessTier(AccessControlAccessTierModel ac) {
-        if (ac == null
-                || ac.getRequiredAccessTier() == null
-                || AccessControlAccessTier.NOT_SET.equals(ac.getRequiredAccessTier())) {
+    private boolean evaluateEntitlements(AccessControlEntitlementsModel expectedEntitlements) {
+        if (expectedEntitlements == null) {
             return true;
         }
-        AccessTier expectedAccessTier = accessTierRegistry.getAccessTier(ac.getRequiredAccessTier());
-        if (expectedAccessTier == null) {
-            throw new IllegalArgumentException("Invalid value is set for an AccessTier: " + ac.getRequiredAccessTier());
+        List<String> actualEntitlements = AuthenticatedPrincipalContextHolder.getEntitlements();
+        if (expectedEntitlements.isSatisfiedBy(actualEntitlements)) {
+            return true;
         }
-        Optional<AccessTier> actualAccessTier = AuthenticatedPrincipalContextHolder.getAccessTier();
-        if (actualAccessTier.isEmpty()) {
-            reportMissingAccessTier(expectedAccessTier);
-            return false;
+        if (actualEntitlements.isEmpty()) {
+            reportMissingEntitlements(expectedEntitlements);
+        } else {
+            reportUnsatisfiedEntitlements(expectedEntitlements, actualEntitlements);
         }
-        return actualAccessTier.get().compareTo(expectedAccessTier) >= 0;
+        return false;
     }
 
     /**
-     * Reports a principal that passed authentication but carries no access tier at all.
+     * Reports a principal that passed authentication but carries no entitlements at all.
      * <p>
-     * Such a principal fails every access tier requirement no matter which tier is asked for, which almost
-     * always means the configured {@code PrincipalResolver} produces no tier — a JWT resolver whose tier
+     * Such a principal fails every entitlement requirement no matter which entitlement is asked for, which almost
+     * always means the configured {@code PrincipalResolver} produces no entitlements — a JWT resolver whose entitlements
      * claim is absent from the tokens being issued, most commonly. It is reported once per process at
      * {@code WARN}, and on every occurrence at {@code DEBUG}.
      *
-     * @param expectedAccessTier the tier the denied requirement asked for
+     * @param expectedEntitlements the requirement that was denied
      */
-    private void reportMissingAccessTier(AccessTier expectedAccessTier) {
-        if (!isMissingAccessTierMisconfiguration()) {
+    private void reportMissingEntitlements(AccessControlEntitlementsModel expectedEntitlements) {
+        if (!isMissingEntitlementsMisconfiguration()) {
             return;
         }
-        String message = "Access denied: an access tier of '{}' or higher is required, but the "
-                + "authenticated principal carries no access tier at all. The configured PrincipalResolver "
+        String message = "Access denied: {} is required, but the "
+                + "authenticated principal carries no entitlement at all. The configured PrincipalResolver "
                 + "resolved none — when using a JWT resolver, check that issued tokens actually carry the "
-                + "configured access tier claim. See https://api4.pro/principal-resolution/";
-        if (missingAccessTierReported.compareAndSet(false, true)) {
-            log.warn(message, expectedAccessTier.getName());
+                + "configured entitlements claim. See https://api4.pro/principal-resolution/";
+        if (missingEntitlementsReported.compareAndSet(false, true)) {
+            log.warn(message, describeRequirement(expectedEntitlements));
         } else {
-            log.debug(message, expectedAccessTier.getName());
+            log.debug(message, describeRequirement(expectedEntitlements));
         }
+    }
+
+    /**
+     * Explains an ordinary entitlements denial — the principal holds entitlements, just not the ones asked for.
+     * <p>
+     * Reported at {@code DEBUG} only: unlike a principal with no entitlements at all, this is business as usual on
+     * any endpoint that restricts access, and reporting it louder would flood the log with healthy traffic.
+     * Both sides of the comparison are printed so that a near miss caused by a misspelled entitlement name — an
+     * {@code ADMNI} that was meant to be {@code ADMIN} — is visible instead of looking like a plain denial.
+     *
+     * @param expectedEntitlements the requirement that was not satisfied
+     * @param actualEntitlements   the entitlements the principal actually carries
+     */
+    private void reportUnsatisfiedEntitlements(AccessControlEntitlementsModel expectedEntitlements,
+                                               List<String> actualEntitlements) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        log.debug("Access denied: {} is required, but the authenticated principal carries {}. "
+                        + "Entitlement names are matched exactly, so a name that merely looks alike does not match — "
+                        + "check both sides for typos. See https://api4.pro/access-control-plugin/",
+                describeRequirement(expectedEntitlements),
+                describeNames(new HashSet<>(actualEntitlements)));
+    }
+
+    /**
+     * Renders a requirement for a log line, e.g. {@code ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER]]}, or
+     * the policy class name when one decides the requirement instead.
+     * <p>
+     * A declared {@code description} is quoted ahead of the structure, so a denial reads as the reason the
+     * requirement exists rather than only as the entitlements it names.
+     *
+     * @param expectedEntitlements the requirement to describe
+     * @return human-readable description
+     */
+    static String describeRequirement(AccessControlEntitlementsModel expectedEntitlements) {
+        String structure = expectedEntitlements.getPolicy() != null
+                ? String.format("policy %s", expectedEntitlements.getPolicy().getClass().getName())
+                : String.format("%s%s",
+                expectedEntitlements.getMode(),
+                expectedEntitlements.getGroups().stream()
+                        .map(DefaultAccessControlEvaluator::describeGroup)
+                        .collect(Collectors.joining(", ", "[", "]")));
+        return StringUtils.isBlank(expectedEntitlements.getDescription())
+                ? structure
+                : String.format("'%s' (%s)", expectedEntitlements.getDescription(), structure);
+    }
+
+    /**
+     * Renders a single clause of a requirement, e.g. {@code ALL_OF[ADMIN, PARTNER]}.
+     *
+     * @param group the clause to describe
+     * @return human-readable description
+     */
+    static String describeGroup(EntitlementsGroupModel group) {
+        return String.format("%s%s", group.getMode(), describeNames(group.getEntitlements()));
+    }
+
+    private static String describeNames(Set<String> names) {
+        return names.stream().sorted().collect(Collectors.joining(", ", "[", "]"));
     }
 
     /**
      * Distinguishes a misconfigured principal from an ordinary anonymous one.
      * <p>
-     * An anonymous caller legitimately has no access tier, and denying it is the point of the requirement.
-     * A caller that authenticated successfully and still has no tier is a configuration problem.
+     * An anonymous caller legitimately has no entitlement, and denying it is the point of the requirement.
+     * A caller that authenticated successfully and still has no entitlement is a configuration problem.
      *
-     * @return {@code true} if the current principal is authenticated yet has no access tier
+     * @return {@code true} if the current principal is authenticated yet has no entitlement
      */
-    boolean isMissingAccessTierMisconfiguration() {
-        return AuthenticatedPrincipalContextHolder.getAccessTier().isEmpty()
+    boolean isMissingEntitlementsMisconfiguration() {
+        return AuthenticatedPrincipalContextHolder.getEntitlements().isEmpty()
                 && AuthenticatedPrincipalContextHolder.getAuthenticatedUserId()
                 .filter(StringUtils::isNotBlank)
                 .isPresent();
@@ -202,19 +268,99 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
 
         // no info about the current request's Scopes
         if (CollectionUtils.isEmpty(actualScopes)) {
+            reportMissingScopes(ac);
             return false;
         }
 
+        boolean satisfied;
         if (StringUtils.isNotBlank(expectedScopesExpression)) {
             // scopes expression has higher priority
-            return ScopesUtils.matches(actualScopes, expectedScopesExpression);
+            satisfied = ScopesUtils.matches(actualScopes, expectedScopesExpression);
         } else {
             // list of scopes has lower priority
-            return ScopesUtils.matches(
+            satisfied = ScopesUtils.matches(
                     actualScopes,
                     ScopesUtils.toScopesExpression(expectedScopes)
             );
         }
+        if (!satisfied) {
+            reportUnsatisfiedScopes(ac, actualScopes);
+        }
+        return satisfied;
+    }
+
+    /**
+     * Reports a principal that passed authentication but carries no scopes at all.
+     * <p>
+     * Such a principal fails every scope requirement no matter which scope is asked for, which almost always
+     * means the configured {@code PrincipalResolver} produces none — a JWT resolver whose scope claim is
+     * absent from the tokens being issued, most commonly. It is reported once per process at {@code WARN},
+     * and on every occurrence at {@code DEBUG}.
+     *
+     * @param ac the scopes requirement that was denied
+     */
+    private void reportMissingScopes(AccessControlScopesModel ac) {
+        if (!isMissingScopesMisconfiguration()) {
+            return;
+        }
+        String message = "Access denied: {} is required, but the authenticated principal carries no scopes "
+                + "at all. The configured PrincipalResolver resolved none — when using a JWT resolver, check "
+                + "that issued tokens actually carry the configured scopes claim. "
+                + "See https://api4.pro/principal-resolution/";
+        if (missingScopesReported.compareAndSet(false, true)) {
+            log.warn(message, describeScopesRequirement(ac));
+        } else {
+            log.debug(message, describeScopesRequirement(ac));
+        }
+    }
+
+    /**
+     * Explains an ordinary scopes denial — the principal holds scopes, just not the ones asked for.
+     * <p>
+     * Reported at {@code DEBUG} only, for the same reason as {@link #reportUnsatisfiedEntitlements}: on any
+     * endpoint that restricts access this is business as usual, and reporting it louder would flood the log
+     * with healthy traffic.
+     *
+     * @param ac           the scopes requirement that was not satisfied
+     * @param actualScopes the scopes the principal actually carries
+     */
+    private void reportUnsatisfiedScopes(AccessControlScopesModel ac, Set<String> actualScopes) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        log.debug("Access denied: {} is required, but the authenticated principal carries {}. "
+                        + "See https://api4.pro/access-control-plugin/",
+                describeScopesRequirement(ac),
+                describeNames(actualScopes));
+    }
+
+    /**
+     * Renders a scopes requirement, e.g. {@code scopes [users.read, users.write]} or
+     * {@code scopes expression 'users.read AND users.write'}.
+     *
+     * @param ac the requirement to describe
+     * @return human-readable description
+     */
+    static String describeScopesRequirement(AccessControlScopesModel ac) {
+        if (StringUtils.isNotBlank(ac.getRequiredScopesExpression())) {
+            return String.format("scopes expression '%s'", ac.getRequiredScopesExpression());
+        }
+        return String.format("scopes %s", describeNames(ac.getRequiredScopes()));
+    }
+
+    /**
+     * Distinguishes a misconfigured principal from an ordinary anonymous one.
+     * <p>
+     * An anonymous caller legitimately has no scopes, and denying it is the point of the requirement.
+     * A caller that authenticated successfully and still has no scopes is a configuration problem.
+     *
+     * @return {@code true} if the current principal is authenticated yet has no scopes
+     */
+    boolean isMissingScopesMisconfiguration() {
+        return CollectionUtils.isEmpty(AuthenticatedPrincipalContextHolder.getScopes().orElse(null))
+                && AuthenticatedPrincipalContextHolder.getAuthenticatedUserId()
+                .filter(StringUtils::isNotBlank)
+                .isPresent();
     }
 
 }

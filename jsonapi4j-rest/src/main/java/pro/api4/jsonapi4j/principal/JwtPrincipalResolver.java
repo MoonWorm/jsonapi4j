@@ -6,11 +6,10 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,12 +33,6 @@ import java.util.Set;
 public class JwtPrincipalResolver implements PrincipalResolver {
 
     public static final String DEFAULT_AUTHORIZATION_HEADER_NAME = "Authorization";
-
-    /**
-     * Request attribute under which the decoded claims are cached, so that the four resolver calls made
-     * per request by {@code PrincipalResolvingFilter} decode the token once.
-     */
-    static final String CLAIMS_REQUEST_ATT_NAME = "pro.api4.jsonapi4j.principal.jwt-claims";
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final int JWT_PAYLOAD_SEGMENT = 1;
@@ -84,56 +77,26 @@ public class JwtPrincipalResolver implements PrincipalResolver {
     }
 
     /**
-     * Convenience factory for the common case of resolving access tiers from an application-specific claim.
+     * Convenience factory for the common case of resolving entitlements from an application-specific claim.
      *
-     * @param accessTierClaim    claim holding the access tier name, optionally a dotted path
-     * @param accessTierRegistry registry used to resolve the tier name
-     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given tier claim
+     * @param entitlementsClaim claim holding the entitlements, optionally a dotted path
+     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given entitlements claim
      */
-    public static JwtPrincipalResolver withAccessTierClaim(String accessTierClaim,
-                                                           AccessTierRegistry accessTierRegistry) {
+    public static JwtPrincipalResolver withEntitlementsClaim(String entitlementsClaim) {
         return new JwtPrincipalResolver(new ClaimsPrincipalMapper(
-                accessTierClaim,
-                accessTierRegistry
+                entitlementsClaim
         ));
     }
 
     @Override
-    public AccessTier resolveAccessTier(ServletRequest servletRequest) {
-        return claimsMapper.resolveAccessTier(resolveClaims(servletRequest));
-    }
-
-    @Override
-    public Set<String> resolveScopes(ServletRequest servletRequest) {
-        return claimsMapper.resolveScopes(resolveClaims(servletRequest));
-    }
-
-    @Override
-    public String resolveUserId(ServletRequest servletRequest) {
-        return claimsMapper.resolveUserId(resolveClaims(servletRequest));
-    }
-
-    @Override
-    public Map<String, Object> resolveAttributes(ServletRequest servletRequest) {
-        return claimsMapper.resolveAttributes(resolveClaims(servletRequest));
-    }
-
-    /**
-     * Returns the claims of the request's bearer token, decoding them on first access and caching the
-     * result under {@link #CLAIMS_REQUEST_ATT_NAME}.
-     *
-     * @param servletRequest the current request
-     * @return the decoded claims, or an empty map when no readable token is present
-     */
-    @SuppressWarnings("unchecked")
-    protected Map<String, Object> resolveClaims(ServletRequest servletRequest) {
-        Object cached = servletRequest.getAttribute(CLAIMS_REQUEST_ATT_NAME);
-        if (cached != null) {
-            return (Map<String, Object>) cached;
-        }
+    public Principal resolvePrincipal(ServletRequest servletRequest) {
         Map<String, Object> claims = decodeClaims(readBearerToken(servletRequest));
-        servletRequest.setAttribute(CLAIMS_REQUEST_ATT_NAME, claims);
-        return claims;
+        return new DefaultPrincipal(
+                claimsMapper.resolveEntitlements(claims),
+                claimsMapper.resolveScopes(claims),
+                claimsMapper.resolveUserId(claims),
+                claimsMapper.resolveAttributes(claims)
+        );
     }
 
     /**

@@ -6,9 +6,9 @@ import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,21 +30,13 @@ public class PrincipalResolvingFilter implements Filter {
     public void doFilter(ServletRequest servletRequest,
                          ServletResponse servletResponse,
                          FilterChain filterChain) throws IOException, ServletException {
-        AccessTier accessTierName = resolver.resolveAccessTier(servletRequest);
-        Set<String> scopes = resolver.resolveScopes(servletRequest);
-        String userId = resolver.resolveUserId(servletRequest);
-        Map<String, Object> attributes = resolver.resolveAttributes(servletRequest);
+        AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(resolver.resolvePrincipal(servletRequest));
 
-        AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
-                new DefaultPrincipal(
-                        accessTierName,
-                        scopes,
-                        userId,
-                        attributes
-                )
-        );
-
-        filterChain.doFilter(servletRequest, servletResponse);
+        try {
+            filterChain.doFilter(servletRequest, servletResponse);
+        } finally {
+            AuthenticatedPrincipalContextHolder.clear();
+        }
     }
 
     private PrincipalResolver initJsonApi4jPrincipalResolver(ServletContext servletContext) {

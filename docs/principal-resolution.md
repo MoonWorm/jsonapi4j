@@ -19,7 +19,7 @@ A `Principal` carries four things:
 | Method | Purpose |
 |---|---|
 | `authenticatedUserId()` | Identifies the caller. Also used for ownership checks. |
-| `authenticatedClientAccessTier()` | Coarse-grained privilege level (`PUBLIC`, `ADMIN`, …). |
+| `authenticatedClientEntitlements()` | Unordered entitlement labels (`PUBLIC`, `ADMIN`, …). |
 | `authenticatedClientScopes()` | Fine-grained OAuth2 scopes. |
 | `attributes()` | Everything else the token carried — email, tenant, expiry — for ABAC rules. |
 
@@ -62,13 +62,13 @@ the caller's credentials:
 
 1. `X-Authenticated-User-Id` — the caller's id. The request counts as authenticated when this is neither
    null nor blank. Also used for ownership checks.
-2. `X-Authenticated-Client-Access-Tier` — the access tier. Built-in values are **NO_ACCESS**, **PUBLIC**,
-   **PARTNER**, **ADMIN** and **ROOT_ADMIN**; register your own via `AccessTierRegistry`.
+2. `X-Authenticated-Client-Entitlements` — a space-separated list of entitlements. Any string works;
+   `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants.
 3. `X-Authenticated-User-Granted-Scopes` — a space-separated list of granted scopes.
 
 ```bash
 curl -H 'X-Authenticated-User-Id: 42' \
-     -H 'X-Authenticated-Client-Access-Tier: ADMIN' \
+     -H 'X-Authenticated-Client-Entitlements: ADMIN' \
      -H 'X-Authenticated-User-Granted-Scopes: users.read users.write' \
      http://localhost:8080/jsonapi/users/42
 ```
@@ -97,11 +97,11 @@ produce a principal from an unverified token at all.
 // Servlet — register before the framework initializes
 servletContext.setAttribute(
         JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME,
-        JwtPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry));
+        JwtPrincipalResolver.withEntitlementsClaim("entitlements"));
 ```
 
-The decoded claims are cached per request, so the token is parsed once regardless of how many principal
-fields are read.
+The token is decoded once per request — `resolvePrincipal` is called a single time by the filter and maps
+every principal field from the same claim set.
 
 #### Spring Boot
 
@@ -111,8 +111,8 @@ by Spring Security.
 
 ```java
 @Bean
-public PrincipalResolver jsonapi4jPrincipalResolver(AccessTierRegistry accessTierRegistry) {
-    return SpringSecurityPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry);
+public PrincipalResolver jsonapi4jPrincipalResolver() {
+    return SpringSecurityPrincipalResolver.withEntitlementsClaim("entitlements");
 }
 ```
 
@@ -125,45 +125,54 @@ single resolver instance serves every request.
 ```java
 @Produces
 @Singleton
-public PrincipalResolver principalResolver(JsonWebToken jwt, AccessTierRegistry accessTierRegistry) {
-    return QuarkusJwtPrincipalResolver.withAccessTierClaim(jwt, "access_tier", accessTierRegistry);
+public PrincipalResolver principalResolver(JsonWebToken jwt) {
+    return QuarkusJwtPrincipalResolver.withEntitlementsClaim(jwt, "entitlements");
 }
 ```
 
-### Access tiers need an explicit claim
+### Entitlements need an explicit claim
 
 **This is the most common cause of unexpected 403s after switching to a JWT resolver.** JWT defines no
-standard claim for access tiers. JsonApi4j reads `access_tier` by convention, but no identity provider emits
+standard claim for entitlements. JsonApi4j reads `entitlements` by convention, but no identity provider emits
 that claim on its own — you have to configure your IdP to include it, or point the resolver at whichever
-claim you already use. If the claim is missing from the token, every principal resolves a `null` tier, and
-every operation guarded by `@AccessControl(tier = …)` is denied, even for a perfectly valid token.
+claim you already use. If the claim is missing from the token, every principal resolves no entitlements at all, and
+every operation guarded by `@AccessControl(entitlements = …)` is denied, even for a perfectly valid token.
 {: .notice--warning}
 
-Point the resolver at the claim that carries your tier, and register the tier values through
-`AccessTierRegistry`:
+Point the resolver at the claim that carries your entitlements. The claim may hold a single entitlement or several — a
+space-delimited string and an array of strings are both accepted, matching the scopes claim:
 
 ```java
-SpringSecurityPrincipalResolver.withAccessTierClaim("https://api4.pro/tier", accessTierRegistry);
+SpringSecurityPrincipalResolver.withEntitlementsClaim("https://api4.pro/entitlements");
 ```
 
-Passing `null` as the access tier claim disables tier resolution altogether. Do that only when your
-application declares no tier requirements.
+Passing `null` as the entitlements claim disables entitlements resolution altogether. Do that only when your
+application declares no entitlement requirements.
 
-When a request is denied because the caller authenticated successfully but carries no tier at all — as
-opposed to holding a tier that is merely too low — the Access Control plugin says so once per process:
+When a request is denied because the caller authenticated successfully but carries no entitlement at all — as
+opposed to holding entitlements that simply are not the ones required — the Access Control plugin says so once per
+process:
 
 ```
-WARN  Access denied: an access tier of 'ADMIN' or higher is required, but the authenticated principal
-      carries no access tier at all. The configured PrincipalResolver resolved none — when using a JWT
-      resolver, check that issued tokens actually carry the configured access tier claim.
+WARN  Access denied: OR[ADMIN] is required, but the authenticated principal carries no entitlement at all.
+      The configured PrincipalResolver resolved none — when using a JWT resolver, check that issued tokens
+      actually carry the configured entitlements claim.
 ```
 
-Anonymous callers never trigger it: having no tier is the expected state for them, and denying them is the
-point of the requirement.
+Anonymous callers never trigger it: having no entitlement is the expected state for them, and denying them is the
+point of the requirement. The same warning exists for scopes, for the same reason.
 
-If the claim is present but its value is not a registered tier, the registry's default tier (`PUBLIC`) is
-used — untrusted input lands on least privilege rather than most. Scopes and user id have standard defaults
-that work out of the box; tiers never can.
+If the claim is present but carries an entitlement no requirement asks for, that is an ordinary denial — entitlement names
+are matched exactly, and nothing is inferred from an unrecognized value. Because a misspelling on either
+side looks exactly like a legitimate denial, the plugin logs both sides at `DEBUG`:
+
+```
+DEBUG Access denied: OR[ADMIN] is required, but the authenticated principal carries [ADMNI, PUBLIC].
+      Entitlement names are matched exactly, so a name that merely looks alike does not match — check both
+      sides for typos.
+```
+
+Scopes and user id have standard defaults that work out of the box; entitlements never can.
 
 ### Claim mapping
 
@@ -173,7 +182,7 @@ The defaults follow the registered JWT claims, and every name is configurable:
 |---|---|---|
 | `authenticatedUserId()` | `sub` | RFC 7519. Override for providers that prefer `oid` or `email`. |
 | `authenticatedClientScopes()` | `scope`, falling back to `scp` | See shapes below. |
-| `authenticatedClientAccessTier()` | `access_tier` | A jsonapi4j convention, not a standard — see above. |
+| `authenticatedClientEntitlements()` | `entitlements` | A jsonapi4j convention, not a standard — see above. |
 | `attributes()` | all claims | Exposed as an unmodifiable map. |
 
 **Scope shapes.** Providers disagree, so both accepted forms are handled automatically:
@@ -187,10 +196,10 @@ exists — treated as a path into nested objects. Both of these work:
 
 ```java
 // Keycloak — roles nested under a realm_access object
-new ClaimsPrincipalMapper("sub", "realm_access.roles", "access_tier", accessTierRegistry);
+new ClaimsPrincipalMapper("sub", "realm_access.roles", "entitlements");
 
 // Auth0 — a namespaced claim whose *name* contains dots
-new ClaimsPrincipalMapper("sub", "https://api4.pro/roles", "access_tier", accessTierRegistry);
+new ClaimsPrincipalMapper("sub", "https://api4.pro/roles", "entitlements");
 ```
 
 **Claim value types differ between resolvers.** Spring Security converts the time claims (`exp`, `iat`,
@@ -202,20 +211,28 @@ resolvers without a type check.
 ### Writing your own resolver
 
 Implement `PrincipalResolver` when none of the above fits — a session cookie, an API key table, mTLS
-certificate attributes. Every method has a default returning `null`, so implement only what applies:
+certificate attributes. It has a single method; leave `null` or empty whatever your source cannot supply:
 
 ```java
 public class ApiKeyPrincipalResolver implements PrincipalResolver {
 
     @Override
-    public String resolveUserId(ServletRequest servletRequest) {
+    public Principal resolvePrincipal(ServletRequest servletRequest) {
         String apiKey = ((HttpServletRequest) servletRequest).getHeader("X-Api-Key");
-        return apiKeyRegistry.lookupUserId(apiKey);
+        String userId = apiKeyRegistry.lookupUserId(apiKey);
+        return userId == null
+                ? null
+                : new DefaultPrincipal(List.of(), Set.of(), userId, Map.of());
     }
 }
 ```
 
-Returning `null` from a method means "unknown", and the corresponding access control check fails closed.
+Returning `null` marks the request as anonymous. A `null` or empty value on the principal means "unknown",
+and the corresponding access control check fails closed.
+
+The resolver is called once per request and a single instance serves every request, so implementations must
+be thread-safe and must resolve everything from the request argument rather than caching state on the
+resolver itself.
 
 To reuse JWT claim mapping from a different claim source, hand a claims map to `ClaimsPrincipalMapper`
 rather than reimplementing the `scope`/`scp` and nested-path handling.

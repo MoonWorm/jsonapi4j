@@ -10,7 +10,6 @@ import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.ac",
@@ -31,10 +30,8 @@ public class SpringJsonApi4jAcPluginConfig {
 
     @ConditionalOnMissingBean(AccessControlEvaluator.class)
     @Bean
-    public AccessControlEvaluator jsonapi4jAccessControlEvaluator(
-            AccessTierRegistry accessTierRegistry
-    ) {
-        return new DefaultAccessControlEvaluator(accessTierRegistry);
+    public AccessControlEvaluator jsonapi4jAccessControlEvaluator() {
+        return new DefaultAccessControlEvaluator();
     }
 
 }

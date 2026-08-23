@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j.plugin.oas.config;
 
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PluginProperties;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
 
 import java.util.List;
 import java.util.Map;
@@ -119,7 +118,7 @@ public interface OasProperties extends PluginProperties {
 
         String description();
 
-        AccessTier requiredAccessTier();
+        List<String> requiredEntitlements();
 
     }
 

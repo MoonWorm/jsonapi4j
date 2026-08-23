@@ -7,8 +7,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.principal.ClaimsPrincipalMapper;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,11 +21,19 @@ import static org.mockito.Mockito.when;
 
 class QuarkusJwtPrincipalResolverTests {
 
-    private static final String TIER_CLAIM = "access_tier";
+    private static final String ENTITLEMENTS_CLAIM = "entitlements";
 
     private final ServletRequest request = mock(ServletRequest.class);
 
     private JsonWebToken jwt;
+
+    private static Map<String, Object> claims(Object... keysAndValues) {
+        Map<String, Object> claims = new LinkedHashMap<>();
+        for (int i = 0; i < keysAndValues.length; i += 2) {
+            claims.put((String) keysAndValues[i], keysAndValues[i + 1]);
+        }
+        return claims;
+    }
 
     @BeforeEach
     void setUp() {
@@ -43,14 +49,6 @@ class QuarkusJwtPrincipalResolverTests {
         when(jwt.getClaim(anyString())).thenAnswer(invocation -> claims.get(invocation.<String>getArgument(0)));
     }
 
-    private static Map<String, Object> claims(Object... keysAndValues) {
-        Map<String, Object> claims = new LinkedHashMap<>();
-        for (int i = 0; i < keysAndValues.length; i += 2) {
-            claims.put((String) keysAndValues[i], keysAndValues[i + 1]);
-        }
-        return claims;
-    }
-
     // --- plain Java claim values, as returned for registered claims ---
 
     @Test
@@ -59,8 +57,8 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveUserId(request)).isEqualTo("user-42");
-        assertThat(resolver.resolveScopes(request)).containsExactlyInAnyOrder("read", "write");
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("user-42");
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).containsExactlyInAnyOrder("read", "write");
     }
 
     // --- JSON-P claim values, as returned for custom claims ---
@@ -74,8 +72,8 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveUserId(request)).isEqualTo("user-42");
-        assertThat(resolver.resolveAttributes(request)).containsEntry("email", "user@api4.pro");
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isEqualTo("user-42");
+        assertThat(resolver.resolvePrincipal(request).attributes()).containsEntry("email", "user@api4.pro");
     }
 
     @Test
@@ -84,7 +82,7 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveScopes(request)).containsExactlyInAnyOrder("read", "write");
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).containsExactlyInAnyOrder("read", "write");
     }
 
     @Test
@@ -93,7 +91,7 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveScopes(request)).containsExactlyInAnyOrder("read", "write");
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).containsExactlyInAnyOrder("read", "write");
     }
 
     @Test
@@ -105,9 +103,9 @@ class QuarkusJwtPrincipalResolverTests {
                         .build()
         ));
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt,
-                new ClaimsPrincipalMapper("sub", "realm_access.roles", null, new DefaultAccessTierRegistry()));
+                new ClaimsPrincipalMapper("sub", "realm_access.roles", null));
 
-        assertThat(resolver.resolveScopes(request)).containsExactly("admin");
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).containsExactly("admin");
     }
 
     @Test
@@ -120,7 +118,7 @@ class QuarkusJwtPrincipalResolverTests {
                 "deleted_at", JsonValue.NULL
         ));
 
-        Map<String, Object> attributes = new QuarkusJwtPrincipalResolver(jwt).resolveAttributes(request);
+        Map<String, Object> attributes = new QuarkusJwtPrincipalResolver(jwt).resolvePrincipal(request).attributes();
 
         assertThat(attributes)
                 .containsEntry("exp", 1893456000L)
@@ -137,24 +135,25 @@ class QuarkusJwtPrincipalResolverTests {
                         .add("roles", Json.createArrayBuilder().add("admin").add("audit")))
                 .build()));
 
-        Map<String, Object> attributes = new QuarkusJwtPrincipalResolver(jwt).resolveAttributes(request);
+        Map<String, Object> attributes = new QuarkusJwtPrincipalResolver(jwt).resolvePrincipal(request).attributes();
 
         assertThat(attributes).containsEntry("resource_access",
                 Map.of("jsonapi4j", Map.of("roles", List.of("admin", "audit"))));
     }
 
-    // --- access tier ---
+    // --- entitlements ---
 
     @Test
-    void resolvesAccessTierFromConfiguredClaim() {
-        givenClaims(claims("sub", Json.createValue("user-42"), TIER_CLAIM, Json.createValue("ADMIN")));
-        QuarkusJwtPrincipalResolver resolver = QuarkusJwtPrincipalResolver.withAccessTierClaim(
-                jwt, TIER_CLAIM, new DefaultAccessTierRegistry());
+    void resolvesEntitlementsFromConfiguredClaim() {
+        givenClaims(claims("sub", Json.createValue("user-42"), ENTITLEMENTS_CLAIM, Json.createValue("ADMIN")));
+        QuarkusJwtPrincipalResolver resolver = QuarkusJwtPrincipalResolver.withEntitlementsClaim(
+                jwt, ENTITLEMENTS_CLAIM);
 
-        AccessTier tier = resolver.resolveAccessTier(request);
+        List<String> entitlements = resolver.resolvePrincipal(request).authenticatedClientEntitlements();
 
-        assertThat(tier).isNotNull();
-        assertThat(tier.getName()).isEqualTo("ADMIN");
+        assertThat(entitlements).isNotNull().hasSize(1);
+        assertThat(entitlements.getFirst()).isNotNull();
+        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
     }
 
     // --- fails closed ---
@@ -165,10 +164,10 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveUserId(request)).isNull();
-        assertThat(resolver.resolveScopes(request)).isNull();
-        assertThat(resolver.resolveAccessTier(request)).isNull();
-        assertThat(resolver.resolveAttributes(request)).isEmpty();
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientEntitlements()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
     }
 
     @Test
@@ -177,8 +176,8 @@ class QuarkusJwtPrincipalResolverTests {
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
 
-        assertThat(resolver.resolveUserId(request)).isNull();
-        assertThat(resolver.resolveAttributes(request)).isEmpty();
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
     }
 
     @Test
@@ -186,8 +185,8 @@ class QuarkusJwtPrincipalResolverTests {
         givenClaims(claims("sub", "user-42"));
 
         QuarkusJwtPrincipalResolver resolver = new QuarkusJwtPrincipalResolver(jwt);
-        resolver.resolveUserId(request);
-        resolver.resolveAttributes(request);
+        resolver.resolvePrincipal(request).authenticatedUserId();
+        resolver.resolvePrincipal(request).attributes();
 
         verifyNoInteractions(request);
     }

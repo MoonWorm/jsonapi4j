@@ -5,7 +5,7 @@ import pro.api4.jsonapi4j.sampleapp.servlet.EmbeddedJettyExtension;
 import pro.api4.jsonapi4j.sampleapp.servlet.JettyTestConfig;
 import pro.api4.jsonapi4j.sampleapp.testsuite.AccessControlOperationsTests;
 
-import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_ACCESS_TIER_HEADER_NAME;
+import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_ENTITLEMENTS_HEADER_NAME;
 import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_SCOPES_HEADER_NAME;
 import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME;
 
@@ -17,7 +17,7 @@ public class ServletAccessControlOperationsTests extends AccessControlOperations
         super(
                 EmbeddedJettyExtension.ROOT_PATH,
                 EmbeddedJettyExtension.PORT,
-                DEFAULT_ACCESS_TIER_HEADER_NAME,
+                DEFAULT_ENTITLEMENTS_HEADER_NAME,
                 DEFAULT_SCOPES_HEADER_NAME,
                 DEFAULT_USER_ID_HEADER_NAME
         );

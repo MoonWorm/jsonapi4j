@@ -18,18 +18,18 @@ public abstract class AccessControlOperationsTests {
     private final String jsonApiRootPath;
     private final int serverPort;
 
-    private final String defaultAccessTierHeaderName;
+    private final String defaultEntitlementsHeaderName;
     private final String defaultScopesHeaderName;
     private final String defaultUserIdHeaderName;
 
     public AccessControlOperationsTests(String jsonApiRootPath,
                                       int serverPort,
-                                      String defaultAccessTierHeaderName,
+                                      String defaultEntitlementsHeaderName,
                                       String defaultScopesHeaderName,
                                       String defaultUserIdHeaderName) {
         this.jsonApiRootPath = jsonApiRootPath;
         this.serverPort = serverPort;
-        this.defaultAccessTierHeaderName = defaultAccessTierHeaderName;
+        this.defaultEntitlementsHeaderName = defaultEntitlementsHeaderName;
         this.defaultScopesHeaderName = defaultScopesHeaderName;
         this.defaultUserIdHeaderName = defaultUserIdHeaderName;
     }
@@ -357,7 +357,7 @@ public abstract class AccessControlOperationsTests {
 
     @Test
     public void test_deleteUser_acDenied_nonAdmin() {
-        // non-admin user tries to delete — admin tier check should deny
+        // non-admin user tries to delete — admin entitlement check should deny
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
@@ -375,6 +375,142 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("3"));
+    }
+
+    @Test
+    public void test_deleteUser_acGranted_adminEntitlementInHeader() {
+        // the entitlements header alone grants what the previous test was denied
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN")
+                .pathParam("userId", "4")
+                .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(204);
+    }
+
+    @Test
+    public void test_deleteUser_acDenied_unrelatedEntitlementInHeader() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "PARTNER PUBLIC")
+                .pathParam("userId", "3")
+                .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    public void test_deleteUser_acDenied_entitlementDifferingOnlyByCase() {
+        // entitlements are matched by exact name — 'admin' is not 'ADMIN'
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "admin")
+                .pathParam("userId", "3")
+                .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(403);
+    }
+
+    @Test
+    public void test_resourceMeta_bothDimensionsSatisfied_metaVisible() {
+        // meta requires (ADMIN or ROOT_ADMIN) and (PARTNER and PUBLIC)
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo("1"))
+                .body("data.meta.internalUserRef", equalTo("internal-1"));
+    }
+
+    @Test
+    public void test_resourceMeta_orDimensionSatisfiedByAlternative_metaVisible() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ROOT_ADMIN PARTNER PUBLIC")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.meta.internalUserRef", equalTo("internal-1"));
+    }
+
+    @Test
+    public void test_resourceMeta_entitlementsBeyondRequiredOnes_metaVisible() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC NO_ACCESS")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.meta.internalUserRef", equalTo("internal-1"));
+    }
+
+    @Test
+    public void test_resourceMeta_andDimensionUnsatisfied_metaHidden() {
+        // holds ADMIN but neither PARTNER nor PUBLIC — the second dimension fails
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo("1"))
+                .body("data", not(hasKey("meta")));
+    }
+
+    @Test
+    public void test_resourceMeta_andDimensionPartiallySatisfied_metaHidden() {
+        // holds PARTNER but not PUBLIC — an AND dimension needs every entitlement it lists,
+        // so this is denied where an OR dimension would have granted
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo("1"))
+                .body("data", not(hasKey("meta")));
+    }
+
+    @Test
+    public void test_resourceMeta_orDimensionUnsatisfied_metaHidden() {
+        // holds PARTNER but neither ADMIN nor ROOT_ADMIN — the first dimension fails
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "PARTNER PUBLIC")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data", not(hasKey("meta")));
+    }
+
+    @Test
+    public void test_resourceMeta_noEntitlementsAtAll_metaHidden() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data", not(hasKey("meta")));
     }
 
 }

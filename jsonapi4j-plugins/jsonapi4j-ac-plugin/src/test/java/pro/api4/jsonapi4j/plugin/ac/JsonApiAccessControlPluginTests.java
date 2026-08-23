@@ -10,15 +10,18 @@ import pro.api4.jsonapi4j.domain.ToOneRelationship;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
-import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlAccessTier;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
+import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
-import pro.api4.jsonapi4j.principal.tier.TierAdmin;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
+import java.util.Set;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
 
 @ExtendWith(MockitoExtension.class)
 public class JsonApiAccessControlPluginTests {
@@ -85,8 +88,8 @@ public class JsonApiAccessControlPluginTests {
         assertThat(result.getAuthenticated()).isNotNull();
         assertThat(result.getAuthenticated().getAuthenticated()).isNotNull().isEqualTo(Authenticated.AUTHENTICATED);
 
-        assertThat(result.getRequiredAccessTier()).isNotNull();
-        assertThat(result.getRequiredAccessTier().getRequiredAccessTier()).isNotNull().isEqualTo(TierAdmin.ADMIN_ACCESS_TIER);
+        assertThat(result.getRequiredEntitlements()).isNotNull();
+        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements()).isEqualTo(Set.of(ADMIN));
 
         assertThat(result.getRequiredOwnership()).isNull();
         assertThat(result.getRequiredScopes()).isNull();
@@ -139,7 +142,7 @@ public class JsonApiAccessControlPluginTests {
         }
     }
 
-    @AccessControl(tier = @AccessControlAccessTier(TierAdmin.ADMIN_ACCESS_TIER))
+    @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
     private static class MyOperation implements ReadResourceByIdOperation<String> {
 
         @AccessControl(authenticated = Authenticated.AUTHENTICATED)

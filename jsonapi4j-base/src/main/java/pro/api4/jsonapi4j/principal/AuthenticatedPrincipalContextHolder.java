@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j.principal;
 
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,7 +26,23 @@ public class AuthenticatedPrincipalContextHolder {
      * @param principal the authenticated principal, or {@code null} to clear the context
      */
     public static void setAuthenticatedPrincipalContext(Principal principal) {
+        if (principal == null) {
+            clear();
+            return;
+        }
         PRINCIPAL.set(principal);
+    }
+
+    /**
+     * Removes the current thread's {@link Principal}.
+     * <p>
+     * Called by the principal-resolving servlet filter once the request completes. Request threads are
+     * pooled and reused, so a principal left behind would be visible to whatever the container runs on that
+     * thread next — including work that never passes through the filter. Clearing removes the thread-local
+     * entry outright rather than setting it to {@code null}, so nothing is retained between requests.
+     */
+    public static void clear() {
+        PRINCIPAL.remove();
     }
 
     /**
@@ -48,8 +64,8 @@ public class AuthenticatedPrincipalContextHolder {
             }
 
             @Override
-            public AccessTier authenticatedClientAccessTier() {
-                return principal.authenticatedClientAccessTier();
+            public List<String> authenticatedClientEntitlements() {
+                return principal.authenticatedClientEntitlements();
             }
 
             @Override
@@ -65,13 +81,17 @@ public class AuthenticatedPrincipalContextHolder {
     }
 
     /**
-     * Returns the {@link AccessTier} of the current principal, or an empty {@link Optional}
-     * if no principal is set.
+     * Returns the entitlements of the current principal, or an empty list if no principal is set or the
+     * principal carries none. Unlike the other accessors here, this never returns {@code null} and is not
+     * wrapped in an {@link Optional} — an absent principal and one without entitlements are treated alike,
+     * since both fail every entitlement requirement.
      *
-     * @return optional access tier
+     * @return the current principal's entitlements, never {@code null} (may be empty)
      */
-    public static Optional<AccessTier> getAccessTier() {
-        return Optional.ofNullable(PRINCIPAL.get()).map(Principal::authenticatedClientAccessTier);
+    public static List<String> getEntitlements() {
+        return Optional.ofNullable(PRINCIPAL.get())
+                .map(Principal::authenticatedClientEntitlements)
+                .orElse(Collections.emptyList());
     }
 
     /**

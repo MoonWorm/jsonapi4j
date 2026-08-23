@@ -229,8 +229,8 @@ mechanisms shown above.
 
 ```java
 @Bean
-public PrincipalResolver jsonapi4jPrincipalResolver(AccessTierRegistry accessTierRegistry) {
-    return SpringSecurityPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry);
+public PrincipalResolver jsonapi4jPrincipalResolver() {
+    return SpringSecurityPrincipalResolver.withEntitlementsClaim("entitlements");
 }
 ```
 
@@ -239,8 +239,8 @@ public PrincipalResolver jsonapi4jPrincipalResolver(AccessTierRegistry accessTie
 ```java
 @Produces
 @Singleton
-public PrincipalResolver principalResolver(JsonWebToken jwt, AccessTierRegistry accessTierRegistry) {
-    return QuarkusJwtPrincipalResolver.withAccessTierClaim(jwt, "access_tier", accessTierRegistry);
+public PrincipalResolver principalResolver(JsonWebToken jwt) {
+    return QuarkusJwtPrincipalResolver.withEntitlementsClaim(jwt, "entitlements");
 }
 ```
 

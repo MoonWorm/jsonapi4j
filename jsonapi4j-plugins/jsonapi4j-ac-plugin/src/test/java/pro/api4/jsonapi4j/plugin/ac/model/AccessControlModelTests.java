@@ -3,12 +3,13 @@ package pro.api4.jsonapi4j.plugin.ac.model;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
-import pro.api4.jsonapi4j.principal.tier.TierAdmin;
-import pro.api4.jsonapi4j.principal.tier.TierRootAdmin;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
+import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ROOT_ADMIN;
 
 public class AccessControlModelTests {
 
@@ -51,7 +52,9 @@ public class AccessControlModelTests {
 
         AccessControlModel higherPrecedence = AccessControlModel.builder()
                 .authenticated(AccessControlAuthenticatedModel.builder().authenticated(Authenticated.AUTHENTICATED).build())
-                .requiredAccessTier(AccessControlAccessTierModel.builder().requiredAccessTier(TierAdmin.ADMIN_ACCESS_TIER).build())
+                .requiredEntitlements(AccessControlEntitlementsModel.builder()
+                        .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
+                        .build())
                 .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
@@ -65,10 +68,9 @@ public class AccessControlModelTests {
                 .isNotNull()
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.AUTHENTICATED);
-        assertThat(result.getRequiredAccessTier())
-                .isNotNull()
-                .extracting(AccessControlAccessTierModel::getRequiredAccessTier)
-                .isEqualTo(TierAdmin.ADMIN_ACCESS_TIER);
+        assertThat(result.getRequiredEntitlements()).isNotNull();
+        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+                .isEqualTo(Set.of(ADMIN));
         assertThat(result.getRequiredScopes())
                 .isNotNull()
                 .extracting(AccessControlScopesModel::getRequiredScopesExpression)
@@ -86,7 +88,9 @@ public class AccessControlModelTests {
         // given
         AccessControlModel lowerPrecedence = AccessControlModel.builder()
                 .authenticated(AccessControlAuthenticatedModel.builder().authenticated(Authenticated.AUTHENTICATED).build())
-                .requiredAccessTier(AccessControlAccessTierModel.builder().requiredAccessTier(TierAdmin.ADMIN_ACCESS_TIER).build())
+                .requiredEntitlements(AccessControlEntitlementsModel.builder()
+                        .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
+                        .build())
                 .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
@@ -102,10 +106,9 @@ public class AccessControlModelTests {
                 .isNotNull()
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.AUTHENTICATED);
-        assertThat(result.getRequiredAccessTier())
-                .isNotNull()
-                .extracting(AccessControlAccessTierModel::getRequiredAccessTier)
-                .isEqualTo(TierAdmin.ADMIN_ACCESS_TIER);
+        assertThat(result.getRequiredEntitlements()).isNotNull();
+        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+                .isEqualTo(Set.of(ADMIN));
         assertThat(result.getRequiredScopes())
                 .isNotNull()
                 .extracting(AccessControlScopesModel::getRequiredScopesExpression)
@@ -123,14 +126,18 @@ public class AccessControlModelTests {
         // given
         AccessControlModel lowerPrecedence = AccessControlModel.builder()
                 .authenticated(AccessControlAuthenticatedModel.builder().authenticated(Authenticated.AUTHENTICATED).build())
-                .requiredAccessTier(AccessControlAccessTierModel.builder().requiredAccessTier(TierAdmin.ADMIN_ACCESS_TIER).build())
+                .requiredEntitlements(AccessControlEntitlementsModel.builder()
+                        .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ADMIN)).build()))
+                        .build())
                 .requiredScopes(AccessControlScopesModel.builder().requiredScopesExpression("bla bla").build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdExtractor(ResourceIdFromUrlPathExtractor.class).build())
                 .build();
 
         AccessControlModel higherPrecedence = AccessControlModel.builder()
                 .authenticated(AccessControlAuthenticatedModel.builder().authenticated(Authenticated.ANONYMOUS).build())
-                .requiredAccessTier(AccessControlAccessTierModel.builder().requiredAccessTier(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER).build())
+                .requiredEntitlements(AccessControlEntitlementsModel.builder()
+                        .groups(List.of(EntitlementsGroupModel.builder().entitlements(Set.of(ROOT_ADMIN)).build()))
+                        .build())
                 .requiredScopes(AccessControlScopesModel.builder().requiredScopes(Set.of("bla", "bla2")).build())
                 .requiredOwnership(AccessControlOwnershipModel.builder().ownerIdFieldPath("id").build())
                 .build();
@@ -144,10 +151,9 @@ public class AccessControlModelTests {
                 .isNotNull()
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.ANONYMOUS);
-        assertThat(result.getRequiredAccessTier())
-                .isNotNull()
-                .extracting(AccessControlAccessTierModel::getRequiredAccessTier)
-                .isEqualTo(TierRootAdmin.ROOT_ADMIN_ACCESS_TIER);
+        assertThat(result.getRequiredEntitlements()).isNotNull();
+        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+                .isEqualTo(Set.of(ROOT_ADMIN));
         assertThat(result.getRequiredScopes()).isNotNull();
         assertThat(result.getRequiredScopes().getRequiredScopes()).isEqualTo(Set.of("bla", "bla2"));
         assertThat(result.getRequiredScopes().getRequiredScopesExpression()).isNull();

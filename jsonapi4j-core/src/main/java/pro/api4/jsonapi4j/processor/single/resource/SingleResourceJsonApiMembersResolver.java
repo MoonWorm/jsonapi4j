@@ -122,6 +122,8 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                                     }
                                                 } catch (ResourceNotFoundException nfe) {
                                                     return createToManyRelationshipsWithEmptyData(rel, request, dto);
+                                                } finally {
+                                                    AuthenticatedPrincipalContextHolder.clear();
                                                 }
                                             },
                                             executor
@@ -153,6 +155,8 @@ public class SingleResourceJsonApiMembersResolver<REQUEST, DATA_SOURCE_DTO, ATTR
                                                     }
                                                 } catch (ResourceNotFoundException nfe) {
                                                     return createToOneRelationshipWithNullData(rel, request, dto);
+                                                } finally {
+                                                    AuthenticatedPrincipalContextHolder.clear();
                                                 }
                                             },
                                             executor

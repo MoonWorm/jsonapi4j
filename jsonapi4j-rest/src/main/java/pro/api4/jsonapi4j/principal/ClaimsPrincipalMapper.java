@@ -1,13 +1,11 @@
 package pro.api4.jsonapi4j.principal;
 
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -46,68 +44,64 @@ public class ClaimsPrincipalMapper {
     public static final String FALLBACK_SCOPES_CLAIM = "scp";
 
     /**
-     * Claim carrying the access tier. JWT standardizes no such claim, so this is a jsonapi4j convention:
-     * configure your identity provider to emit it, or name your own claim. Pass {@code null} as the access
-     * tier claim to disable tier resolution entirely.
+     * Claim carrying the entitlements. JWT standardizes no such claim, so this is a jsonapi4j convention:
+     * configure your identity provider to emit it, or name your own claim. Pass {@code null} as the
+     * entitlements claim to disable entitlements resolution entirely.
      */
-    public static final String DEFAULT_ACCESS_TIER_CLAIM = "access_tier";
+    public static final String DEFAULT_ENTITLEMENTS_CLAIM = "entitlements";
 
     private static final String CLAIM_PATH_SEPARATOR = "\\.";
 
     private final String userIdClaim;
     private final String scopesClaim;
-    private final String accessTierClaim;
-    private final AccessTierRegistry accessTierRegistry;
+    private final String entitlementsClaim;
 
     /**
-     * Creates a mapper using the default claim names and the default access tier registry.
+     * Creates a mapper using the default claim names, including the default entitlements claim.
      */
     public ClaimsPrincipalMapper() {
-        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, DEFAULT_ACCESS_TIER_CLAIM, new DefaultAccessTierRegistry());
+        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, DEFAULT_ENTITLEMENTS_CLAIM);
     }
 
     /**
      * Creates a mapper with explicit claim names.
      *
-     * @param userIdClaim        claim holding the user id, e.g. {@code sub} or {@code oid}
-     * @param scopesClaim        claim holding the granted scopes, accepted either as a space-delimited
-     *                           string or as an array of strings
-     * @param accessTierClaim    claim holding the access tier name, resolved through
-     *                           {@code accessTierRegistry}; {@code null} disables access tier resolution
-     * @param accessTierRegistry registry used to look up the tier name found in {@code accessTierClaim}
+     * @param userIdClaim       claim holding the user id, e.g. {@code sub} or {@code oid}
+     * @param scopesClaim       claim holding the granted scopes, accepted either as a space-delimited
+     *                          string or as an array of strings
+     * @param entitlementsClaim claim holding the entitlements, accepted either as a space-delimited
+     *                          string or as an array of strings; {@code null} disables entitlements
+     *                          resolution
      */
     public ClaimsPrincipalMapper(String userIdClaim,
                                  String scopesClaim,
-                                 String accessTierClaim,
-                                 AccessTierRegistry accessTierRegistry) {
+                                 String entitlementsClaim) {
         this.userIdClaim = userIdClaim;
         this.scopesClaim = scopesClaim;
-        this.accessTierClaim = accessTierClaim;
-        this.accessTierRegistry = accessTierRegistry;
+        this.entitlementsClaim = entitlementsClaim;
     }
 
     /**
-     * Creates a mapper with explicit claim names for userId and scopes. Not setting anything for access tier.
+     * Creates a mapper with explicit claim names for userId and scopes, leaving entitlements unresolved.
      *
-     * @param userIdClaim        claim holding the user id, e.g. {@code sub} or {@code oid}
-     * @param scopesClaim        claim holding the granted scopes, accepted either as a space-delimited
-     *                           string or as an array of strings
+     * @param userIdClaim claim holding the user id, e.g. {@code sub} or {@code oid}
+     * @param scopesClaim claim holding the granted scopes, accepted either as a space-delimited
+     *                    string or as an array of strings
      */
     public ClaimsPrincipalMapper(String userIdClaim,
                                  String scopesClaim) {
-        this(userIdClaim, scopesClaim, null, null);
+        this(userIdClaim, scopesClaim, null);
     }
 
     /**
-     * Creates a mapper with default claim names except for access tier claim.
+     * Creates a mapper with default claim names except for the entitlements claim.
      *
-     * @param accessTierClaim    claim holding the access tier name, resolved through
-     *                           {@code accessTierRegistry}; {@code null} disables access tier resolution
-     * @param accessTierRegistry registry used to look up the tier name found in {@code accessTierClaim}
+     * @param entitlementsClaim claim holding the entitlements, accepted either as a space-delimited
+     *                          string or as an array of strings; {@code null} disables entitlements
+     *                          resolution
      */
-    public ClaimsPrincipalMapper(String accessTierClaim,
-                                 AccessTierRegistry accessTierRegistry) {
-        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, accessTierClaim, accessTierRegistry);
+    public ClaimsPrincipalMapper(String entitlementsClaim) {
+        this(DEFAULT_USER_ID_CLAIM, DEFAULT_SCOPES_CLAIM, entitlementsClaim);
     }
 
     /**
@@ -154,24 +148,36 @@ public class ClaimsPrincipalMapper {
     }
 
     /**
-     * Resolves the access tier from the configured access tier claim.
+     * Resolves the entitlements from the configured entitlements claim. For multiple values accepts the same format
+     * as for scopes - space-separated string.
      * <p>
-     * JWT defines no standard claim for access tiers, so this returns {@code null} unless an
+     * JWT defines no standard claim for entitlements, so this returns {@code null} unless an
      * application-specific claim name has been configured.
      *
      * @param claims verified JWT claims
-     * @return the resolved {@link AccessTier}, or {@code null} if no access tier claim is configured
+     * @return the resolved list of entitlements, or {@code null} if no entitlements claim is configured
      * or the claim is absent
      */
-    public AccessTier resolveAccessTier(Map<String, Object> claims) {
-        if (accessTierClaim == null) {
+    public List<String> resolveEntitlements(Map<String, Object> claims) {
+        if (entitlementsClaim == null) {
             return null;
         }
-        Object value = readClaim(claims, accessTierClaim);
+        Object value = readClaim(claims, entitlementsClaim);
         if (value == null) {
             return null;
         }
-        return accessTierRegistry.getAccessTierOrDefault(String.valueOf(value));
+        if (value instanceof Collection<?> collection) {
+            return collection.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::valueOf)
+                    .filter(StringUtils::isNotBlank)
+                    .toList();
+        }
+        String scopes = String.valueOf(value);
+        if (StringUtils.isBlank(scopes)) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(scopes.trim().split("\\s+")).toList();
     }
 
     /**
@@ -191,7 +197,7 @@ public class ClaimsPrincipalMapper {
      * Reads a claim by name.
      * <p>
      * The name is first looked up literally, so that namespaced claim names containing dots — such as
-     * Auth0's {@code https://example.com/access_tier} convention — resolve as-is. Only when no such claim
+     * Auth0's {@code https://example.com/entitlements} convention — resolve as-is. Only when no such claim
      * exists is the name treated as a dot-separated path and walked through nested JSON objects, which is
      * what makes Keycloak's {@code realm_access.roles} resolvable.
      *

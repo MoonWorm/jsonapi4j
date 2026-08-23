@@ -13,7 +13,7 @@ public @interface AccessControl {
 
     AccessControlScopes scopes() default @AccessControlScopes();
 
-    AccessControlAccessTier tier() default @AccessControlAccessTier();
+    AccessControlEntitlements entitlements() default @AccessControlEntitlements();
 
     AccessControlOwnership ownership() default @AccessControlOwnership();
 

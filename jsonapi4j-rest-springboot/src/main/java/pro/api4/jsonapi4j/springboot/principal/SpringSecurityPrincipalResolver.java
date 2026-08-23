@@ -6,12 +6,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import pro.api4.jsonapi4j.principal.ClaimsPrincipalMapper;
+import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 import pro.api4.jsonapi4j.principal.Principal;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.principal.tier.AccessTier;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,8 +27,8 @@ import java.util.Set;
  * Applications opt in by declaring it as a bean, which takes precedence over the framework default:
  * <pre>{@code
  * @Bean
- * public PrincipalResolver jsonapi4jPrincipalResolver(AccessTierRegistry accessTierRegistry) {
- *     return SpringSecurityPrincipalResolver.withAccessTierClaim("access_tier", accessTierRegistry);
+ * public PrincipalResolver jsonapi4jPrincipalResolver() {
+ *     return SpringSecurityPrincipalResolver.withEntitlementsClaim("entitlements");
  * }
  * }</pre>
  * Requires {@code spring-boot-starter-oauth2-resource-server} on the application classpath, and the
@@ -45,7 +45,7 @@ public class SpringSecurityPrincipalResolver implements PrincipalResolver {
     private final ClaimsPrincipalMapper claimsMapper;
 
     /**
-     * Creates a resolver mapping the standard claim names, without access tier resolution.
+     * Creates a resolver mapping the standard claim names, without entitlements resolution.
      */
     public SpringSecurityPrincipalResolver() {
         this(new ClaimsPrincipalMapper());
@@ -61,38 +61,24 @@ public class SpringSecurityPrincipalResolver implements PrincipalResolver {
     }
 
     /**
-     * Convenience factory for the common case of resolving access tiers from an application-specific claim.
+     * Convenience factory for the common case of resolving entitlements from an application-specific claim.
      *
-     * @param accessTierClaim    claim holding the access tier name, optionally a dotted path
-     * @param accessTierRegistry registry used to resolve the tier name
-     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given tier claim
+     * @param entitlementsClaim    claim holding the entitlements, optionally a dotted path
+     * @return a resolver using the standard {@code sub} and {@code scope} claims and the given entitlements claim
      */
-    public static SpringSecurityPrincipalResolver withAccessTierClaim(String accessTierClaim,
-                                                                      AccessTierRegistry accessTierRegistry) {
-        return new SpringSecurityPrincipalResolver(new ClaimsPrincipalMapper(
-                accessTierClaim,
-                accessTierRegistry
-        ));
+    public static SpringSecurityPrincipalResolver withEntitlementsClaim(String entitlementsClaim) {
+        return new SpringSecurityPrincipalResolver(new ClaimsPrincipalMapper(entitlementsClaim));
     }
 
     @Override
-    public AccessTier resolveAccessTier(ServletRequest servletRequest) {
-        return claimsMapper.resolveAccessTier(resolveClaims());
-    }
-
-    @Override
-    public Set<String> resolveScopes(ServletRequest servletRequest) {
-        return claimsMapper.resolveScopes(resolveClaims());
-    }
-
-    @Override
-    public String resolveUserId(ServletRequest servletRequest) {
-        return claimsMapper.resolveUserId(resolveClaims());
-    }
-
-    @Override
-    public Map<String, Object> resolveAttributes(ServletRequest servletRequest) {
-        return claimsMapper.resolveAttributes(resolveClaims());
+    public Principal resolvePrincipal(ServletRequest servletRequest) {
+        Map<String, Object> claims = resolveClaims();
+        return new DefaultPrincipal(
+                claimsMapper.resolveEntitlements(claims),
+                claimsMapper.resolveScopes(claims),
+                claimsMapper.resolveUserId(claims),
+                claimsMapper.resolveAttributes(claims)
+        );
     }
 
     /**

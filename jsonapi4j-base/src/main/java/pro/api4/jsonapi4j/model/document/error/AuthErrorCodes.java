@@ -18,8 +18,8 @@ public enum AuthErrorCodes implements ErrorCode {
     FORBIDDEN("FORBIDDEN"),
     /** The principal's token does not include the required OAuth scopes. */
     INSUFFICIENT_SCOPES("INSUFFICIENT_SCOPES"),
-    /** The principal's access tier is below the minimum required for the requested operation. */
-    INSUFFICIENT_ACCESS_TIER("INSUFFICIENT_ACCESS_TIER");
+    /** The authenticated principal does not hold the required entitlements. */
+    INSUFFICIENT_ENTITLEMENTS("INSUFFICIENT_ENTITLEMENTS");
 
     private final String code;
 

@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
-import pro.api4.jsonapi4j.principal.tier.AccessTierRegistry;
 
 /**
  * Optional beans that are only registered when jsonapi4j-ac-plugin is available in the app classpath.
@@ -31,13 +30,13 @@ public class QuarkusJsonApi4jAcPluginBeans {
     @Produces
     @Singleton
     @DefaultBean
-    AccessControlEvaluator accessControlEvaluator(AccessTierRegistry accessTierRegistry) {
+    AccessControlEvaluator accessControlEvaluator() {
         LOG.info(
                 "AC Plugin Enabled. Composing {} as {}",
                 AccessControlEvaluator.class.getSimpleName(),
                 DefaultAccessControlEvaluator.class.getSimpleName()
         );
-        return new DefaultAccessControlEvaluator(accessTierRegistry);
+        return new DefaultAccessControlEvaluator();
     }
 
 }

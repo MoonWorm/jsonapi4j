@@ -22,7 +22,6 @@ import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
 import pro.api4.jsonapi4j.plugin.sf.config.DefaultSfProperties;
-import pro.api4.jsonapi4j.principal.tier.DefaultAccessTierRegistry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryCurrenciesRelationship;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 import pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyResource;
@@ -92,7 +91,7 @@ public class ServletJsonapi4jSampleApp {
         // build plugins
         List<JsonApi4jPlugin> plugins = List.of(
                 new JsonApiAccessControlPlugin(
-                        new DefaultAccessControlEvaluator(new DefaultAccessTierRegistry()),
+                        new DefaultAccessControlEvaluator(),
                         DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
                 ),
                 new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)),
