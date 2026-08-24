@@ -374,17 +374,51 @@ public final class ReflectionUtils {
         return field;
     }
 
+    /**
+     * Returns the field names a type declares more than once across its hierarchy — a field shadowing an
+     * inherited one of the same name.
+     *
+     * <p>Fields are addressed by name throughout these utilities, and a name can only point at one field,
+     * so for a shadowed name the inherited declaration becomes unreachable: annotations on it are not seen,
+     * and its value is neither read nor written. Callers that care about that ambiguity can ask for it here
+     * and say something, rather than silently acting on one of the two.
+     *
+     * @param type the type to inspect
+     * @return the shadowed field names, empty when nothing is shadowed
+     */
+    public static Set<String> shadowedFieldNames(Class<?> type) {
+        Validate.notNull(type, "type must not be null");
+        Set<String> seen = new HashSet<>();
+        Set<String> shadowed = new HashSet<>();
+        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+            for (Field field : c.getDeclaredFields()) {
+                if (!seen.add(field.getName())) {
+                    shadowed.add(field.getName());
+                }
+            }
+        }
+        return Collections.unmodifiableSet(shadowed);
+    }
+
     private static Map<String, Field> getAllFields(Class<?> type) {
         return Collections.unmodifiableMap(getAllFieldsRecursively(new HashMap<>(), type));
     }
 
+    /**
+     * Collects fields by name from the whole hierarchy, letting the most-derived declaration win.
+     *
+     * <p>Superclasses are visited first so that a field shadowing an inherited one of the same name
+     * replaces it, which is what {@code this.field} means in Java and what a serializer will emit. Visiting
+     * them the other way round resolves a shadowed name to the inherited field, so a value would be read
+     * from — and written to — the one the application cannot see.
+     */
     private static Map<String, Field> getAllFieldsRecursively(Map<String, Field> fields,
                                                               Class<?> type) {
-        for (Field f : type.getDeclaredFields()) {
-            fields.put(f.getName(), f);
-        }
         if (type.getSuperclass() != null) {
             getAllFieldsRecursively(fields, type.getSuperclass());
+        }
+        for (Field f : type.getDeclaredFields()) {
+            fields.put(f.getName(), f);
         }
         return fields;
     }

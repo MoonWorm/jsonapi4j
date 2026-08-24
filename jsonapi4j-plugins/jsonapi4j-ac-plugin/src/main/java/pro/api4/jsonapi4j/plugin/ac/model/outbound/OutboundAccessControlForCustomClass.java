@@ -104,6 +104,7 @@ public class OutboundAccessControlForCustomClass {
             Map<String, OutboundAccessControlForCustomClass> attNested
                     = extractNestedRecursively(attributesClass);
             AccessControlDiagnostics.reportUnhideableFields(attributesClass, attFieldLevelAccessControl);
+            AccessControlDiagnostics.reportShadowedFields(attributesClass);
             if (attClassLevelAccessControl != null
                     || MapUtils.isNotEmpty(attFieldLevelAccessControl)
                     || MapUtils.isNotEmpty(attNested)) {
@@ -119,6 +120,7 @@ public class OutboundAccessControlForCustomClass {
         }
 
         AccessControlDiagnostics.reportUnhideableFields(clazz, fieldLevelAccessControl);
+        AccessControlDiagnostics.reportShadowedFields(clazz);
         return OutboundAccessControlForCustomClass.builder()
                 .classLevel(classLevelAccessControl)
                 .fieldLevel(fieldLevelAccessControl)
@@ -162,6 +164,7 @@ public class OutboundAccessControlForCustomClass {
                             ? Collections.emptyMap()
                             : extractNestedRecursively(fieldClass, visited);
                     AccessControlDiagnostics.reportUnhideableFields(fieldClass, fieldLevelAccessControl);
+                    AccessControlDiagnostics.reportShadowedFields(fieldClass);
                     if (classLevelAccessControl != null
                             || MapUtils.isNotEmpty(fieldLevelAccessControl)
                             || MapUtils.isNotEmpty(nested)) {

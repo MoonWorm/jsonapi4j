@@ -173,6 +173,23 @@ public class AccessControlModelTests {
 
 
     @Nested
+    class FieldShadowing {
+
+        @Test
+        void fromFieldsAnnotations_shadowedField_readsTheMostDerivedDeclaration() {
+            assertThat(AccessControlModel.fromFieldsAnnotations(ShadowingChild.class))
+                    .doesNotContainKey("secret");
+        }
+
+        @Test
+        void fromFieldsAnnotations_unshadowedAnnotatedField_isFound() {
+            assertThat(AccessControlModel.fromFieldsAnnotations(ShadowingBase.class))
+                    .containsKey("secret");
+        }
+
+    }
+
+    @Nested
     class Caching {
 
         @Test
@@ -208,6 +225,19 @@ public class AccessControlModelTests {
             assertThat(AccessControlModel.fromClassAnnotation(AnnotatedResource.class))
                     .isNotSameAs(AccessControlModel.fromClassAnnotation(OtherAnnotatedResource.class));
         }
+
+    }
+
+    private static class ShadowingBase {
+
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("secret.read")))
+        protected String secret = "base";
+
+    }
+
+    private static class ShadowingChild extends ShadowingBase {
+
+        private String secret = "child";
 
     }
 

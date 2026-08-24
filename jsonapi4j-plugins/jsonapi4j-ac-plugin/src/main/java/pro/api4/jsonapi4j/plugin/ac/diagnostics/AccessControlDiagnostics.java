@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.ac.diagnostics;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
@@ -231,6 +232,39 @@ public final class AccessControlDiagnostics {
                 + "at all. The configured PrincipalResolver resolved none — when using a JWT resolver, check "
                 + "that issued tokens actually carry the configured scopes claim. "
                 + "See https://api4.pro/principal-resolution/";
+    }
+
+    /**
+     * Warns about a field that shadows an inherited one of the same name.
+     *
+     * <p>Requirements are looked up by field name, and a name resolves to exactly one field — the
+     * most-derived declaration. The inherited one is therefore invisible: an {@code @AccessControl} on it
+     * is never seen, so the rule silently does not apply. Which of the two carries the annotation decides
+     * whether anything is enforced, and that is far too subtle to leave unsaid.
+     *
+     * @param clazz the class to inspect
+     */
+    public static void reportShadowedFields(Class<?> clazz) {
+        for (String fieldName : ReflectionUtils.shadowedFieldNames(clazz)) {
+            if (!anyDeclarationCarriesAccessControl(clazz, fieldName)) {
+                continue;
+            }
+            log.warn("{}.{} shadows an inherited field of the same name. Only the most-derived declaration "
+                            + "is used, so @AccessControl on the inherited one is ignored. Rename one of "
+                            + "them so the requirement is unambiguous.",
+                    clazz.getName(), fieldName);
+        }
+    }
+
+    private static boolean anyDeclarationCarriesAccessControl(Class<?> clazz, String fieldName) {
+        for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
+            for (Field field : c.getDeclaredFields()) {
+                if (field.getName().equals(fieldName) && field.isAnnotationPresent(AccessControl.class)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // ---------------------------------------------------------------------------------------------------
