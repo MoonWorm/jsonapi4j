@@ -9,6 +9,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlPolicy;
 import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.policy.AccessPolicy;
 import pro.api4.jsonapi4j.plugin.ac.policy.NoOpAccessPolicy;
@@ -51,9 +52,7 @@ public class AccessControlPolicyModel {
             return policyType.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException
                  | NoSuchMethodException e) {
-            throw new AccessControlMisconfigurationException(String.format(
-                    "Failed to instantiate AccessPolicy %s. It must be a public class with a public "
-                            + "no-argument constructor.", policyType.getName()), e);
+            throw AccessControlDiagnostics.uninstantiablePolicy(policyType, e);
         }
     }
 

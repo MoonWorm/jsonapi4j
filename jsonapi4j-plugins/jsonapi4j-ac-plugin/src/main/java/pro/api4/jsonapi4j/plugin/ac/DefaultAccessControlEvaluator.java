@@ -5,6 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlAuthenticatedModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlEntitlementsModel;
@@ -126,10 +127,10 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
             if (ownerId instanceof String ownerIdStr) {
                 return ownerIdStr;
             } else {
-                throw new AccessControlMisconfigurationException("Owner ID field must be of type String");
+                throw AccessControlDiagnostics.ownerIdFieldNotAString();
             }
         } catch (RuntimeException e) {
-            throw new AccessControlMisconfigurationException("Failed to read 'ownerId' field value", e);
+            throw AccessControlDiagnostics.unreadableOwnerIdField(e);
         }
     }
 
@@ -156,7 +157,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
             return ownerIdExtractorForRequest;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
                  NoSuchMethodException e) {
-            throw new AccessControlMisconfigurationException("Failed to instantiate a custom OwnerIdExtractor. It must has the default constructor only.", e);
+            throw AccessControlDiagnostics.uninstantiableOwnerIdExtractor(e);
         }
     }
 
@@ -220,10 +221,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         if (!isMissingEntitlementsMisconfiguration()) {
             return;
         }
-        String message = "Access denied: {} is required, but the "
-                + "authenticated principal carries no entitlement at all. The configured PrincipalResolver "
-                + "resolved none — when using a JWT resolver, check that issued tokens actually carry the "
-                + "configured entitlements claim. See https://api4.pro/principal-resolution/";
+        String message = AccessControlDiagnostics.missingEntitlementsMessage();
         if (missingEntitlementsReported.compareAndSet(false, true)) {
             log.warn(message, describeRequirement(expectedEntitlements));
         } else {
@@ -333,10 +331,7 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         if (!isMissingScopesMisconfiguration()) {
             return;
         }
-        String message = "Access denied: {} is required, but the authenticated principal carries no scopes "
-                + "at all. The configured PrincipalResolver resolved none — when using a JWT resolver, check "
-                + "that issued tokens actually carry the configured scopes claim. "
-                + "See https://api4.pro/principal-resolution/";
+        String message = AccessControlDiagnostics.missingScopesMessage();
         if (missingScopesReported.compareAndSet(false, true)) {
             log.warn(message, describeScopesRequirement(expectedScopes));
         } else {

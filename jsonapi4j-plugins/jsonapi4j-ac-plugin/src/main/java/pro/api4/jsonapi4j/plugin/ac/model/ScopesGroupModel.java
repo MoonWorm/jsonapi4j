@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 
 import java.util.Arrays;
@@ -38,15 +39,11 @@ public class ScopesGroupModel {
      */
     static ScopesGroupModel fromAnnotation(ScopesGroup group) {
         if (group == null) {
-            throw new AccessControlMisconfigurationException(
-                    "@ScopesGroup must not be null. Omit it from @AccessControlScopes to declare no requirement.");
+            throw AccessControlDiagnostics.missingScopesGroup();
         }
         Set<String> scopes = new LinkedHashSet<>(Arrays.asList(group.value()));
         if (scopes.isEmpty() || scopes.stream().anyMatch(StringUtils::isBlank)) {
-            throw new AccessControlMisconfigurationException(String.format(
-                    "@ScopesGroup must name at least one non-blank scope, but was %s. "
-                            + "Omit it from @AccessControlScopes to declare no requirement.",
-                    Arrays.toString(group.value())));
+            throw AccessControlDiagnostics.emptyScopesGroup(group.value());
         }
         return ScopesGroupModel.builder()
                 .scopes(scopes)

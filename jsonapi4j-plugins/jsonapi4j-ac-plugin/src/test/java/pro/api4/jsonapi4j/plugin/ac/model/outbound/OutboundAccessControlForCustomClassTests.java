@@ -8,6 +8,10 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
 import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 
+import pro.api4.jsonapi4j.util.ReflectionUtils;
+
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;

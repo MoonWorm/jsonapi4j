@@ -53,6 +53,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- Instantiates a copy of a DTO without running its constructor, so that access control can
+             redact fields without depending on the shape of the application's constructors -->
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+        </dependency>
+
         <!-- Apache commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>

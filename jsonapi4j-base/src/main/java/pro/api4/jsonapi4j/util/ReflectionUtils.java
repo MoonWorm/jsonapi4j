@@ -305,6 +305,20 @@ public final class ReflectionUtils {
     }
 
     /**
+     * Fetches the declared fields of a type and all its superclasses, keyed by name.
+     *
+     * <p>Gives callers what {@link #fetchFieldTypes(Class)} erases — generic type arguments, modifiers and
+     * annotations — for cases like telling a {@code List<Address>} from a {@code List<String>}, or a static
+     * field from an instance one.
+     *
+     * @param objectType target object type
+     * @return map of fieldName - field pairs
+     */
+    public static Map<String, Field> fetchFields(Class<?> objectType) {
+        return getAllFields(objectType);
+    }
+
+    /**
      * Fetches annotations per field for a given type. Doesn't resolve field types, but resolves fields of all
      * superclasses recursively.
      *

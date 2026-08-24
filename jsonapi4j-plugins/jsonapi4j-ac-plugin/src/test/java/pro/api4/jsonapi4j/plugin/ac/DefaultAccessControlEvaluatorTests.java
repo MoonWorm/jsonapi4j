@@ -17,6 +17,7 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlEntitlementsModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlPolicyModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.principal.DefaultPrincipal;
 
@@ -537,4 +538,182 @@ class DefaultAccessControlEvaluatorTests {
         }
     }
 
+
+    @Nested
+    class Anonymization {
+
+        @Test
+        void anonymizeObjectIfNeeded_fieldDenied_originalObjectIsNotModified() {
+            // given - the object an application resolver handed over, which it may also be caching
+            givenPrincipalWithEntitlements(PUBLIC);
+            SecretiveAttributes original = new SecretiveAttributes("John", "4111");
+
+            // when
+            AnonymizationResult<SecretiveAttributes> actualResult = anonymize(original);
+
+            // then - the response is redacted but the application's own object still holds everything
+            assertThat(actualResult.targetObject().getCreditCardNumber()).isNull();
+            assertThat(original.getCreditCardNumber()).isEqualTo("4111");
+            assertThat(actualResult.targetObject()).isNotSameAs(original);
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_fieldDenied_survivingFieldsAreCarriedOver() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            AnonymizationResult<SecretiveAttributes> actualResult
+                    = anonymize(new SecretiveAttributes("John", "4111"));
+
+            assertThat(actualResult.targetObject().getFullName()).isEqualTo("John");
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_nothingDenied_returnsTheOriginalInstance() {
+            givenPrincipalWithEntitlements(ADMIN);
+            SecretiveAttributes original = new SecretiveAttributes("John", "4111");
+
+            assertThat(anonymize(original).targetObject()).isSameAs(original);
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_nestedFieldDenied_originalNestedObjectIsNotModified() {
+            // given
+            givenPrincipalWithEntitlements(PUBLIC);
+            SecretiveAttributes nested = new SecretiveAttributes("John", "4111");
+            HolderAttributes original = new HolderAttributes("holder", nested);
+
+            // when
+            AnonymizationResult<HolderAttributes> actualResult = anonymize(original);
+
+            // then - both the holder and the object it points at are left intact
+            assertThat(actualResult.targetObject().getSecrets().getCreditCardNumber()).isNull();
+            assertThat(nested.getCreditCardNumber()).isEqualTo("4111");
+            assertThat(original.getSecrets()).isSameAs(nested);
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_fieldDenied_reportsItsBareName() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            assertThat(anonymize(new SecretiveAttributes("John", "4111")).anonymizedFields())
+                    .containsExactly("creditCardNumber");
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_nestedFieldDenied_reportsADottedPath() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            AnonymizationResult<HolderAttributes> actualResult
+                    = anonymize(new HolderAttributes("holder", new SecretiveAttributes("John", "4111")));
+
+            assertThat(actualResult.anonymizedFields()).containsExactly("secrets.creditCardNumber");
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_wholeNestedObjectDenied_reportsTheSubtreeRootOnly() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            AnonymizationResult<GuardedHolderAttributes> actualResult
+                    = anonymize(new GuardedHolderAttributes("holder", new GuardedAttributes("secret")));
+
+            assertThat(actualResult.anonymizedFields()).containsExactly("guarded");
+            assertThat(actualResult.targetObject().getGuarded()).isNull();
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_wholeObjectDenied_reportsNoPathsAndDropsTheObject() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            AnonymizationResult<GuardedAttributes> actualResult = anonymize(new GuardedAttributes("secret"));
+
+            assertThat(actualResult.isFullyAnonymized()).isTrue();
+            assertThat(actualResult.targetObject()).isNull();
+            assertThat(actualResult.anonymizedFields()).isEmpty();
+        }
+
+        private <T> AnonymizationResult<T> anonymize(T target) {
+            return sut.anonymizeObjectIfNeeded(
+                    target,
+                    DefaultAccessControlContext.outboundForResource(target),
+                    OutboundAccessControlForCustomClass.fromClassAnnotationsOf(target));
+        }
+
+    }
+
+    @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
+    private static class GuardedAttributes {
+
+        private final String secret;
+
+        GuardedAttributes(String secret) {
+            this.secret = secret;
+        }
+
+        String getSecret() {
+            return secret;
+        }
+
+    }
+
+    private static class GuardedHolderAttributes {
+
+        private final String label;
+        private final GuardedAttributes guarded;
+
+        GuardedHolderAttributes(String label, GuardedAttributes guarded) {
+            this.label = label;
+            this.guarded = guarded;
+        }
+
+        String getLabel() {
+            return label;
+        }
+
+        GuardedAttributes getGuarded() {
+            return guarded;
+        }
+
+    }
+
+    private static class HolderAttributes {
+
+        private final String label;
+        private final SecretiveAttributes secrets;
+
+        HolderAttributes(String label, SecretiveAttributes secrets) {
+            this.label = label;
+            this.secrets = secrets;
+        }
+
+        String getLabel() {
+            return label;
+        }
+
+        SecretiveAttributes getSecrets() {
+            return secrets;
+        }
+
+    }
+
+    private static class SecretiveAttributes {
+
+        private final String fullName;
+
+        @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
+        private final String creditCardNumber;
+
+        SecretiveAttributes(String fullName, String creditCardNumber) {
+            this.fullName = fullName;
+            this.creditCardNumber = creditCardNumber;
+        }
+
+        String getFullName() {
+            return fullName;
+        }
+
+        String getCreditCardNumber() {
+            return creditCardNumber;
+        }
+
+    }
 }

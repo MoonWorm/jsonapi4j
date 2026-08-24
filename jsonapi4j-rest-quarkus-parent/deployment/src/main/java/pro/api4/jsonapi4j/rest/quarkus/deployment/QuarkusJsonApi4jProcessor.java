@@ -3,12 +3,19 @@ package pro.api4.jsonapi4j.rest.quarkus.deployment;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.undertow.deployment.FilterBuildItem;
 import io.quarkus.undertow.deployment.IgnoredServletContainerInitializerBuildItem;
 import io.quarkus.undertow.deployment.ListenerBuildItem;
 import io.quarkus.undertow.deployment.ServletBuildItem;
 import jakarta.servlet.DispatcherType;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -26,6 +33,9 @@ import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfPluginBeans;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfProperties;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 
 class QuarkusJsonApi4jProcessor {
@@ -35,6 +45,9 @@ class QuarkusJsonApi4jProcessor {
     private static final String FEATURE = "jsonapi4j-rest-quarkus";
 
     private static final String AC_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin";
+
+    private static final DotName ACCESS_CONTROL_ANNOTATION
+            = DotName.createSimple("pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl");
     private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer";
     private static final String SF_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin";
     private static final String CD_SERVLET_INITIALIZER_CLASSNAME = "pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer";
@@ -111,6 +124,78 @@ class QuarkusJsonApi4jProcessor {
                 ).addFilterUrlMapping(mapping, DispatcherType.REQUEST)
                 .setLoadOnStartup(1)
                 .build();
+    }
+
+
+    /**
+     * Registers the classes access control may have to redact, so that redaction works in a native image.
+     *
+     * <p>Hiding a field produces a copy of the object with that field blanked, and building that copy
+     * instantiates the class without running its constructor. Native image permits that only for classes it
+     * was told about ahead of time; without the registration the image still builds, and then fails at
+     * runtime the first time a caller is denied — which is exactly the request you least want to fail.
+     *
+     * <p>Registration covers more than the annotated classes themselves. Redacting a field deep in a graph
+     * copies every object on the path to it, so a class that merely holds an annotated one is copied too and
+     * has to be registered as well. The set is therefore closed over "declares a field of a registered
+     * type" until it stops growing.
+     */
+    @BuildStep
+    void registerAccessControlledClassesForRedaction(QuarkusJsonApi4jAcProperties acProperties,
+                                                     CombinedIndexBuildItem combinedIndex,
+                                                     BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
+        if (!isAcPluginEnabled(acProperties)) {
+            return;
+        }
+        IndexView index = combinedIndex.getIndex();
+        Set<DotName> redactable = new LinkedHashSet<>();
+        for (AnnotationInstance annotation : index.getAnnotations(ACCESS_CONTROL_ANNOTATION)) {
+            AnnotationTarget target = annotation.target();
+            if (target.kind() == AnnotationTarget.Kind.CLASS) {
+                redactable.add(target.asClass().name());
+            } else if (target.kind() == AnnotationTarget.Kind.FIELD) {
+                redactable.add(target.asField().declaringClass().name());
+            }
+        }
+        if (redactable.isEmpty()) {
+            LOG.warn("Access control is enabled but no @AccessControl was found in the Jandex index, so "
+                    + "nothing was registered for native-image redaction. Quarkus indexes the application "
+                    + "module automatically but not its dependencies: if your attributes classes live in "
+                    + "another jar, index it with 'quarkus.index-dependency.<name>.group-id' and "
+                    + "'.artifact-id', or ship that jar with a Jandex index.");
+            return;
+        }
+        addClassesHolding(index, redactable);
+
+        String[] classNames = redactable.stream().map(DotName::toString).toArray(String[]::new);
+        LOG.info("Registering {} access-controlled classes for native-image redaction", classNames.length);
+        reflectiveClasses.produce(ReflectiveClassBuildItem.builder(classNames)
+                .constructors(true)
+                .fields(true)
+                .serialization(true)
+                .build());
+    }
+
+    /**
+     * Grows the set to include every class holding a field of an already-included type, repeatedly, until it
+     * stops changing.
+     */
+    private static void addClassesHolding(IndexView index, Set<DotName> redactable) {
+        boolean grown = true;
+        while (grown) {
+            grown = false;
+            for (ClassInfo candidate : index.getKnownClasses()) {
+                if (redactable.contains(candidate.name())) {
+                    continue;
+                }
+                boolean holdsRedactable = candidate.fields().stream()
+                        .anyMatch(field -> redactable.contains(field.type().name()));
+                if (holdsRedactable) {
+                    redactable.add(candidate.name());
+                    grown = true;
+                }
+            }
+        }
     }
 
     @BuildStep

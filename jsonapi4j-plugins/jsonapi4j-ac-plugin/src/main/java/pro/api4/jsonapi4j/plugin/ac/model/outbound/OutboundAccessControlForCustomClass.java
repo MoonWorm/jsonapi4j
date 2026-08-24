@@ -9,10 +9,12 @@ import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -101,6 +103,7 @@ public class OutboundAccessControlForCustomClass {
                     = AccessControlModel.fromFieldsAnnotations(attributesClass);
             Map<String, OutboundAccessControlForCustomClass> attNested
                     = extractNestedRecursively(attributesClass);
+            AccessControlDiagnostics.reportUnhideableFields(attributesClass, attFieldLevelAccessControl);
             if (attClassLevelAccessControl != null
                     || MapUtils.isNotEmpty(attFieldLevelAccessControl)
                     || MapUtils.isNotEmpty(attNested)) {
@@ -115,12 +118,15 @@ public class OutboundAccessControlForCustomClass {
             }
         }
 
+        AccessControlDiagnostics.reportUnhideableFields(clazz, fieldLevelAccessControl);
         return OutboundAccessControlForCustomClass.builder()
                 .classLevel(classLevelAccessControl)
                 .fieldLevel(fieldLevelAccessControl)
                 .nested(Collections.unmodifiableMap(nested))
                 .build();
     }
+
+
 
     private static Map<String, OutboundAccessControlForCustomClass> extractNestedRecursively(Class<?> clazz) {
         return extractNestedRecursively(clazz, new HashSet<>());
@@ -138,8 +144,11 @@ public class OutboundAccessControlForCustomClass {
         }
         try {
             Map<String, Class<?>> fields = ReflectionUtils.fetchFieldTypes(clazz);
+            Map<String, Field> declaredFields = ReflectionUtils.fetchFields(clazz);
 
             fields.forEach((fieldName, fieldClass) -> {
+                AccessControlDiagnostics.reportUnenforceableElementRequirements(
+                        clazz, fieldName, fieldClass, declaredFields.get(fieldName).getGenericType());
                 if (!ReflectionUtils.isJdkType(fieldClass)) {
                     AccessControlModel classLevelAccessControl
                             = AccessControlModel.fromClassAnnotation(fieldClass);
@@ -152,6 +161,7 @@ public class OutboundAccessControlForCustomClass {
                     Map<String, OutboundAccessControlForCustomClass> nested = fieldClass.isEnum()
                             ? Collections.emptyMap()
                             : extractNestedRecursively(fieldClass, visited);
+                    AccessControlDiagnostics.reportUnhideableFields(fieldClass, fieldLevelAccessControl);
                     if (classLevelAccessControl != null
                             || MapUtils.isNotEmpty(fieldLevelAccessControl)
                             || MapUtils.isNotEmpty(nested)) {

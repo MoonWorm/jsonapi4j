@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
 
 import java.util.Arrays;
@@ -38,15 +39,11 @@ public class EntitlementsGroupModel {
      */
     static EntitlementsGroupModel fromAnnotation(EntitlementsGroup group) {
         if (group == null) {
-            throw new AccessControlMisconfigurationException(
-                    "@EntitlementsGroup must not be null. Omit it from @AccessControlEntitlements to declare no requirement.");
+            throw AccessControlDiagnostics.missingEntitlementsGroup();
         }
         Set<String> entitlements = new LinkedHashSet<>(Arrays.asList(group.value()));
         if (entitlements.isEmpty() || entitlements.stream().anyMatch(StringUtils::isBlank)) {
-            throw new AccessControlMisconfigurationException(String.format(
-                    "@EntitlementsGroup must name at least one non-blank entitlement, but was %s. "
-                            + "Omit it from @AccessControlEntitlements to declare no requirement.",
-                    Arrays.toString(group.value())));
+            throw AccessControlDiagnostics.emptyEntitlementsGroup(group.value());
         }
         return EntitlementsGroupModel.builder()
                 .entitlements(entitlements)

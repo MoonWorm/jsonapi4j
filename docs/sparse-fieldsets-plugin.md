@@ -65,6 +65,7 @@ This returns `users` with only `email` and `lastName` in their attributes, and i
 | All requested fields don't exist | Treated as empty fields (no fields returned) by default. Configurable via `requestedFieldsDontExistMode`. |
 | Primitive-typed fields (e.g. `int`) | Cannot be excluded if other fields at the same level are requested, because primitives can't be set to `null`. Use object types (e.g. `Integer`) for full sparse fieldsets support. |
 | Multi-type responses (e.g. users + included countries) | Use separate `fields[TYPE]` parameters per resource type |
+| Excluded fields are nulled **on the attributes object your resource returned** | Unlike the [Access Control plugin](/access-control-plugin/), which copies before hiding anything, this plugin modifies the object in place. Return a freshly built attributes object from `resolveAttributes(...)` — a cached or shared instance would keep the excluded fields `null` for later requests. |
 
 ### Available Properties
 

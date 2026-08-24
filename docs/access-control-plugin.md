@@ -391,6 +391,54 @@ public class UserCitizenshipsRelationship implements ToManyRelationship<CountryR
 
 If you're working with the `jsonapi4j-core` module directly (without the REST layer), you can place `@AccessControl` on a custom `ResourceObject`, `Attributes` object, or their fields for outbound evaluations. For inbound evaluations, the annotation can also be placed at the class level of the `Request` class.
 
+### How Fields Are Hidden
+
+Hiding a field never modifies your object. The plugin builds a **copy** of the attributes object with the
+denied fields left `null` and puts the copy in the response, so the instance your `Resource` returned comes
+back untouched. That matters because nothing stops a resource from returning a cached, shared, or otherwise
+long-lived object — nulling a field on one would corrupt it for every later request.
+
+Copies are made only along the path to a hidden field, and only when something is actually hidden. When a
+caller may see everything, the original object is passed straight through and nothing is allocated.
+
+Building the copy does not call your constructor, so constructors that validate their arguments, normalise
+them, or take them in a different order than the fields are declared all work fine. Records are the one
+exception: their components cannot be written after construction, so a record is rebuilt through its
+canonical constructor instead.
+
+### Limitations
+
+| Scenario | Behavior |
+|----------|----------|
+| Primitive-typed fields (e.g. `int`) | Cannot be hidden — a primitive can't hold "absent". A denied caller gets an error instead of a hidden value. Use the boxed type (e.g. `Integer`). Warned about at startup. |
+| `@AccessControl` on a field of a **collection, array or map element** class (e.g. a rule on `Address.zip` where the response exposes `List<Address>`) | **Not enforced** — requirements are not applied to elements. Warned about at startup. Hiding the container field itself does work, see the next row. |
+| `@AccessControl` on the container field itself (e.g. on `List<Address> addresses`) | Enforced — the whole collection, array or map is hidden. |
+| `@AccessControl` on a `static` field | No effect — static fields are never serialized into a response. Warned about at startup. |
+| Attributes object is a dynamic proxy (e.g. a Hibernate/CGLIB proxied entity) | Cannot be copied, so the request fails with a clear error. Return a DTO rather than a proxied entity. |
+| Attributes class lives in a JPMS module that does not `open` its package | Reflective access fails. Open the package to the framework. |
+| Denied `GET` requests | Return `200` with the restricted data omitted, not `403`. A `403` would fail the whole response, including the parts the caller is allowed to see, and would break compound documents. |
+
+The three "warned about at startup" cases are reported once, when the access control model for a class is
+first built, naming the class and field involved — so a rule that can never take effect shows up in your
+logs rather than silently doing nothing.
+
+### Native Image (GraalVM / Quarkus)
+
+Building the redacted copy instantiates your attributes class reflectively, which a native image allows
+only for classes registered ahead of time. The Quarkus extension registers them for you by scanning for
+`@AccessControl` at build time.
+
+Quarkus indexes your application module automatically but **not its dependencies**. If your attributes
+classes live in a separate jar, index it explicitly or the registration will find nothing:
+
+```properties
+quarkus.index-dependency.my-domain.group-id=com.example
+quarkus.index-dependency.my-domain.artifact-id=my-domain
+```
+
+Alternatively, ship that jar with a Jandex index. If access control is enabled and no `@AccessControl` is
+found in the index, the build logs a warning naming this property.
+
 ### Available Properties
 
 | Property name          | Default value | Description                            |

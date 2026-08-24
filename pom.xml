@@ -85,6 +85,9 @@
         <!--codegen-->
         <lombok.version>1.18.44</lombok.version>
 
+        <!--object instantiation without invoking constructors-->
+        <objenesis.version>3.3</objenesis.version>
+
         <!--test-->
         <junit-jupiter-api.version>5.8.2</junit-jupiter-api.version>
         <mockito-core.version>5.15.2</mockito-core.version>
@@ -120,6 +123,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!--Objenesis-->
+            <dependency>
+                <groupId>org.objenesis</groupId>
+                <artifactId>objenesis</artifactId>
+                <version>${objenesis.version}</version>
+            </dependency>
             <!--Spring framework-->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

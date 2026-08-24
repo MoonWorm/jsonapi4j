@@ -2,15 +2,17 @@ package pro.api4.jsonapi4j.plugin.ac;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
-import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
-import pro.api4.jsonapi4j.plugin.ac.exception.AccessControlMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
+import pro.api4.jsonapi4j.plugin.ac.copy.ObjectCopier;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,15 +57,6 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         }
     }
 
-    private static void anonymizeField(Object targetObject,
-                                       String fieldName) {
-        try {
-            ReflectionUtils.setFieldValueThrowing(targetObject, fieldName, null);
-        } catch (Exception ex) {
-            throw new AccessControlMisconfigurationException("Anonymization failed. Can't set a value for a field ." + fieldName, ex);
-        }
-    }
-
     public <DATA> DATA retrieveDataIfAllowed(AccessControlContext context,
                                              Supplier<DATA> dataSupplier,
                                              AccessControlModel inboundAccessControlRequirements) {
@@ -86,6 +79,18 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         return anonymizeObjectIfNeeded("", targetObject, context, outboundAccessControlSettings);
     }
 
+    /**
+     * Works out what the caller may see of the given object and returns an object that shows only that.
+     *
+     * <p>The input graph is never modified. When something has to be hidden, a copy of the object is built
+     * with those fields blanked out, and the copy is returned in its place; when nothing has to be hidden,
+     * the original instance is returned and nothing is allocated. Objects reached through this method are
+     * owned by the application — a resolver is free to hand back a cached or shared instance — so nulling
+     * fields on them would corrupt them for every later request.
+     *
+     * <p>Copies are made one level at a time as the recursion unwinds, so only objects on a path to a
+     * hidden field are copied; everything else is carried over by reference.
+     */
     private <T> AnonymizationResult<T> anonymizeObjectIfNeeded(
             String fieldPath,
             T targetObject,
@@ -110,7 +115,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         }
 
         log.debug("Access to the entire {} is allowed, proceeding...", targetObject);
-        Set<String> targetObjectAnonymizedFields = anonymizeFields(
+        Set<String> deniedFields = deniedFields(
                 targetObject,
                 context,
                 outboundAccessControlSettings.getFieldLevel()
@@ -118,14 +123,17 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
         log.debug(
                 "Anonymizing fields of the {}. {}",
                 targetObject,
-                targetObjectAnonymizedFields.isEmpty() ? "None fields have been anonymized." : "Fields anonymized: " + String.join(", ", targetObjectAnonymizedFields)
+                deniedFields.isEmpty() ? "None fields have been anonymized." : "Fields anonymized: " + String.join(", ", deniedFields)
         );
+
+        Map<String, Object> replacements = new HashMap<>();
+        deniedFields.forEach(fieldName -> replacements.put(fieldName, null));
 
         List<String> nestedAnonymizedPaths = new ArrayList<>();
         MapUtils.emptyIfNull(outboundAccessControlSettings.getNested())
                 .forEach((fieldName, nestedOutboundAccessControlSettings) -> {
                     Object nestedTargetObject = ReflectionUtils.getFieldValueThrowing(targetObject, fieldName);
-                    if (nestedTargetObject != null && !targetObjectAnonymizedFields.contains(fieldName)) {
+                    if (nestedTargetObject != null && !deniedFields.contains(fieldName)) {
                         AnonymizationResult<Object> anonymizationResult = anonymizeObjectIfNeeded(
                                 fieldName,
                                 nestedTargetObject,
@@ -134,31 +142,65 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                         );
                         if (anonymizationResult.isFullyAnonymized()) {
                             nestedAnonymizedPaths.add(fieldName);
-                            anonymizeField(targetObject, fieldName);
+                            replacements.put(fieldName, null);
                         } else {
                             nestedAnonymizedPaths.addAll(
                                     anonymizationResult.anonymizedFields()
                             );
+                            if (anonymizationResult.targetObject() != nestedTargetObject) {
+                                replacements.put(fieldName, anonymizationResult.targetObject());
+                            }
                         }
                     }
                 });
 
         Set<String> anonymizedPaths = Stream.concat(
                         nestedAnonymizedPaths.stream(),
-                        targetObjectAnonymizedFields.stream()
+                        deniedFields.stream()
                 )
                 .map(p -> !fieldPath.isEmpty() ? fieldPath + "." + p : p)
                 .collect(Collectors.toSet());
 
-        return new AnonymizationResult<>(targetObject, false, anonymizedPaths);
+        T resultObject = replacements.isEmpty() ? targetObject : redact(targetObject, replacements);
+        return new AnonymizationResult<>(resultObject, false, anonymizedPaths);
     }
 
-    private Set<String> anonymizeFields(
+    /**
+     * Applies the hidden fields, by copying rather than by damaging the object — except for the envelopes
+     * the framework itself builds.
+     *
+     * <p>A {@link ResourceIdentifierObject} — which every {@code ResourceObject} is — is constructed fresh
+     * for each response out of the parts a resolver returned, so writing to it can affect nothing but the
+     * response being built, and it is edited in place. Its constructors take inherited fields, which makes
+     * it uncopyable anyway.
+     *
+     * <p>Everything reachable inside such an envelope is different: attributes and the objects nested in
+     * them come from the application and may be cached, shared or otherwise outlive the request, so those
+     * are copied.
+     */
+    private static <T> T redact(T targetObject, Map<String, Object> replacements) {
+        try {
+            if (targetObject instanceof ResourceIdentifierObject) {
+                replacements.forEach((fieldName, value) ->
+                        ReflectionUtils.setFieldValueThrowing(targetObject, fieldName, value));
+                return targetObject;
+            }
+            return ObjectCopier.copyWith(targetObject, replacements);
+        } catch (Exception ex) {
+            throw AccessControlDiagnostics.unredactable(
+                    targetObject.getClass(), replacements.keySet(), ex);
+        }
+    }
+
+    /**
+     * Returns the names of the fields the caller may not see, without touching the object.
+     */
+    private Set<String> deniedFields(
             Object targetObject,
             AccessControlContext context,
             Map<String, AccessControlModel> fieldLevelAcSettings
     ) {
-        Set<String> anonymizedFields = new HashSet<>();
+        Set<String> deniedFields = new HashSet<>();
         if (fieldLevelAcSettings != null) {
             for (Map.Entry<String, AccessControlModel> e : fieldLevelAcSettings.entrySet()) {
                 String fieldName = e.getKey();
@@ -166,13 +208,12 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                 if (fieldValue != null) {
                     AccessControlModel fieldAcInfo = e.getValue();
                     if (!evaluateOutboundRequirements(context, fieldAcInfo)) {
-                        anonymizeField(targetObject, fieldName);
-                        anonymizedFields.add(fieldName);
+                        deniedFields.add(fieldName);
                     }
                 }
             }
         }
-        return Collections.unmodifiableSet(anonymizedFields);
+        return Collections.unmodifiableSet(deniedFields);
     }
 
 }

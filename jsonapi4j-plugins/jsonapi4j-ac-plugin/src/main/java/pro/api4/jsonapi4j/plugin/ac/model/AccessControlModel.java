@@ -9,6 +9,7 @@ import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.HashMap;
@@ -36,7 +37,10 @@ public class AccessControlModel {
     private static final ClassValue<Optional<AccessControlModel>> FROM_CLASS_ANNOTATION = new ClassValue<>() {
         @Override
         protected Optional<AccessControlModel> computeValue(Class<?> clazz) {
-            return Optional.ofNullable(fromAnnotation(ReflectionUtils.findAnnotationForClass(clazz, AccessControl.class)));
+            AccessControlModel model
+                    = fromAnnotation(ReflectionUtils.findAnnotationForClass(clazz, AccessControl.class));
+            AccessControlDiagnostics.reportRequirementlessAccessControl(clazz.getName(), model);
+            return Optional.ofNullable(model);
         }
     };
 
@@ -50,8 +54,12 @@ public class AccessControlModel {
         protected Map<String, AccessControlModel> computeValue(Class<?> clazz) {
             Map<String, AccessControlModel> accessControlModelPerField = new HashMap<>();
             ReflectionUtils.fetchAnnotationForFields(clazz, AccessControl.class)
-                    .forEach((fieldName, accessControl) ->
-                            accessControlModelPerField.put(fieldName, fromAnnotation(accessControl)));
+                    .forEach((fieldName, accessControl) -> {
+                        AccessControlModel model = fromAnnotation(accessControl);
+                        AccessControlDiagnostics.reportRequirementlessAccessControl(
+                                clazz.getName() + "." + fieldName, model);
+                        accessControlModelPerField.put(fieldName, model);
+                    });
             return unmodifiableMap(accessControlModelPerField);
         }
     };
@@ -61,6 +69,20 @@ public class AccessControlModel {
     private final AccessControlScopesModel requiredScopes;
     private final AccessControlOwnershipModel requiredOwnership;
     private final AccessControlPolicyModel requiredPolicy;
+
+    /**
+     * Tells whether this model asks for anything at all. A model with every requirement absent enforces
+     * nothing, which is worth noticing — it usually means an annotation was written but never filled in.
+     *
+     * @return {@code true} when no requirement of any kind is declared
+     */
+    public boolean declaresNoRequirements() {
+        return authenticated == null
+                && requiredEntitlements == null
+                && requiredScopes == null
+                && requiredOwnership == null
+                && requiredPolicy == null;
+    }
 
     public static AccessControlModel fromAnnotation(AccessControl annotation) {
         if (annotation == null) {
