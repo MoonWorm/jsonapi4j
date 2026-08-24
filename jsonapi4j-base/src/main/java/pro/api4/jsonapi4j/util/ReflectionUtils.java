@@ -240,14 +240,20 @@ public final class ReflectionUtils {
             return;
         }
         visited.add(clazz);
-        for (Field field : clazz.getDeclaredFields()) {
-            String path = prefix.isEmpty()
-                    ? field.getName()
-                    : prefix + "." + field.getName();
-            result.add(path);
-            Class<?> fieldType = field.getType();
-            // recurse
-            traverse(fieldType, path, result, visited);
+        // Inherited fields are part of the object just as much as declared ones — they are serialized
+        // alongside them, so a caller asking which paths exist must be told about both.
+        for (Class<?> current = clazz;
+             current != null && current != Object.class && !isLeafType(current);
+             current = current.getSuperclass()) {
+            for (Field field : current.getDeclaredFields()) {
+                String path = prefix.isEmpty()
+                        ? field.getName()
+                        : prefix + "." + field.getName();
+                result.add(path);
+                Class<?> fieldType = field.getType();
+                // recurse
+                traverse(fieldType, path, result, visited);
+            }
         }
         visited.remove(clazz); // important for different branches
     }

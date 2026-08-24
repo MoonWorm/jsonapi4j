@@ -337,4 +337,43 @@ public class SparseFieldsetsHelperTests {
 
         assertThat(resourceObject.getAttributes()).isSameAs(original);
     }
+
+    @Test
+    public void sparseFieldsets_inheritedFieldNotRequested_isExcluded() {
+        // given
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("own")))
+                .build();
+        ResourceObject<Inheriting, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Inheriting(), null, null, null);
+
+        // when
+        helper.sparseFieldsets(request, resourceObject);
+
+        // then
+        assertThat(resourceObject.getAttributes().own).isEqualTo("own");
+        assertThat(resourceObject.getAttributes().createdAt).isNull();
+    }
+
+    @Test
+    public void sparseFieldsets_inheritedFieldRequested_isKept() {
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("createdAt")))
+                .build();
+        ResourceObject<Inheriting, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new Inheriting(), null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(resourceObject.getAttributes().createdAt).isEqualTo("2026-01-01");
+        assertThat(resourceObject.getAttributes().own).isNull();
+    }
+
+    private static class AuditBase {
+        String createdAt = "2026-01-01";
+    }
+
+    private static class Inheriting extends AuditBase {
+        String own = "own";
+    }
 }
