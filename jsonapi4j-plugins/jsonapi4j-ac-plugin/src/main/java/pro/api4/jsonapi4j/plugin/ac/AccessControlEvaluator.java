@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
-import pro.api4.jsonapi4j.plugin.ac.copy.ObjectCopier;
+import pro.api4.jsonapi4j.util.ObjectCopier;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.plugin.ac.copy;
+package pro.api4.jsonapi4j.util;
 
 import org.apache.commons.lang3.Validate;
 import org.objenesis.Objenesis;

@@ -65,7 +65,16 @@ This returns `users` with only `email` and `lastName` in their attributes, and i
 | All requested fields don't exist | Treated as empty fields (no fields returned) by default. Configurable via `requestedFieldsDontExistMode`. |
 | Primitive-typed fields (e.g. `int`) | Cannot be excluded if other fields at the same level are requested, because primitives can't be set to `null`. Use object types (e.g. `Integer`) for full sparse fieldsets support. |
 | Multi-type responses (e.g. users + included countries) | Use separate `fields[TYPE]` parameters per resource type |
-| Excluded fields are nulled **on the attributes object your resource returned** | Unlike the [Access Control plugin](/access-control-plugin/), which copies before hiding anything, this plugin modifies the object in place. Return a freshly built attributes object from `resolveAttributes(...)` — a cached or shared instance would keep the excluded fields `null` for later requests. |
+| Attributes class cannot be copied (e.g. a dynamic proxy) | All of its fields are returned, and a warning is logged. Sparse fieldsets is a convenience over the response shape, never a security control, so it does not fail the request. |
+
+### How Fields Are Excluded
+
+Excluding a field never modifies your object. The plugin builds a **copy** of the attributes object without
+the excluded fields and puts the copy in the response, so the instance your `Resource` returned comes back
+untouched — an application is free to return a cached or shared attributes object. Objects are copied only
+along a path to an excluded field, and only when something is actually excluded.
+
+This matches how the [Access Control plugin](/access-control-plugin/) hides fields.
 
 ### Available Properties
 

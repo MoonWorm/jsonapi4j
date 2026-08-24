@@ -5,9 +5,18 @@ import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties.RequestedFieldsDontExistMode;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.util.ObjectCopier;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
-import java.util.*;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 class SparseFieldsetsHelper {
@@ -64,19 +73,91 @@ class SparseFieldsetsHelper {
         }
     }
 
+    /**
+     * Replaces the attributes with a copy that carries only the requested fields.
+     *
+     * <p>The attributes object belongs to the application — a resolver may well return a cached or shared
+     * instance — so the excluded fields are dropped from a copy rather than nulled on the original, which
+     * would leave them missing for every later request. Objects are copied only along a path to an excluded
+     * field; anything untouched is carried over by reference, and when nothing is excluded the original
+     * instance is used as-is.
+     */
     private void sparseNonRequestedFields(ResourceObject<?, ?> resourceObject,
                                           List<String> existingPathsToInclude) {
         Object attributes = resourceObject.getAttributes();
-        List<String> denormalizedPathsToInclude = existingPathsToInclude.stream()
+        Set<String> pathsToInclude = existingPathsToInclude.stream()
                 .flatMap(p -> denormalizePath(p).stream())
-                .distinct()
-                .toList();
+                .collect(Collectors.toSet());
         Set<String> allPaths = ReflectionUtils.getAllFieldPaths(attributes.getClass());
-        for (String path : allPaths) {
-            if (!denormalizedPathsToInclude.contains(path)) {
-                ReflectionUtils.setFieldPathValueSilent(attributes, path, null);
+        Set<String> pathsToExclude = allPaths.stream()
+                .filter(p -> !pathsToInclude.contains(p))
+                .collect(Collectors.toSet());
+        if (pathsToExclude.isEmpty()) {
+            return;
+        }
+        try {
+            Object sparsed = sparse(attributes, allPaths, pathsToExclude, "");
+            if (sparsed != attributes) {
+                ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, sparsed);
+            }
+        } catch (RuntimeException e) {
+            // Sparse fieldsets is a convenience over the response shape, never a security control, so a
+            // class that cannot be copied returns all of its fields rather than failing the request.
+            log.warn("Sparse fieldsets: could not build a reduced copy of {}, returning all of its fields.",
+                    attributes.getClass().getName(), e);
+        }
+    }
+
+    /**
+     * Builds a copy of {@code source} without the excluded fields, recursing into the objects that hold
+     * them. Returns {@code source} untouched when nothing below it is excluded.
+     */
+    private Object sparse(Object source, Set<String> allPaths, Set<String> pathsToExclude, String prefix) {
+        Map<String, Field> fields = ReflectionUtils.fetchFields(source.getClass());
+        Map<String, Object> replacements = new HashMap<>();
+        for (String fieldName : directChildrenOf(allPaths, prefix)) {
+            String path = prefix.isEmpty() ? fieldName : prefix + "." + fieldName;
+            Field field = fields.get(fieldName);
+            if (pathsToExclude.contains(path)) {
+                // A primitive cannot hold the absence of a value, so it stays — as it always has.
+                if (field != null && !field.getType().isPrimitive()) {
+                    replacements.put(fieldName, null);
+                }
+                continue;
+            }
+            if (!hasExcludedDescendant(pathsToExclude, path)) {
+                continue;
+            }
+            Object child = ReflectionUtils.getFieldValueThrowing(source, fieldName);
+            if (child != null) {
+                Object sparsedChild = sparse(child, allPaths, pathsToExclude, path);
+                if (sparsedChild != child) {
+                    replacements.put(fieldName, sparsedChild);
+                }
             }
         }
+        return replacements.isEmpty() ? source : ObjectCopier.copyWith(source, replacements);
+    }
+
+    private static Set<String> directChildrenOf(Set<String> allPaths, String prefix) {
+        String childPrefix = prefix.isEmpty() ? "" : prefix + ".";
+        Set<String> children = new LinkedHashSet<>();
+        for (String path : allPaths) {
+            if (!path.startsWith(childPrefix)) {
+                continue;
+            }
+            String remainder = path.substring(childPrefix.length());
+            if (!remainder.isEmpty()) {
+                int dot = remainder.indexOf('.');
+                children.add(dot < 0 ? remainder : remainder.substring(0, dot));
+            }
+        }
+        return children;
+    }
+
+    private static boolean hasExcludedDescendant(Set<String> pathsToExclude, String path) {
+        String descendantPrefix = path + ".";
+        return pathsToExclude.stream().anyMatch(p -> p.startsWith(descendantPrefix));
     }
 
     /**

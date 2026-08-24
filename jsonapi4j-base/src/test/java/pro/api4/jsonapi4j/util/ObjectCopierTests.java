@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.plugin.ac.copy;
+package pro.api4.jsonapi4j.util;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

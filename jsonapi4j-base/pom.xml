@@ -63,6 +63,13 @@
             <version>${base62lib.version}</version>
         </dependency>
 
+        <!-- Instantiates a copy of a DTO without running its constructor, so that features which hide
+             fields can redact a copy instead of damaging the object the application handed over -->
+        <dependency>
+            <groupId>org.objenesis</groupId>
+            <artifactId>objenesis</artifactId>
+        </dependency>
+
         <!-- Apache commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>

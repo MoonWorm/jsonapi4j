@@ -283,4 +283,58 @@ public class SparseFieldsetsHelperTests {
         assertThat(result).containsExactly("a", "a.b", "a.b.c", "a.b.c.d");
     }
 
+
+    @Test
+    public void sparseFieldsets_fieldsExcluded_originalAttributesObjectIsNotModified() {
+        // given - the object an application resolver handed over, which it may also be caching
+        Att original = new Att();
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("s")))
+                .build();
+        ResourceObject<Att, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, original, null, null, null);
+
+        // when
+        helper.sparseFieldsets(request, resourceObject);
+
+        // then - the response is reduced, but the application's own object still holds everything
+        assertThat(resourceObject.getAttributes().a).isNull();
+        assertThat(original.a).isNotNull();
+        assertThat(resourceObject.getAttributes()).isNotSameAs(original);
+    }
+
+    @Test
+    public void sparseFieldsets_nestedFieldExcluded_originalNestedObjectIsNotModified() {
+        // given
+        Att original = new Att();
+        Att.A originalNested = original.a;
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.i")))
+                .build();
+        ResourceObject<Att, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, original, null, null, null);
+
+        // when
+        helper.sparseFieldsets(request, resourceObject);
+
+        // then - both the holder and the object it points at are left intact
+        assertThat(resourceObject.getAttributes().a.b).isNull();
+        assertThat(resourceObject.getAttributes().a.i).isEqualTo(1);
+        assertThat(originalNested.b).isNotNull();
+        assertThat(original.a).isSameAs(originalNested);
+    }
+
+    @Test
+    public void sparseFieldsets_nothingExcluded_keepsTheOriginalInstance() {
+        Att original = new Att();
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of("other-type", List.of("s")))
+                .build();
+        ResourceObject<Att, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, original, null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(resourceObject.getAttributes()).isSameAs(original);
+    }
 }
