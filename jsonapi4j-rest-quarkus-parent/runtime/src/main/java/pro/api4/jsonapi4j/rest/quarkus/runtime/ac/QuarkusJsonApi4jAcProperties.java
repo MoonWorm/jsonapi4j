@@ -23,9 +23,18 @@ public interface QuarkusJsonApi4jAcProperties {
     @WithDefault(AcProperties.DEFAULT_ENABLED)
     boolean enabled();
 
+    /**
+     * Reject access control that is declared but cannot take effect, instead of only reporting it.
+     * Disabled by default.
+     * Example: `true`, `false`.
+     */
+    @WithDefault(AcProperties.DEFAULT_FAIL_ON_MISCONFIGURATION)
+    boolean failOnMisconfiguration();
+
     default AcProperties toJsonapi4jAcProperties() {
         DefaultAcProperties acProperties = new DefaultAcProperties();
         acProperties.setEnabled(enabled());
+        acProperties.setFailOnMisconfiguration(failOnMisconfiguration());
         return acProperties;
     }
 

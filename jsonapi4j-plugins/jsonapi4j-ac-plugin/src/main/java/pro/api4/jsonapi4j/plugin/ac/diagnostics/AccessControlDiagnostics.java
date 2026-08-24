@@ -18,7 +18,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
 
 /**
  * Everything the Access Control plugin complains about, and how loudly.
@@ -41,8 +43,50 @@ import java.util.function.Predicate;
 @Slf4j
 public final class AccessControlDiagnostics {
 
+    private static final AtomicBoolean FAIL_ON_MISCONFIGURATION = new AtomicBoolean();
+
     private AccessControlDiagnostics() {
 
+    }
+
+    /**
+     * Chooses whether a reported problem is rejected instead of merely logged.
+     *
+     * <p>Set once when the plugin is configured. It is process-wide because the checks run inside static
+     * per-class caches with nowhere to inject configuration; two plugin instances disagreeing about it in
+     * one JVM would be incoherent, which in practice does not arise.
+     *
+     * @param failOnMisconfiguration {@code true} to throw rather than warn
+     */
+    public static void failOnMisconfiguration(boolean failOnMisconfiguration) {
+        FAIL_ON_MISCONFIGURATION.set(failOnMisconfiguration);
+    }
+
+    /**
+     * Reports a declaration that will not take effect — by rejecting it when the plugin is configured to,
+     * and by warning otherwise.
+     *
+     * <p>Everything routed through here is decidable from a class alone. Diagnostics about the caller stay
+     * warnings whatever the setting: a principal arriving without entitlements is a token problem rather
+     * than a misconfigured application, and such a request already fails closed.
+     */
+    private static void report(String message, Object... arguments) {
+        if (FAIL_ON_MISCONFIGURATION.get()) {
+            throw new AccessControlMisconfigurationException(format(message, arguments));
+        }
+        log.warn(message, arguments);
+    }
+
+    /**
+     * Renders an SLF4J-style message, whose placeholders are {@code {}} rather than {@code %s}, for an
+     * exception that has to carry the same text.
+     */
+    private static String format(String message, Object... arguments) {
+        String rendered = message;
+        for (Object argument : arguments) {
+            rendered = rendered.replaceFirst("\\{}", Matcher.quoteReplacement(String.valueOf(argument)));
+        }
+        return rendered;
     }
 
     // ---------------------------------------------------------------------------------------------------
@@ -147,13 +191,13 @@ public final class AccessControlDiagnostics {
         }
         Set<String> fieldNames = fieldLevel.keySet();
         for (String fieldName : primitiveFieldsAmong(clazz, fieldNames)) {
-            log.warn("Access control on {}.{} cannot be enforced: the field is a primitive and cannot be "
+            report("Access control on {}.{} cannot be enforced: the field is a primitive and cannot be "
                             + "blanked out, so a denied caller gets an error instead of a hidden value. "
                             + "Change it to the boxed type to make it hideable.",
                     clazz.getName(), fieldName);
         }
         for (String fieldName : staticFieldsAmong(clazz, fieldNames)) {
-            log.warn("Access control on {}.{} has no effect: the field is static and is never serialized "
+            report("Access control on {}.{} has no effect: the field is static and is never serialized "
                             + "into a response, so there is nothing to hide.",
                     clazz.getName(), fieldName);
         }
@@ -175,7 +219,7 @@ public final class AccessControlDiagnostics {
                                                               Class<?> fieldClass,
                                                               Type genericType) {
         for (Class<?> elementClass : unenforceableElementRequirements(fieldClass, genericType)) {
-            log.warn("Access control declared on {} will NOT be enforced: {}.{} holds it inside a {}, and "
+            report("Access control declared on {} will NOT be enforced: {}.{} holds it inside a {}, and "
                             + "requirements are not applied to collection, array or map elements. Access "
                             + "control on the '{}' field itself is still enforced and hides the whole "
                             + "container.",
@@ -198,7 +242,7 @@ public final class AccessControlDiagnostics {
         if (model == null || !model.declaresNoRequirements()) {
             return;
         }
-        log.warn("@AccessControl on {} declares no requirement, so it enforces nothing. Set one of "
+        report("@AccessControl on {} declares no requirement, so it enforces nothing. Set one of "
                         + "authenticated, entitlements, scopes, ownership or policy, or remove the "
                         + "annotation.",
                 element);
@@ -249,7 +293,7 @@ public final class AccessControlDiagnostics {
             if (!anyDeclarationCarriesAccessControl(clazz, fieldName)) {
                 continue;
             }
-            log.warn("{}.{} shadows an inherited field of the same name. Only the most-derived declaration "
+            report("{}.{} shadows an inherited field of the same name. Only the most-derived declaration "
                             + "is used, so @AccessControl on the inherited one is ignored. Rename one of "
                             + "them so the requirement is unambiguous.",
                     clazz.getName(), fieldName);

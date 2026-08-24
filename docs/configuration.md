@@ -33,6 +33,7 @@ JsonApi4j is configured differently depending on your web framework. All three i
 
   <span class="na">ac</span><span class="pi">:</span>
     <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">failOnMisconfiguration</span><span class="pi">:</span> <span class="no">false</span>
 
   <span class="na">sf</span><span class="pi">:</span>
     <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
@@ -70,6 +71,7 @@ JsonApi4j is configured differently depending on your web framework. All three i
 <span class="py">jsonapi4j.validation.maxElementsInSortByParam</span>=<span class="s">5</span>
 
 <span class="py">jsonapi4j.ac.enabled</span>=<span class="s">true</span>
+<span class="py">jsonapi4j.ac.failOnMisconfiguration</span>=<span class="s">false</span>
 
 <span class="py">jsonapi4j.sf.enabled</span>=<span class="s">true</span>
 <span class="py">jsonapi4j.sf.requestedFieldsDontExistMode</span>=<span class="s">SPARSE_ALL_FIELDS</span>
@@ -104,6 +106,7 @@ JsonApi4j is configured differently depending on your web framework. All three i
 
 <span class="na">ac</span><span class="pi">:</span>
   <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">failOnMisconfiguration</span><span class="pi">:</span> <span class="no">false</span>
 
 <span class="na">sf</span><span class="pi">:</span>
   <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>

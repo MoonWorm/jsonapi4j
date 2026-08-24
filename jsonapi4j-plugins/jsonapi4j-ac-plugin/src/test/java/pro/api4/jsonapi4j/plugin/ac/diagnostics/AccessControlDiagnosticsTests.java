@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.ac.diagnostics;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
@@ -15,8 +16,16 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AccessControlDiagnosticsTests {
+
+    @AfterEach
+    void resetMode() {
+        AccessControlDiagnostics.failOnMisconfiguration(false);
+    }
+
 
     @Nested
     class UnenforceableElementRequirements {
@@ -100,6 +109,59 @@ class AccessControlDiagnosticsTests {
         void declaresNoRequirements_annotationDeclaringARequirement_isFalse() {
             assertThat(AccessControlModel.fromClassAnnotation(AuthenticatedResource.class)
                     .declaresNoRequirements()).isFalse();
+        }
+
+    }
+
+    @Nested
+    class FailOnMisconfiguration {
+
+        @Test
+        void reportUnhideableFields_primitiveFieldAndModeOff_onlyWarns() {
+            assertThatCode(() -> AccessControlDiagnostics
+                    .reportUnhideableFields(UnhideableHolder.class, requirementOn("count")))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void reportUnhideableFields_primitiveFieldAndModeOn_throws() {
+            AccessControlDiagnostics.failOnMisconfiguration(true);
+
+            assertThatThrownBy(() -> AccessControlDiagnostics
+                    .reportUnhideableFields(UnhideableHolder.class, requirementOn("count")))
+                    .isInstanceOf(AccessControlMisconfigurationException.class)
+                    .hasMessageContaining("count")
+                    .hasMessageContaining("primitive");
+        }
+
+        @Test
+        void reportUnhideableFields_staticFieldAndModeOn_throws() {
+            AccessControlDiagnostics.failOnMisconfiguration(true);
+
+            assertThatThrownBy(() -> AccessControlDiagnostics
+                    .reportUnhideableFields(UnhideableHolder.class, requirementOn("SHARED")))
+                    .isInstanceOf(AccessControlMisconfigurationException.class)
+                    .hasMessageContaining("SHARED");
+        }
+
+        @Test
+        void reportUnhideableFields_hideableFieldAndModeOn_doesNotThrow() {
+            AccessControlDiagnostics.failOnMisconfiguration(true);
+
+            assertThatCode(() -> AccessControlDiagnostics
+                    .reportUnhideableFields(UnhideableHolder.class, requirementOn("name")))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void missingEntitlementsMessage_modeOn_remainsAMessageRatherThanAFailure() {
+            AccessControlDiagnostics.failOnMisconfiguration(true);
+
+            assertThat(AccessControlDiagnostics.missingEntitlementsMessage()).contains("PrincipalResolver");
+        }
+
+        private Map<String, AccessControlModel> requirementOn(String fieldName) {
+            return Map.of(fieldName, AccessControlModel.fromClassAnnotation(AuthenticatedResource.class));
         }
 
     }

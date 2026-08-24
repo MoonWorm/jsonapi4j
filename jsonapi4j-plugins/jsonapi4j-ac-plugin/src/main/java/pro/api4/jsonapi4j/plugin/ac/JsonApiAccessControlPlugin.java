@@ -20,6 +20,7 @@ import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
+import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
@@ -54,6 +55,9 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
                                       AcProperties acProperties) {
         this.accessControlEvaluator = accessControlEvaluator;
         this.acProperties = acProperties;
+        if (acProperties != null) {
+            AccessControlDiagnostics.failOnMisconfiguration(acProperties.failOnMisconfiguration());
+        }
     }
 
     private static AccessControlModel findOnTheOperationMethod(Class<?> operationType, String methodName) {

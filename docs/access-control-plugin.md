@@ -410,17 +410,36 @@ canonical constructor instead.
 
 | Scenario | Behavior |
 |----------|----------|
-| Primitive-typed fields (e.g. `int`) | Cannot be hidden — a primitive can't hold "absent". A denied caller gets an error instead of a hidden value. Use the boxed type (e.g. `Integer`). Warned about at startup. |
-| `@AccessControl` on a field of a **collection, array or map element** class (e.g. a rule on `Address.zip` where the response exposes `List<Address>`) | **Not enforced** — requirements are not applied to elements. Warned about at startup. Hiding the container field itself does work, see the next row. |
+| Primitive-typed fields (e.g. `int`) | Cannot be hidden — a primitive can't hold "absent". A denied caller gets an error instead of a hidden value. Use the boxed type (e.g. `Integer`). Reported — see below. |
+| `@AccessControl` on a field of a **collection, array or map element** class (e.g. a rule on `Address.zip` where the response exposes `List<Address>`) | **Not enforced** — requirements are not applied to elements. Reported — see below. Hiding the container field itself does work, see the next row. |
 | `@AccessControl` on the container field itself (e.g. on `List<Address> addresses`) | Enforced — the whole collection, array or map is hidden. |
-| `@AccessControl` on a `static` field | No effect — static fields are never serialized into a response. Warned about at startup. |
+| `@AccessControl` on a `static` field | No effect — static fields are never serialized into a response. Reported — see below. |
+| `@AccessControl` on a field that **shadows an inherited field** of the same name | Only the most-derived declaration is used, so a requirement on the inherited one is ignored. Rename one of them. Reported — see below. |
+| `@AccessControl` that declares no requirement at all (a bare `@AccessControl`) | Enforces nothing. Set one of `authenticated`, `entitlements`, `scopes`, `ownership` or `policy`, or remove it. Reported — see below. |
 | Attributes object is a dynamic proxy (e.g. a Hibernate/CGLIB proxied entity) | Cannot be copied, so the request fails with a clear error. Return a DTO rather than a proxied entity. |
 | Attributes class lives in a JPMS module that does not `open` its package | Reflective access fails. Open the package to the framework. |
 | Denied `GET` requests | Return `200` with the restricted data omitted, not `403`. A `403` would fail the whole response, including the parts the caller is allowed to see, and would break compound documents. |
 
-The three "warned about at startup" cases are reported once, when the access control model for a class is
-first built, naming the class and field involved — so a rule that can never take effect shows up in your
-logs rather than silently doing nothing.
+These cases are reported once, when the access control model for a class is first built, naming the class
+and field involved — so a rule that can never take effect shows up in your logs rather than silently doing
+nothing.
+
+#### Turning those reports into failures
+
+Set `jsonapi4j.ac.failOnMisconfiguration=true` and each of them raises
+`AccessControlMisconfigurationException` instead of logging. Off by default, because turning a warning into
+a failure would break an application that has been running with a rule that quietly does nothing. It earns
+its keep in tests and CI, where a security rule silently not applying is exactly what you want to hear
+about loudly.
+
+It covers only what is decidable from a class: a requirement on a primitive or static field, on a
+collection element, on a shadowed field name, or one that asks for nothing at all. It deliberately does
+**not** cover diagnostics about the caller — a principal arriving with no entitlements is a token or
+deployment problem rather than a misconfigured application, and such requests already fail closed.
+
+Despite the name, this is not startup validation. Requirements on a resource, operation or relationship
+class are read when the plugin registers, but an attributes class is only known once a response carries one
+— so most of these are raised on the **first request** that touches the resource, not at boot.
 
 ### Native Image (GraalVM / Quarkus)
 
@@ -441,9 +460,10 @@ found in the index, the build logs a warning naming this property.
 
 ### Available Properties
 
-| Property name          | Default value | Description                            |
-|------------------------|---------------|----------------------------------------|
-| `jsonapi4j.ac.enabled` | `true`          | Enables/Disables Access Control plugin |
+| Property name                            | Default value | Description                                                                                              |
+|------------------------------------------|---------------|----------------------------------------------------------------------------------------------------------|
+| `jsonapi4j.ac.enabled`                   | `true`        | Enables/Disables Access Control plugin                                                                   |
+| `jsonapi4j.ac.failOnMisconfiguration`    | `false`       | Reject access control that is declared but cannot take effect, instead of only logging it. See below.    |
 
 ### Related
 
