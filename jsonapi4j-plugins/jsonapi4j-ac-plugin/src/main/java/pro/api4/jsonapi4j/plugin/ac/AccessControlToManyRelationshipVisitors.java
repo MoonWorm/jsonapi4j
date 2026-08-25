@@ -108,7 +108,11 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 nonAnonymizedDtos.add(nonAnonymizedDto);
             }
 
-            anonymizedData.add(anonymizationResult.targetObject());
+            // A fully denied element is left out rather than added as null: the array then carries only
+            // what the caller may see, and no client has to treat a hole as meaningful.
+            if (anonymizationResult.targetObject() != null) {
+                anonymizedData.add(anonymizationResult.targetObject());
+            }
         }
 
         if (nonAnonymizedDtos.size() == ctx.getPaginationAwareResponse().getItems().size()) {

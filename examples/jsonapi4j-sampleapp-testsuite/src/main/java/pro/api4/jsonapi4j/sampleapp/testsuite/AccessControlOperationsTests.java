@@ -7,10 +7,14 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 public abstract class AccessControlOperationsTests {
@@ -545,4 +549,127 @@ public abstract class AccessControlOperationsTests {
                 .body("data.meta.internalUserRef", equalTo("internal-1"));
     }
 
+
+    @Test
+    public void test_readById_collectionElementFieldHidden() {
+        // no sensitive scope — the rule on the element type still applies inside the list
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses", hasSize(1))
+                .body("data.attributes.addresses[0].city", equalTo("Oslo"))
+                .body("data.attributes.addresses[0]", not(hasKey("zip")));
+    }
+
+    @Test
+    public void test_readById_collectionElementFieldVisibleWithScope() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0].zip", equalTo("0150"));
+    }
+
+    @Test
+    public void test_readById_runtimeSubtypeFieldHidden() {
+        // 'doorCode' exists only on HomeAddress; the field is declared as Address
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0]", not(hasKey("doorCode")));
+    }
+
+    @Test
+    public void test_readById_runtimeSubtypeFieldVisibleWithScope() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0].doorCode", equalTo("door-1"));
+    }
+
+    @Test
+    public void test_readMultipleUsers_noNullEntriesInDataArray() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(200)
+                .body("data", not(hasItem(nullValue())));
+    }
+
+    @Test
+    public void test_readMultipleUsers_collectionElementFieldHidden() {
+        // the multiple-resources path anonymizes each resource separately
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(200)
+                .body("data.findAll { it.attributes.addresses }.attributes.addresses.flatten()", not(empty()))
+                .body("data.findAll { it.attributes.addresses }.attributes.addresses.flatten()",
+                        everyItem(not(hasKey("zip"))));
+    }
+
+    @Test
+    public void test_readMultipleUsers_collectionElementFieldVisibleWithScope() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0].zip", equalTo("0150"));
+    }
+
+    @Test
+    public void test_readByIdWithIncludes_collectionElementFieldHiddenInIncluded() {
+        // an included resource is fetched through its own request, so it is anonymized on its own terms
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("included.findAll { it.type == 'users' }.attributes.addresses.flatten()", not(empty()))
+                .body("included.findAll { it.type == 'users' }.attributes.addresses.flatten()",
+                        everyItem(not(hasKey("zip"))));
+    }
+
+    @Test
+    public void test_readById_elementWithoutTheSubtypeField_omitsItEvenWhenAllowed() {
+        // user 3's address carries no door code, so its absence is the data rather than a hidden value
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "3")
+                .pathParam("userId", "3")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0].zip", equalTo("00100"))
+                .body("data.attributes.addresses[0]", not(hasKey("doorCode")));
+    }
 }

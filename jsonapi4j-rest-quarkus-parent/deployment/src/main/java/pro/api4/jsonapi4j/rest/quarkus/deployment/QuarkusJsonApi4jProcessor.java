@@ -16,6 +16,7 @@ import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
@@ -177,6 +178,25 @@ class QuarkusJsonApi4jProcessor {
     }
 
     /**
+     * Whether a field's type is one of the given types, or holds one.
+     *
+     * <p>A {@code List<Address>} names {@code java.util.List}, so the element type has to be read from the
+     * type arguments — otherwise a class holding a list of an annotated type is never registered, and
+     * rebuilding that list at runtime fails in a native image.
+     */
+    private static boolean mentions(Type type, Set<DotName> redactable) {
+        if (redactable.contains(type.name())) {
+            return true;
+        }
+        return switch (type.kind()) {
+            case PARAMETERIZED_TYPE -> type.asParameterizedType().arguments().stream()
+                    .anyMatch(argument -> mentions(argument, redactable));
+            case ARRAY -> mentions(type.asArrayType().component(), redactable);
+            default -> false;
+        };
+    }
+
+    /**
      * Grows the set to include every class holding a field of an already-included type, repeatedly, until it
      * stops changing.
      */
@@ -189,7 +209,7 @@ class QuarkusJsonApi4jProcessor {
                     continue;
                 }
                 boolean holdsRedactable = candidate.fields().stream()
-                        .anyMatch(field -> redactable.contains(field.type().name()));
+                        .anyMatch(field -> mentions(field.type(), redactable));
                 if (holdsRedactable) {
                     redactable.add(candidate.name());
                     grown = true;

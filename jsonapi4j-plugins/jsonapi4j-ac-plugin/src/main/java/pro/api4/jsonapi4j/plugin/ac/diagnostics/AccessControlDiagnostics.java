@@ -9,14 +9,10 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
@@ -157,6 +153,32 @@ public final class AccessControlDiagnostics {
                 "Anonymization failed. Could not hide fields %s of %s.", fieldNames, type.getName()), cause);
     }
 
+    /**
+     * Rejects a container whose type cannot be rebuilt after an element was hidden.
+     */
+    public static AccessControlMisconfigurationException unrebuildableContainer(Class<?> containerType,
+                                                                                Class<?> declaredType,
+                                                                                String path) {
+        return new AccessControlMisconfigurationException(String.format(
+                "Access control had to hide something inside '%s', but no replacement container fits a "
+                        + "field declared as %s (it holds a %s). Declare the field as List, Set, Map, "
+                        + "Collection, an array or Optional, or give %s a public no-argument constructor.",
+                path,
+                declaredType == null ? "?" : declaredType.getName(),
+                containerType.getName(),
+                containerType.getSimpleName()));
+    }
+
+    /**
+     * Rejects a field that could not be read while anonymizing.
+     */
+    public static AccessControlMisconfigurationException unreadableField(String fieldName,
+                                                                         Class<?> ownerType,
+                                                                         Throwable cause) {
+        return new AccessControlMisconfigurationException(String.format(
+                "Anonymization failed. Could not read field '%s' of %s.", fieldName, ownerType.getName()), cause);
+    }
+
     // ---------------------------------------------------------------------------------------------------
     // Reports — declarations that are accepted but will not take effect
     // ---------------------------------------------------------------------------------------------------
@@ -183,26 +205,6 @@ public final class AccessControlDiagnostics {
             report("Access control on {}.{} has no effect: the field is static and is never serialized "
                             + "into a response, so there is nothing to hide.",
                     clazz.getName(), fieldName);
-        }
-    }
-
-    /**
-     * Reports access control declared on a class reached only through a collection, array or map.
-     *
-     * <p>Requirements are not applied to elements, so a rule on {@code Address.zip} has no effect when the
-     * response exposes a {@code List<Address>}. Access control on the container field itself is enforced
-     * and hides the whole container.
-     */
-    public static void reportUnenforceableElementRequirements(Class<?> owner,
-                                                              String fieldName,
-                                                              Class<?> fieldClass,
-                                                              Type genericType) {
-        for (Class<?> elementClass : unenforceableElementRequirements(fieldClass, genericType)) {
-            report("Access control declared on {} will NOT be enforced: {}.{} holds it inside a {}, and "
-                            + "requirements are not applied to collection, array or map elements. Access "
-                            + "control on the '{}' field itself is still enforced and hides the whole "
-                            + "container.",
-                    elementClass.getName(), owner.getName(), fieldName, fieldClass.getSimpleName(), fieldName);
         }
     }
 
@@ -295,48 +297,6 @@ public final class AccessControlDiagnostics {
      */
     public static Set<String> staticFieldsAmong(Class<?> clazz, Set<String> fieldNames) {
         return matching(clazz, fieldNames, field -> Modifier.isStatic(field.getModifiers()));
-    }
-
-    /**
-     * Returns the element types of a container field that declare access control which will never run.
-     * Empty for a field that is not a container, or whose elements declare nothing.
-     */
-    public static Set<Class<?>> unenforceableElementRequirements(Class<?> fieldClass, Type genericType) {
-        Set<Class<?>> result = new LinkedHashSet<>();
-        for (Class<?> elementClass : elementTypesOf(fieldClass, genericType)) {
-            if (!ReflectionUtils.isJdkType(elementClass) && declaresAccessControl(elementClass)) {
-                result.add(elementClass);
-            }
-        }
-        return Collections.unmodifiableSet(result);
-    }
-
-    private static boolean declaresAccessControl(Class<?> clazz) {
-        return AccessControlModel.fromClassAnnotation(clazz) != null
-                || MapUtils.isNotEmpty(AccessControlModel.fromFieldsAnnotations(clazz));
-    }
-
-    /**
-     * Returns the types held <i>inside</i> a container field — the component type of an array, or the type
-     * arguments of a {@code Collection}, {@code Map} or {@code Optional}. Empty for anything else.
-     */
-    private static Set<Class<?>> elementTypesOf(Class<?> fieldClass, Type genericType) {
-        if (fieldClass.isArray()) {
-            return Set.of(fieldClass.getComponentType());
-        }
-        boolean isContainer = Collection.class.isAssignableFrom(fieldClass)
-                || Map.class.isAssignableFrom(fieldClass)
-                || Optional.class.isAssignableFrom(fieldClass);
-        if (!isContainer || !(genericType instanceof ParameterizedType parameterizedType)) {
-            return Set.of();
-        }
-        Set<Class<?>> elementTypes = new LinkedHashSet<>();
-        for (Type typeArgument : parameterizedType.getActualTypeArguments()) {
-            if (typeArgument instanceof Class<?> typeArgumentClass) {
-                elementTypes.add(typeArgumentClass);
-            }
-        }
-        return Collections.unmodifiableSet(elementTypes);
     }
 
     private static Set<String> matching(Class<?> clazz, Set<String> fieldNames, Predicate<Field> predicate) {

@@ -28,42 +28,6 @@ class AccessControlDiagnosticsTests {
 
 
     @Nested
-    class UnenforceableElementRequirements {
-
-        @Test
-        void unenforceableElementRequirements_listOfAnnotatedElements_reportsTheElementType() {
-            assertThat(unenforceableFor("addresses")).containsExactly(AnnotatedElement.class);
-        }
-
-        @Test
-        void unenforceableElementRequirements_arrayOfAnnotatedElements_reportsTheElementType() {
-            assertThat(unenforceableFor("arr")).containsExactly(AnnotatedElement.class);
-        }
-
-        @Test
-        void unenforceableElementRequirements_mapOfAnnotatedValues_reportsTheValueType() {
-            assertThat(unenforceableFor("byName")).containsExactly(AnnotatedElement.class);
-        }
-
-        @Test
-        void unenforceableElementRequirements_containerOfPlainElements_reportsNothing() {
-            assertThat(unenforceableFor("plain")).isEmpty();
-        }
-
-        @Test
-        void unenforceableElementRequirements_annotatedElementHeldDirectly_reportsNothing() {
-            assertThat(unenforceableFor("primary")).isEmpty();
-        }
-
-        private Set<Class<?>> unenforceableFor(String fieldName) {
-            return AccessControlDiagnostics.unenforceableElementRequirements(
-                    ReflectionUtils.fetchFieldTypes(ContainerHolder.class).get(fieldName),
-                    ReflectionUtils.fetchFields(ContainerHolder.class).get(fieldName).getGenericType());
-        }
-
-    }
-
-    @Nested
     class UnhideableFields {
 
         @Test
@@ -199,23 +163,6 @@ class AccessControlDiagnosticsTests {
                     .hasMessageContaining("secret")
                     .hasMessageContaining(String.class.getName());
         }
-
-    }
-
-    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("elements.read")))
-    private static class AnnotatedElement {
-    }
-
-    private static class PlainElement {
-    }
-
-    private static class ContainerHolder {
-
-        private List<AnnotatedElement> addresses;
-        private AnnotatedElement[] arr;
-        private Map<String, AnnotatedElement> byName;
-        private List<PlainElement> plain;
-        private AnnotatedElement primary;
 
     }
 

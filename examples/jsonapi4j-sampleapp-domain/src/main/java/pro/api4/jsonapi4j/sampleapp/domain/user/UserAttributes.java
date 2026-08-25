@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 
+import java.util.List;
+
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 @AccessControl(authenticated = Authenticated.AUTHENTICATED)
@@ -26,5 +28,8 @@ public class UserAttributes {
     )
     @Schema(description = "User's credit card number", example = "123456789", requiredMode = REQUIRED)
     private final String creditCardNumber;
+
+    @Schema(description = "Known addresses")
+    private final List<Address> addresses;
 
 }

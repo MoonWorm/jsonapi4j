@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef.RelationshipType;
 
@@ -27,7 +28,7 @@ public class UserInMemoryDb implements UserDb {
     private final Map<String, List<RelativeRef>> userRalatives = new ConcurrentHashMap<>();
 
     {
-        users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789"));
+        users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789", List.of(AddressRow.home("Oslo", "0150", "door-1"))));
         userCitizenships.put("1", List.of(new CountryRef("NO"), new CountryRef("FI"), new CountryRef("US")));
         userPlaceOfBirth.put("1", new CountryRef("US"));
         userRalatives.put(
@@ -38,7 +39,7 @@ public class UserInMemoryDb implements UserDb {
                 )
         );
 
-        users.put("2", new UserDbEntity("2", "Jane", "Doe", "jane@doe.com", "222456789"));
+        users.put("2", new UserDbEntity("2", "Jane", "Doe", "jane@doe.com", "222456789", List.of(AddressRow.home("Bergen", "5003", "door-2"))));
         userCitizenships.put("2", List.of(new CountryRef("US")));
         userPlaceOfBirth.put("2", new CountryRef("FI"));
         userRalatives.put(
@@ -49,12 +50,12 @@ public class UserInMemoryDb implements UserDb {
                 )
         );
 
-        users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789"));
+        users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789", List.of(AddressRow.of("Helsinki", "00100"))));
         userCitizenships.put("3", List.of(new CountryRef("US"), new CountryRef("FI")));
         userPlaceOfBirth.put("3", new CountryRef("NO"));
         userRalatives.put("3", Collections.emptyList());
 
-        users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789"));
+        users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789", List.of(AddressRow.of("Tampere", "33100"))));
         userCitizenships.put("4", List.of(new CountryRef("NO"), new CountryRef("US")));
         userPlaceOfBirth.put("4", new CountryRef("US"));
         userRalatives.put(
@@ -65,7 +66,7 @@ public class UserInMemoryDb implements UserDb {
                 )
         );
 
-        users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789"));
+        users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789", List.of()));
         userCitizenships.put("5", List.of(new CountryRef("US")));
         userPlaceOfBirth.put("5", new CountryRef("NO"));
         userRalatives.put(
@@ -104,7 +105,8 @@ public class UserInMemoryDb implements UserDb {
                 firstName,
                 lastName,
                 email,
-                creditCardNumber
+                creditCardNumber,
+                List.of()
         );
         users.put(newUser.getId(), newUser);
         return newUser;

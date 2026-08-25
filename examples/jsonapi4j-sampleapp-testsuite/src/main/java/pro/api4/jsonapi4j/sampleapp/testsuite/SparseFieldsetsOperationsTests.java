@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
@@ -40,10 +41,12 @@ public abstract class SparseFieldsetsOperationsTests {
                 .body("data.attributes.email", equalTo("john@doe.com"))
                 .body("data.attributes", not(hasKey("fullName")))
                 .body("data.attributes", not(hasKey("creditCardNumber")))
+                .body("data.attributes", not(hasKey("addresses")))
                 // relationships still resolved
                 .body("data.relationships.placeOfBirth.data.id", equalTo("US"))
                 .body("data.relationships.relatives.data", hasSize(2))
                 // included users — only email (fields propagated via CD)
+                .body("included.findAll { it.type == 'users' }.attributes", not(empty()))
                 .body("included.findAll { it.type == 'users' }.attributes", everyItem(hasKey("email")))
                 .body("included.findAll { it.type == 'users' }.attributes", everyItem(not(hasKey("fullName"))))
                 // included country — only name
@@ -69,6 +72,7 @@ public abstract class SparseFieldsetsOperationsTests {
                 .body("data[1].attributes.email", equalTo("jane@doe.com"))
                 .body("data[1].attributes", not(hasKey("fullName")))
                 // included users — only email
+                .body("included.findAll { it.type == 'users' }.attributes", not(empty()))
                 .body("included.findAll { it.type == 'users' }.attributes", everyItem(hasKey("email")))
                 .body("included.findAll { it.type == 'users' }.attributes", everyItem(not(hasKey("fullName"))));
     }

@@ -55,8 +55,6 @@ public class JsonApiAccessControlPluginTests {
         assertThat(result.getResourceMetaFieldLevel()).isNotNull();
         assertThat(result.getResourceMetaFieldLevel().getAuthenticated()).isNotNull();
         assertThat(result.getResourceMetaFieldLevel().getAuthenticated().getAuthenticated()).isNotNull().isEqualTo(Authenticated.AUTHENTICATED);
-
-        assertThat(result.getAttributesNested()).isNull();
     }
 
     @Test

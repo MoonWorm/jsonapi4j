@@ -8,7 +8,9 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -161,6 +163,7 @@ public abstract class CompoundDocsOperationsTests {
                 // user 1's relatives: {2, 3}
                 .body("included", hasSize(2))
                 .body("included.id", containsInAnyOrder("2", "3"))
+                .body("included.links.self", not(empty()))
                 .body("included.links.self", everyItem(containsString("customParam")));
     }
 

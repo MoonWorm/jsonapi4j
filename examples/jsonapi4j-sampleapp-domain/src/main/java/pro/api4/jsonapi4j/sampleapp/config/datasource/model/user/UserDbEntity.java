@@ -3,6 +3,8 @@ package pro.api4.jsonapi4j.sampleapp.config.datasource.model.user;
 import lombok.Data;
 import lombok.With;
 
+import java.util.List;
+
 // fake DB entity
 @Data
 @With
@@ -13,5 +15,6 @@ public class UserDbEntity {
     private final String lastName;
     private final String email;
     private final String creditCardNumber;
+    private final List<AddressRow> addresses;
 
 }

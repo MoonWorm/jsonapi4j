@@ -217,6 +217,9 @@ attributes — use a [policy](#policies-deciding-access-in-code); it reads the g
 | **Resource links** | On `resolveResourceLinks()` method | Links section is anonymized |
 | **Resource meta** | On `resolveResourceMeta()` method | Meta section is anonymized |
 | **Individual attribute field** | On the field in the attributes class | Only the affected field is anonymized |
+| **Nested object** | On a class held by the attributes, or on its fields | Applies wherever an instance of that class appears, at any depth |
+| **Collection, array or map element** | On the element class, or on its fields | Applied per element; an element denied entirely is dropped from the container |
+| **A runtime type more specific than the field's declared type** | On the runtime class | Applies — requirements come from the object present, not from how the field was declared |
 | **Entire Relationship** | On the class implementing `ToOneRelationship<T>` or `ToManyRelationship<T>` | The entire resource identifier is anonymized |
 | **Relationship meta** | On `resolveResourceIdentifierMeta()` method | Meta section of the resource identifier is anonymized |
 
@@ -428,13 +431,40 @@ them, or take them in a different order than the fields are declared all work fi
 exception: their components cannot be written after construction, so a record is rebuilt through its
 canonical constructor instead.
 
+#### Requirements follow the object, not the field
+
+Requirements are read from the type of the value actually present, at the moment the response is built.
+A rule declared on a class therefore applies wherever an instance of that class turns up — held directly,
+at any depth, inside a container, or behind a field declared as an interface, a supertype or `Object`:
+
+```java
+public class UserAttributes {
+    private Address home;              // rule on Address applies
+    private List<Address> addresses;   // applies to every element
+    private Payment payment;           // applies to whatever CardPayment declares
+}
+```
+
+#### Containers
+
+A container is rebuilt only when one of its elements is replaced or dropped. A `List` comes back as a
+`List`, a `Map` as a `Map`, an array with the same component type, and sorted types keep their comparator —
+though the concrete class may differ, so a field declared `List` can receive an `ArrayList`. A field
+declared with a concrete type receives that type, provided it can be constructed empty and filled; if it
+cannot, the request fails rather than return data that should have been hidden.
+
+An element the caller may not see at all is **dropped**, so a container carries only what they may see. Two
+consequences worth knowing: its length depends on the caller, and indices do not line up between callers.
+
 ### Limitations
 
 | Scenario | Behavior |
 |----------|----------|
 | Primitive-typed fields (e.g. `int`) | Cannot be hidden — a primitive can't hold "absent". A denied caller gets an error instead of a hidden value. Use the boxed type (e.g. `Integer`). Reported — see below. |
-| `@AccessControl` on a field of a **collection, array or map element** class (e.g. a rule on `Address.zip` where the response exposes `List<Address>`) | **Not enforced** — requirements are not applied to elements. Reported — see below. Hiding the container field itself does work, see the next row. |
-| `@AccessControl` on the container field itself (e.g. on `List<Address> addresses`) | Enforced — the whole collection, array or map is hidden. |
+| `@AccessControl` on the container field itself (e.g. on `List<Address> addresses`) | Enforced — the whole collection, array or map is hidden, without inspecting elements. |
+| Map **keys** | Not inspected. A JSON member name is a string, so a requirement on a key type has nothing to hide. A denied map *value* takes its whole entry with it. |
+| A container declared with a **concrete type that cannot be rebuilt** (e.g. `ImmutableList<Address> addresses`) | The request fails with an error naming the field, but only when something inside that container actually had to be hidden. Declare the field as `List`, `Set`, `Map`, `Collection`, an array or `Optional`, or give the type a public no-argument constructor. |
+| Framework types below the response root (`ResourceObject`, `RelationshipObject`, `LinksObject`) | Not descended into. Relationships are anonymized by their own requirements at their own stage. |
 | `@AccessControl` on a `static` field | No effect — static fields are never serialized into a response. Reported — see below. |
 | `@AccessControl` on a field that **shadows an inherited field** of the same name | Only the most-derived declaration is used, so a requirement on the inherited one is ignored. Rename one of them. Reported — see below. |
 | `@AccessControl` that declares no requirement at all (a bare `@AccessControl`) | Enforces nothing. Set one of `authenticated`, `entitlements`, `scopes`, `ownership` or `policy`, or remove it. Reported — see below. |
@@ -455,7 +485,7 @@ its keep in tests and CI, where a security rule silently not applying is exactly
 about loudly.
 
 It covers only what is decidable from a class: a requirement on a primitive or static field, on a
-collection element, on a shadowed field name, or one that asks for nothing at all. It deliberately does
+shadowed field name, or one that asks for nothing at all. It deliberately does
 **not** cover diagnostics about the caller — a principal arriving with no entitlements is a token or
 deployment problem rather than a misconfigured application, and such requests already fail closed.
 

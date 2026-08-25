@@ -712,6 +712,31 @@ class DefaultAccessControlEvaluatorTests {
             assertThat(actualResult.anonymizedFields()).isEmpty();
         }
 
+        @Test
+        void anonymizeObjectIfNeeded_containerFieldDenied_hidesTheWholeContainer() {
+            givenPrincipalWithEntitlements(PUBLIC);
+            HolderWithGuardedList original = new HolderWithGuardedList();
+
+            AnonymizationResult<HolderWithGuardedList> actualResult = anonymize(original);
+
+            assertThat(actualResult.targetObject().getSecrets()).isNull();
+            assertThat(original.getSecrets()).isNotNull();
+        }
+
+        @Test
+        void anonymizeObjectIfNeeded_deeplyNestedFieldDenied_appliesAtEveryLevel() {
+            // three wrappers between the root and the guarded field
+            givenPrincipalWithEntitlements(PUBLIC);
+            DeepL1 original = new DeepL1();
+            SecretiveAttributes deepest = original.l2.l3.secrets;
+
+            AnonymizationResult<DeepL1> actualResult = anonymize(original);
+
+            assertThat(actualResult.targetObject().l2.l3.secrets.getCreditCardNumber()).isNull();
+            assertThat(deepest.getCreditCardNumber()).isEqualTo("4111");
+            assertThat(actualResult.anonymizedFields()).containsExactly("l2.l3.secrets.creditCardNumber");
+        }
+
         private <T> AnonymizationResult<T> anonymize(T target) {
             return sut.anonymizeObjectIfNeeded(
                     target,
@@ -768,6 +793,30 @@ class DefaultAccessControlEvaluatorTests {
             return guarded;
         }
 
+    }
+
+    private static class HolderWithGuardedList {
+
+        @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
+        private final List<SecretiveAttributes> secrets
+                = List.of(new SecretiveAttributes("John", "4111"));
+
+        List<SecretiveAttributes> getSecrets() {
+            return secrets;
+        }
+
+    }
+
+    private static class DeepL3 {
+        private final SecretiveAttributes secrets = new SecretiveAttributes("John", "4111");
+    }
+
+    private static class DeepL2 {
+        private final DeepL3 l3 = new DeepL3();
+    }
+
+    private static class DeepL1 {
+        private final DeepL2 l2 = new DeepL2();
     }
 
     private static class HolderAttributes {

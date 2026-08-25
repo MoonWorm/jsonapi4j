@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlPolicy;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 
 import java.util.Map;
@@ -37,8 +38,15 @@ public class UserResource implements Resource<UserDbEntity> {
         return new UserAttributes(
                 userDbEntity.getFirstName() + " " + userDbEntity.getLastName(),
                 userDbEntity.getEmail(),
-                userDbEntity.getCreditCardNumber()
+                userDbEntity.getCreditCardNumber(),
+                userDbEntity.getAddresses().stream().map(UserResource::toAddress).toList()
         );
+    }
+
+    private static Address toAddress(AddressRow row) {
+        return row.doorCode() == null
+                ? new Address(row.city(), row.zip())
+                : new HomeAddress(row.city(), row.zip(), row.doorCode());
     }
 
     /**
