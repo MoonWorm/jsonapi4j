@@ -340,6 +340,59 @@ public class ReflectionUtilsTests {
     }
 
     @Nested
+    class Caching {
+
+        @Test
+        void fetchFields_sameClassTwice_returnsTheSameInstance() {
+            assertThat(ReflectionUtils.fetchFields(Child.class))
+                    .isSameAs(ReflectionUtils.fetchFields(Child.class));
+        }
+
+        @Test
+        void fetchFieldTypes_sameClassTwice_returnsTheSameInstance() {
+            assertThat(ReflectionUtils.fetchFieldTypes(Child.class))
+                    .isSameAs(ReflectionUtils.fetchFieldTypes(Child.class));
+        }
+
+        @Test
+        void getAllFieldPaths_sameClassTwice_returnsTheSameInstance() {
+            assertThat(ReflectionUtils.getAllFieldPaths(Child.class))
+                    .isSameAs(ReflectionUtils.getAllFieldPaths(Child.class));
+        }
+
+        @Test
+        void shadowedFieldNames_sameClassTwice_returnsTheSameInstance() {
+            assertThat(ReflectionUtils.shadowedFieldNames(Child.class))
+                    .isSameAs(ReflectionUtils.shadowedFieldNames(Child.class));
+        }
+
+        @Test
+        void fetchFields_differentClasses_returnDifferentInstances() {
+            assertThat(ReflectionUtils.fetchFields(Child.class))
+                    .isNotSameAs(ReflectionUtils.fetchFields(Base.class));
+        }
+
+        @Test
+        void fetchFieldTypes_sharedResult_rejectsMutation() {
+            assertThatThrownBy(() -> ReflectionUtils.fetchFieldTypes(Child.class).clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void getAllFieldPaths_sharedResult_rejectsMutation() {
+            assertThatThrownBy(() -> ReflectionUtils.getAllFieldPaths(Child.class).clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void fetchFields_sharedResult_rejectsMutation() {
+            assertThatThrownBy(() -> ReflectionUtils.fetchFields(Child.class).clear())
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+    }
+
+    @Nested
     class AllFieldPaths {
 
         @Test

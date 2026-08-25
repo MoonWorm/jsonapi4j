@@ -25,6 +25,64 @@ import static java.util.stream.Collectors.toMap;
  */
 public final class ReflectionUtils {
 
+    /**
+     * Fields of a class and its superclasses, keyed by name, computed once per class.
+     *
+     * <p>A class's fields cannot change while the JVM runs, and this walk sits behind every reflective read
+     * and write the framework performs. {@link ClassValue} keys weakly, so an entry is collected with the
+     * class it describes and nothing pins an application classloader.
+     */
+    private static final ClassValue<Map<String, Field>> ALL_FIELDS = new ClassValue<>() {
+        @Override
+        protected Map<String, Field> computeValue(Class<?> type) {
+            return Collections.unmodifiableMap(getAllFieldsRecursively(new HashMap<>(), type));
+        }
+    };
+
+    /**
+     * Field types of a class and its superclasses, keyed by name, computed once per class.
+     */
+    private static final ClassValue<Map<String, Class<?>>> FIELD_TYPES = new ClassValue<>() {
+        @Override
+        protected Map<String, Class<?>> computeValue(Class<?> type) {
+            return Collections.unmodifiableMap(getAllFields(type).entrySet().stream().collect(toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().getType()
+            )));
+        }
+    };
+
+    /**
+     * Dotted field paths of a class, computed once per class.
+     */
+    private static final ClassValue<Set<String>> ALL_FIELD_PATHS = new ClassValue<>() {
+        @Override
+        protected Set<String> computeValue(Class<?> type) {
+            Set<String> result = new HashSet<>();
+            traverse(type, "", result, new HashSet<>());
+            return Collections.unmodifiableSet(result);
+        }
+    };
+
+    /**
+     * Field names a class declares more than once across its hierarchy, computed once per class.
+     */
+    private static final ClassValue<Set<String>> SHADOWED_FIELD_NAMES = new ClassValue<>() {
+        @Override
+        protected Set<String> computeValue(Class<?> type) {
+            Set<String> seen = new HashSet<>();
+            Set<String> shadowed = new HashSet<>();
+            for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+                for (Field field : c.getDeclaredFields()) {
+                    if (!seen.add(field.getName())) {
+                        shadowed.add(field.getName());
+                    }
+                }
+            }
+            return Collections.unmodifiableSet(shadowed);
+        }
+    };
+
     private ReflectionUtils() {
 
     }
@@ -223,9 +281,7 @@ public final class ReflectionUtils {
      * @return set of all paths
      */
     public static Set<String> getAllFieldPaths(Class<?> clazz) {
-        Set<String> result = new HashSet<>();
-        traverse(clazz, "", result, new HashSet<>());
-        return result;
+        return ALL_FIELD_PATHS.get(clazz);
     }
 
     private static void traverse(Class<?> clazz,
@@ -303,10 +359,7 @@ public final class ReflectionUtils {
      * @return map of the target class and its superclasses
      */
     public static Map<String, Class<?>> fetchFieldTypes(Class<?> objectType) {
-        return ReflectionUtils.getAllFields(objectType).entrySet().stream().collect(toMap(
-                Map.Entry::getKey,
-                e -> e.getValue().getType()
-        ));
+        return FIELD_TYPES.get(objectType);
     }
 
     /**
@@ -392,20 +445,11 @@ public final class ReflectionUtils {
      */
     public static Set<String> shadowedFieldNames(Class<?> type) {
         Validate.notNull(type, "type must not be null");
-        Set<String> seen = new HashSet<>();
-        Set<String> shadowed = new HashSet<>();
-        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
-            for (Field field : c.getDeclaredFields()) {
-                if (!seen.add(field.getName())) {
-                    shadowed.add(field.getName());
-                }
-            }
-        }
-        return Collections.unmodifiableSet(shadowed);
+        return SHADOWED_FIELD_NAMES.get(type);
     }
 
     private static Map<String, Field> getAllFields(Class<?> type) {
-        return Collections.unmodifiableMap(getAllFieldsRecursively(new HashMap<>(), type));
+        return ALL_FIELDS.get(type);
     }
 
     /**
