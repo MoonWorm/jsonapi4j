@@ -62,6 +62,9 @@ This returns `users` with only `email` and `lastName` in their attributes, and i
 | Empty value: `fields[users]=` | No fields are returned for that resource type |
 | Non-existing type or field | Ignored |
 | Nested path where parent exists but leaf doesn't (e.g. `a.b.c` where `a.b` exists but `c` doesn't) | Entire path is ignored |
+| Path into a collection, array or map (e.g. `fields[users]=addresses.zip`) | Names a field of **every** element — `zip` is kept in each address, other fields of each address are dropped. Elements themselves are never removed. |
+| Path through a field that is `null` on this resource | Still a valid path. Whether it exists is decided by the type, not by the data. |
+| Map keys | Not addressable. Only values are narrowed. |
 | All requested fields don't exist | Treated as empty fields (no fields returned) by default. Configurable via `requestedFieldsDontExistMode`. |
 | Primitive-typed fields (e.g. `int`) | Cannot be excluded if other fields at the same level are requested, because primitives can't be set to `null`. Use object types (e.g. `Integer`) for full sparse fieldsets support. |
 | Multi-type responses (e.g. users + included countries) | Use separate `fields[TYPE]` parameters per resource type |

@@ -1,6 +1,8 @@
-package pro.api4.jsonapi4j.plugin.ac.anonymization;
+package pro.api4.jsonapi4j.util;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -20,13 +22,38 @@ import java.util.TreeSet;
  * <p>Map keys are not visited — a JSON member name is a string, so a requirement on a key type would have
  * nothing to hide. A denied map value takes its whole entry with it.
  */
-final class Containers {
+public final class Containers {
 
     private Containers() {
 
     }
 
-    static boolean isContainerType(Class<?> type) {
+    /**
+     * The type held inside a container field — the component type of an array, or the single type argument
+     * of a {@code Collection} or {@code Optional}, or a {@code Map}'s value type.
+     *
+     * @return the element type, or {@code null} when the field is not a container or its element type
+     *         cannot be resolved (a raw type, or one erased to a type variable)
+     */
+    public static Class<?> elementTypeOf(Class<?> declaredType, Type genericType) {
+        if (declaredType.isArray()) {
+            return declaredType.getComponentType();
+        }
+        if (!isContainerType(declaredType) || !(genericType instanceof ParameterizedType parameterized)) {
+            return null;
+        }
+        Type[] arguments = parameterized.getActualTypeArguments();
+        if (arguments.length == 0) {
+            return null;
+        }
+        // a Map is keyed by strings on the wire, so only its values carry anything worth reaching
+        Type element = Map.class.isAssignableFrom(declaredType) && arguments.length > 1
+                ? arguments[1]
+                : arguments[0];
+        return element instanceof Class<?> elementClass ? elementClass : null;
+    }
+
+    public static boolean isContainerType(Class<?> type) {
         return Collection.class.isAssignableFrom(type)
                 || Map.class.isAssignableFrom(type)
                 || Optional.class.isAssignableFrom(type)
@@ -34,7 +61,7 @@ final class Containers {
                 || type == Object.class;
     }
 
-    static boolean isContainer(Object value) {
+    public static boolean isContainer(Object value) {
         return value instanceof Collection<?>
                 || value instanceof Map<?, ?>
                 || value instanceof Optional<?>
@@ -56,7 +83,7 @@ final class Containers {
      * @param declaredType the type the rebuilt container has to fit into, or {@code null} when unconstrained
      * @return the rebuilt container, or {@code null} when nothing assignable can be produced
      */
-    static Object rebuild(Object original, List<Object> elements, List<Object> keys, Class<?> declaredType) {
+    public static Object rebuild(Object original, List<Object> elements, List<Object> keys, Class<?> declaredType) {
         Object standard = rebuildAsStandardType(original, elements, keys);
         if (fits(standard, declaredType)) {
             return standard;

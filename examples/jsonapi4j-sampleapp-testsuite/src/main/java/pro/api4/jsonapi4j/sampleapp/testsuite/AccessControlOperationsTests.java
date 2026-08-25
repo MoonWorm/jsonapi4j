@@ -672,4 +672,35 @@ public abstract class AccessControlOperationsTests {
                 .body("data.attributes.addresses[0].zip", equalTo("00100"))
                 .body("data.attributes.addresses[0]", not(hasKey("doorCode")));
     }
+
+    @Test
+    public void test_readById_requestingADeniedFieldViaSparseFieldsets_stillHidesIt() {
+        // asking for a field explicitly must not talk access control out of hiding it
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .queryParam("fields[users]", "addresses.zip")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses", not(empty()))
+                .body("data.attributes.addresses[0]", not(hasKey("zip")))
+                .body("data.attributes.addresses[0]", not(hasKey("doorCode")));
+    }
+
+    @Test
+    public void test_readById_requestingAnAllowedFieldViaSparseFieldsets_returnsIt() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, "1")
+                .queryParam("fields[users]", "addresses.zip")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses[0].zip", equalTo("0150"))
+                .body("data.attributes", not(hasKey("fullName")));
+    }
 }

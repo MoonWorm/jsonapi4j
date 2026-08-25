@@ -11,4 +11,4 @@ jsonapi4j:
   oas:
     enabled: false
   sf:
-    enabled: false
+    enabled: true

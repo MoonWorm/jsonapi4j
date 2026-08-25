@@ -123,12 +123,21 @@ public final class ReflectionUtils {
      * @return true if exists, false - otherwise
      */
     public static boolean fieldPathExists(Object object, String fieldPath) {
-        try {
-            getFieldValueThrowing(object, fieldPath);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return object != null && fieldPathExists(object.getClass(), fieldPath);
+    }
+
+    /**
+     * Checks whether a type declares the given field path.
+     *
+     * <p>Decided from the type, so the answer does not change with the data: a path through a field that
+     * happens to be {@code null} on this instance still exists.
+     *
+     * @param type      target type
+     * @param fieldPath field path
+     * @return true if the type declares it, false otherwise
+     */
+    public static boolean fieldPathExists(Class<?> type, String fieldPath) {
+        return type != null && getAllFieldPaths(type).contains(fieldPath);
     }
 
     /**
@@ -305,9 +314,10 @@ public final class ReflectionUtils {
                         ? field.getName()
                         : prefix + "." + field.getName();
                 result.add(path);
-                Class<?> fieldType = field.getType();
-                // recurse
-                traverse(fieldType, path, result, visited);
+                // A container contributes the paths of what it holds, without an index: a path names a
+                // field of every element, not of one.
+                Class<?> elementType = Containers.elementTypeOf(field.getType(), field.getGenericType());
+                traverse(elementType != null ? elementType : field.getType(), path, result, visited);
             }
         }
         visited.remove(clazz); // important for different branches

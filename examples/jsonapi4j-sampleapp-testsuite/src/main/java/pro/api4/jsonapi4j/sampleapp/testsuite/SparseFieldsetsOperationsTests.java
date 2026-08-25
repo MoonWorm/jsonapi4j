@@ -177,4 +177,58 @@ public abstract class SparseFieldsetsOperationsTests {
                 .body("included.find { it.id == 'USD' }.attributes.symbol", equalTo("$"));
     }
 
+
+    @Test
+    public void test_sparseFieldsets_pathIntoCollectionElements() {
+        // fields[users]=addresses.zip — names a field of every address, not of one
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(SparseFieldsetsAwareRequest.getFieldsParam("users"), "addresses.zip")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes", not(hasKey("fullName")))
+                .body("data.attributes.addresses", not(empty()))
+                .body("data.attributes.addresses[0].zip", equalTo("0150"))
+                .body("data.attributes.addresses[0]", not(hasKey("city")));
+    }
+
+
+    @Test
+    public void test_readMultiple_pathIntoCollectionElements() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(SparseFieldsetsAwareRequest.getFieldsParam("users"), "addresses.zip")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("data", hasSize(2))
+                .body("data[0].attributes.addresses[0].zip", equalTo("0150"))
+                .body("data[0].attributes.addresses[0]", not(hasKey("city")))
+                .body("data[1].attributes.addresses[0].zip", equalTo("5003"))
+                .body("data[1].attributes.addresses[0]", not(hasKey("city")))
+                .body("data[0].attributes", not(hasKey("fullName")));
+    }
+
+    @Test
+    public void test_readByIdWithIncludes_pathIntoCollectionElements() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .queryParam(SparseFieldsetsAwareRequest.getFieldsParam("users"), "addresses.zip")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("included.findAll { it.type == 'users' }.attributes.addresses.flatten()", not(empty()))
+                .body("included.findAll { it.type == 'users' }.attributes.addresses.flatten()",
+                        everyItem(hasKey("zip")))
+                .body("included.findAll { it.type == 'users' }.attributes.addresses.flatten()",
+                        everyItem(not(hasKey("city"))))
+                .body("included.findAll { it.type == 'users' }.attributes",
+                        everyItem(not(hasKey("fullName"))));
+    }
 }

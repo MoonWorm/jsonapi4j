@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestBuilder;
 
 import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -375,5 +376,97 @@ public class SparseFieldsetsHelperTests {
 
     private static class Inheriting extends AuditBase {
         String own = "own";
+    }
+
+    @Test
+    public void sparseFieldsets_pathIntoCollectionElements_keepsOnlyTheRequestedField() {
+        // given
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("addresses.zip")))
+                .build();
+        WithAddresses original = new WithAddresses();
+        ResourceObject<WithAddresses, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, original, null, null, null);
+
+        // when
+        helper.sparseFieldsets(request, resourceObject);
+
+        // then
+        assertThat(resourceObject.getAttributes().addresses.get(0).zip).isEqualTo("0150");
+        assertThat(resourceObject.getAttributes().addresses.get(0).city).isNull();
+    }
+
+    @Test
+    public void sparseFieldsets_pathIntoCollectionElements_appliesToEveryElement() {
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("addresses.zip")))
+                .build();
+        ResourceObject<WithAddresses, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new WithAddresses(), null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(resourceObject.getAttributes().addresses).hasSize(2);
+        assertThat(resourceObject.getAttributes().addresses.get(1).city).isNull();
+    }
+
+    @Test
+    public void sparseFieldsets_pathIntoCollectionElements_originalIsNotModified() {
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("addresses.zip")))
+                .build();
+        WithAddresses original = new WithAddresses();
+        ResourceObject<WithAddresses, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, original, null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(original.addresses.get(0).city).isEqualTo("Oslo");
+    }
+
+    @Test
+    public void sparseFieldsets_collectionNotRequested_isExcludedEntirely() {
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("label")))
+                .build();
+        ResourceObject<WithAddresses, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, new WithAddresses(), null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(resourceObject.getAttributes().addresses).isNull();
+        assertThat(resourceObject.getAttributes().label).isEqualTo("l");
+    }
+
+    @Test
+    public void sparseFieldsets_pathThroughANullIntermediate_isStillTreatedAsExisting() {
+        // the path exists on the type; whether this instance happens to hold a value must not decide it
+        JsonApiRequest request = new JsonApiRequestBuilder()
+                .fieldSets(Map.of(RESOURCE_TYPE, List.of("a.i")))
+                .build();
+        Att attributes = new Att();
+        attributes.a = null;
+        ResourceObject<Att, ?> resourceObject
+                = new ResourceObject<>(RESOURCE_ID, null, RESOURCE_TYPE, attributes, null, null, null);
+
+        helper.sparseFieldsets(request, resourceObject);
+
+        assertThat(resourceObject.getAttributes()).isNotNull();
+        assertThat(resourceObject.getAttributes().s).isNull();
+    }
+
+    static class Addr {
+        String city;
+        String zip;
+
+        Addr(String city, String zip) {
+            this.city = city;
+            this.zip = zip;
+        }
+    }
+
+    static class WithAddresses {
+        String label = "l";
+        List<Addr> addresses = new ArrayList<>(List.of(new Addr("Oslo", "0150"), new Addr("Bergen", "5003")));
     }
 }

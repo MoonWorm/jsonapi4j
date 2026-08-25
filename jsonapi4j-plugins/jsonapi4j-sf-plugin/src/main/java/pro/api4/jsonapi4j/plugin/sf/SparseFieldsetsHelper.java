@@ -5,10 +5,15 @@ import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties;
 import pro.api4.jsonapi4j.plugin.sf.config.SfProperties.RequestedFieldsDontExistMode;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.util.Containers;
 import pro.api4.jsonapi4j.util.ObjectCopier;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -128,7 +133,9 @@ class SparseFieldsetsHelper {
             }
             Object child = ReflectionUtils.getFieldValueThrowing(source, fieldName);
             if (child != null) {
-                Object sparsedChild = sparse(child, allPaths, pathsToExclude, path);
+                Object sparsedChild = Containers.isContainer(child)
+                        ? sparseElements(child, allPaths, pathsToExclude, path, field)
+                        : sparse(child, allPaths, pathsToExclude, path);
                 if (sparsedChild != child) {
                     replacements.put(fieldName, sparsedChild);
                 }
@@ -136,6 +143,62 @@ class SparseFieldsetsHelper {
         }
         return replacements.isEmpty() ? source : ObjectCopier.copyWith(source, replacements);
     }
+
+    /**
+     * Applies the same paths to every element of a container.
+     *
+     * <p>A requested path names a field of each element rather than of one, so there is no index to match:
+     * {@code fields[users]=addresses.zip} keeps {@code zip} in every address. The container is rebuilt only
+     * when an element changed, and elements are never dropped — sparse fieldsets narrows what each object
+     * carries, not how many there are.
+     */
+    private Object sparseElements(Object container,
+                                  Set<String> allPaths,
+                                  Set<String> pathsToExclude,
+                                  String path,
+                                  Field field) {
+        List<Object> elements = new ArrayList<>();
+        List<Object> keys = new ArrayList<>();
+        boolean changed = false;
+        for (Map.Entry<Object, Object> entry : entriesOf(container)) {
+            Object element = entry.getValue();
+            Object sparsedElement = element == null || Containers.isContainer(element)
+                    ? element
+                    : sparse(element, allPaths, pathsToExclude, path);
+            changed |= sparsedElement != element;
+            elements.add(sparsedElement);
+            keys.add(entry.getKey());
+        }
+        if (!changed) {
+            return container;
+        }
+        Object rebuilt = Containers.rebuild(container, elements, keys,
+                field != null ? field.getType() : null);
+        if (rebuilt != null) {
+            return rebuilt;
+        }
+        log.warn("Sparse fieldsets: could not rebuild {} for '{}', returning it unchanged.",
+                container.getClass().getName(), path);
+        return container;
+    }
+
+    private static List<Map.Entry<Object, Object>> entriesOf(Object container) {
+        List<Map.Entry<Object, Object>> entries = new ArrayList<>();
+        if (container instanceof Map<?, ?> map) {
+            map.forEach((key, value) -> entries.add(new AbstractMap.SimpleEntry<>(key, value)));
+        } else if (container instanceof Optional<?> optional) {
+            optional.ifPresent(value -> entries.add(new AbstractMap.SimpleEntry<>(null, value)));
+        } else if (container instanceof Collection<?> collection) {
+            collection.forEach(value -> entries.add(new AbstractMap.SimpleEntry<>(null, value)));
+        } else {
+            int length = Array.getLength(container);
+            for (int i = 0; i < length; i++) {
+                entries.add(new AbstractMap.SimpleEntry<>(null, Array.get(container, i)));
+            }
+        }
+        return entries;
+    }
+
 
     private static Set<String> directChildrenOf(Set<String> allPaths, String prefix) {
         String childPrefix = prefix.isEmpty() ? "" : prefix + ".";

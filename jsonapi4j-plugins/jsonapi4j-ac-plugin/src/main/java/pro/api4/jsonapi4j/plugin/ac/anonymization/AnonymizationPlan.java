@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
+import pro.api4.jsonapi4j.util.Containers;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
