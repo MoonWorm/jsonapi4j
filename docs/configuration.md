@@ -276,13 +276,28 @@ working:
 public class AuditingAccessControlEvaluator extends DefaultAccessControlEvaluator {
 
     @Override
-    public boolean evaluateInboundRequirements(AccessControlContext context,
-                                               AccessControlModel accessControlModel) {
-        boolean allowed = super.evaluateInboundRequirements(context, accessControlModel);
-        auditLog.record(context.principal().authenticatedUserId(), context.operation(), allowed);
-        return allowed;
+    public EvaluationResult evaluateInboundRequirements(AccessControlContext context,
+                                                       AccessControlModel accessControlModel) {
+        EvaluationResult result = super.evaluateInboundRequirements(context, accessControlModel);
+        auditLog.record(context.principal().authenticatedUserId(), context.operation(), result.granted());
+        return result;
     }
 }
+```
+
+`EvaluationResult` carries the decision together with the `ErrorCode` to report when access is refused, so
+a denial can say more than "forbidden" — the default evaluator reports `INSUFFICIENT_ENTITLEMENTS` or
+`INSUFFICIENT_SCOPES` where those are what failed. Both come from the same evaluation, so the reason can
+never disagree with the decision.
+
+The code is an [`ErrorCode`](/error-handling/), not a fixed set of framework-defined reasons, so an
+evaluator can report something meaningful in its own domain:
+
+```java
+if (subscriptionExpired(context)) {
+    return EvaluationResult.denied(MyErrorCodes.SUBSCRIPTION_EXPIRED);
+}
+return EvaluationResult.allowed();
 ```
 
 **Spring Boot** — the default is `@ConditionalOnMissingBean`, so your bean wins:

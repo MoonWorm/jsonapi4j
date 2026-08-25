@@ -72,7 +72,7 @@ public class AccessControlModel {
 
     /**
      * Tells whether this model asks for anything at all. A model with every requirement absent enforces
-     * nothing, which is worth noticing — it usually means an annotation was written but never filled in.
+     * nothing.
      *
      * @return {@code true} when no requirement of any kind is declared
      */

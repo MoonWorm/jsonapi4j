@@ -23,21 +23,15 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 
 /**
- * Everything the Access Control plugin complains about, and how loudly.
+ * The misconfigurations the Access Control plugin detects, and how each is reported.
  *
- * <p>Collected in one place so that the full inventory of "your access control is wrong" is discoverable,
- * worded consistently, and easy to extend. Call sites stay where the information is — a clause validates
- * itself as it is built, class-level checks run as the model for a class is assembled, principal-dependent
- * ones run per request — but what counts as a problem, and what is said about it, is decided here.
- *
- * <p>Two kinds of problem, treated differently:
  * <ul>
- *     <li><b>Rejections</b> throw {@link AccessControlMisconfigurationException}. These are declarations
- *     that can never work — a clause naming no entitlement, a policy that cannot be instantiated. Failing
- *     at construction keeps an unsatisfiable model from existing at all.</li>
- *     <li><b>Reports</b> log a warning. These are declarations that are accepted but will not take
- *     effect, so a rule someone wrote does nothing. They are raised while the model for a class is being
- *     built, which happens once per class, so each is said once rather than per request.</li>
+ *     <li><b>Rejections</b> throw {@link AccessControlMisconfigurationException}: declarations that can
+ *     never be satisfied, such as a clause naming no entitlement or a policy that cannot be
+ *     instantiated.</li>
+ *     <li><b>Reports</b> log a warning: declarations that are accepted but will not take effect. Raised
+ *     once per class, while its model is built. Turn them into rejections with
+ *     {@code jsonapi4j.ac.failOnMisconfiguration}.</li>
  * </ul>
  */
 @Slf4j
@@ -50,25 +44,18 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Chooses whether a reported problem is rejected instead of merely logged.
+     * Sets whether reports are thrown instead of logged. Process-wide, set when the plugin is configured.
      *
-     * <p>Set once when the plugin is configured. It is process-wide because the checks run inside static
-     * per-class caches with nowhere to inject configuration; two plugin instances disagreeing about it in
-     * one JVM would be incoherent, which in practice does not arise.
-     *
-     * @param failOnMisconfiguration {@code true} to throw rather than warn
+     * @param failOnMisconfiguration {@code true} to throw
      */
     public static void failOnMisconfiguration(boolean failOnMisconfiguration) {
         FAIL_ON_MISCONFIGURATION.set(failOnMisconfiguration);
     }
 
     /**
-     * Reports a declaration that will not take effect — by rejecting it when the plugin is configured to,
-     * and by warning otherwise.
-     *
-     * <p>Everything routed through here is decidable from a class alone. Diagnostics about the caller stay
-     * warnings whatever the setting: a principal arriving without entitlements is a token problem rather
-     * than a misconfigured application, and such a request already fails closed.
+     * Logs a declaration that will not take effect, or throws when
+     * {@code jsonapi4j.ac.failOnMisconfiguration} is set. For problems decidable from a class alone;
+     * caller-dependent diagnostics always log.
      */
     private static void report(String message, Object... arguments) {
         if (FAIL_ON_MISCONFIGURATION.get()) {
@@ -78,8 +65,7 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Renders an SLF4J-style message, whose placeholders are {@code {}} rather than {@code %s}, for an
-     * exception that has to carry the same text.
+     * Substitutes SLF4J {@code {}} placeholders, so an exception can carry the same text as the log line.
      */
     private static String format(String message, Object... arguments) {
         String rendered = message;
@@ -131,8 +117,7 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Rejects an {@code AccessPolicy} that cannot be constructed. A policy is instantiated once when the
-     * model is built, so this is found at startup rather than on the request it would have decided.
+     * Rejects an {@code AccessPolicy} that cannot be constructed.
      */
     public static AccessControlMisconfigurationException uninstantiablePolicy(Class<?> policyType, Throwable cause) {
         return new AccessControlMisconfigurationException(String.format(
@@ -177,10 +162,8 @@ public final class AccessControlDiagnostics {
     // ---------------------------------------------------------------------------------------------------
 
     /**
-     * Warns about field-level access control that cannot take effect on the class that declares it.
-     *
-     * <p>Both cases are decidable from the class alone, so they are reported once, when the model for that
-     * class is first built, rather than on the unlucky request where a caller happens to be denied.
+     * Reports field-level access control that cannot take effect: on a primitive field, which cannot hold
+     * an absent value, or on a static field, which is never serialized.
      *
      * @param clazz      the class carrying the requirements
      * @param fieldLevel requirements declared on its fields
@@ -204,15 +187,11 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Warns about access control declared on a class that is only ever reached through a collection.
+     * Reports access control declared on a class reached only through a collection, array or map.
      *
-     * <p>Requirements are discovered by walking field types, and a container's type arguments are not part
-     * of that walk — so a rule on {@code Address.zip} has no effect when the response exposes a
-     * {@code List<Address>}. Hiding the container field as a whole does work; it is only per-element rules
-     * that are unenforced.
-     *
-     * <p>This is the one limitation that fails open: restricted values are served rather than withheld.
-     * Until element traversal exists, say so out loud rather than let it pass silently.
+     * <p>Requirements are not applied to elements, so a rule on {@code Address.zip} has no effect when the
+     * response exposes a {@code List<Address>}. Access control on the container field itself is enforced
+     * and hides the whole container.
      */
     public static void reportUnenforceableElementRequirements(Class<?> owner,
                                                               String fieldName,
@@ -228,12 +207,8 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Warns about an {@code @AccessControl} that asks for nothing.
-     *
-     * <p>Every requirement left at its default means the annotation enforces nothing at all, which is
-     * almost always a slip rather than an intent — most often a bare {@code @AccessControl} written where
-     * {@code @AccessControl(authenticated = AUTHENTICATED)} was meant. Declaring no requirement is
-     * expressed by leaving the annotation off.
+     * Reports an {@code @AccessControl} with every requirement left at its default, which enforces
+     * nothing. Declaring no requirement is expressed by leaving the annotation off.
      *
      * @param element a description of what carries the annotation, used in the message
      * @param model   the model built from it
@@ -249,12 +224,8 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Explains a principal that authenticated but carries no entitlements at all.
-     *
-     * <p>Unlike the checks above this one depends on the caller, not on a class, so it can only be noticed
-     * while handling a request. Such a principal fails every entitlement requirement no matter which one is
-     * asked for, which almost always means the configured {@code PrincipalResolver} produces none — a JWT
-     * resolver whose entitlements claim is absent from the tokens being issued, most commonly.
+     * Message for a principal that authenticated but carries no entitlements at all, which fails every
+     * entitlement requirement and usually means the configured {@code PrincipalResolver} produces none.
      *
      * @return the message, taking the denied requirement as its single placeholder
      */
@@ -266,8 +237,8 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Explains a principal that authenticated but was granted no scopes at all. The runtime counterpart of
-     * {@link #missingEntitlementsMessage()}.
+     * Message for a principal that authenticated but was granted no scopes at all. The scopes counterpart
+     * of {@link #missingEntitlementsMessage()}.
      *
      * @return the message, taking the denied requirement as its single placeholder
      */
@@ -279,12 +250,9 @@ public final class AccessControlDiagnostics {
     }
 
     /**
-     * Warns about a field that shadows an inherited one of the same name.
-     *
-     * <p>Requirements are looked up by field name, and a name resolves to exactly one field — the
-     * most-derived declaration. The inherited one is therefore invisible: an {@code @AccessControl} on it
-     * is never seen, so the rule silently does not apply. Which of the two carries the annotation decides
-     * whether anything is enforced, and that is far too subtle to leave unsaid.
+     * Reports a field shadowing an inherited one of the same name. Requirements are looked up by name and
+     * resolve to the most-derived declaration, so an {@code @AccessControl} on the inherited field is never
+     * seen.
      *
      * @param clazz the class to inspect
      */

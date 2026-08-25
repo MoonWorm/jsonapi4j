@@ -37,13 +37,11 @@ public class OutboundAccessControlForCustomClass {
      * Outbound requirements per class, computed once and reused.
      * <p>
      * The scan reads no instance values — only the object's class and, for a {@link ResourceObject}, its
-     * attributes class — so the result is a pure function of that pair. The two levels are nested
-     * {@link ClassValue}s rather than a map keyed on a class pair so that neither class is strongly held: an
-     * entry is collected together with the classes it describes, which matters because the outer key is a
-     * framework class while the inner is an application one.
+     * attributes class — so the result is a pure function of that pair. Nested {@link ClassValue}s hold
+     * both keys weakly, so entries are collected along with the classes they describe.
      * <p>
-     * Only this entry point is cached. {@code extractNestedRecursively} descends into nested classes and is
-     * deliberately left uncached, so no lookup can re-enter the cache it is currently populating.
+     * Only this entry point is cached; {@code extractNestedRecursively} is not, so no lookup can re-enter
+     * the cache it is populating.
      */
     private static final ClassValue<ClassValue<OutboundAccessControlForCustomClass>> BY_CLASS =
             new ClassValue<>() {
@@ -67,10 +65,9 @@ public class OutboundAccessControlForCustomClass {
     /**
      * Reads the outbound requirements declared on the given object's class.
      * <p>
-     * Results are cached per class, so a page of resources of one type performs a single class-graph scan
-     * rather than one per item. A consequence worth knowing: an {@code AccessPolicy} declared on an
-     * attributes class is now instantiated once for the process rather than once per request, which is what
-     * {@code AccessPolicy} already documents. Policies must be stateless and thread-safe.
+     * Results are cached per class: a page of resources of one type performs a single class-graph scan. An
+     * {@code AccessPolicy} declared on an attributes class is therefore instantiated once per process, so
+     * policies must be stateless and thread-safe.
      *
      * @param object the object whose class declares the requirements
      * @return the requirements, or {@code null} when {@code object} is {@code null}

@@ -20,23 +20,12 @@ import java.util.Set;
 /**
  * Copies a DTO while blanking out selected fields, without touching the original.
  *
- * <p>Exists so that features which hide fields — access-control anonymization, sparse fieldsets — can
- * produce a redacted view of an object the application owns instead of destroying it. An application is
- * free to return a cached, shared or otherwise long-lived object from a resolver; nulling a field on such
- * an object would corrupt it for every later request.
+ * <p>The source object is never modified, so it is safe to pass one that is cached, shared, or otherwise
+ * outlives the request.
  *
  * <p>Copies are <b>shallow</b>: fields that are not blanked are carried over by reference. Callers that
  * redact deep inside a graph copy each object along the path and rewire the copies as they unwind.
  *
- * <p>Ordinary classes are copied by allocating an instance <i>without running any constructor</i> and then
- * writing every field across. This deliberately sidesteps the application's constructors: a constructor
- * that rejects nulls, normalises its arguments, takes them in a different order than the fields are
- * declared, or simply does not exist in a usable shape would otherwise make the class impossible to redact
- * — or, worse, redact it incorrectly. Since every field is then assigned from the source, the object ends
- * up in exactly the state it was in, minus what had to be hidden.
- *
- * <p>Records are the exception. Their fields cannot be written reflectively at all, so a record is rebuilt
- * through its canonical constructor with the hidden components passed as {@code null}.
  */
 public final class ObjectCopier {
 
@@ -208,8 +197,8 @@ public final class ObjectCopier {
     /**
      * Returns every instance field of the type and its superclasses.
      *
-     * <p>Synthetic instance fields are included on purpose: the reference a non-static inner class holds to
-     * its enclosing instance is one, and dropping it would produce a broken copy.
+     * <p>Includes synthetic instance fields, such as the reference a non-static inner class holds to its
+     * enclosing instance.
      */
     private static List<Field> allInstanceFields(Class<?> type) {
         List<Field> fields = new ArrayList<>();

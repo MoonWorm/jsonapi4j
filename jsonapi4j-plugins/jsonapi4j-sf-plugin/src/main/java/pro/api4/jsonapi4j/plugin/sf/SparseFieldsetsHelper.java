@@ -76,11 +76,9 @@ class SparseFieldsetsHelper {
     /**
      * Replaces the attributes with a copy that carries only the requested fields.
      *
-     * <p>The attributes object belongs to the application — a resolver may well return a cached or shared
-     * instance — so the excluded fields are dropped from a copy rather than nulled on the original, which
-     * would leave them missing for every later request. Objects are copied only along a path to an excluded
-     * field; anything untouched is carried over by reference, and when nothing is excluded the original
-     * instance is used as-is.
+     * <p>The original attributes object is never modified. Objects are copied only along a path to an
+     * excluded field; anything untouched is carried over by reference, and when nothing is excluded the
+     * original instance is used as-is.
      */
     private void sparseNonRequestedFields(ResourceObject<?, ?> resourceObject,
                                           List<String> existingPathsToInclude) {
@@ -101,8 +99,8 @@ class SparseFieldsetsHelper {
                 ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, sparsed);
             }
         } catch (RuntimeException e) {
-            // Sparse fieldsets is a convenience over the response shape, never a security control, so a
-            // class that cannot be copied returns all of its fields rather than failing the request.
+            // A class that cannot be copied returns all of its fields; sparse fieldsets is a convenience
+            // over the response shape, not a security control.
             log.warn("Sparse fieldsets: could not build a reduced copy of {}, returning all of its fields.",
                     attributes.getClass().getName(), e);
         }

@@ -17,12 +17,15 @@ public interface InboundAccessControlEvaluator {
      *     <li>Check the declared {@code AccessPolicy} allows it</li>
      * </ul>
      *
+     * <p>A denied result carries the {@link pro.api4.jsonapi4j.model.document.error.ErrorCode} reported to
+     * the caller.
+     *
      * @param context            everything the requirements are decided against — the caller, the operation,
      *                           the request, and the stage
      * @param accessControlModel Access Control requirements that should be evaluated
-     * @return <code>true</code> if passed, <code>false</code> - otherwise
+     * @return the decision, and the refusing requirement when denied
      */
-    boolean evaluateInboundRequirements(
+    EvaluationResult evaluateInboundRequirements(
             AccessControlContext context,
             AccessControlModel accessControlModel
     );

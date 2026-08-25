@@ -61,7 +61,7 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
                                              Supplier<DATA> dataSupplier,
                                              AccessControlModel inboundAccessControlRequirements) {
         if (inboundAccessControlRequirements == null
-                || evaluateInboundRequirements(context, inboundAccessControlRequirements)
+                || evaluateInboundRequirements(context, inboundAccessControlRequirements).granted()
         ) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", context.request());
             return dataSupplier.get();
@@ -166,17 +166,11 @@ public abstract class AccessControlEvaluator implements InboundAccessControlEval
     }
 
     /**
-     * Applies the hidden fields, by copying rather than by damaging the object — except for the envelopes
-     * the framework itself builds.
+     * Applies the hidden fields.
      *
-     * <p>A {@link ResourceIdentifierObject} — which every {@code ResourceObject} is — is constructed fresh
-     * for each response out of the parts a resolver returned, so writing to it can affect nothing but the
-     * response being built, and it is edited in place. Its constructors take inherited fields, which makes
-     * it uncopyable anyway.
-     *
-     * <p>Everything reachable inside such an envelope is different: attributes and the objects nested in
-     * them come from the application and may be cached, shared or otherwise outlive the request, so those
-     * are copied.
+     * <p>A {@link ResourceIdentifierObject}, which every {@code ResourceObject} is, is built fresh for each
+     * response and is edited in place. Everything reachable inside it comes from the application and is
+     * copied, leaving the original untouched.
      */
     private static <T> T redact(T targetObject, Map<String, Object> replacements) {
         try {

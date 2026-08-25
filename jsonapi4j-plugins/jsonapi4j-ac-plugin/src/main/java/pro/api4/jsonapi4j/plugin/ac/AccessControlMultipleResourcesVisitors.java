@@ -8,7 +8,6 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
-import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
@@ -43,7 +42,9 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings)) {
+        EvaluationResult inboundResult = accessControlEvaluator.evaluateInboundRequirements(
+                DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings);
+        if (inboundResult.granted()) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
@@ -57,7 +58,10 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
                 log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", ctx.getRequest());
-                throw new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
+                throw new JsonApi4jException(
+                        403,
+                        inboundResult.errorCode(),
+                        "Access to the operation is forbidden");
             }
         }
     }

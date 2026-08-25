@@ -16,6 +16,7 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.plugin.ac.model.ScopesGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.model.EntitlementsGroupModel;
 import pro.api4.jsonapi4j.plugin.ac.ownership.OwnerIdExtractor;
+import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.principal.AuthenticatedPrincipalContextHolder;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
@@ -33,20 +34,34 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
     private final AtomicBoolean missingScopesReported = new AtomicBoolean();
 
     @Override
-    public boolean evaluateInboundRequirements(AccessControlContext context,
-                                               AccessControlModel accessControlModel) {
+    /**
+     * Denies with {@code INSUFFICIENT_ENTITLEMENTS} or {@code INSUFFICIENT_SCOPES} when those requirements
+     * fail. Authentication, ownership and policy failures deny with {@code FORBIDDEN}: naming ownership
+     * would confirm the resource exists and is held by someone else.
+     */
+    public EvaluationResult evaluateInboundRequirements(AccessControlContext context,
+                                                        AccessControlModel accessControlModel) {
 
         if (accessControlModel == null) {
-            return true;
+            return EvaluationResult.allowed();
         }
 
-        String ownerId = getOwnerIdFromRequest(accessControlModel, context.request());
-
-        return checkIsAuthenticated(accessControlModel.getAuthenticated())
-                && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
-                && evaluateScopes(accessControlModel.getRequiredScopes())
-                && evaluateOwnership(ownerId)
-                && evaluatePolicy(accessControlModel.getRequiredPolicy(), context);
+        if (!checkIsAuthenticated(accessControlModel.getAuthenticated())) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        if (!evaluateEntitlements(accessControlModel.getRequiredEntitlements())) {
+            return EvaluationResult.denied(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
+        }
+        if (!evaluateScopes(accessControlModel.getRequiredScopes())) {
+            return EvaluationResult.denied(AuthErrorCodes.INSUFFICIENT_SCOPES);
+        }
+        if (!evaluateOwnership(getOwnerIdFromRequest(accessControlModel, context.request()))) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        if (!evaluatePolicy(accessControlModel.getRequiredPolicy(), context)) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        return EvaluationResult.allowed();
     }
 
     @Override

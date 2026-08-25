@@ -364,7 +364,8 @@ public abstract class AccessControlOperationsTests {
                 .pathParam("userId", "3")
                 .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .body("errors[0].code", equalTo("INSUFFICIENT_ENTITLEMENTS"));
 
         // verify user 3 still exists
         given()
@@ -399,7 +400,8 @@ public abstract class AccessControlOperationsTests {
                 .pathParam("userId", "3")
                 .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .body("errors[0].code", equalTo("INSUFFICIENT_ENTITLEMENTS"));
     }
 
     @Test
@@ -412,7 +414,8 @@ public abstract class AccessControlOperationsTests {
                 .pathParam("userId", "3")
                 .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(403);
+                .statusCode(403)
+                .body("errors[0].code", equalTo("INSUFFICIENT_ENTITLEMENTS"));
     }
 
     @Test

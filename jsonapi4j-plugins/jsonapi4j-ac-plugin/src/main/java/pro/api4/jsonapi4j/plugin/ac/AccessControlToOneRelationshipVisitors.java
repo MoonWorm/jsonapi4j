@@ -6,7 +6,6 @@ import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
-import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
@@ -38,7 +37,9 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
         if (inboundAccessControlSettings == null) {
             return DataPreRetrievalPhase.doNothing();
         }
-        if (accessControlEvaluator.evaluateInboundRequirements(DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings)) {
+        EvaluationResult inboundResult = accessControlEvaluator.evaluateInboundRequirements(
+                DefaultAccessControlContext.inbound(ctx), inboundAccessControlSettings);
+        if (inboundResult.granted()) {
             log.debug("Inbound Access is allowed for a request {}. Proceeding...", ctx.getRequest());
             return DataPreRetrievalPhase.doNothing();
         } else {
@@ -52,7 +53,10 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
                 log.debug("Inbound Access is not allowed for a request {}, restricting access to the operation", ctx.getRequest());
-                throw new JsonApi4jException(403, AuthErrorCodes.FORBIDDEN, "Access to the operation is forbidden");
+                throw new JsonApi4jException(
+                        403,
+                        inboundResult.errorCode(),
+                        "Access to the operation is forbidden");
             }
 
         }

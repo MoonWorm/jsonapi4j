@@ -3,7 +3,9 @@ package pro.api4.jsonapi4j.plugin.ac;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
+import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlEntitlements;
 import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlScopes;
@@ -54,6 +56,10 @@ class DefaultAccessControlEvaluatorTests {
     }
 
     private boolean evaluateInbound(Class<?> annotatedResource) {
+        return evaluateInboundResult(annotatedResource).granted();
+    }
+
+    private EvaluationResult evaluateInboundResult(Class<?> annotatedResource) {
         AccessControlModel model = AccessControlModel.fromClassAnnotation(annotatedResource);
         return sut.evaluateInboundRequirements(DefaultAccessControlContext.inboundForRequest(new Object()), model);
     }
@@ -504,6 +510,19 @@ class DefaultAccessControlEvaluatorTests {
     private static class NoEntitlementsResource {
     }
 
+    @AccessControl(policy = @AccessControlPolicy(AlwaysDenyPolicy.class))
+    private static class DenyingPolicyResource {
+    }
+
+    public static class AlwaysDenyPolicy implements AccessPolicy {
+
+        @Override
+        public boolean isSatisfiedBy(AccessControlContext context) {
+            return false;
+        }
+
+    }
+
     @AccessControl(policy = @AccessControlPolicy(ActiveStatusPolicy.class))
     private static class ActiveStatusPolicyResource {
     }
@@ -538,6 +557,68 @@ class DefaultAccessControlEvaluatorTests {
         }
     }
 
+
+    @Nested
+    class DenialReason {
+
+        @Test
+        void evaluateInboundRequirements_entitlementsNotHeld_reportsInsufficientEntitlements() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            assertThat(evaluateInboundResult(AnyOfResource.class).errorCode())
+                    .isEqualTo(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
+        }
+
+        @Test
+        void evaluateInboundRequirements_scopesNotGranted_reportsInsufficientScopes() {
+            givenPrincipalWithEntitlements(ADMIN);
+
+            assertThat(evaluateInboundResult(ScopedResource.class).errorCode())
+                    .isEqualTo(AuthErrorCodes.INSUFFICIENT_SCOPES);
+        }
+
+        @Test
+        void evaluateInboundRequirements_entitlementsAndScopesBothFail_reportsTheOneCheckedFirst() {
+            givenPrincipalWithEntitlements(PUBLIC);
+
+            assertThat(evaluateInboundResult(EntitledAndScopedResource.class).errorCode())
+                    .isEqualTo(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
+        }
+
+        @Test
+        void evaluateInboundRequirements_notAuthenticated_staysForbidden() {
+            AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
+                    new DefaultPrincipal(null, Set.of(), null, Map.of()));
+
+            assertThat(evaluateInboundResult(AuthenticatedOnlyResource.class).errorCode())
+                    .isEqualTo(AuthErrorCodes.FORBIDDEN);
+        }
+
+        @Test
+        void evaluateInboundRequirements_policyDenies_staysForbidden() {
+            givenPrincipalWithEntitlements(ADMIN);
+
+            assertThat(evaluateInboundResult(DenyingPolicyResource.class).errorCode())
+                    .isEqualTo(AuthErrorCodes.FORBIDDEN);
+        }
+
+        @Test
+        void evaluateInboundRequirements_granted_reportsNoCode() {
+            givenPrincipalWithEntitlements(ADMIN);
+
+            EvaluationResult actualResult = evaluateInboundResult(AnyOfResource.class);
+
+            assertThat(actualResult.granted()).isTrue();
+            assertThat(actualResult.errorCode()).isNull();
+        }
+
+        @Test
+        void evaluateInboundRequirements_noRequirements_allowed() {
+            assertThat(sut.evaluateInboundRequirements(
+                    DefaultAccessControlContext.inboundForRequest(new Object()), null).granted()).isTrue();
+        }
+
+    }
 
     @Nested
     class Anonymization {
@@ -638,6 +719,20 @@ class DefaultAccessControlEvaluatorTests {
                     OutboundAccessControlForCustomClass.fromClassAnnotationsOf(target));
         }
 
+    }
+
+    @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("things.read")))
+    private static class ScopedResource {
+    }
+
+    @AccessControl(
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)),
+            scopes = @AccessControlScopes(@ScopesGroup("things.read")))
+    private static class EntitledAndScopedResource {
+    }
+
+    @AccessControl(authenticated = Authenticated.AUTHENTICATED)
+    private static class AuthenticatedOnlyResource {
     }
 
     @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))

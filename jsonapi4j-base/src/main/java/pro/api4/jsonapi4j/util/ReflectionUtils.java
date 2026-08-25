@@ -240,8 +240,7 @@ public final class ReflectionUtils {
             return;
         }
         visited.add(clazz);
-        // Inherited fields are part of the object just as much as declared ones — they are serialized
-        // alongside them, so a caller asking which paths exist must be told about both.
+        // Inherited fields are serialized alongside declared ones, so both are enumerated.
         for (Class<?> current = clazz;
              current != null && current != Object.class && !isLeafType(current);
              current = current.getSuperclass()) {
@@ -384,10 +383,9 @@ public final class ReflectionUtils {
      * Returns the field names a type declares more than once across its hierarchy — a field shadowing an
      * inherited one of the same name.
      *
-     * <p>Fields are addressed by name throughout these utilities, and a name can only point at one field,
-     * so for a shadowed name the inherited declaration becomes unreachable: annotations on it are not seen,
-     * and its value is neither read nor written. Callers that care about that ambiguity can ask for it here
-     * and say something, rather than silently acting on one of the two.
+     * <p>Fields are addressed by name, and a name resolves to one field — the most-derived declaration.
+     * The inherited one is unreachable: annotations on it are not seen, and its value is neither read nor
+     * written.
      *
      * @param type the type to inspect
      * @return the shadowed field names, empty when nothing is shadowed
@@ -413,10 +411,8 @@ public final class ReflectionUtils {
     /**
      * Collects fields by name from the whole hierarchy, letting the most-derived declaration win.
      *
-     * <p>Superclasses are visited first so that a field shadowing an inherited one of the same name
-     * replaces it, which is what {@code this.field} means in Java and what a serializer will emit. Visiting
-     * them the other way round resolves a shadowed name to the inherited field, so a value would be read
-     * from — and written to — the one the application cannot see.
+     * <p>Superclasses are visited first, so a field shadowing an inherited one of the same name replaces
+     * it — matching what {@code this.field} refers to in Java.
      */
     private static Map<String, Field> getAllFieldsRecursively(Map<String, Field> fields,
                                                               Class<?> type) {

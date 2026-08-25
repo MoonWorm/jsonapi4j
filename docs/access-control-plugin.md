@@ -64,6 +64,28 @@ Access control rules can be defined for:
 * Entire **Resource Identifier Object** - if requirements are not met, the entire resource identifier will be anonymized. `@AccessControl` annotation must be placed on top of the class that implements `ToOneRelationship<RELATIONSHIP_DTO>` or `ToManyRelationship<RELATIONSHIP_DTO>` interface.
 * Specific members (e.g., `meta`) - if requirements are not met, only those members will be anonymized. `@AccessControl` annotation must be placed above the `resolveResourceIdentifierMeta(...)` method.
 
+#### What a denial returns
+
+For a `GET`, a denied request returns `200` with the restricted data omitted rather than an error — a `403`
+would fail the whole response including the parts the caller is allowed to see, and would break compound
+documents.
+
+For everything else, a denied request returns `403` with an error code naming what failed:
+
+| Requirement that failed | Error code |
+|-------------------------|------------|
+| `entitlements` | `INSUFFICIENT_ENTITLEMENTS` |
+| `scopes` | `INSUFFICIENT_SCOPES` |
+| `authenticated`, `ownership`, `policy` | `FORBIDDEN` |
+
+Entitlements and scopes are named because they tell a caller different things — one needs different
+credentials, the other a differently-scoped token. Ownership stays generic deliberately: reporting "you are
+not the owner" would confirm that the resource exists and that somebody else holds it. A policy is
+application code with no code of its own to report.
+
+A custom evaluator can report any [`ErrorCode`](/error-handling/) it likes, including its own — see
+[Overriding the AccessControlEvaluator](/configuration/#overriding-the-accesscontrolevaluator).
+
 ### Access Control Requirements
 
 By default, **JsonApi4j** does not enforce any access control (i.e., all requests are allowed).
