@@ -27,7 +27,22 @@ public class UserInMemoryDb implements UserDb {
     private final Map<String, CountryRef> userPlaceOfBirth = new ConcurrentHashMap<>();
     private final Map<String, List<RelativeRef>> userRalatives = new ConcurrentHashMap<>();
 
-    {
+    public UserInMemoryDb() {
+        reset();
+    }
+
+    /**
+     * Restores the seed data, discarding everything written since.
+     *
+     * <p>Exists so a test can start from a known state: this stands in for a database, and a fake
+     * that cannot be rewound forces tests to depend on the order they run in.
+     */
+    @Override
+    public void reset() {
+        users.clear();
+        userCitizenships.clear();
+        userPlaceOfBirth.clear();
+        userRalatives.clear();
         users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789", List.of(AddressRow.home("Oslo", "0150", "door-1"))));
         userCitizenships.put("1", List.of(new CountryRef("NO"), new CountryRef("FI"), new CountryRef("US")));
         userPlaceOfBirth.put("1", new CountryRef("US"));
@@ -113,26 +128,22 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public UserDbEntity updateUser(String userId,
-                                   String firstName,
-                                   String lastName,
-                                   String email,
-                                   String creditCardNumber) {
+    public UserDbEntity updateUser(String userId, Map<String, Object> changes) {
         if (!users.containsKey(userId)) {
             throw new RuntimeException("User with id " + userId + "doesn't exist");
         }
         UserDbEntity updatedUser = users.get(userId);
-        if (StringUtils.isNotBlank(firstName)) {
-            updatedUser = updatedUser.withFirstName(firstName);
+        if (changes.containsKey("firstName")) {
+            updatedUser = updatedUser.withFirstName((String) changes.get("firstName"));
         }
-        if (StringUtils.isNotBlank(lastName)) {
-            updatedUser = updatedUser.withLastName(lastName);
+        if (changes.containsKey("lastName")) {
+            updatedUser = updatedUser.withLastName((String) changes.get("lastName"));
         }
-        if (StringUtils.isNotBlank(email)) {
-            updatedUser = updatedUser.withEmail(email);
+        if (changes.containsKey("email")) {
+            updatedUser = updatedUser.withEmail((String) changes.get("email"));
         }
-        if (StringUtils.isNotBlank(creditCardNumber)) {
-            updatedUser = updatedUser.withCreditCardNumber(creditCardNumber);
+        if (changes.containsKey("creditCardNumber")) {
+            updatedUser = updatedUser.withCreditCardNumber((String) changes.get("creditCardNumber"));
         }
         users.put(updatedUser.getId(), updatedUser);
         return updatedUser;
@@ -227,7 +238,11 @@ public class UserInMemoryDb implements UserDb {
 
     @Override
     public void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth) {
-        userPlaceOfBirth.put(userId, placeOfBirth);
+        if (placeOfBirth == null) {
+            userPlaceOfBirth.remove(userId);
+        } else {
+            userPlaceOfBirth.put(userId, placeOfBirth);
+        }
     }
 
     @Override

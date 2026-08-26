@@ -4,8 +4,10 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
+import static pro.api4.jsonapi4j.sampleapp.testsuite.SampleUsers.createUser;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 public abstract class UpdateUserPlaceOfBirthOperationTests {
 
@@ -20,9 +22,11 @@ public abstract class UpdateUserPlaceOfBirthOperationTests {
 
     @Test
     public void test_updatePlaceOfBirth() {
+        String userId = createUser(jsonApiRootPath, appPort);
+
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("userId", "2")
+                .pathParam("userId", userId)
                 .body("""                                                                                                                                                               
                         {
                           "data": { "type": "countries", "id": "NO" }
@@ -34,10 +38,13 @@ public abstract class UpdateUserPlaceOfBirthOperationTests {
     }
 
     @Test
-    public void test_updatePlaceOfBirth_nullData_deletesPlaceOfBirth() {
+    public void test_updatePlaceOfBirth_nullData_clearsTheRelationshipAndKeepsTheUser() {
+        String userId = createUser(jsonApiRootPath, appPort, """
+                { "placeOfBirth": { "data": { "type": "countries", "id": "US" } } }""");
+
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("userId", "1")
+                .pathParam("userId", userId)
                 .body("""
                         {
                           "data": null
@@ -46,6 +53,22 @@ public abstract class UpdateUserPlaceOfBirthOperationTests {
                 .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
                 .then()
                 .statusCode(204);
+
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", userId)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.id", equalTo(userId));
+
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", userId)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}/relationships/placeOfBirth")
+                .then()
+                .statusCode(200)
+                .body("data", nullValue());
     }
 
     @Test

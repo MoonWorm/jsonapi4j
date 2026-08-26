@@ -123,29 +123,40 @@ Add the `update` method to the same `UserOperations` class:
 ```java
 @Override
 public void update(JsonApiRequest request) {
-    var payload = request.getSingleResourceDocPayload(UserAttributes.class);
-    UserAttributes attributes = payload.getData().getAttributes();
-    userDb.updateUser(
-            request.getResourceId(),
-            attributes.getFullName(),
-            attributes.getEmail(),
-            attributes.getCreditCardNumber()
-    );
+    var attributes = request.getSingleResourceDocPayload().getData().getAttributes();
+
+    Map<String, Object> changes = new LinkedHashMap<>();
+    for (String attribute : List.of("fullName", "email", "creditCardNumber")) {
+        if (attributes.containsKey(attribute)) {
+            changes.put(attribute, attributes.get(attribute));
+        }
+    }
+
+    userDb.updateUser(request.getResourceId(), changes);
 }
 ```
 
 The `update` method returns `void` — the framework returns `204 No Content` automatically.
 
-The resource ID comes from the URL path (`/users/3`), available via `request.getResourceId()`. The updated attributes come from the request body.
+The resource ID comes from the URL path (`/users/3`), available via `request.getResourceId()`. The
+attributes come from the request body, and `changes` carries only the ones the client actually sent —
+`PATCH` is a partial update, and the next section explains why that distinction has to be made here rather
+than further down.
 
 Extend `UserDb`:
 
 ```java
-public void updateUser(String id, String fullName, String email, String creditCardNumber) {
-    if (!users.containsKey(id)) {
+public void updateUser(String id, Map<String, Object> changes) {
+    UserDbEntity current = users.get(id);
+    if (current == null) {
         throw new ResourceNotFoundException(id, new ResourceType("users"));
     }
-    users.put(id, new UserDbEntity(id, fullName, email, creditCardNumber));
+    users.put(id, new UserDbEntity(
+            id,
+            (String) changes.getOrDefault("fullName", current.getFullName()),
+            (String) changes.getOrDefault("email", current.getEmail()),
+            (String) changes.getOrDefault("creditCardNumber", current.getCreditCardNumber())
+    ));
 }
 ```
 
@@ -173,47 +184,26 @@ Empty body.
 
 #### Partial updates
 
-The request above sends every attribute, which sidesteps a question real clients raise immediately: what
-happens to an attribute the payload does not mention?
+The `update` above reads the attributes untyped and forwards only the ones the client sent. That is not a
+stylistic preference — it is what the specification requires, and what typed binding cannot express.
 
-The specification answers it, and does not leave the choice to you —
 [Updating a Resource's Attributes](https://jsonapi.org/format/#crud-updating-resource-attributes) requires
 that missing attributes be interpreted as if they were sent with their current values, and explicitly
-forbids treating them as `null`. A `PATCH` carrying only `email` must leave `fullName` alone.
+forbids treating them as `null`. A `PATCH` carrying only `email` must leave `fullName` alone — which is
+what `getOrDefault` says in `updateUser`, once `changes` is known to hold only what arrived.
 
 A member that *is* present replaces the old value in full. For an array- or object-valued attribute that
-means wholesale replacement, not a merge — the same stance the specification takes for to-many
+means wholesale replacement rather than a merge — the same stance the specification takes for to-many
 relationships.
 
-That leaves one practical problem: a typed payload cannot tell the two cases apart. Jackson binds both an
-absent member and an explicit `"fullName": null` to `null`, so `attributes.getFullName()` cannot answer
-"did the client send this?". Checking for null is the usual workaround and it satisfies the specification,
-but it has a cost worth knowing about: an attribute can never be *cleared*, because the request that would
-clear it is indistinguishable from the request that omits it.
+Typed binding cannot tell those two cases apart. Jackson binds both an absent member and an explicit
+`"fullName": null` to `null`, so `attributes.getFullName()` cannot answer "did the client send this?".
+Testing for null is the common workaround and it does satisfy the specification, but it costs you the
+ability to *clear* an attribute: the request that would clear it is indistinguishable from the one that
+omits it. On the raw `LinkedHashMap` returned by `getSingleResourceDocPayload()`, presence and value stay
+independent, so an explicit `null` can mean "clear this" while an absent key means "leave it alone".
 
-When that distinction matters, read the attributes untyped — `getSingleResourceDocPayload()` with no
-argument returns them as a `LinkedHashMap`, where the key's presence is the answer:
-
-```java
-@Override
-public void update(JsonApiRequest request) {
-    var raw = request.getSingleResourceDocPayload().getData().getAttributes();
-
-    Map<String, Object> changes = new LinkedHashMap<>();
-    for (String attribute : List.of("fullName", "email", "creditCardNumber")) {
-        if (raw.containsKey(attribute)) {
-            changes.put(attribute, raw.get(attribute));
-        }
-    }
-
-    userDb.applyChanges(request.getResourceId(), changes);
-}
-```
-
-`changes` now holds exactly what the client sent, with an explicit `null` preserved and distinguishable
-from an omission — which is what lets a persistence layer apply a genuine partial update.
-
-Both forms may be used in the same operation — payloads are deserialized once per type and cached — so the
+Both views may be used in the same operation — payloads are deserialized once per type and cached — so
 typed accessors can stay in place for attributes that are always sent, with the untyped view reserved for
 those that need "absent" and "null" to mean different things.
 

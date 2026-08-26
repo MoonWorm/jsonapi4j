@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
+import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToManyRelationshipObjectValidationBuilder;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.SingleResourceDocValidationBuilder.ToOneRelationshipObjectValidationBuilder;
@@ -208,24 +209,32 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     @Override
     public void update(JsonApiRequest request) {
         var payload = request.getSingleResourceDocPayload(UserAttributes.class);
-        UserAttributes att = payload.getData().getAttributes();
         String userId = payload.getData().getId();
-        if (att != null) {
-            String firstName = null;
-            String lastName = null;
-            if (StringUtils.isNotBlank(att.getFullName())) {
-                firstName = att.getFullName().split("\\s+")[0];
-                lastName = att.getFullName().split("\\s+")[1];
-            }
-            userDb.updateUser(
-                    userId,
-                    firstName,
-                    lastName,
-                    att.getEmail(),
-                    att.getCreditCardNumber()
-            );
+
+        Map<String, Object> changes = toChangeSet(
+                request.getSingleResourceDocPayload().getData().getAttributes());
+        if (!changes.isEmpty()) {
+            userDb.updateUser(userId, changes);
         }
         updateUserRelationships(userId, payload.getData().getRelationships());
+    }
+
+    private static Map<String, Object> toChangeSet(LinkedHashMap<String, Object> attributes) {
+        Map<String, Object> changes = new LinkedHashMap<>();
+        if (attributes == null) {
+            return changes;
+        }
+        if (attributes.containsKey("fullName")) {
+            String[] nameParts = ((String) attributes.get("fullName")).split("\\s+");
+            changes.put("firstName", nameParts[0]);
+            changes.put("lastName", nameParts[1]);
+        }
+        for (String attribute : List.of("email", "creditCardNumber")) {
+            if (attributes.containsKey(attribute)) {
+                changes.put(attribute, attributes.get(attribute));
+            }
+        }
+        return changes;
     }
 
     private void updateUserRelationships(String userId,
@@ -233,25 +242,23 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (relationships != null) {
             ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get(CITIZENSHIPS);
             if (citizenships != null) {
-                List<CountryRef> citizenshipRefs = citizenships.getData()
+                List<CountryRef> citizenshipRefs = ListUtils.emptyIfNull(citizenships.getData())
                         .stream()
                         .map(ResourceIdentifierObject::getId)
                         .map(CountryRef::new)
                         .toList();
-                if (!citizenshipRefs.isEmpty()) {
-                    userDb.updateUserCitizenships(userId, citizenshipRefs);
-                }
+                userDb.updateUserCitizenships(userId, citizenshipRefs);
             }
             ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get(PLACE_OF_BIRTH);
             if (placeOfBirth != null) {
-                userDb.updateUserPlaceOfBirth(userId, new CountryRef(placeOfBirth.getData().getId()));
+                userDb.updateUserPlaceOfBirth(
+                        userId,
+                        placeOfBirth.getData() == null ? null : new CountryRef(placeOfBirth.getData().getId())
+                );
             }
             ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get(RELATIVES);
             if (relatives != null) {
-                List<RelativeRef> relations = parseRelations(relatives.getData());
-                if (!relations.isEmpty()) {
-                    userDb.updateUserRelatives(userId, relations);
-                }
+                userDb.updateUserRelatives(userId, parseRelations(relatives.getData()));
             }
         }
     }
@@ -292,20 +299,31 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 .validate();
     }
 
+    private static void assertRequiredAttributesAreNotCleared(LinkedHashMap<String, Object> attributes) {
+        for (String required : List.of("fullName", "email")) {
+            if (attributes.containsKey(required)) {
+                assertThat(attributes.get(required))
+                        .withSource(ErrorSources.pointer().data().attributes(required))
+                        .isNotNull();
+            }
+        }
+    }
+
     @Override
     public void validateUpdate(JsonApiRequest request) {
         forRequest(request)
-                .singleResourceBody(UserAttributes.class, body -> body
+                .singleResourceBody(body -> body
                         .withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
                         .withResourceTypeValidator(type -> type.isOneOf(USERS))
                         .withAttributesValidator(v -> {
                             v.ifPresent();
-                            v.field("fullName", UserAttributes::getFullName).ifPresent().asString()
+                            v.field("fullName", att -> (String) att.get("fullName")).ifPresent().asString()
                                     .satisfies(name -> {
                                         assertThat(name.split("\\s+")[0]).isNotBlank().hasLengthBetween(1, 64);
                                         assertThat(name.split("\\s+")[1]).isNotBlank().hasLengthBetween(1, 64);
                                     });
-                            v.field("email", UserAttributes::getEmail).ifPresent().asString().isEmail();
+                            v.field("email", att -> (String) att.get("email")).ifPresent().asString().isEmail();
+                            v.satisfies(UserOperations::assertRequiredAttributesAreNotCleared);
                         })
                         .withToManyRelationship(CITIZENSHIPS, this::citizenshipsValidator)
                         .withToOneRelationship(PLACE_OF_BIRTH, this::placeOfBirthValidator)

@@ -11,11 +11,13 @@ import jakarta.enterprise.inject.Produces;
 public class IntegrationsConfig {
 
     @Produces
+    @ApplicationScoped
     public UserDb userDb() {
         return new UserInMemoryDb();
     }
 
     @Produces
+    @ApplicationScoped
     public CountriesClient countriesClient() {
         return new CountriesInMemoryClient();
     }

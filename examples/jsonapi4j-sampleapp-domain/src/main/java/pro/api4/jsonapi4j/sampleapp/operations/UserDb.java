@@ -10,6 +10,8 @@ import java.util.Set;
 
 public interface UserDb {
 
+    void reset();
+
     UserDbEntity readById(String id);
 
     List<UserDbEntity> readByIds(List<String> ids);
@@ -19,11 +21,18 @@ public interface UserDb {
                             String email,
                             String creditCardNumber);
 
-    UserDbEntity updateUser(String userId,
-                            String firstName,
-                            String lastName,
-                            String email,
-                            String creditCardNumber);
+    /**
+     * Applies a partial update, changing only the fields the change set names.
+     *
+     * <p>A key that is absent leaves its field alone; a key mapped to {@code null} clears it. Nullable
+     * parameters cannot express that difference, which is why the change set is a map:
+     * {@code null} as a value and no entry at all are different instructions.
+     *
+     * @param userId    the user to update
+     * @param changes   field names of {@link UserDbEntity} mapped to their new values
+     * @return the updated user
+     */
+    UserDbEntity updateUser(String userId, Map<String, Object> changes);
 
     void deleteUser(String userId);
 

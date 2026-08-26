@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
+import static pro.api4.jsonapi4j.sampleapp.testsuite.SampleUsers.createUser;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -20,18 +21,18 @@ public abstract class DeleteUserOperationTests {
 
     @Test
     public void test_deleteUser() {
-        // delete user
+        String userId = createUser(jsonApiRootPath, appPort);
+
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("userId", "5")
+                .pathParam("userId", userId)
                 .delete("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
                 .statusCode(204);
 
-        // verify user no longer exists
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
-                .pathParam("userId", "5")
+                .pathParam("userId", userId)
                 .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
                 .then()
                 .statusCode(404)
