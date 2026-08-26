@@ -30,9 +30,11 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef.RelationshipType;
+import pro.api4.jsonapi4j.sampleapp.domain.user.Address;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
@@ -188,7 +190,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 att.getFullName().split("\\s+")[0],
                 att.getFullName().split("\\s+")[1],
                 att.getEmail(),
-                att.getCreditCardNumber()
+                att.getCreditCardNumber(),
+                toAddressRows(request.getSingleResourceDocPayload().getData().getAttributes())
         );
         updateUserRelationships(result.getId(), singleResourceDoc.getData().getRelationships());
         return result;
@@ -234,7 +237,25 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                 changes.put(attribute, attributes.get(attribute));
             }
         }
+        if (attributes.containsKey("addresses")) {
+            changes.put("addresses", toAddressRows(attributes));
+        }
         return changes;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<AddressRow> toAddressRows(LinkedHashMap<String, Object> attributes) {
+        if (attributes == null || attributes.get("addresses") == null) {
+            return List.of();
+        }
+        List<AddressRow> rows = new ArrayList<>();
+        for (Map<String, Object> address : (List<Map<String, Object>>) attributes.get("addresses")) {
+            String city = (String) address.get("city");
+            String zip = (String) address.get("zip");
+            String doorCode = (String) address.get("doorCode");
+            rows.add(doorCode == null ? AddressRow.of(city, zip) : AddressRow.home(city, zip, doorCode));
+        }
+        return rows;
     }
 
     private void updateUserRelationships(String userId,
@@ -292,11 +313,39 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                             att.field("email", UserAttributes::getEmail).asString()
                                     .isNotBlank()
                                     .isEmail();
+                            att.satisfies(UserOperations::assertAddressesNameACity);
                         })
                         .withToManyRelationship(CITIZENSHIPS, this::citizenshipsValidator)
                         .withToOneRelationship(PLACE_OF_BIRTH, this::placeOfBirthValidator)
                         .withToManyRelationship(RELATIVES, this::relativesValidator))
                 .validate();
+    }
+
+    private static void assertAddressesNameACity(UserAttributes attributes) {
+        List<Address> addresses = attributes.getAddresses();
+        if (addresses == null) {
+            return;
+        }
+        for (int i = 0; i < addresses.size(); i++) {
+            Address address = addresses.get(i);
+            assertThat(address == null ? null : address.getCity())
+                    .withSource(ErrorSources.pointer().data().attributes("addresses/" + i + "/city"))
+                    .isNotBlank();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertAddressesNameACity(LinkedHashMap<String, Object> attributes) {
+        Object addresses = attributes.get("addresses");
+        if (!(addresses instanceof List<?> elements)) {
+            return;
+        }
+        for (int i = 0; i < elements.size(); i++) {
+            Map<String, Object> address = (Map<String, Object>) elements.get(i);
+            assertThat(address == null ? null : (String) address.get("city"))
+                    .withSource(ErrorSources.pointer().data().attributes("addresses/" + i + "/city"))
+                    .isNotBlank();
+        }
     }
 
     private static void assertRequiredAttributesAreNotCleared(LinkedHashMap<String, Object> attributes) {
@@ -324,6 +373,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                                     });
                             v.field("email", att -> (String) att.get("email")).ifPresent().asString().isEmail();
                             v.satisfies(UserOperations::assertRequiredAttributesAreNotCleared);
+                            v.satisfies(UserOperations::assertAddressesNameACity);
                         })
                         .withToManyRelationship(CITIZENSHIPS, this::citizenshipsValidator)
                         .withToOneRelationship(PLACE_OF_BIRTH, this::placeOfBirthValidator)

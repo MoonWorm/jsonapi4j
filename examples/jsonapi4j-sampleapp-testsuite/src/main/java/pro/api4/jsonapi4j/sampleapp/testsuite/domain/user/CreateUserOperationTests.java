@@ -5,7 +5,9 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class CreateUserOperationTests {
@@ -438,5 +440,65 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].code", equalTo("CONFLICT"))
                 .body("errors[0].status", equalTo("409"))
                 .body("errors[0].id", notNullValue());
+    }
+
+    @Test
+    public void test_createUser_withAddresses_keepsTheDoorCodeOnlyWhereItWasSent() {
+        String userId = given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "users",
+                            "attributes": {
+                              "fullName": "Ada Lovelace",
+                              "email": "ada@lovelace.com",
+                              "addresses": [
+                                { "city": "Oslo", "zip": "0150", "doorCode": "1234" },
+                                { "city": "Bergen", "zip": "5003" }
+                              ]
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(201)
+                .extract()
+                .path("data.id");
+
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", userId)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses", hasSize(2))
+                .body("data.attributes.addresses[0].city", equalTo("Oslo"))
+                .body("data.attributes.addresses[0].doorCode", equalTo("1234"))
+                .body("data.attributes.addresses[1].city", equalTo("Bergen"))
+                .body("data.attributes.addresses[1]", not(hasKey("doorCode")));
+    }
+
+    @Test
+    public void test_createUser_validationError_addressWithoutACity() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "users",
+                            "attributes": {
+                              "fullName": "Ada Lovelace",
+                              "email": "ada@lovelace.com",
+                              "addresses": [ { "zip": "0150" } ]
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(400)
+                .body("errors[0].source.pointer", equalTo("/data/attributes/addresses/0/city"));
     }
 }

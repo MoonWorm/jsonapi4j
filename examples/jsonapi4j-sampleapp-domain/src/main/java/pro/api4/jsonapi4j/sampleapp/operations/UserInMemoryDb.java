@@ -111,7 +111,8 @@ public class UserInMemoryDb implements UserDb {
     public UserDbEntity createUser(String firstName,
                                    String lastName,
                                    String email,
-                                   String creditCardNumber) {
+                                   String creditCardNumber,
+                                   List<AddressRow> addresses) {
         Validate.notBlank(firstName, "firstName is required");
         Validate.notBlank(lastName, "lastName is required");
         Validate.notBlank(email, "email is required");
@@ -121,7 +122,7 @@ public class UserInMemoryDb implements UserDb {
                 lastName,
                 email,
                 creditCardNumber,
-                List.of()
+                emptyIfNull(addresses)
         );
         users.put(newUser.getId(), newUser);
         return newUser;
@@ -144,6 +145,9 @@ public class UserInMemoryDb implements UserDb {
         }
         if (changes.containsKey("creditCardNumber")) {
             updatedUser = updatedUser.withCreditCardNumber((String) changes.get("creditCardNumber"));
+        }
+        if (changes.containsKey("addresses")) {
+            updatedUser = updatedUser.withAddresses((List<AddressRow>) changes.get("addresses"));
         }
         users.put(updatedUser.getId(), updatedUser);
         return updatedUser;

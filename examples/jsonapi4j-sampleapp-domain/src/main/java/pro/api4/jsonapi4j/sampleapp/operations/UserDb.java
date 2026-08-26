@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.sampleapp.operations;
 
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 
@@ -19,7 +20,8 @@ public interface UserDb {
     UserDbEntity createUser(String firstName,
                             String lastName,
                             String email,
-                            String creditCardNumber);
+                            String creditCardNumber,
+                            List<AddressRow> addresses);
 
     /**
      * Applies a partial update, changing only the fields the change set names.

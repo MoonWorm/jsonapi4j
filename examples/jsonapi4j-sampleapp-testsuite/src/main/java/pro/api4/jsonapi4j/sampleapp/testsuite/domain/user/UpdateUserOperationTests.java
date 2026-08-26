@@ -500,4 +500,54 @@ public abstract class UpdateUserOperationTests {
                 .body("errors[0].code", equalTo("CONFLICT"))
                 .body("errors[0].status", equalTo("409"));
     }
+
+    @Test
+    public void test_updateUser_addresses_replaceInFull() {
+        String userId = givenAUser("222456789");
+
+        patchUser(userId, """
+                {
+                  "data": {
+                    "id": "%s",
+                    "type": "users",
+                    "attributes": {
+                      "addresses": [ { "city": "Tromso", "zip": "9008", "doorCode": "4321" } ]
+                    }
+                  }
+                }
+                """.formatted(userId));
+
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", userId)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses", hasSize(1))
+                .body("data.attributes.addresses[0].city", equalTo("Tromso"))
+                .body("data.attributes.addresses[0].doorCode", equalTo("4321"));
+    }
+
+    @Test
+    public void test_updateUser_emptyAddresses_removesThemAll() {
+        String userId = givenAUser("222456789");
+
+        patchUser(userId, """
+                {
+                  "data": {
+                    "id": "%s",
+                    "type": "users",
+                    "attributes": { "addresses": [] }
+                  }
+                }
+                """.formatted(userId));
+
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", userId)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.addresses", empty());
+    }
 }
