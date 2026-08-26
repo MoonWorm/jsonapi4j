@@ -37,12 +37,12 @@ class OutboundAnonymizerTests {
 
     private void givenCallerWithoutTheScope() {
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
-                new DefaultPrincipal(List.of("PUBLIC"), Set.of(), "u1", Map.of()));
+                new DefaultPrincipal(List.of("SUPPORT"), Set.of(), "u1", Map.of()));
     }
 
     private void givenCallerWithTheScope() {
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
-                new DefaultPrincipal(List.of("PUBLIC"), Set.of(SENSITIVE_SCOPE), "u1", Map.of()));
+                new DefaultPrincipal(List.of("SUPPORT"), Set.of(SENSITIVE_SCOPE), "u1", Map.of()));
     }
 
     private <T> AnonymizationResult<T> anonymize(T target) {

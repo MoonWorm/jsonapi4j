@@ -6,7 +6,6 @@ import lombok.Setter;
 import lombok.ToString;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.RawConfigAccessor;
-import pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +234,7 @@ public class DefaultOasProperties implements OasProperties {
     public static class DefaultOAuth2Scope implements OAuth2Scope {
         private String name;
         private String description;
-        private List<String> requiredEntitlements = List.of(DefaultEntitlements.PUBLIC);
+        private List<String> requiredEntitlements = List.of();
 
         @Override
         public String name() {

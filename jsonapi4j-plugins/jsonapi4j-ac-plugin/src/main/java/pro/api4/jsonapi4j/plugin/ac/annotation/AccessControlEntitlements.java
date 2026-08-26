@@ -16,10 +16,10 @@ import java.lang.annotation.Target;
  *         description = "internal support staff, or a partner integration",
  *         value = {
  *                 @EntitlementsGroup(mode = ALL_OF, value = {ADMIN, SUPPORT}),
- *                 @EntitlementsGroup(mode = ALL_OF, value = {PARTNER, PUBLIC})
+ *                 @EntitlementsGroup(mode = ALL_OF, value = {PARTNER, INTEGRATOR})
  *         }))
  * }</pre>
- * which reads as {@code (ADMIN and SUPPORT) or (PARTNER and PUBLIC)}.
+ * which reads as {@code (ADMIN and SUPPORT) or (PARTNER and INTEGRATOR)}.
  * <p>
  * Two levels is the limit — Java annotations cannot nest arbitrarily. For anything deeper, or for rules that
  * count matches or consider more than entitlements, declare an

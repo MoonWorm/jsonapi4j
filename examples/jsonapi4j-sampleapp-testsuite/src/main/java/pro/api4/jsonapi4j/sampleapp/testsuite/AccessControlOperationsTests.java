@@ -400,7 +400,7 @@ public abstract class AccessControlOperationsTests {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "PARTNER SUPPORT")
                 .pathParam("userId", "3")
                 .delete("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -423,12 +423,12 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
-    public void test_resourceMeta_bothDimensionsSatisfied_metaVisible() {
-        // meta requires (ADMIN or ROOT_ADMIN) and (PARTNER and PUBLIC)
+    public void test_resourceMeta_administratorClauseSatisfied_metaVisible() {
+        // meta requires (ADMIN or ROOT_ADMIN) or (DEPARTMENT_HR and PII_CLEARED)
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "ADMIN")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -438,11 +438,25 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
-    public void test_resourceMeta_orDimensionSatisfiedByAlternative_metaVisible() {
+    public void test_resourceMeta_administratorClauseSatisfiedByAlternative_metaVisible() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ROOT_ADMIN PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "ROOT_ADMIN")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.meta.internalUserRef", equalTo("internal-1"));
+    }
+
+    @Test
+    public void test_resourceMeta_hrClauseFullySatisfied_metaVisible() {
+        // the other clause — neither ADMIN nor ROOT_ADMIN, but HR with the clearance
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultEntitlementsHeaderName, "DEPARTMENT_HR PII_CLEARED")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -455,7 +469,7 @@ public abstract class AccessControlOperationsTests {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC NO_ACCESS")
+                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER REVOKED")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -464,12 +478,12 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
-    public void test_resourceMeta_andDimensionUnsatisfied_metaHidden() {
-        // holds ADMIN but neither PARTNER nor PUBLIC — the second dimension fails
+    public void test_resourceMeta_hrClausePartiallySatisfied_metaHidden() {
+        // HR without the clearance — an ALL_OF clause needs every entitlement it lists
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN")
+                .header(defaultEntitlementsHeaderName, "DEPARTMENT_HR")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -479,13 +493,12 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
-    public void test_resourceMeta_andDimensionPartiallySatisfied_metaHidden() {
-        // holds PARTNER but not PUBLIC — an AND dimension needs every entitlement it lists,
-        // so this is denied where an OR dimension would have granted
+    public void test_resourceMeta_hrClauseSatisfiedOnlyByClearance_metaHidden() {
+        // the clearance alone admits nobody — it is one half of a clause, not a clause
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER")
+                .header(defaultEntitlementsHeaderName, "PII_CLEARED")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -495,12 +508,12 @@ public abstract class AccessControlOperationsTests {
     }
 
     @Test
-    public void test_resourceMeta_orDimensionUnsatisfied_metaHidden() {
-        // holds PARTNER but neither ADMIN nor ROOT_ADMIN — the first dimension fails
+    public void test_resourceMeta_noClauseSatisfied_metaHidden() {
+        // entitlements unrelated to either clause
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "PARTNER SUPPORT")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
@@ -526,7 +539,7 @@ public abstract class AccessControlOperationsTests {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "ADMIN")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
                 .then()
                 .statusCode(200)
@@ -541,7 +554,7 @@ public abstract class AccessControlOperationsTests {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .header(defaultUserIdHeaderName, "1")
-                .header(defaultEntitlementsHeaderName, "ADMIN PARTNER PUBLIC")
+                .header(defaultEntitlementsHeaderName, "ADMIN")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()

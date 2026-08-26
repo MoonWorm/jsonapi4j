@@ -25,7 +25,7 @@ public interface Principal {
 
     /**
      * Returns the entitlements held by the authenticated client — opaque labels naming what the client may
-     * reach (e.g. {@code PUBLIC}, {@code PARTNER}, {@code ADMIN}), used by the Access Control plugin to
+     * reach (e.g. {@code PARTNER}, {@code ADMIN}, {@code SUPPORT}), used by the Access Control plugin to
      * enforce coarse-grained authorization rules.
      *
      * <p>Returned as a {@link List} so that the order and multiplicity the principal source produced are

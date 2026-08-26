@@ -11,10 +11,9 @@ import java.lang.annotation.Target;
  * matched against them.
  * <p>
  * Entitlements are unordered labels, not privilege levels — holding one grants nothing beyond that
- * entitlement. The framework ships {@link DefaultEntitlements#NO_ACCESS}, {@link DefaultEntitlements#PUBLIC},
- * {@link DefaultEntitlements#PARTNER}, {@link DefaultEntitlements#ADMIN} and
- * {@link DefaultEntitlements#ROOT_ADMIN} as ready-made constants, but any string a {@code PrincipalResolver}
- * can produce works.
+ * entitlement. The framework ships {@link DefaultEntitlements#PARTNER}, {@link DefaultEntitlements#ADMIN}
+ * and {@link DefaultEntitlements#ROOT_ADMIN} as ready-made constants, but any string a
+ * {@code PrincipalResolver} can produce works.
  * <p>
  * Groups are listed in {@link AccessControlEntitlements#value()} and combined by that annotation's
  * {@link AccessControlEntitlements#mode()}.

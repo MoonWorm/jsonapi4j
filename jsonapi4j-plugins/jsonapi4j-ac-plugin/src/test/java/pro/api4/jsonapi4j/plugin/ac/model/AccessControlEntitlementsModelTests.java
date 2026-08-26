@@ -101,9 +101,9 @@ class AccessControlEntitlementsModelTests {
         void isSatisfiedBy_anyOfClauses_onlyOneClauseNeedsToHold() {
             AccessControlEntitlementsModel sut = modelOf(TwoClausesResource.class);
 
-            assertThat(sut.isSatisfiedBy(List.of("PARTNER", "PUBLIC"))).isTrue();
+            assertThat(sut.isSatisfiedBy(List.of("PARTNER", "SUPPORT"))).isTrue();
             assertThat(sut.isSatisfiedBy(List.of("ADMIN", "SUPPORT"))).isTrue();
-            assertThat(sut.isSatisfiedBy(List.of("ADMIN", "PUBLIC"))).isFalse();
+            assertThat(sut.isSatisfiedBy(List.of("ADMIN", "PARTNER"))).isFalse();
         }
 
         @Test
@@ -119,7 +119,7 @@ class AccessControlEntitlementsModelTests {
             mode = AccessControlEntitlements.Mode.ANY_OF,
             value = {
                     @EntitlementsGroup(value = {"ADMIN", "SUPPORT"}, mode = EntitlementsGroup.Mode.ALL_OF),
-                    @EntitlementsGroup(value = {"PARTNER", "PUBLIC"}, mode = EntitlementsGroup.Mode.ALL_OF)
+                    @EntitlementsGroup(value = {"PARTNER", "SUPPORT"}, mode = EntitlementsGroup.Mode.ALL_OF)
             }))
     private static class TwoClausesResource {
     }

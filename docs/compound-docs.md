@@ -103,6 +103,18 @@ Only cache misses trigger downstream HTTP calls. Cached and freshly fetched reso
 The final compound document response carries an aggregated `Cache-Control` header reflecting the most restrictive directive across all included resources.
 For example, if `countries` returns `max-age=300` and `currencies` returns `max-age=60`, the compound document response will contain `max-age=60`.
 
+**`public` means the body is identical for every caller.** A shared cache — a CDN, a reverse proxy — is
+entitled to store one response and serve it to everyone who asks for the same URL, without ever consulting
+your application again. That is the whole point of the directive, and it is your declaration to make: the
+framework forwards what your operations return and never second-guesses it.
+
+Use `private` when the body varies by caller — the [Access Control plugin](/access-control-plugin/) hiding
+fields the current principal may not see, per-principal links, or a resource that simply belongs to one
+user. Browsers and other private caches still store it; shared caches do not. Use `no-store` when it should
+not be retained at all. HTTP's own answer for "varies by caller" is `Vary`, but the input here is a
+principal derived from a token, so it degenerates to `Vary: Authorization` — correct in principle and
+destructive to hit rate in practice, which is why `private` is usually the honest answer.
+
 The built-in cache uses a `ConcurrentHashMap` with lazy expiration and LRU eviction when the soft capacity is exceeded.
 For distributed deployments or custom eviction policies, implement the `CompoundDocsResourceCache` SPI and register your own bean - the framework will use it instead of the default in-memory cache.
 

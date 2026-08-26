@@ -14,8 +14,6 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import java.util.Map;
 
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PARTNER;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PUBLIC;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ROOT_ADMIN;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
@@ -49,19 +47,13 @@ public class UserResource implements Resource<UserDbEntity> {
                 : new HomeAddress(row.city(), row.zip(), row.doorCode());
     }
 
-    /**
-     * Internal bookkeeping exposed only to an administrator acting on behalf of a partner integration.
-     * <p>
-     * The requirement is deliberately two-level, and each clause uses a different mode: the caller must
-     * hold {@code ADMIN} <em>or</em> {@code ROOT_ADMIN}, <em>and</em> must hold both {@code PARTNER}
-     * <em>and</em> {@code PUBLIC}. Callers that fail either clause simply receive no {@code meta} member.
-     */
     @AccessControl(
             entitlements = @AccessControlEntitlements(
-                    description = "internal administrator acting for a partner integration",
+                    mode = AccessControlEntitlements.Mode.ANY_OF,
+                    description = "a platform administrator, or HR cleared for personal data",
                     value = {
                             @EntitlementsGroup(value = {ADMIN, ROOT_ADMIN}, mode = EntitlementsGroup.Mode.ANY_OF),
-                            @EntitlementsGroup(value = {PARTNER, PUBLIC}, mode = EntitlementsGroup.Mode.ALL_OF)
+                            @EntitlementsGroup(value = {"DEPARTMENT_HR", "PII_CLEARED"}, mode = EntitlementsGroup.Mode.ALL_OF)
                     }),
             policy = @AccessControlPolicy(
                     value = SingleUserLookupPolicy.class,

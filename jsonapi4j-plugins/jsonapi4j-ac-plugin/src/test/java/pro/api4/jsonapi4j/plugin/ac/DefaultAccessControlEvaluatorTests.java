@@ -29,9 +29,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.NO_ACCESS;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PARTNER;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PUBLIC;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ROOT_ADMIN;
 
 class DefaultAccessControlEvaluatorTests {
@@ -76,7 +74,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_anyOfAndCallerHoldsNone_accessDenied() {
-            givenPrincipalWithEntitlements(PUBLIC, PARTNER);
+            givenPrincipalWithEntitlements("SUPPORT", PARTNER);
 
             assertThat(evaluateInbound(AnyOfResource.class)).isFalse();
         }
@@ -97,7 +95,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_allOfAndCallerHoldsBeyondRequired_accessGranted() {
-            givenPrincipalWithEntitlements(ADMIN, PARTNER, PUBLIC);
+            givenPrincipalWithEntitlements(ADMIN, PARTNER, "SUPPORT");
 
             assertThat(evaluateInbound(AllOfResource.class)).isTrue();
         }
@@ -118,7 +116,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_noneOfAndCallerHoldsOne_accessDenied() {
-            givenPrincipalWithEntitlements(ADMIN, NO_ACCESS);
+            givenPrincipalWithEntitlements(ADMIN, "REVOKED");
 
             assertThat(evaluateInbound(NoneOfResource.class)).isFalse();
         }
@@ -144,7 +142,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_allOfClausesAndEveryClauseSatisfied_accessGranted() {
-            givenPrincipalWithEntitlements(ADMIN, PARTNER, PUBLIC);
+            givenPrincipalWithEntitlements(ADMIN, PARTNER, "SUPPORT");
 
             assertThat(evaluateInbound(AllOfClausesResource.class)).isTrue();
         }
@@ -184,7 +182,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_noEntitlementsRequired_accessGranted() {
-            givenPrincipalWithEntitlements(NO_ACCESS);
+            givenPrincipalWithEntitlements("REVOKED");
 
             assertThat(evaluateInbound(NoEntitlementsResource.class)).isTrue();
         }
@@ -224,7 +222,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_policyAllowsButEntitlementsFail_accessDenied() {
-            givenPrincipalWithAttributes(Map.of("status", "active"), PUBLIC);
+            givenPrincipalWithAttributes(Map.of("status", "active"), "SUPPORT");
 
             assertThat(evaluateInbound(EntitlementsAndPolicyResource.class)).isFalse();
         }
@@ -313,7 +311,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void isMissingEntitlementsMisconfiguration_principalHoldsADifferentEntitlement_returnsFalse() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             assertThat(sut.isMissingEntitlementsMisconfiguration()).isFalse();
         }
@@ -394,7 +392,7 @@ class DefaultAccessControlEvaluatorTests {
         @Test
         void describeRequirement_severalClauses_rendersEveryClause() {
             assertThat(DefaultAccessControlEvaluator.describeRequirement(requirementOf(AnyOfClausesResource.class)))
-                    .isEqualTo("ANY_OF[ALL_OF[ADMIN, PUBLIC], ALL_OF[PARTNER, ROOT_ADMIN]]");
+                    .isEqualTo("ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER, ROOT_ADMIN]]");
         }
 
         @Test
@@ -453,7 +451,7 @@ class DefaultAccessControlEvaluatorTests {
     }
 
     @AccessControl(entitlements = @AccessControlEntitlements(
-            @EntitlementsGroup(value = NO_ACCESS, mode = EntitlementsGroup.Mode.NONE_OF)))
+            @EntitlementsGroup(value = "REVOKED", mode = EntitlementsGroup.Mode.NONE_OF)))
     private static class NoneOfResource {
     }
 
@@ -471,7 +469,7 @@ class DefaultAccessControlEvaluatorTests {
             mode = AccessControlEntitlements.Mode.ALL_OF,
             value = {
                     @EntitlementsGroup(value = {ADMIN, ROOT_ADMIN}, mode = EntitlementsGroup.Mode.ANY_OF),
-                    @EntitlementsGroup(value = {PARTNER, PUBLIC}, mode = EntitlementsGroup.Mode.ALL_OF)
+                    @EntitlementsGroup(value = {PARTNER, "SUPPORT"}, mode = EntitlementsGroup.Mode.ALL_OF)
             }))
     private static class AllOfClausesResource {
     }
@@ -479,7 +477,7 @@ class DefaultAccessControlEvaluatorTests {
     @AccessControl(entitlements = @AccessControlEntitlements(
             mode = AccessControlEntitlements.Mode.ANY_OF,
             value = {
-                    @EntitlementsGroup(value = {ADMIN, PUBLIC}, mode = EntitlementsGroup.Mode.ALL_OF),
+                    @EntitlementsGroup(value = {ADMIN, "SUPPORT"}, mode = EntitlementsGroup.Mode.ALL_OF),
                     @EntitlementsGroup(value = {PARTNER, ROOT_ADMIN}, mode = EntitlementsGroup.Mode.ALL_OF)
             }))
     private static class AnyOfClausesResource {
@@ -563,7 +561,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_entitlementsNotHeld_reportsInsufficientEntitlements() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             assertThat(evaluateInboundResult(AnyOfResource.class).errorCode())
                     .isEqualTo(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
@@ -579,7 +577,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void evaluateInboundRequirements_entitlementsAndScopesBothFail_reportsTheOneCheckedFirst() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             assertThat(evaluateInboundResult(EntitledAndScopedResource.class).errorCode())
                     .isEqualTo(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
@@ -626,7 +624,7 @@ class DefaultAccessControlEvaluatorTests {
         @Test
         void anonymizeObjectIfNeeded_fieldDenied_originalObjectIsNotModified() {
             // given - the object an application resolver handed over, which it may also be caching
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
             SecretiveAttributes original = new SecretiveAttributes("John", "4111");
 
             // when
@@ -640,7 +638,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_fieldDenied_survivingFieldsAreCarriedOver() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             AnonymizationResult<SecretiveAttributes> actualResult
                     = anonymize(new SecretiveAttributes("John", "4111"));
@@ -659,7 +657,7 @@ class DefaultAccessControlEvaluatorTests {
         @Test
         void anonymizeObjectIfNeeded_nestedFieldDenied_originalNestedObjectIsNotModified() {
             // given
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
             SecretiveAttributes nested = new SecretiveAttributes("John", "4111");
             HolderAttributes original = new HolderAttributes("holder", nested);
 
@@ -674,7 +672,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_fieldDenied_reportsItsBareName() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             assertThat(anonymize(new SecretiveAttributes("John", "4111")).anonymizedFields())
                     .containsExactly("creditCardNumber");
@@ -682,7 +680,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_nestedFieldDenied_reportsADottedPath() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             AnonymizationResult<HolderAttributes> actualResult
                     = anonymize(new HolderAttributes("holder", new SecretiveAttributes("John", "4111")));
@@ -692,7 +690,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_wholeNestedObjectDenied_reportsTheSubtreeRootOnly() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             AnonymizationResult<GuardedHolderAttributes> actualResult
                     = anonymize(new GuardedHolderAttributes("holder", new GuardedAttributes("secret")));
@@ -703,7 +701,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_wholeObjectDenied_reportsNoPathsAndDropsTheObject() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
 
             AnonymizationResult<GuardedAttributes> actualResult = anonymize(new GuardedAttributes("secret"));
 
@@ -714,7 +712,7 @@ class DefaultAccessControlEvaluatorTests {
 
         @Test
         void anonymizeObjectIfNeeded_containerFieldDenied_hidesTheWholeContainer() {
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
             HolderWithGuardedList original = new HolderWithGuardedList();
 
             AnonymizationResult<HolderWithGuardedList> actualResult = anonymize(original);
@@ -726,7 +724,7 @@ class DefaultAccessControlEvaluatorTests {
         @Test
         void anonymizeObjectIfNeeded_deeplyNestedFieldDenied_appliesAtEveryLevel() {
             // three wrappers between the root and the guarded field
-            givenPrincipalWithEntitlements(PUBLIC);
+            givenPrincipalWithEntitlements("SUPPORT");
             DeepL1 original = new DeepL1();
             SecretiveAttributes deepest = original.l2.l3.secrets;
 

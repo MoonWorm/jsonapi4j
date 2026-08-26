@@ -36,9 +36,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.NO_ACCESS;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PARTNER;
-import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.PUBLIC;
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ROOT_ADMIN;
 import static pro.api4.jsonapi4j.processor.resolvers.relationships.DefaultRelationshipResolvers.all;
 
@@ -82,7 +80,7 @@ public class SingleResourceProcessorAccessControlTests {
         // given
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
-                        List.of(NO_ACCESS),
+                        List.of("REVOKED"),
                         Set.of("users.read", "roles.read", "roles.write", "groups.read", "groups.write"),
                         ID
                 )
@@ -122,7 +120,7 @@ public class SingleResourceProcessorAccessControlTests {
         // given
         AuthenticatedPrincipalContextHolder.setAuthenticatedPrincipalContext(
                 new DefaultPrincipal(
-                        List.of(PUBLIC),
+                        List.of("SUPPORT"),
                         Set.of("users.read", "roles.read", "roles.write", "groups.read", "groups.write"),
                         ID
                 )
@@ -265,7 +263,7 @@ public class SingleResourceProcessorAccessControlTests {
     }
 
     @AccessControl(
-            entitlements = @AccessControlEntitlements(@EntitlementsGroup(PUBLIC)),
+            entitlements = @AccessControlEntitlements(@EntitlementsGroup("SUPPORT")),
             scopes = @AccessControlScopes(@ScopesGroup({"users.read"})),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )

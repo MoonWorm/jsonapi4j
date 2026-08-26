@@ -93,7 +93,7 @@ However, you can configure and enforce access control rules for either or both s
 
 There are five types of access control requirements, which can be combined in any way as needed:
 * **Authentication requirement** - verifies whether the request is made on behalf of an authenticated client or user. This can be used to restrict anonymous access.
-* **Entitlement requirement** - verifies whether the client or user holds a given entitlement. Entitlements are plain, unordered labels that your application defines and your principal source supplies - any string works. `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as ready-made constants, but they carry no built-in ranking. See more details below.
+* **Entitlement requirement** - verifies whether the client or user holds a given entitlement. Entitlements are plain, unordered labels that your application defines and your principal source supplies - any string works. `DefaultEntitlements` offers **PARTNER**, **ADMIN** and **ROOT_ADMIN** as ready-made constants, but they carry no built-in ranking, and there is no label meaning "everyone" or "nobody" - omit the requirement to demand nothing, and name an entitlement no principal carries to deny everyone. See more details below.
 * **OAuth2 scope(s) requirement** - verifies whether the request was authorized to access user data protected by certain OAuth2 scopes. This information is typically embedded within the JWT access token. Declared with the same two-level clause structure as entitlements. See more details below.
 * **Ownership requirement** - ensures that the requested resource belongs to the client or user making the request. This is typically used for APIs where users are only allowed to view their own data, but not others'.
 * **Policy requirement** - decides the rule in code, for anything the four declarative forms cannot express - reading the caller's attributes, branching on the operation being performed, or comparing the caller against the resource being returned. See more details below.
@@ -105,7 +105,7 @@ If any of the specified requirements are not met, the corresponding section - or
 By default, the plugin uses the `DefaultPrincipalResolver`, which relies on the following HTTP headers to resolve the current authentication context:
 
 1. `X-Authenticated-User-Id` - identifies whether the request is sent on behalf of an authenticated client or user. Considered authenticated if the value is not null or blank. Also used for ownership checks.
-2. `X-Authenticated-Client-Entitlements` - defines the principal's entitlements, as a space-separated list. Any string works; `DefaultEntitlements` ships **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants purely for convenience.
+2. `X-Authenticated-Client-Entitlements` - defines the principal's entitlements, as a space-separated list. Any string works; `DefaultEntitlements` ships **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants purely for convenience.
 3. `X-Authenticated-User-Granted-Scopes` - specifies the OAuth2 scopes granted to the client by the user. This should be a space-separated string.
 
 This is not the only option. JsonApi4j also ships resolvers that build the principal from a JWT — either by
@@ -128,7 +128,7 @@ It encapsulates rules for all currently supported dimensions: `authenticated`, `
 #### Entitlements Are Unordered Labels
 
 Entitlements are matched by name, not by rank. A principal holding `ADMIN` does **not** satisfy a requirement for
-`PUBLIC` — it satisfies a requirement for `ADMIN` and nothing else. Grant a principal every entitlement it needs
+`PARTNER` — it satisfies a requirement for `ADMIN` and nothing else. Grant a principal every entitlement it needs
 rather than expecting a "higher" one to cover the others.
 
 A requirement is built from `@EntitlementsGroup` clauses. Each clause quantifies over entitlement names:
@@ -147,12 +147,13 @@ default. That gives two levels:
         description = "internal support staff, or a partner integration",
         mode = AccessControlEntitlements.Mode.ANY_OF,
         value = {
-                @EntitlementsGroup(value = {ADMIN, SUPPORT}, mode = EntitlementsGroup.Mode.ALL_OF),
-                @EntitlementsGroup(value = {PARTNER, PUBLIC}, mode = EntitlementsGroup.Mode.ALL_OF)
+                @EntitlementsGroup(value = {ADMIN, "SUPPORT"}, mode = EntitlementsGroup.Mode.ALL_OF),
+                @EntitlementsGroup(value = {PARTNER, "INTEGRATOR"}, mode = EntitlementsGroup.Mode.ALL_OF)
         }))
 ```
 
-which reads as *(`ADMIN` and `SUPPORT`) or (`PARTNER` and `PUBLIC`)*.
+which reads as *(`ADMIN` and `SUPPORT`) or (`PARTNER` and `INTEGRATOR`)*. `ADMIN` and `PARTNER` come from
+`DefaultEntitlements`; `SUPPORT` and `INTEGRATOR` are plain strings — any label your principal source produces works.
 
 The simple case stays short — a single clause with the default `ANY_OF`:
 
@@ -169,7 +170,7 @@ requirement exists rather than only naming entitlements:
 
 ```
 DEBUG Access denied: 'internal support staff, or a partner integration'
-      (ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER, PUBLIC]]) is required,
+      (ANY_OF[ALL_OF[ADMIN, SUPPORT], ALL_OF[PARTNER, INTEGRATOR]]) is required,
       but the authenticated principal carries [PARTNER].
 ```
 
@@ -471,6 +472,7 @@ consequences worth knowing: its length depends on the caller, and indices do not
 | Attributes object is a dynamic proxy (e.g. a Hibernate/CGLIB proxied entity) | Cannot be copied, so the request fails with a clear error. Return a DTO rather than a proxied entity. |
 | Attributes class lives in a JPMS module that does not `open` its package | Reflective access fails. Open the package to the framework. |
 | Denied `GET` requests | Return `200` with the restricted data omitted, not `403`. A `403` would fail the whole response, including the parts the caller is allowed to see, and would break compound documents. |
+| Responses marked `Cache-Control: public` | Anonymization runs per caller, so the body is not the same for everyone — but a shared cache is entitled to store one copy and serve it to the next caller. The framework forwards the directive your operation returns and does not override it. Use `private` for per-caller caching. See [Caching](/compound-docs/#caching). |
 
 These cases are reported once, when the access control model for a class is first built, naming the class
 and field involved — so a rule that can never take effect shows up in your logs rather than silently doing

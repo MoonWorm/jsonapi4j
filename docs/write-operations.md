@@ -171,6 +171,52 @@ public void updateUser(String id, String fullName, String email, String creditCa
 
 Empty body.
 
+#### Partial updates
+
+The request above sends every attribute, which sidesteps a question real clients raise immediately: what
+happens to an attribute the payload does not mention?
+
+The specification answers it, and does not leave the choice to you —
+[Updating a Resource's Attributes](https://jsonapi.org/format/#crud-updating-resource-attributes) requires
+that missing attributes be interpreted as if they were sent with their current values, and explicitly
+forbids treating them as `null`. A `PATCH` carrying only `email` must leave `fullName` alone.
+
+A member that *is* present replaces the old value in full. For an array- or object-valued attribute that
+means wholesale replacement, not a merge — the same stance the specification takes for to-many
+relationships.
+
+That leaves one practical problem: a typed payload cannot tell the two cases apart. Jackson binds both an
+absent member and an explicit `"fullName": null` to `null`, so `attributes.getFullName()` cannot answer
+"did the client send this?". Checking for null is the usual workaround and it satisfies the specification,
+but it has a cost worth knowing about: an attribute can never be *cleared*, because the request that would
+clear it is indistinguishable from the request that omits it.
+
+When that distinction matters, read the attributes untyped — `getSingleResourceDocPayload()` with no
+argument returns them as a `LinkedHashMap`, where the key's presence is the answer:
+
+```java
+@Override
+public void update(JsonApiRequest request) {
+    var raw = request.getSingleResourceDocPayload().getData().getAttributes();
+
+    Map<String, Object> changes = new LinkedHashMap<>();
+    for (String attribute : List.of("fullName", "email", "creditCardNumber")) {
+        if (raw.containsKey(attribute)) {
+            changes.put(attribute, raw.get(attribute));
+        }
+    }
+
+    userDb.applyChanges(request.getResourceId(), changes);
+}
+```
+
+`changes` now holds exactly what the client sent, with an explicit `null` preserved and distinguishable
+from an omission — which is what lets a persistence layer apply a genuine partial update.
+
+Both forms may be used in the same operation — payloads are deserialized once per type and cached — so the
+typed accessors can stay in place for attributes that are always sent, with the untyped view reserved for
+those that need "absent" and "null" to mean different things.
+
 ### 4. Add Delete Operation
 
 Add the `delete` method:

@@ -19,7 +19,7 @@ A `Principal` carries four things:
 | Method | Purpose |
 |---|---|
 | `authenticatedUserId()` | Identifies the caller. Also used for ownership checks. |
-| `authenticatedClientEntitlements()` | Unordered entitlement labels (`PUBLIC`, `ADMIN`, …). |
+| `authenticatedClientEntitlements()` | Unordered entitlement labels (`ADMIN`, `PARTNER`, …). |
 | `authenticatedClientScopes()` | Fine-grained OAuth2 scopes. |
 | `attributes()` | Everything else the token carried — email, tenant, expiry. Read by [access control policies](/access-control-plugin/#policies-deciding-access-in-code). |
 
@@ -63,7 +63,7 @@ the caller's credentials:
 1. `X-Authenticated-User-Id` — the caller's id. The request counts as authenticated when this is neither
    null nor blank. Also used for ownership checks.
 2. `X-Authenticated-Client-Entitlements` — a space-separated list of entitlements. Any string works;
-   `DefaultEntitlements` offers **NO_ACCESS**, **PUBLIC**, **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants.
+   `DefaultEntitlements` offers **PARTNER**, **ADMIN** and **ROOT_ADMIN** as constants.
 3. `X-Authenticated-User-Granted-Scopes` — a space-separated list of granted scopes.
 
 ```bash
@@ -167,7 +167,7 @@ are matched exactly, and nothing is inferred from an unrecognized value. Because
 side looks exactly like a legitimate denial, the plugin logs both sides at `DEBUG`:
 
 ```
-DEBUG Access denied: OR[ADMIN] is required, but the authenticated principal carries [ADMNI, PUBLIC].
+DEBUG Access denied: OR[ADMIN] is required, but the authenticated principal carries [ADMNI, PARTNER].
       Entitlement names are matched exactly, so a name that merely looks alike does not match — check both
       sides for typos.
 ```
