@@ -146,7 +146,7 @@ public final class ObjectCopier {
         ObjectInstantiator<?> instantiator;
         List<Field> fields;
         try {
-            instantiator = OBJENESIS.getInstantiatorOf(type);
+            instantiator = instantiatorFor(type);
             fields = allInstanceFields(type);
         } catch (RuntimeException e) {
             return NOT_COPYABLE;
@@ -163,6 +163,76 @@ public final class ObjectCopier {
             }
             return copy;
         };
+    }
+
+    /**
+     * Finds a way to obtain a bare instance, which is all a copy needs — every field is written afterwards,
+     * so nothing the constructor computes survives.
+     *
+     * <p>A no-argument constructor is tried first, then {@code Objenesis}, then any constructor at all
+     * invoked with throwaway arguments. The last of those exists for GraalVM native images, where Objenesis
+     * cannot allocate: it routes through {@code ReflectionFactory}, which a native image does not provide
+     * for arbitrary classes however the class is registered. Calling a real constructor is the price of
+     * working there, and the reason it is a last resort: a constructor that rejects its arguments or has
+     * side effects will fail here, where allocation alone would not have.
+     */
+    private static ObjectInstantiator<?> instantiatorFor(Class<?> type) {
+        Constructor<?> noArgs = findConstructor(type, 0);
+        if (noArgs != null) {
+            return () -> newInstance(noArgs, new Object[0]);
+        }
+        try {
+            ObjectInstantiator<?> objenesis = OBJENESIS.getInstantiatorOf(type);
+            if (objenesis != null) {
+                objenesis.newInstance();
+                return objenesis;
+            }
+        } catch (RuntimeException | LinkageError e) {
+            // no allocation without a constructor here — fall through to calling one
+        }
+        Constructor<?> shortest = Arrays.stream(type.getDeclaredConstructors())
+                .min(java.util.Comparator.comparingInt(Constructor::getParameterCount))
+                .orElse(null);
+        if (shortest == null) {
+            return null;
+        }
+        Object[] arguments = Arrays.stream(shortest.getParameterTypes())
+                .map(ObjectCopier::defaultValue)
+                .toArray();
+        Constructor<?> constructor = shortest;
+        return () -> newInstance(constructor, arguments);
+    }
+
+    private static Constructor<?> findConstructor(Class<?> type, int parameterCount) {
+        return Arrays.stream(type.getDeclaredConstructors())
+                .filter(c -> c.getParameterCount() == parameterCount)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Object newInstance(Constructor<?> constructor, Object[] arguments) {
+        try {
+            constructor.setAccessible(true);
+            return constructor.newInstance(arguments);
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            throw new IllegalArgumentException(String.format(
+                    "Type %s could not be instantiated to build a copy of it.",
+                    constructor.getDeclaringClass().getName()), e);
+        }
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return null;
+        }
+        if (type == boolean.class) return false;
+        if (type == char.class) return (char) 0;
+        if (type == byte.class) return (byte) 0;
+        if (type == short.class) return (short) 0;
+        if (type == int.class) return 0;
+        if (type == long.class) return 0L;
+        if (type == float.class) return 0f;
+        return 0d;
     }
 
     private static Object replacement(Map<String, Object> replacements, String fieldName, Class<?> fieldType) {

@@ -127,6 +127,42 @@ class QuarkusJsonApi4jProcessor {
                 .build();
     }
 
+    /**
+     * Registers the JSON:API document model itself.
+     *
+     * <p>These are the framework's own classes, not the application's, and two things need them at
+     * runtime: access control walks the composed document reflectively to find what to hide, and Jackson
+     * serializes it on the way out. Neither is visible to the native-image analysis — the document is
+     * written through the framework's own mapper rather than a declared endpoint return type — so without
+     * this a request returns {@code 500} the moment anonymization touches it, and the error document
+     * describing that failure serializes to an empty body.
+     */
+    @BuildStep
+    void registerJsonApiDocumentModel(BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
+        reflectiveClasses.produce(ReflectiveClassBuildItem.builder(
+                        "pro.api4.jsonapi4j.model.document.BaseDoc",
+                        "pro.api4.jsonapi4j.model.document.LinkObject",
+                        "pro.api4.jsonapi4j.model.document.LinksObject",
+                        "pro.api4.jsonapi4j.model.document.data.JsonApiObject",
+                        "pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc",
+                        "pro.api4.jsonapi4j.model.document.data.RelationshipObject",
+                        "pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject",
+                        "pro.api4.jsonapi4j.model.document.data.ResourceObject",
+                        "pro.api4.jsonapi4j.model.document.data.SingleResourceDoc",
+                        "pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject",
+                        "pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc",
+                        "pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc",
+                        "pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject",
+                        "pro.api4.jsonapi4j.model.document.error.ErrorObject",
+                        "pro.api4.jsonapi4j.model.document.error.ErrorSourceObject",
+                        "pro.api4.jsonapi4j.model.document.error.ErrorsDoc",
+                        "pro.api4.jsonapi4j.model.document.meta.MetaDoc")
+                .constructors(true)
+                .methods(true)
+                .fields(true)
+                .serialization(true)
+                .build());
+    }
 
     /**
      * Registers the classes access control may have to redact, so that redaction works in a native image.
@@ -172,8 +208,10 @@ class QuarkusJsonApi4jProcessor {
         LOG.info("Registering {} access-controlled classes for native-image redaction", classNames.length);
         reflectiveClasses.produce(ReflectiveClassBuildItem.builder(classNames)
                 .constructors(true)
+                .methods(true)
                 .fields(true)
                 .serialization(true)
+                .unsafeAllocated(true)
                 .build());
     }
 
