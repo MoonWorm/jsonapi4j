@@ -18,6 +18,18 @@ By the end of this page, the `users` resource will support:
 | `PATCH` | `/users/{id}` | Update | `204 No Content` |
 | `DELETE` | `/users/{id}` | Delete | `204 No Content` |
 
+Some request-level rejections are enforced for you before any of your own validation runs, because
+JSON:API names the status for each:
+
+| Request | Response |
+|---------|----------|
+| `POST` whose body supplies its own `data.id` | `403 Forbidden`, `CLIENT_GENERATED_ID_NOT_SUPPORTED` — ids are assigned by the server |
+| `POST` or `PATCH` whose `data.type` is not the collection's type | `409 Conflict`, `CONFLICT` |
+| `PATCH` whose `data.id` names a different resource than the URL | `409 Conflict`, `CONFLICT` |
+
+Each is answered on its own rather than alongside other validation errors — see
+[Answering with a different status](/error-handling/#answering-with-a-different-status).
+
 ### 1. Accessing the Request Payload
 
 Write operations receive a JSON:API document as the request body. The framework parses it and makes it available via `request.getSingleResourceDocPayload()`. You pass your attributes class to get typed access:

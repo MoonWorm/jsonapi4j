@@ -81,7 +81,7 @@ Covers all framework-specific exceptions from the core and REST layers, as well 
 
 | Exception | HTTP Status | Error Code | When It Occurs |
 |-----------|------------|------------|----------------|
-| `JsonApiRequestValidationException` | 400 | From exception | Single validation failure — produces one error object |
+| `JsonApiRequestValidationException` | From exception | From exception | Single validation failure — produces one error object. Normally `400`; see [Answering with a different status](#answering-with-a-different-status) |
 | `CompositeJsonApiRequestValidationException` | 400 | From errors | Multiple validation failures collected by `JsonApiRequestValidator` — produces multiple error objects in one response |
 | `ResourceNotFoundException` | 404 | `NOT_FOUND` | Resource with the given ID does not exist |
 | `JsonApi4jException` | From exception | From exception | Catch-all for exceptions that extend `JsonApi4jException` — uses the exception's own `httpStatus` and `errorCode` |
@@ -116,13 +116,50 @@ When using `JsonApiRequestValidator.forRequest(request)`, the validator runs **a
 
 Each developer-provided validator lambda is atomic — if a lambda throws, the error is collected and the next validator runs. Errors within a single lambda are still fail-fast (e.g., a null check followed by a method call on the same value). This design prevents NPEs from interdependent checks while still collecting errors across independent validators.
 
+#### Answering with a different status
+
+Validation failures are `400` by default. A few are not: JSON:API requires `409 Conflict` when a request
+body is aimed at the wrong collection, and `403 Forbidden` when a create request supplies its own `id` and
+the server does not accept client-generated ids. `withHttpStatus` says so on the assertion itself:
+
+```java
+.withResourceTypeValidator(type -> type
+        .isNotBlank()
+        .withHttpStatus(HttpStatusCodes.SC_409_CONFLICT.getCode())
+        .withErrorCode(DefaultErrorCodes.CONFLICT)
+        .withDetail("resource type does not belong to this collection")
+        .isEqualTo(request.getTargetResourceType().getType()))
+```
+
+Both built-in cases above are already enforced for you — this is how, and the same mechanism is available
+to your own validators when a failure needs a status of its own, such as `409` for a duplicate.
+
+**Such a failure is reported alone.** Collecting exists to tell a client everything that is wrong at once,
+which works only while the errors share a status — a JSON:API document carries many error objects but one
+HTTP status. A `409` merged into a batch of `400`s would have to be answered `400`, breaking the rule that
+asked for `409` in the first place. So a failure carrying its own status short-circuits: it is returned by
+itself, and anything collected before it is dropped.
+
+The consequence is worth stating plainly. A request that is both aimed at the wrong collection *and* has
+four malformed fields answers `409` describing only the first problem. The client fixes it, resubmits, and
+then learns about the other four.
+
+**The override applies to the assertion that follows it**, exactly like `withErrorCode` and `withDetail`,
+and is cleared once that assertion has run. Order matters:
+
+```java
+type.isNotBlank().withHttpStatus(409).isEqualTo(expected);   // 409 on the equality check
+type.withHttpStatus(409).isNotBlank().isEqualTo(expected);   // 409 on isNotBlank, then cleared
+```
+
+
 ## Error Codes
 
 Error codes are represented by the `ErrorCode` interface (single method: `toCode()`). The framework provides `DefaultErrorCodes` with 32 built-in codes organized by category:
 
 **Request validation:** `GENERIC_REQUEST_ERROR`, `MISSING_REQUIRED_PARAMETER`, `MISSING_REQUIRED_HEADER`, `INVALID_ENUM_VALUE`, `VALUE_IS_ABSENT`, `VALUE_EMPTY`, `VALUE_TOO_SHORT`, `VALUE_TOO_LONG`, `VALUE_TOO_HIGH`, `VALUE_TOO_LOW`, `VALUE_INVALID_FORMAT`, `ARRAY_LENGTH_TOO_SHORT`, `ARRAY_LENGTH_TOO_LONG`, `CONFLICTING_PARAMETERS`, `INVALID_CURSOR`, `INVALID_LIMIT`, `INVALID_PAYLOAD`
 
-**HTTP/server:** `NOT_FOUND`, `METHOD_NOT_SUPPORTED`, `NOT_ACCEPTABLE`, `UNSUPPORTED_MEDIA_TYPE`, `CONFLICT`, `BAD_GATEWAY`, `INTERNAL_SERVER_ERROR`, `SERVICE_UNAVAILABLE`, `MAX_AMOUNT_OF_RESOURCES`
+**HTTP/server:** `NOT_FOUND`, `METHOD_NOT_SUPPORTED`, `NOT_ACCEPTABLE`, `UNSUPPORTED_MEDIA_TYPE`, `CONFLICT`, `CLIENT_GENERATED_ID_NOT_SUPPORTED`, `BAD_GATEWAY`, `INTERNAL_SERVER_ERROR`, `SERVICE_UNAVAILABLE`, `MAX_AMOUNT_OF_RESOURCES`
 
 **Authentication/authorization:** `UNAUTHORIZED`, `ACCESS_TOKEN_REVOKED`, `ACCESS_TOKEN_EXPIRED`, `FORBIDDEN`, `INSUFFICIENT_SCOPES`, `INSUFFICIENT_ENTITLEMENTS`
 
