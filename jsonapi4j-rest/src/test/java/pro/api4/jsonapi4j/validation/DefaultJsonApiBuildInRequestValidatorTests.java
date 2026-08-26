@@ -228,37 +228,38 @@ class DefaultJsonApiBuildInRequestValidatorTests {
         }
 
         @Test
-        void resourceIdPresent_throws() {
-            setupKnownResourceType();
+        void resourceIdPresent_throwsForbidden() {
             when(request.getTargetResourceType()).thenReturn(USERS);
             mockSingleResourceDoc("123", "users", null, null);
 
             assertThatThrownBy(() -> validator.validateCreateResource(request))
-                    .isInstanceOf(JsonApiRequestValidationException.class);
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getHttpStatus())
+                            .isEqualTo(403));
         }
 
         @Test
-        void typeMismatch_throws() {
-            setupKnownResourceType();
+        void typeMismatch_throwsConflict() {
             when(request.getTargetResourceType()).thenReturn(USERS);
             mockSingleResourceDoc(null, "countries", null, null);
 
             assertThatThrownBy(() -> validator.validateCreateResource(request))
-                    .isInstanceOf(JsonApiRequestValidationException.class);
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getHttpStatus())
+                            .isEqualTo(409));
         }
 
         @Test
-        void resourceIdPresentAndTypeMismatch_throwsComposite() {
-            setupKnownResourceType();
+        void resourceIdPresentAndTypeMismatch_reportsTheFirstOfThem() {
+            // the two ask for different statuses, so they cannot share one response; the id is validated
+            // before the type, so that is the one reported
             when(request.getTargetResourceType()).thenReturn(USERS);
             mockSingleResourceDoc("123", "countries", null, null);
 
             assertThatThrownBy(() -> validator.validateCreateResource(request))
-                    .isInstanceOf(CompositeJsonApiRequestValidationException.class)
-                    .satisfies(e -> {
-                        var errors = ((CompositeJsonApiRequestValidationException) e).getValidationErrors();
-                        assertThat(errors).hasSize(2);
-                    });
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getHttpStatus())
+                            .isEqualTo(403));
         }
     }
 
@@ -278,13 +279,14 @@ class DefaultJsonApiBuildInRequestValidatorTests {
         }
 
         @Test
-        void resourceIdMismatch_throws() {
-            setupKnownResourceType();
+        void resourceIdMismatch_throwsConflict() {
             setupBasicPathRequest();
             mockSingleResourceDoc("999", "users", null, null);
 
             assertThatThrownBy(() -> validator.validateUpdateResource(request))
-                    .isInstanceOf(JsonApiRequestValidationException.class);
+                    .isInstanceOf(JsonApiRequestValidationException.class)
+                    .satisfies(e -> assertThat(((JsonApiRequestValidationException) e).getHttpStatus())
+                            .isEqualTo(409));
         }
 
         @Test

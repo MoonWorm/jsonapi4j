@@ -392,4 +392,51 @@ public abstract class CreateUserOperationTests {
                 .body("errors[0].id", notNullValue());
     }
 
+
+    @Test
+    public void test_createUser_clientGeneratedId_isForbidden() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "users",
+                            "id": "999",
+                            "attributes": {
+                              "fullName": "Alice Smith",
+                              "email": "alice@smith.com"
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(403)
+                .body("errors[0].code", equalTo("CLIENT_GENERATED_ID_NOT_SUPPORTED"))
+                .body("errors[0].status", equalTo("403"))
+                .body("errors[0].id", notNullValue());
+    }
+
+    @Test
+    public void test_createUser_typeNotBelongingToTheEndpoint_isConflict() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .body("""
+                        {
+                          "data": {
+                            "type": "countries",
+                            "attributes": {
+                              "fullName": "Alice Smith",
+                              "email": "alice@smith.com"
+                            }
+                          }
+                        }
+                        """)
+                .post("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(409)
+                .body("errors[0].code", equalTo("CONFLICT"))
+                .body("errors[0].status", equalTo("409"))
+                .body("errors[0].id", notNullValue());
+    }
 }

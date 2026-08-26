@@ -458,4 +458,46 @@ public abstract class UpdateUserOperationTests {
                 .body("data", nullValue());
     }
 
+
+    @Test
+    public void test_updateUser_typeNotBelongingToTheEndpoint_isConflict() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": {
+                            "id": "1",
+                            "type": "countries",
+                            "attributes": { "email": "john@doe.com" }
+                          }
+                        }
+                        """)
+                .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(409)
+                .body("errors[0].code", equalTo("CONFLICT"))
+                .body("errors[0].status", equalTo("409"));
+    }
+
+    @Test
+    public void test_updateUser_idNotMatchingThePath_isConflict() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .pathParam("userId", "1")
+                .body("""
+                        {
+                          "data": {
+                            "id": "2",
+                            "type": "users",
+                            "attributes": { "email": "john@doe.com" }
+                          }
+                        }
+                        """)
+                .patch("http://localhost:" + appPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(409)
+                .body("errors[0].code", equalTo("CONFLICT"))
+                .body("errors[0].status", equalTo("409"));
+    }
 }

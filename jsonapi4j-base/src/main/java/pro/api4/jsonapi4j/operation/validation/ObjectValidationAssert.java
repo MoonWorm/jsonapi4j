@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.operation.validation;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorCode;
 
 import java.text.MessageFormat;
@@ -52,6 +53,7 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
     private ErrorSources.Source source;
     private ErrorCode errorCodeOverride;
     private String detailOverride;
+    private Integer httpStatusOverride;
     private boolean skipped;
 
     protected ObjectValidationAssert(ACTUAL actual, ErrorSources.Source source) {
@@ -78,6 +80,21 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
      * @param code the error code to use
      * @return this assertion for chaining
      */
+    /**
+     * Answers the next failed assertion with this HTTP status instead of {@code 400}.
+     *
+     * <p>Applies to the assertion that follows, like {@link #withErrorCode(ErrorCode)}, and is cleared
+     * once that assertion has run. A failure carrying a status of its own is reported on its own: a
+     * response has one status, so it cannot be merged with the other errors a request collected.
+     *
+     * @param httpStatus the status to answer with
+     * @return this assertion for chaining
+     */
+    public SELF withHttpStatus(int httpStatus) {
+        this.httpStatusOverride = httpStatus;
+        return (SELF) this;
+    }
+
     public SELF withErrorCode(ErrorCode code) {
         this.errorCodeOverride = code;
         return (SELF) this;
@@ -392,13 +409,17 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
     protected void clearOverrides() {
         errorCodeOverride = null;
         detailOverride = null;
+        httpStatusOverride = null;
     }
 
     protected void fail(ErrorCode defaultCode, String defaultDetail) {
         ErrorCode code = errorCodeOverride != null ? errorCodeOverride : defaultCode;
         String detail = detailOverride != null ? detailOverride : defaultDetail;
+        int httpStatus = httpStatusOverride != null
+                ? httpStatusOverride
+                : HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
         clearOverrides();
-        throw new JsonApiRequestValidationException(code, detail, source);
+        throw new JsonApiRequestValidationException(httpStatus, code, detail, source);
     }
 
     private static ErrorSources.Source appendToSource(ErrorSources.Source current, String fieldName) {

@@ -28,7 +28,7 @@ public class JsonApiRequestValidationException extends JsonApi4jException {
 
     public static JsonApiRequestValidationException withSource(JsonApiRequestValidationException e,
                                                                ErrorSources.Source source) {
-        return new JsonApiRequestValidationException(e.getErrorCode(), e.getDetail(), source);
+        return new JsonApiRequestValidationException(e.getHttpStatus(), e.getErrorCode(), e.getDetail(), source);
     }
 
     public JsonApiRequestValidationException(ErrorCode errorCode,
@@ -39,7 +39,21 @@ public class JsonApiRequestValidationException extends JsonApi4jException {
     public JsonApiRequestValidationException(ErrorCode errorCode,
                                              String detail,
                                              ErrorSources.Source source) {
-        super(HttpStatusCodes.SC_400_BAD_REQUEST.getCode(), errorCode, source != null ? source + ":" + detail : detail);
+        this(HttpStatusCodes.SC_400_BAD_REQUEST.getCode(), errorCode, detail, source);
+    }
+
+    /**
+     * Reports a failure that must be answered with something other than {@code 400}.
+     *
+     * <p>JSON:API requires specific statuses for a few request-level failures — {@code 409} when a body is
+     * aimed at the wrong collection, {@code 403} for a client-generated id a server does not accept. Such a
+     * failure is never collected alongside others, because a response carries one status.
+     */
+    public JsonApiRequestValidationException(int httpStatus,
+                                             ErrorCode errorCode,
+                                             String detail,
+                                             ErrorSources.Source source) {
+        super(httpStatus, errorCode, source != null ? source + ":" + detail : detail);
         this.detail = detail;
         this.source = source;
     }

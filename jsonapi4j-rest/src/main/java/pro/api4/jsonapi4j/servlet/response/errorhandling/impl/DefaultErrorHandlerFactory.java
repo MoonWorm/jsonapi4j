@@ -57,12 +57,13 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
         this.errorResponseMappers.put(JsonApiRequestValidationException.class, new ErrorsDocSupplier<JsonApiRequestValidationException>() {
             @Override
             public ErrorsDoc getErrorResponse(JsonApiRequestValidationException e) {
-                return ErrorsDocFactory.badRequestErrorsDoc(e.getErrorCode(), e.getDetail(), e.getSource());
+                return ErrorsDocFactory.genericErrorsDoc(
+                        e.getHttpStatus(), e.getErrorCode(), e.getDetail(), e.getSource());
             }
 
             @Override
             public int getHttpStatus(JsonApiRequestValidationException e) {
-                return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+                return e.getHttpStatus();
             }
         });
         this.errorResponseMappers.put(CompositeJsonApiRequestValidationException.class, new ErrorsDocSupplier<CompositeJsonApiRequestValidationException>() {

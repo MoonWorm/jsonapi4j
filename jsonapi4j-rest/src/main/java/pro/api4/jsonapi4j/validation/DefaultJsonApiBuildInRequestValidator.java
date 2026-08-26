@@ -10,9 +10,10 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.exception.InvalidLimitException;
 import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
@@ -21,7 +22,6 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.validation.CollectionValidationAssert;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator;
@@ -87,9 +87,16 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withResourceTypeValidator(this::validateKnownResourceType))
                 .singleResourceBody(body -> body
                         .withDataValidator(data -> data.isNotNull())
-                        .withResourceIdValidator(id -> id.isNull())
+                        .withResourceIdValidator(id -> id
+                                .withHttpStatus(HttpStatusCodes.SC_403_FORBIDDEN.getCode())
+                                .withErrorCode(DefaultErrorCodes.CLIENT_GENERATED_ID_NOT_SUPPORTED)
+                                .withDetail("resource id is assigned by the server, omit it from the request")
+                                .isNull())
                         .withResourceTypeValidator(type -> type
                                 .isNotBlank()
+                                .withHttpStatus(HttpStatusCodes.SC_409_CONFLICT.getCode())
+                                .withErrorCode(DefaultErrorCodes.CONFLICT)
+                                .withDetail("resource type does not belong to this collection")
                                 .isEqualTo(request.getTargetResourceType().getType()))
                         .withRelationshipsValidator(relationships -> relationships.satisfies(
                                 rels -> validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), (LinkedHashMap<String, RelationshipObject>) rels))))
@@ -107,10 +114,17 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withResourceIdValidator(id -> id.satisfies(raw -> {
                             Validate.assertThat(raw).isNotBlank();
                             validateResourceId(raw);
-                            Validate.assertThat(raw).isEqualTo(request.getResourceId());
+                            Validate.assertThat(raw)
+                                    .withHttpStatus(HttpStatusCodes.SC_409_CONFLICT.getCode())
+                                    .withErrorCode(DefaultErrorCodes.CONFLICT)
+                                    .withDetail("resource id does not match the one in the request path")
+                                    .isEqualTo(request.getResourceId());
                         }))
                         .withResourceTypeValidator(type -> type
                                 .isNotBlank()
+                                .withHttpStatus(HttpStatusCodes.SC_409_CONFLICT.getCode())
+                                .withErrorCode(DefaultErrorCodes.CONFLICT)
+                                .withDetail("resource type does not belong to this collection")
                                 .isEqualTo(request.getTargetResourceType().getType()))
                         .withRelationshipsValidator(relationships -> relationships.satisfies(
                                 rels -> validateRelationshipsStructure(request.getTargetResourceType(), request.getSingleResourceDocPayload(), (LinkedHashMap<String, RelationshipObject>) rels))))

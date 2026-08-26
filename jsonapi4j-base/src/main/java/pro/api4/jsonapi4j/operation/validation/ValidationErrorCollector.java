@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.operation.validation;
 
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
+
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.ValidationError;
@@ -34,6 +36,7 @@ public class ValidationErrorCollector {
         try {
             runnable.run();
         } catch (JsonApiRequestValidationException e) {
+            rethrowIfItCarriesItsOwnStatus(e);
             ErrorSources.Source effectiveSource = e.getSource() != null ? e.getSource() : fallbackSource;
             errors.add(new ValidationError(e.getErrorCode(), e.getDetail(), effectiveSource));
         } catch (CompositeJsonApiRequestValidationException e) {
@@ -51,6 +54,7 @@ public class ValidationErrorCollector {
         try {
             runnable.run();
         } catch (JsonApiRequestValidationException e) {
+            rethrowIfItCarriesItsOwnStatus(e);
             errors.add(new ValidationError(e.getErrorCode(), e.getDetail(), e.getSource()));
         } catch (CompositeJsonApiRequestValidationException e) {
             errors.addAll(e.getValidationErrors());
@@ -60,6 +64,20 @@ public class ValidationErrorCollector {
     /**
      * Returns whether any validation errors have been collected.
      */
+    /**
+     * Lets a failure that names its own HTTP status through untouched.
+     *
+     * <p>Collecting exists to report every problem with a request at once, which works while they share a
+     * status — a JSON:API document carries many errors but one status code. A failure requiring
+     * {@code 403} or {@code 409} cannot join that: merging it would answer with {@code 400} and break the
+     * rule that asked for it. So it is reported alone, and whatever else was collected is dropped.
+     */
+    private void rethrowIfItCarriesItsOwnStatus(JsonApiRequestValidationException e) {
+        if (e.getHttpStatus() != HttpStatusCodes.SC_400_BAD_REQUEST.getCode()) {
+            throw e;
+        }
+    }
+
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
