@@ -20,6 +20,7 @@ import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
 import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl;
 import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
 import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResource;
@@ -178,23 +179,30 @@ public class JsonApiAccessControlPlugin implements JsonApi4jPlugin {
                 .build();
     }
 
+    /**
+     * The configured report level, or {@code NONE} when the plugin was built without properties.
+     */
+    private AnonymizationReportLevel reportLevel() {
+        return acProperties == null ? AnonymizationReportLevel.NONE : acProperties.anonymizationReport();
+    }
+
     @Override
     public SingleResourceVisitors singleResourceVisitors() {
-        return new AccessControlSingleResourceVisitors(accessControlEvaluator);
+        return new AccessControlSingleResourceVisitors(accessControlEvaluator, reportLevel());
     }
 
     @Override
     public MultipleResourcesVisitors multipleResourcesVisitors() {
-        return new AccessControlMultipleResourcesVisitors(accessControlEvaluator);
+        return new AccessControlMultipleResourcesVisitors(accessControlEvaluator, reportLevel());
     }
 
     @Override
     public ToOneRelationshipVisitors toOneRelationshipVisitors() {
-        return new AccessControlToOneRelationshipVisitors(accessControlEvaluator);
+        return new AccessControlToOneRelationshipVisitors(accessControlEvaluator, reportLevel());
     }
 
     @Override
     public ToManyRelationshipVisitors toManyRelationshipVisitors() {
-        return new AccessControlToManyRelationshipVisitors(accessControlEvaluator);
+        return new AccessControlToManyRelationshipVisitors(accessControlEvaluator, reportLevel());
     }
 }

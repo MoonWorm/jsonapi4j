@@ -7,9 +7,11 @@ public interface AcProperties extends PluginProperties {
     String AC_PROPERTY = "ac";
     String ENABLED_PROPERTY = "enabled";
     String FAIL_ON_MISCONFIGURATION_PROPERTY = "failOnMisconfiguration";
+    String ANONYMIZATION_REPORT_PROPERTY = "anonymizationReport";
 
     String DEFAULT_ENABLED = "true";
     String DEFAULT_FAIL_ON_MISCONFIGURATION = "false";
+    String DEFAULT_ANONYMIZATION_REPORT = "NONE";
 
     @Override
     default String section() {
@@ -35,6 +37,19 @@ public interface AcProperties extends PluginProperties {
      */
     default boolean failOnMisconfiguration() {
         return Boolean.parseBoolean(DEFAULT_FAIL_ON_MISCONFIGURATION);
+    }
+
+    /**
+     * How much a response says about what access control hid from the caller.
+     *
+     * <p>Off by default. A denied read answers {@code 200} with the data left out, which cannot be told
+     * apart from there being nothing to return; this is what closes that gap, at the cost of confirming
+     * that something is there. See {@link AnonymizationReportLevel}.
+     *
+     * @return the level of detail to report, never {@code null}
+     */
+    default AnonymizationReportLevel anonymizationReport() {
+        return AnonymizationReportLevel.valueOf(DEFAULT_ANONYMIZATION_REPORT);
     }
 
 }

@@ -50,6 +50,12 @@ jsonapi4j:
   # AC Plugin
   ac:
     enabled: true
+    # Reject access control that cannot take effect instead of only logging it. Useful in CI.
+    failOnMisconfiguration: false
+    # What a response says about data withheld from the caller:
+    # NONE | INDICATOR | FIELDS | FIELDS_AND_REASONS. Off by default — saying that something
+    # was hidden confirms that something is there.
+    anonymizationReport: NONE
 
   # Sparse Fieldsets Plugin
   sf:

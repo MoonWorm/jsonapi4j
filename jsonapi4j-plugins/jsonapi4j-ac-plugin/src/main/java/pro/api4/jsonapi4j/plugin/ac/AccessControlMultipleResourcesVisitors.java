@@ -6,10 +6,13 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.LinksObject;
 import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.MultipleResourcesVisitors;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
+import pro.api4.jsonapi4j.plugin.ac.report.AnonymizationReport;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
 import pro.api4.jsonapi4j.plugin.context.MultipleResourcesVisitorContext;
@@ -30,6 +33,7 @@ import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getOutboun
 public class AccessControlMultipleResourcesVisitors implements MultipleResourcesVisitors {
 
     private final AccessControlEvaluator accessControlEvaluator;
+    private final AnonymizationReportLevel reportLevel;
 
     /**
      * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
@@ -53,7 +57,9 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 MultipleResourcesDoc<?> doc = new MultipleResourcesDoc<>(
                         null,
                         ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null, null),
-                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null, null)
+                        AnonymizationReport.mergeInto(
+                                ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null, null),
+                                AnonymizationReport.indicator(true, reportLevel))
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -63,6 +69,21 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                         inboundResult.errorCode(),
                         "Access to the operation is forbidden");
             }
+        }
+    }
+
+    /**
+     * Names what was hidden from one resource in that resource's own meta — written after anonymization,
+     * so it is not itself a candidate for it.
+     */
+    private void reportOnResource(ResourceObject<?, ?> resource, AnonymizationResult<?> result) {
+        if (!reportLevel.includesFields()) {
+            return;
+        }
+        Map<String, Object> report = AnonymizationReport.of(result, reportLevel);
+        if (report != null) {
+            ReflectionUtils.setFieldValueThrowing(resource, ResourceIdentifierObject.META_FIELD,
+                    AnonymizationReport.mergeInto(resource.getMeta(), report));
         }
     }
 
@@ -83,6 +104,7 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 ));
         List<DATA_SOURCE_DTO> nonAnonymizedDtos = new ArrayList<>();
         List<ResourceObject<?, ?>> anonymizedData = new ArrayList<>();
+        boolean anythingAnonymized = false;
         for (ResourceObject<?, ?> resourceObject : data) {
             AnonymizationResult<ResourceObject<?, ?>> anonymizationResult = anonymizeObjectIfNeeded(
                     accessControlEvaluator,
@@ -103,7 +125,9 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
 
             // A fully denied element is left out rather than added as null: the array then carries only
             // what the caller may see, and no client has to treat a hole as meaningful.
+            anythingAnonymized |= anonymizationResult.isAnyAnonymized();
             if (anonymizationResult.targetObject() != null) {
+                reportOnResource(anonymizationResult.targetObject(), anonymizationResult);
                 anonymizedData.add(anonymizationResult.targetObject());
             }
         }
@@ -129,7 +153,9 @@ public class AccessControlMultipleResourcesVisitors implements MultipleResources
                 nonAnonymizedDtos,
                 ctx.getPaginationAwareResponse().getPaginationContext()
         );
-        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
+        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD,
+                AnonymizationReport.mergeInto(docMeta,
+                        AnonymizationReport.indicator(anythingAnonymized, reportLevel)));
 
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
     }

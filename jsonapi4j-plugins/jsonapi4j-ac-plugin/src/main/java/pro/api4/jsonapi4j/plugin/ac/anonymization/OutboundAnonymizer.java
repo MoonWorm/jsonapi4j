@@ -5,6 +5,8 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.plugin.ac.AnonymizationResult;
 import pro.api4.jsonapi4j.plugin.ac.context.AccessControlContext;
 import pro.api4.jsonapi4j.plugin.ac.diagnostics.AccessControlDiagnostics;
+import pro.api4.jsonapi4j.model.document.error.ErrorCode;
+import pro.api4.jsonapi4j.plugin.ac.EvaluationResult;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.util.ObjectCopier;
@@ -19,11 +21,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiPredicate;
+import java.util.function.BiFunction;
 
 /**
  * Walks a composed response and returns a view of it carrying only what the caller may see.
@@ -43,10 +46,10 @@ public final class OutboundAnonymizer {
      * Decides a single set of requirements — supplied by the evaluator so that a custom one governs the
      * decisions without having to reimplement the walk.
      */
-    private final BiPredicate<AccessControlContext, AccessControlModel> requirementsSatisfied;
+    private final BiFunction<AccessControlContext, AccessControlModel, EvaluationResult> evaluate;
 
-    public OutboundAnonymizer(BiPredicate<AccessControlContext, AccessControlModel> requirementsSatisfied) {
-        this.requirementsSatisfied = requirementsSatisfied;
+    public OutboundAnonymizer(BiFunction<AccessControlContext, AccessControlModel, EvaluationResult> evaluate) {
+        this.evaluate = evaluate;
     }
 
     /**
@@ -58,7 +61,7 @@ public final class OutboundAnonymizer {
                                                 AccessControlContext context,
                                                 OutboundAccessControlForCustomClass rootRequirements) {
         if (root == null) {
-            return new AnonymizationResult<>(root, false, Collections.emptySet());
+            return new AnonymizationResult<>(root, false, Map.of());
         }
         Set<Object> branch = Collections.newSetFromMap(new IdentityHashMap<>());
         return walk("", root, context, rootRequirements, branch);
@@ -75,13 +78,17 @@ public final class OutboundAnonymizer {
         Map<String, AccessControlModel> fieldLevel
                 = requirements != null ? requirements.getFieldLevel() : plan.fieldLevel();
 
-        if (classLevel != null && !requirementsSatisfied.test(context, classLevel)) {
-            return new AnonymizationResult<>(null, true, Collections.emptySet());
+        if (classLevel != null) {
+            EvaluationResult classResult = evaluate.apply(context, classLevel);
+            if (classResult.isDenied()) {
+                // keyed by the path of the object itself, so whoever holds it already has the entry it needs
+                return new AnonymizationResult<>(null, true, Map.of(path, classResult.errorCode()));
+            }
         }
         if (!branch.add(target)) {
             log.debug("Access control walk met {} again in the same branch, stopping there",
                     target.getClass().getName());
-            return new AnonymizationResult<>(target, false, Collections.emptySet());
+            return new AnonymizationResult<>(target, false, Map.of());
         }
         try {
             return walkFields(path, target, context, plan, fieldLevel, branch);
@@ -97,14 +104,14 @@ public final class OutboundAnonymizer {
                                                   AnonymizationPlan plan,
                                                   Map<String, AccessControlModel> fieldLevel,
                                                   Set<Object> branch) {
-        Set<String> denied = deniedFields(target, context, fieldLevel);
+        Map<String, ErrorCode> denied = deniedFields(target, context, fieldLevel);
         Map<String, Object> replacements = new HashMap<>();
-        denied.forEach(fieldName -> replacements.put(fieldName, null));
-        Set<String> hidden = new LinkedHashSet<>(denied);
+        denied.keySet().forEach(fieldName -> replacements.put(fieldName, null));
+        Map<String, ErrorCode> hidden = new LinkedHashMap<>(denied);
 
         for (Field field : plan.descendable()) {
             String fieldName = field.getName();
-            if (denied.contains(fieldName)) {
+            if (denied.containsKey(fieldName)) {
                 continue;
             }
             Object value = read(field, target);
@@ -115,7 +122,7 @@ public final class OutboundAnonymizer {
             if (redacted == null) {
                 continue;
             }
-            hidden.addAll(redacted.hidden());
+            hidden.putAll(redacted.hidden());
             if (redacted.value() != value) {
                 replacements.put(fieldName, redacted.value());
             }
@@ -143,7 +150,7 @@ public final class OutboundAnonymizer {
         }
         AnonymizationResult<Object> result = walk(path, value, context, null, branch);
         if (result.isFullyAnonymized()) {
-            return new Redacted(null, Set.of(path));
+            return new Redacted(null, result.anonymizedFields());
         }
         return new Redacted(result.targetObject(), result.anonymizedFields());
     }
@@ -155,7 +162,7 @@ public final class OutboundAnonymizer {
                                      Set<Object> branch) {
         List<Object> kept = new ArrayList<>();
         List<Object> keptKeys = new ArrayList<>();
-        Set<String> hidden = new LinkedHashSet<>();
+        Map<String, ErrorCode> hidden = new LinkedHashMap<>();
         boolean changed = false;
         int index = 0;
 
@@ -176,7 +183,7 @@ public final class OutboundAnonymizer {
                 keptKeys.add(entry.key());
                 continue;
             }
-            hidden.addAll(redacted.hidden());
+            hidden.putAll(redacted.hidden());
             if (redacted.value() == null) {
                 changed = true;
                 continue;
@@ -196,17 +203,21 @@ public final class OutboundAnonymizer {
         return new Redacted(rebuilt, hidden);
     }
 
-    private Set<String> deniedFields(Object target,
-                                     AccessControlContext context,
-                                     Map<String, AccessControlModel> fieldLevel) {
+    private Map<String, ErrorCode> deniedFields(Object target,
+                                                AccessControlContext context,
+                                                Map<String, AccessControlModel> fieldLevel) {
         if (fieldLevel == null || fieldLevel.isEmpty()) {
-            return Set.of();
+            return Map.of();
         }
-        Set<String> denied = new HashSet<>();
+        Map<String, ErrorCode> denied = new LinkedHashMap<>();
         for (Map.Entry<String, AccessControlModel> e : fieldLevel.entrySet()) {
             Object value = ReflectionUtils.getFieldValueThrowing(target, e.getKey());
-            if (value != null && !requirementsSatisfied.test(context, e.getValue())) {
-                denied.add(e.getKey());
+            if (value == null) {
+                continue;
+            }
+            EvaluationResult result = evaluate.apply(context, e.getValue());
+            if (result.isDenied()) {
+                denied.put(e.getKey(), result.errorCode());
             }
         }
         return denied;
@@ -238,13 +249,13 @@ public final class OutboundAnonymizer {
         }
     }
 
-    private static Set<String> prefixed(String path, Set<String> names) {
+    private static Map<String, ErrorCode> prefixed(String path, Map<String, ErrorCode> names) {
         if (path.isEmpty() || names.isEmpty()) {
-            return Collections.unmodifiableSet(names);
+            return Collections.unmodifiableMap(names);
         }
-        Set<String> result = new LinkedHashSet<>();
-        names.forEach(name -> result.add(path + "." + name));
-        return Collections.unmodifiableSet(result);
+        Map<String, ErrorCode> result = new LinkedHashMap<>();
+        names.forEach((name, code) -> result.put(path + "." + name, code));
+        return Collections.unmodifiableMap(result);
     }
 
     private static List<Entry> entriesOf(Object container) {
@@ -267,7 +278,7 @@ public final class OutboundAnonymizer {
     private record Entry(Object key, Object value) {
     }
 
-    private record Redacted(Object value, Set<String> hidden) {
+    private record Redacted(Object value, Map<String, ErrorCode> hidden) {
     }
 
 }

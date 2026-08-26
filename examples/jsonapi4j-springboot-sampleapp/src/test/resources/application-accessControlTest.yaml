@@ -8,6 +8,7 @@ jsonapi4j:
     enabled: true
   ac:
     enabled: true
+    anonymizationReport: FIELDS_AND_REASONS
   oas:
     enabled: false
   sf:

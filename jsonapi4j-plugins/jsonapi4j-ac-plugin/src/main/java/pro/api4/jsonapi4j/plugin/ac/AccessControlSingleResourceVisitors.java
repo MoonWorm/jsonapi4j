@@ -4,11 +4,16 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
+import java.util.Map;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.SingleResourceVisitors;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
+import pro.api4.jsonapi4j.plugin.ac.report.AnonymizationReport;
 import pro.api4.jsonapi4j.plugin.context.SingleResourceVisitorContext;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
@@ -21,6 +26,7 @@ import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getOutboun
 public class AccessControlSingleResourceVisitors implements SingleResourceVisitors {
 
     private final AccessControlEvaluator accessControlEvaluator;
+    private final AnonymizationReportLevel reportLevel;
 
     /**
      * Evaluates inbound access control requirements before data retrieval.
@@ -58,7 +64,12 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
                 SingleResourceDoc<?> doc = new SingleResourceDoc<>(
                         null,
                         ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null),
-                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null)
+                        AnonymizationReport.mergeInto(
+                                ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null),
+                                AnonymizationReport.of(
+                                        new AnonymizationResult<>(null, true,
+                                                Map.of("", inboundResult.errorCode())),
+                                        reportLevel))
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -68,6 +79,30 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
                         inboundResult.errorCode(),
                         "Access to the operation is forbidden");
             }
+        }
+    }
+
+    /**
+     * Writes the report into the document's own meta, after anonymization rather than through
+     * {@code resolveResourceMeta} — so it survives even where meta is itself access-controlled, and is
+     * never a candidate for redaction in its own right.
+     */
+    private void reportOnDocument(SingleResourceDoc<?> doc, AnonymizationResult<?> result) {
+        Map<String, Object> report = AnonymizationReport.of(result, reportLevel);
+        if (report != null) {
+            ReflectionUtils.setFieldValueThrowing(doc, BaseDoc.META_FIELD,
+                    AnonymizationReport.mergeInto(doc.getMeta(), report));
+        }
+    }
+
+    private void reportOnResource(ResourceObject<?, ?> resource, AnonymizationResult<?> result) {
+        if (resource == null || !reportLevel.includesFields()) {
+            return;
+        }
+        Map<String, Object> report = AnonymizationReport.of(result, reportLevel);
+        if (report != null) {
+            ReflectionUtils.setFieldValueThrowing(resource, ResourceIdentifierObject.META_FIELD,
+                    AnonymizationReport.mergeInto(resource.getMeta(), report));
         }
     }
 
@@ -90,12 +125,16 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
             return RelationshipsPreRetrievalPhase.doNothing();
         }
 
+        reportOnDocument(doc, anonymizationResult);
+
         if (anonymizationResult.isFullyAnonymized()) {
             ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, null);
             return RelationshipsPreRetrievalPhase.returnDoc(doc);
         }
 
-        ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, anonymizationResult.targetObject());
+        ResourceObject<?, ?> anonymized = anonymizationResult.targetObject();
+        reportOnResource(anonymized, anonymizationResult);
+        ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, anonymized);
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
     }
 

@@ -249,7 +249,7 @@ class DefaultAccessControlEvaluatorTests {
 
             assertThat(sut.evaluateOutboundRequirements(
                     outbound,
-                    AccessControlModel.fromClassAnnotation(InboundOnlyPolicyResource.class))).isFalse();
+                    AccessControlModel.fromClassAnnotation(InboundOnlyPolicyResource.class)).isDenied()).isTrue();
         }
 
         @Test
@@ -675,7 +675,7 @@ class DefaultAccessControlEvaluatorTests {
             givenPrincipalWithEntitlements("SUPPORT");
 
             assertThat(anonymize(new SecretiveAttributes("John", "4111")).anonymizedFields())
-                    .containsExactly("creditCardNumber");
+                    .containsOnlyKeys("creditCardNumber");
         }
 
         @Test
@@ -685,7 +685,7 @@ class DefaultAccessControlEvaluatorTests {
             AnonymizationResult<HolderAttributes> actualResult
                     = anonymize(new HolderAttributes("holder", new SecretiveAttributes("John", "4111")));
 
-            assertThat(actualResult.anonymizedFields()).containsExactly("secrets.creditCardNumber");
+            assertThat(actualResult.anonymizedFields()).containsOnlyKeys("secrets.creditCardNumber");
         }
 
         @Test
@@ -695,19 +695,20 @@ class DefaultAccessControlEvaluatorTests {
             AnonymizationResult<GuardedHolderAttributes> actualResult
                     = anonymize(new GuardedHolderAttributes("holder", new GuardedAttributes("secret")));
 
-            assertThat(actualResult.anonymizedFields()).containsExactly("guarded");
+            assertThat(actualResult.anonymizedFields()).containsOnlyKeys("guarded");
             assertThat(actualResult.targetObject().getGuarded()).isNull();
         }
 
         @Test
-        void anonymizeObjectIfNeeded_wholeObjectDenied_reportsNoPathsAndDropsTheObject() {
+        void anonymizeObjectIfNeeded_wholeObjectDenied_dropsItAndReportsWhyUnderItsOwnPath() {
             givenPrincipalWithEntitlements("SUPPORT");
 
             AnonymizationResult<GuardedAttributes> actualResult = anonymize(new GuardedAttributes("secret"));
 
             assertThat(actualResult.isFullyAnonymized()).isTrue();
             assertThat(actualResult.targetObject()).isNull();
-            assertThat(actualResult.anonymizedFields()).isEmpty();
+            // the object itself was refused, so the entry is keyed by its path — empty for the root
+            assertThat(actualResult.anonymizedFields()).containsOnlyKeys("");
         }
 
         @Test
@@ -732,7 +733,7 @@ class DefaultAccessControlEvaluatorTests {
 
             assertThat(actualResult.targetObject().l2.l3.secrets.getCreditCardNumber()).isNull();
             assertThat(deepest.getCreditCardNumber()).isEqualTo("4111");
-            assertThat(actualResult.anonymizedFields()).containsExactly("l2.l3.secrets.creditCardNumber");
+            assertThat(actualResult.anonymizedFields()).containsOnlyKeys("l2.l3.secrets.creditCardNumber");
         }
 
         private <T> AnonymizationResult<T> anonymize(T target) {

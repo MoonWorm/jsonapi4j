@@ -174,6 +174,20 @@ Each plugin adds its own properties under the `jsonapi4j` namespace. Refer to th
 | OpenAPI | `jsonapi4j.oas.*` | [OpenAPI Plugin](/openapi-plugin/#available-properties) |
 | Compound Documents | `jsonapi4j.cd.*` | [Compound Documents Plugin](/compound-docs-plugin/#available-properties) |
 
+### A config file with everything in it
+
+Each sample application ships a configuration file listing every property with its default, so the whole
+surface is visible in one place rather than assembled from tables:
+
+| Framework | File |
+|-----------|------|
+| Spring Boot | `examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml` |
+| Quarkus | `examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties` |
+| Servlet | `examples/jsonapi4j-servlet-sampleapp/src/main/resources/jsonapi4j.yaml` |
+
+Copy one and delete what you do not need — every value shown is the default, so removing a line changes
+nothing.
+
 ## Overriding Beans
 
 Both Spring Boot and Quarkus allow you to override any default bean provided by JsonApi4j.

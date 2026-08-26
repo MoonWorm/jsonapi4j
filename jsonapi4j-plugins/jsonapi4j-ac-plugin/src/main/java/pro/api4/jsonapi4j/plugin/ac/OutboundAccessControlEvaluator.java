@@ -22,7 +22,7 @@ public interface OutboundAccessControlEvaluator {
      * @param accessControlModel Access Control requirements that should be evaluated
      * @return <code>true</code> if passed, <code>false</code> - otherwise
      */
-    boolean evaluateOutboundRequirements(
+    EvaluationResult evaluateOutboundRequirements(
             AccessControlContext context,
             AccessControlModel accessControlModel
     );

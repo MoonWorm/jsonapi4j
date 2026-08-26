@@ -231,14 +231,14 @@ class OutboundAnonymizerTests {
         void anonymizeObjectIfNeeded_listElementDenied_reportsAnIndexedPath() {
             givenCallerWithoutTheScope();
 
-            assertThat(anonymize(new ListHolder()).anonymizedFields()).containsExactly("items[0].zip");
+            assertThat(anonymize(new ListHolder()).anonymizedFields()).containsOnlyKeys("items[0].zip");
         }
 
         @Test
         void anonymizeObjectIfNeeded_mapValueDenied_reportsTheKey() {
             givenCallerWithoutTheScope();
 
-            assertThat(anonymize(new MapHolder()).anonymizedFields()).containsExactly("byName[home].zip");
+            assertThat(anonymize(new MapHolder()).anonymizedFields()).containsOnlyKeys("byName[home].zip");
         }
 
         @Test
@@ -246,7 +246,7 @@ class OutboundAnonymizerTests {
             givenCallerWithoutTheScope();
 
             assertThat(anonymize(new GuardedListHolder()).anonymizedFields())
-                    .containsExactly("items[0]", "items[1]");
+                    .containsOnlyKeys("items[0]", "items[1]");
         }
 
     }

@@ -6,6 +6,7 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.plugin.ac.config.AcProperties;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
@@ -31,10 +32,19 @@ public interface QuarkusJsonApi4jAcProperties {
     @WithDefault(AcProperties.DEFAULT_FAIL_ON_MISCONFIGURATION)
     boolean failOnMisconfiguration();
 
+    /**
+     * How much a response says about what access control hid from the caller.
+     * Nothing by default, because saying so confirms that something is there.
+     * Example: `NONE`, `INDICATOR`, `FIELDS`, `FIELDS_AND_REASONS`.
+     */
+    @WithDefault(AcProperties.DEFAULT_ANONYMIZATION_REPORT)
+    AnonymizationReportLevel anonymizationReport();
+
     default AcProperties toJsonapi4jAcProperties() {
         DefaultAcProperties acProperties = new DefaultAcProperties();
         acProperties.setEnabled(enabled());
         acProperties.setFailOnMisconfiguration(failOnMisconfiguration());
+        acProperties.setAnonymizationReport(anonymizationReport());
         return acProperties;
     }
 

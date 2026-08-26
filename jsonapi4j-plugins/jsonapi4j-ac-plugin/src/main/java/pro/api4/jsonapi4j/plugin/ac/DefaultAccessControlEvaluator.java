@@ -64,18 +64,34 @@ public class DefaultAccessControlEvaluator extends AccessControlEvaluator {
         return EvaluationResult.allowed();
     }
 
+    /**
+     * Mirrors {@link #evaluateInboundRequirements} — including the order requirements are tried in, so a
+     * policy still runs last — and reports which one refused rather than only that something did. The
+     * anonymization report is built from those codes when the application asks for reasons.
+     */
     @Override
-    public boolean evaluateOutboundRequirements(AccessControlContext context,
-                                                AccessControlModel accessControlModel) {
+    public EvaluationResult evaluateOutboundRequirements(AccessControlContext context,
+                                                         AccessControlModel accessControlModel) {
         if (accessControlModel == null) {
-            return true;
+            return EvaluationResult.allowed();
         }
-        return checkIsAuthenticated(accessControlModel.getAuthenticated())
-                && evaluateEntitlements(accessControlModel.getRequiredEntitlements())
-                && evaluateScopes(accessControlModel.getRequiredScopes())
-                && evaluateOwnershipAgainstResourceObject(context.resource().orElse(null),
-                        accessControlModel.getRequiredOwnership())
-                && evaluatePolicy(accessControlModel.getRequiredPolicy(), context);
+        if (!checkIsAuthenticated(accessControlModel.getAuthenticated())) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        if (!evaluateEntitlements(accessControlModel.getRequiredEntitlements())) {
+            return EvaluationResult.denied(AuthErrorCodes.INSUFFICIENT_ENTITLEMENTS);
+        }
+        if (!evaluateScopes(accessControlModel.getRequiredScopes())) {
+            return EvaluationResult.denied(AuthErrorCodes.INSUFFICIENT_SCOPES);
+        }
+        if (!evaluateOwnershipAgainstResourceObject(context.resource().orElse(null),
+                accessControlModel.getRequiredOwnership())) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        if (!evaluatePolicy(accessControlModel.getRequiredPolicy(), context)) {
+            return EvaluationResult.denied(AuthErrorCodes.FORBIDDEN);
+        }
+        return EvaluationResult.allowed();
     }
 
     /**

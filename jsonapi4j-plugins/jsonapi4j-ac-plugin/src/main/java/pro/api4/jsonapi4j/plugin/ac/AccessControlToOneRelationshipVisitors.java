@@ -9,6 +9,9 @@ import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToOneRelationshipVisitors;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
+import pro.api4.jsonapi4j.plugin.ac.report.AnonymizationReport;
+import java.util.Map;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
 import pro.api4.jsonapi4j.plugin.ac.context.DefaultAccessControlContext;
@@ -25,6 +28,7 @@ import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInbound
 public class AccessControlToOneRelationshipVisitors implements ToOneRelationshipVisitors {
 
     private final AccessControlEvaluator accessControlEvaluator;
+    private final AnonymizationReportLevel reportLevel;
 
     /**
      * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
@@ -48,7 +52,9 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
                 ToOneRelationshipDoc doc = new ToOneRelationshipDoc(
                         null,
                         ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null),
-                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null)
+                        AnonymizationReport.mergeInto(
+                                ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null),
+                                AnonymizationReport.indicator(true, reportLevel))
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -95,6 +101,11 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
             ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD, docMeta);
         }
 
+        Map<String, Object> report = AnonymizationReport.of(anonymizationResult, reportLevel);
+        if (report != null) {
+            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD,
+                    AnonymizationReport.mergeInto(doc.getMeta(), report));
+        }
         ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.DATA_FIELD, anonymizationResult.targetObject());
 
         return DataPostRetrievalPhase.mutatedDoc(doc);

@@ -471,6 +471,7 @@ consequences worth knowing: its length depends on the caller, and indices do not
 | `@AccessControl` that declares no requirement at all (a bare `@AccessControl`) | Enforces nothing. Set one of `authenticated`, `entitlements`, `scopes`, `ownership` or `policy`, or remove it. Reported — see below. |
 | Attributes object is a dynamic proxy (e.g. a Hibernate/CGLIB proxied entity) | Cannot be copied, so the request fails with a clear error. Return a DTO rather than a proxied entity. |
 | Attributes class lives in a JPMS module that does not `open` its package | Reflective access fails. Open the package to the framework. |
+| Application `meta` that is not a `Map` | The anonymization report cannot be added to it — there is nowhere to put a member on an arbitrary type — so it is skipped and logged once. Return a `Map` from your meta resolvers if you want the report. |
 | Denied `GET` requests | Return `200` with the restricted data omitted, not `403`. A `403` would fail the whole response, including the parts the caller is allowed to see, and would break compound documents. |
 | Responses marked `Cache-Control: public` | Anonymization runs per caller, so the body is not the same for everyone — but a shared cache is entitled to store one copy and serve it to the next caller. The framework forwards the directive your operation returns and does not override it. Use `private` for per-caller caching. See [Caching](/compound-docs/#caching). |
 
@@ -512,12 +513,55 @@ quarkus.index-dependency.my-domain.artifact-id=my-domain
 Alternatively, ship that jar with a Jandex index. If access control is enabled and no `@AccessControl` is
 found in the index, the build logs a warning naming this property.
 
+### Telling a caller something was hidden
+
+A denied `GET` returns `200` with the restricted data left out, which a caller cannot tell apart from there
+being nothing to return. `jsonapi4j.ac.anonymizationReport` closes that gap by adding an `accessControl`
+member to the response `meta`:
+
+```json
+{
+  "meta": { "accessControl": { "anonymized": true } },
+  "data": { "id": "1", "type": "users",
+    "attributes": { "fullName": "John Doe" },
+    "meta": { "accessControl": { "anonymized": true, "fields": [
+      { "path": "attributes.creditCardNumber",    "reason": "INSUFFICIENT_SCOPES" },
+      { "path": "attributes.addresses[0].zip",    "reason": "INSUFFICIENT_SCOPES" }
+    ]}}
+  }
+}
+```
+
+Four levels, each saying strictly more than the one before:
+
+| Level | What a response carries |
+|-------|-------------------------|
+| `NONE` | Nothing. Responses are exactly as they were before this existed. **Default.** |
+| `INDICATOR` | That something was hidden, without saying what. |
+| `FIELDS` | The paths that were hidden, indexed into containers as `addresses[0].zip`. |
+| `FIELDS_AND_REASONS` | Also the error code of the requirement that refused each path. |
+
+The top level of the document carries the indicator; each resource names its own hidden paths in its own
+`meta`. The member appears **only when something was actually hidden**, so its absence alongside an empty
+`data` means there genuinely was nothing to return — which is the question the feature exists to answer.
+
+**This discloses.** Saying that something was hidden confirms that something is there, which is why the
+plugin otherwise keeps ownership denials generic. `FIELDS_AND_REASONS` goes further and tells a caller
+which entitlement or scope would reveal each field — excellent for a partner integrating against your API,
+and a map of your authorization model for anyone probing it. Turn it on deliberately, and prefer the lowest
+level that answers your callers' question.
+
+The report is written after anonymization and is not itself subject to it, so it survives on a resource
+whose `meta` was withheld — the caller sees no application meta, and still learns that something was kept
+from them.
+
 ### Available Properties
 
 | Property name                            | Default value | Description                                                                                              |
 |------------------------------------------|---------------|----------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.ac.enabled`                   | `true`        | Enables/Disables Access Control plugin                                                                   |
 | `jsonapi4j.ac.failOnMisconfiguration`    | `false`       | Reject access control that is declared but cannot take effect, instead of only logging it. See below.    |
+| `jsonapi4j.ac.anonymizationReport`       | `NONE`        | How much a response says about what was hidden from the caller: `NONE`, `INDICATOR`, `FIELDS`, `FIELDS_AND_REASONS`. See below. |
 
 ### Related
 

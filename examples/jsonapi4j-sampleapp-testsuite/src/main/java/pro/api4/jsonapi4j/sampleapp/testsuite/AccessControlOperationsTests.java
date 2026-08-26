@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.sampleapp.testsuite;
 
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
@@ -10,6 +11,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -489,7 +491,7 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("data", not(hasKey("meta")));
+                .body("data.meta", not(hasKey("internalUserRef")));
     }
 
     @Test
@@ -504,7 +506,7 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .body("data.id", equalTo("1"))
-                .body("data", not(hasKey("meta")));
+                .body("data.meta", not(hasKey("internalUserRef")));
     }
 
     @Test
@@ -518,7 +520,7 @@ public abstract class AccessControlOperationsTests {
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
                 .statusCode(200)
-                .body("data", not(hasKey("meta")));
+                .body("data.meta", not(hasKey("internalUserRef")));
     }
 
     @Test
@@ -530,7 +532,7 @@ public abstract class AccessControlOperationsTests {
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
                 .statusCode(200)
-                .body("data", not(hasKey("meta")));
+                .body("data.meta", not(hasKey("internalUserRef")));
     }
 
     @Test
@@ -544,8 +546,8 @@ public abstract class AccessControlOperationsTests {
                 .then()
                 .statusCode(200)
                 .body("data", hasSize(2))
-                .body("data[0]", not(hasKey("meta")))
-                .body("data[1]", not(hasKey("meta")));
+                .body("data[0].meta", not(hasKey("internalUserRef")))
+                .body("data[1].meta", not(hasKey("internalUserRef")));
     }
 
     @Test
@@ -715,5 +717,81 @@ public abstract class AccessControlOperationsTests {
                 .statusCode(200)
                 .body("data.attributes.addresses[0].zip", equalTo("0150"))
                 .body("data.attributes", not(hasKey("fullName")));
+    }
+
+    /**
+     * Reads user 2 with its relatives — users 1 and 4 — as one principal, then another, then the first
+     * again, so that what each caller sees is asserted with another caller's request in between.
+     *
+     * <p>The compound-documents cache sits on that path and is shared by every caller. It stores resources
+     * as JSON text rather than as objects, so each request rebuilds its own and anonymization cannot reach
+     * what is cached — the third read exists to keep it that way, and would fail if the cache ever came to
+     * hold the objects themselves.
+     */
+    @Test
+    public void test_includedResource_afterAnotherPrincipalReadIt_theOwnerStillSeesTheirOwnData() {
+        assertIncludedCreditCardNumberOfUserOne("1", equalTo("123456789"));
+        assertIncludedCreditCardNumberOfUserOne("4", nullValue());
+        assertIncludedCreditCardNumberOfUserOne("1", equalTo("123456789"));
+    }
+
+    /**
+     * The same in the opposite order, so neither direction rests on the other: a privileged read must not
+     * leave more visible for the next caller than that caller is entitled to.
+     */
+    @Test
+    public void test_includedResource_afterTheOwnerReadIt_anotherPrincipalStillCannotSeeIt() {
+        assertIncludedCreditCardNumberOfUserOne("4", nullValue());
+        assertIncludedCreditCardNumberOfUserOne("1", equalTo("123456789"));
+        assertIncludedCreditCardNumberOfUserOne("4", nullValue());
+    }
+
+    private void assertIncludedCreditCardNumberOfUserOne(String callerUserId, Matcher<?> expected) {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultUserIdHeaderName, callerUserId)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .pathParam("userId", "2")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("included.find { it.id == '1' }", notNullValue())
+                .body("included.find { it.id == '1' }.attributes.creditCardNumber", expected);
+    }
+
+
+    @Test
+    public void test_anonymizationReport_hiddenFieldsAreNamedWithTheReasonTheyWereRefused() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "2")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("meta.accessControl.anonymized", equalTo(true))
+                .body("meta.accessControl.fields.path", hasItems(
+                        "attributes.creditCardNumber", "attributes.addresses[0].zip"))
+                .body("meta.accessControl.fields.find { it.path == 'attributes.creditCardNumber' }.reason",
+                        equalTo("INSUFFICIENT_SCOPES"))
+                .body("data.meta.accessControl.anonymized", equalTo(true));
+    }
+
+    @Test
+    public void test_anonymizationReport_nothingHidden_noReportAtAll() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header(defaultUserIdHeaderName, "1")
+                .header(defaultScopesHeaderName, "users.sensitive.read")
+                .header(defaultEntitlementsHeaderName, "DEPARTMENT_HR PII_CLEARED")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .body("data.attributes.creditCardNumber", equalTo("123456789"))
+                .body("data.meta.internalUserRef", equalTo("internal-1"))
+                .body("meta", not(hasKey("accessControl")))
+                .body("data.meta", not(hasKey("accessControl")));
     }
 }

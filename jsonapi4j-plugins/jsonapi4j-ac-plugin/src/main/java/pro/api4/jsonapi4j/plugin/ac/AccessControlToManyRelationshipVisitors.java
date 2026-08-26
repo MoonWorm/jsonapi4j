@@ -10,6 +10,8 @@ import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.ToManyRelationshipVisitors;
+import pro.api4.jsonapi4j.plugin.ac.config.AnonymizationReportLevel;
+import pro.api4.jsonapi4j.plugin.ac.report.AnonymizationReport;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForJsonApiResourceIdentifier;
@@ -32,6 +34,7 @@ import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInbound
 public class AccessControlToManyRelationshipVisitors implements ToManyRelationshipVisitors {
 
     private final AccessControlEvaluator accessControlEvaluator;
+    private final AnonymizationReportLevel reportLevel;
 
     /**
      * @see AccessControlSingleResourceVisitors#onDataPreRetrieval
@@ -55,7 +58,9 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 ToManyRelationshipsDoc doc = new ToManyRelationshipsDoc(
                         null,
                         ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null, null),
-                        ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null, null)
+                        AnonymizationReport.mergeInto(
+                                ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null, null),
+                                AnonymizationReport.indicator(true, reportLevel))
                 );
                 return DataPreRetrievalPhase.returnDoc(doc);
             } else {
@@ -90,6 +95,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
 
         List<DATA_SOURCE_DTO> nonAnonymizedDtos = new ArrayList<>();
         List<ResourceIdentifierObject> anonymizedData = new ArrayList<>();
+        boolean anythingAnonymized = false;
         for (ResourceIdentifierObject resourceIdentifierObject : data) {
             AnonymizationResult<ResourceIdentifierObject> anonymizationResult = anonymizeObjectIfNeeded(
                     accessControlEvaluator,
@@ -110,7 +116,14 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
 
             // A fully denied element is left out rather than added as null: the array then carries only
             // what the caller may see, and no client has to treat a hole as meaningful.
+            anythingAnonymized |= anonymizationResult.isAnyAnonymized();
             if (anonymizationResult.targetObject() != null) {
+                Map<String, Object> report = AnonymizationReport.of(anonymizationResult, reportLevel);
+                if (report != null && reportLevel.includesFields()) {
+                    ReflectionUtils.setFieldValueThrowing(anonymizationResult.targetObject(),
+                            ResourceIdentifierObject.META_FIELD,
+                            AnonymizationReport.mergeInto(anonymizationResult.targetObject().getMeta(), report));
+                }
                 anonymizedData.add(anonymizationResult.targetObject());
             }
         }
@@ -136,7 +149,9 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 nonAnonymizedDtos,
                 ctx.getPaginationAwareResponse().getPaginationContext()
         );
-        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD, docMeta);
+        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.META_FIELD,
+                AnonymizationReport.mergeInto(docMeta,
+                        AnonymizationReport.indicator(anythingAnonymized, reportLevel)));
 
         return DataPostRetrievalPhase.mutatedDoc(doc);
     }

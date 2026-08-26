@@ -12,7 +12,7 @@ import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_SCOP
 import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_USER_ID_HEADER_NAME;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@ActiveProfiles("accessControlTests")
+@ActiveProfiles("accessControlTest")
 @DirtiesContext
 public class SpringAccessControlOperationsTests extends AccessControlOperationsTests {
 
