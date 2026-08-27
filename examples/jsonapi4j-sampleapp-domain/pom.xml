@@ -72,6 +72,24 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <!--
+                Builds META-INF/jandex.idx into the jar so that frameworks scanning the classpath at build time
+                (e.g. Quarkus) see this module's annotated domain classes without the consuming app having to
+                declare quarkus.index-dependency.* for it.
+            -->
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <version>${jandex-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                        <goals>
+                            <goal>jandex</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

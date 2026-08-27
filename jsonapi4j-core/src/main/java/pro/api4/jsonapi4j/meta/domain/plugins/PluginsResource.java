@@ -14,7 +14,7 @@ public class PluginsResource implements Resource<PluginsResource.PluginAttribute
     }
 
     @Override
-    public Object resolveAttributes(PluginAttributes a) {
+    public PluginAttributes resolveAttributes(PluginAttributes a) {
         return a;
     }
 

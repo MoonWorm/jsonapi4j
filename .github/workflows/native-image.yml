@@ -1,0 +1,57 @@
+name: Native Image
+
+# Native-only breakage is invisible to the JVM suite: a missing reflection or resource registration
+# builds cleanly and only fails on the first request that returns the affected type. This job builds the
+# Quarkus sample app as a native executable and runs QuarkusNativeSmokeIT against it.
+#
+# Not part of the Build workflow because a native image takes minutes rather than seconds. Run it manually
+# before a release, or let the fortnightly schedule catch drift from a dependency bump.
+on:
+  workflow_dispatch:
+  schedule:
+    # 1st and 15th of each month, 04:00 UTC. Cron cannot express "every two weeks" directly; pinning the
+    # day of month keeps the cadence steady without drifting across the year the way a week counter would.
+    - cron: '0 4 1,15 * *'
+
+concurrency:
+  group: native-image
+  cancel-in-progress: false
+
+jobs:
+  native:
+    name: Build native image and run integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 23
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+
+      # Builds the executable inside Quarkus' Mandrel builder image rather than installing GraalVM on the
+      # runner, which keeps the toolchain pinned to what the Quarkus version expects. The result is a Linux
+      # binary and the runner is Linux, so the integration test executes it directly — no container image
+      # needed here, unlike on a macOS host.
+      - name: Build native image and run integration tests
+        run: mvn -B verify -Dnative -Dquarkus.native.container-build=true
+
+      - name: Upload integration test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-failsafe-reports
+          path: examples/jsonapi4j-quarkus-sampleapp/target/failsafe-reports/
+          if-no-files-found: ignore
+
+      - name: Upload native build stats
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-build-stats
+          path: examples/jsonapi4j-quarkus-sampleapp/target/*-build-output-stats.json
+          if-no-files-found: ignore

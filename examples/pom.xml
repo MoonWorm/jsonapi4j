@@ -26,6 +26,7 @@
         <swagger.model.version>2.2.31</swagger.model.version>
         <lombok.version>1.18.44</lombok.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <jandex-maven-plugin.version>3.5.3</jandex-maven-plugin.version>
 
         <junit-jupiter.version>5.11.3</junit-jupiter.version>
         <assertj-core.version>3.26.3</assertj-core.version>

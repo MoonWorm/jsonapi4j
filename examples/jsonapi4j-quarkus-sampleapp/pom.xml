@@ -127,6 +127,13 @@
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
+                        <!--
+                            The integration test launches the packaged artifact on this port. It has to be the
+                            port the compound-docs mappings were resolved against at build time, because those
+                            are BUILD_AND_RUN_TIME_FIXED: on the default 8081 the plugin's self-call goes to
+                            localhost:8080, finds nothing listening, and every ?include=... returns 500.
+                        -->
+                        <quarkus.http.test-port>8080</quarkus.http.test-port>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -146,6 +153,18 @@
                 <skipITs>false</skipITs>
                 <quarkus.native.enabled>true</quarkus.native.enabled>
             </properties>
+            <dependencies>
+                <!--
+                    Lets QuarkusNativeSmokeIT run the native executable inside a container. A container-built
+                    binary is a Linux one, which a macOS host cannot exec directly; adding
+                    -Dquarkus.container-image.build=true makes the integration test launch the image instead.
+                    Unused on Linux, where the executable runs on the host.
+                -->
+                <dependency>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-container-image-docker</artifactId>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>

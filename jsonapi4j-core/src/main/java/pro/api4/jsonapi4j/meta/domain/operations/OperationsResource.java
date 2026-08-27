@@ -22,7 +22,7 @@ public class OperationsResource implements Resource<OperationsResource.Operation
     }
 
     @Override
-    public Object resolveAttributes(OperationDescriptorAttributes a) {
+    public OperationDescriptorAttributes resolveAttributes(OperationDescriptorAttributes a) {
         return a;
     }
 

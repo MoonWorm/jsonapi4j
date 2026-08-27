@@ -5,6 +5,8 @@ import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.nativeimage.NativeImageResourcePatternsBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
 import io.quarkus.undertow.deployment.FilterBuildItem;
 import io.quarkus.undertow.deployment.IgnoredServletContainerInitializerBuildItem;
@@ -16,9 +18,11 @@ import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.*;
@@ -34,6 +38,8 @@ import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfPluginBeans;
 import pro.api4.jsonapi4j.rest.quarkus.runtime.sf.QuarkusJsonApi4jSfProperties;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -49,7 +55,18 @@ class QuarkusJsonApi4jProcessor {
 
     private static final DotName ACCESS_CONTROL_ANNOTATION
             = DotName.createSimple("pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl");
+
+    private static final DotName RESOURCE_INTERFACE = DotName.createSimple(Resource.class.getName());
+    private static final DotName OBJECT_CLASS = DotName.createSimple(Object.class.getName());
+
     private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer";
+
+    private static final String OAS_MODEL_GROUP_ID = "io.swagger.core.v3";
+    private static final String OAS_MODEL_ARTIFACT_ID = "swagger-models-jakarta";
+    private static final String OAS_MODEL_PACKAGE_PREFIX = "io.swagger.v3.oas.models.";
+    private static final String OAS_ERROR_EXAMPLES_RESOURCE_PATTERN = "oas/errorExamples/.*\\.json";
+    private static final String JACKSON_BEAN_DESCRIPTION_CLASSNAME = "com.fasterxml.jackson.databind.BeanDescription";
+
     private static final String SF_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin";
     private static final String CD_SERVLET_INITIALIZER_CLASSNAME = "pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer";
 
@@ -165,6 +182,182 @@ class QuarkusJsonApi4jProcessor {
     }
 
     /**
+     * Puts the OpenAPI model jar into the index, so the registration below has something to find.
+     *
+     * <p>This is the case {@code quarkus.index-dependency} exists for: a third-party jar that ships no Jandex
+     * index and cannot be changed to ship one. The framework's own jars carry an index instead.
+     *
+     * <p>Produced only when the OAS plugin is both enabled and on the classpath, so an application that does not
+     * serve an OpenAPI document pays neither the indexing nor the image size.
+     */
+    @BuildStep
+    void indexOasModel(QuarkusJsonApi4jOasProperties oasProperties,
+                       BuildProducer<IndexDependencyBuildItem> indexDependencies) {
+        if (!isOasPluginEnabled(oasProperties)) {
+            return;
+        }
+        indexDependencies.produce(new IndexDependencyBuildItem(OAS_MODEL_GROUP_ID, OAS_MODEL_ARTIFACT_ID));
+    }
+
+    /**
+     * Registers the OpenAPI model, so that the served document can be built in a native image.
+     *
+     * <p>The plugin assembles the document by binding into Swagger's model rather than by constructing it field
+     * by field, which needs reflective access to those classes. They are third-party and ship no native-image
+     * metadata of their own, and {@link #addReferencedClasses} deliberately walks only indexed types — so
+     * without this step the image builds and then answers every request for the OpenAPI document with
+     * {@code 500 Cannot construct instance of io.swagger.v3.oas.models.media.ObjectSchema}.
+     *
+     * <p>Registered by package rather than by naming classes: the model is large, entirely reachable from the
+     * document root, and grows between Swagger versions.
+     */
+    @BuildStep
+    void registerOasModelForSerialization(QuarkusJsonApi4jOasProperties oasProperties,
+                                          CombinedIndexBuildItem combinedIndex,
+                                          BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
+        if (!isOasPluginEnabled(oasProperties)) {
+            return;
+        }
+        String[] classNames = combinedIndex.getIndex().getKnownClasses().stream()
+                .map(classInfo -> classInfo.name().toString())
+                .filter(className -> className.startsWith(OAS_MODEL_PACKAGE_PREFIX))
+                .toArray(String[]::new);
+        if (classNames.length == 0) {
+            LOG.warn("{} plugin is enabled but no OpenAPI model classes were found in the Jandex index, so "
+                            + "nothing was registered for native-image serialization. The OpenAPI document will "
+                            + "fail to build in a native image. Expected to find '{}' classes from '{}:{}'.",
+                    OAS_PLUGIN_CLASSNAME, OAS_MODEL_PACKAGE_PREFIX, OAS_MODEL_GROUP_ID, OAS_MODEL_ARTIFACT_ID);
+            return;
+        }
+        LOG.info("Registering {} OpenAPI model classes for native-image serialization", classNames.length);
+        reflectiveClasses.produce(ReflectiveClassBuildItem.builder(classNames)
+                .constructors(true)
+                .methods(true)
+                .fields(true)
+                .serialization(true)
+                .build());
+
+        reflectiveClasses.produce(ReflectiveClassBuildItem.builder(JACKSON_BEAN_DESCRIPTION_CLASSNAME)
+                .methods(true)
+                .build());
+    }
+
+    /**
+     * Includes the OAS plugin's canned error examples in the native image.
+     *
+     * <p>A native image carries no classpath resource unless it was asked to. The plugin reads these with
+     * {@code getResourceAsStream} and treats a {@code null} stream as a bad path, so leaving them out surfaces
+     * as {@code IllegalArgumentException: wrong path} while serving the document rather than as a missing file.
+     *
+     * <p>Matched by pattern so that examples added to the plugin later are picked up without touching this.
+     */
+    @BuildStep
+    void registerOasErrorExampleResources(QuarkusJsonApi4jOasProperties oasProperties,
+                                          BuildProducer<NativeImageResourcePatternsBuildItem> resourcePatterns) {
+        if (!isOasPluginEnabled(oasProperties)) {
+            return;
+        }
+        resourcePatterns.produce(NativeImageResourcePatternsBuildItem.builder()
+                .includePattern(OAS_ERROR_EXAMPLES_RESOURCE_PATTERN)
+                .build());
+    }
+
+    /**
+     * Registers the attributes objects resources expose, so that Jackson can serialize them in a native image.
+     *
+     * <p>An attributes object never appears as a declared endpoint return type — the framework hands it to its
+     * own mapper as an {@code Object} — so the native-image analysis has no reason to keep its members. Without
+     * registration the class builds fine and then serializes to {@code No serializer found for class ...} on the
+     * first request that returns it.
+     *
+     * <p>{@code Resource<RESOURCE_DTO>} is parameterized by the downstream DTO, not by the attributes type, so
+     * the type argument is the wrong thing to read. The attributes type is whatever
+     * {@link pro.api4.jsonapi4j.domain.Resource#resolveAttributes} is narrowed to by the override — an
+     * implementor that leaves the declared {@code Object} return type in place is telling us nothing, and is
+     * skipped.
+     */
+    @BuildStep
+    void registerResourceAttributesForSerialization(CombinedIndexBuildItem combinedIndex,
+                                                    BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
+        IndexView index = combinedIndex.getIndex();
+        Set<DotName> serializable = new LinkedHashSet<>();
+        for (ClassInfo resource : index.getAllKnownImplementors(RESOURCE_INTERFACE)) {
+            for (MethodInfo method : resource.methods()) {
+                if (method.isSynthetic()
+                        || !Resource.RESOLVE_ATTRIBUTES_METHOD_NAME.equals(method.name())
+                        || method.parametersCount() != 1) {
+                    continue;
+                }
+                Type returnType = method.returnType();
+                if (returnType.kind() != Type.Kind.VOID && !OBJECT_CLASS.equals(returnType.name())) {
+                    collectClassNames(returnType, serializable);
+                }
+            }
+        }
+        serializable.removeIf(name -> index.getClassByName(name) == null);
+        if (serializable.isEmpty()) {
+            return;
+        }
+        addReferencedClasses(index, serializable);
+
+        String[] classNames = serializable.stream().map(DotName::toString).toArray(String[]::new);
+        LOG.info("Registering {} resource attributes classes for native-image serialization", classNames.length);
+        reflectiveClasses.produce(ReflectiveClassBuildItem.builder(classNames)
+                .constructors(true)
+                .methods(true)
+                .fields(true)
+                .serialization(true)
+                .build());
+    }
+
+    /**
+     * Grows the set to include everything reachable from an attributes object, repeatedly, until it stops
+     * changing.
+     *
+     * <p>Jackson walks the whole graph, so a nested type needs registering just as much as the attributes class
+     * that holds it. Subtypes are pulled in too: a field declared as {@code Address} can hold a
+     * {@code HomeAddress} at runtime, and only the declared type is visible from the field alone.
+     *
+     * <p>Types absent from the index are dropped rather than registered — that keeps the JDK and third-party
+     * libraries out, which bring their own native-image metadata and must not be walked here.
+     */
+    private static void addReferencedClasses(IndexView index, Set<DotName> serializable) {
+        Deque<DotName> pending = new ArrayDeque<>(serializable);
+        while (!pending.isEmpty()) {
+            ClassInfo current = index.getClassByName(pending.poll());
+            if (current == null) {
+                continue;
+            }
+            Set<DotName> referenced = new LinkedHashSet<>();
+            current.fields().forEach(field -> collectClassNames(field.type(), referenced));
+            index.getAllKnownSubclasses(current.name()).forEach(subclass -> referenced.add(subclass.name()));
+            for (DotName candidate : referenced) {
+                if (index.getClassByName(candidate) != null && serializable.add(candidate)) {
+                    pending.add(candidate);
+                }
+            }
+        }
+    }
+
+    /**
+     * Collects every class named by a type, looking through the generics and arrays that wrap it.
+     *
+     * <p>A {@code List<Address>} names {@code java.util.List} at the top level; the element type only shows up
+     * in the type arguments, and it is the one that has to be serializable.
+     */
+    private static void collectClassNames(Type type, Set<DotName> out) {
+        switch (type.kind()) {
+            case CLASS -> out.add(type.name());
+            case PARAMETERIZED_TYPE -> {
+                out.add(type.name());
+                type.asParameterizedType().arguments().forEach(argument -> collectClassNames(argument, out));
+            }
+            case ARRAY -> collectClassNames(type.asArrayType().component(), out);
+            default -> { }
+        }
+    }
+
+    /**
      * Registers the classes access control may have to redact, so that redaction works in a native image.
      *
      * <p>Hiding a field produces a copy of the object with that field blanked, and building that copy
@@ -198,8 +391,8 @@ class QuarkusJsonApi4jProcessor {
             LOG.warn("Access control is enabled but no @AccessControl was found in the Jandex index, so "
                     + "nothing was registered for native-image redaction. Quarkus indexes the application "
                     + "module automatically but not its dependencies: if your attributes classes live in "
-                    + "another jar, index it with 'quarkus.index-dependency.<name>.group-id' and "
-                    + "'.artifact-id', or ship that jar with a Jandex index.");
+                    + "another jar, build a Jandex index into it (jandex-maven-plugin), or index it from "
+                    + "the application with 'quarkus.index-dependency.<name>.group-id' and '.artifact-id'.");
             return;
         }
         addClassesHolding(index, redactable);

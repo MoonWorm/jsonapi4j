@@ -17,7 +17,7 @@ public class ConfigResource implements Resource<ConfigResource.ConfigAttributes>
     }
 
     @Override
-    public Object resolveAttributes(ConfigAttributes a) {
+    public ConfigAttributes resolveAttributes(ConfigAttributes a) {
         return a;
     }
 

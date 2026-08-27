@@ -503,15 +503,36 @@ only for classes registered ahead of time. The Quarkus extension registers them 
 `@AccessControl` at build time.
 
 Quarkus indexes your application module automatically but **not its dependencies**. If your attributes
-classes live in a separate jar, index it explicitly or the registration will find nothing:
+classes live in a separate jar, that jar has to carry a Jandex index or the registration will find nothing.
+Build one into it with the Jandex Maven plugin:
+
+```xml
+<plugin>
+    <groupId>io.smallrye</groupId>
+    <artifactId>jandex-maven-plugin</artifactId>
+    <version>3.5.3</version>
+    <executions>
+        <execution>
+            <id>make-index</id>
+            <goals>
+                <goal>jandex</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+That keeps the concern with the module that owns the classes, so every consuming application picks it up
+without configuration. If you cannot change the producing jar — a third-party dependency, say — index it
+from the consuming application instead:
 
 ```properties
 quarkus.index-dependency.my-domain.group-id=com.example
 quarkus.index-dependency.my-domain.artifact-id=my-domain
 ```
 
-Alternatively, ship that jar with a Jandex index. If access control is enabled and no `@AccessControl` is
-found in the index, the build logs a warning naming this property.
+If access control is enabled and no `@AccessControl` is found in the index, the build logs a warning
+naming both options.
 
 ### Telling a caller something was hidden
 

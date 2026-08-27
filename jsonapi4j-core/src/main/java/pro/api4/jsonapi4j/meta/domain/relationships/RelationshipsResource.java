@@ -20,7 +20,7 @@ public class RelationshipsResource implements Resource<RelationshipsResource.Rel
     }
 
     @Override
-    public Object resolveAttributes(RelationshipDescriptorAttributes a) {
+    public RelationshipDescriptorAttributes resolveAttributes(RelationshipDescriptorAttributes a) {
         return a;
     }
 

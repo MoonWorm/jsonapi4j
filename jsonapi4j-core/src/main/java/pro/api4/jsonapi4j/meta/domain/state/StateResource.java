@@ -15,7 +15,7 @@ public class StateResource implements Resource<StateResource.StateAttributes> {
     }
 
     @Override
-    public Object resolveAttributes(StateAttributes a) {
+    public StateAttributes resolveAttributes(StateAttributes a) {
         return a;
     }
 

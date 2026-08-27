@@ -18,7 +18,7 @@ public class ResourcesResource implements Resource<ResourcesResource.ResourceDes
     }
 
     @Override
-    public Object resolveAttributes(ResourceDescriptorAttributes a) {
+    public ResourceDescriptorAttributes resolveAttributes(ResourceDescriptorAttributes a) {
         return a;
     }
 
