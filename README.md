@@ -161,8 +161,8 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
-        scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
-        ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
+            scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")),
+            ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
     private final String creditCardNumber;
 }
