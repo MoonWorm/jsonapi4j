@@ -1452,11 +1452,6 @@
     "securitySchemes" : {
       "Authorization_Code_With_PKCE" : {
         "description" : "Use this grant flow to access personalized user data.",
-        "extensions" : {
-          "x-scopes-required-entitlements" : {
-            "users.read" : [ ]
-          }
-        },
         "flows" : {
           "authorizationCode" : {
             "authorizationUrl" : "http://foo.bar/authorizationUrl",

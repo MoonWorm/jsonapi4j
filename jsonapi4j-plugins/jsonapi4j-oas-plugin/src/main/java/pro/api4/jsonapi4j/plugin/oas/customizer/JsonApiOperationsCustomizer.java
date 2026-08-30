@@ -193,9 +193,19 @@ public class JsonApiOperationsCustomizer {
 
         Operation oasOperation = new Operation();
         // summary
-        oasOperation.setSummary(extraOasOperationInfo.getSummary());
+        oasOperation.setSummary(
+                overrideIfNotBlank(
+                        oasOperationInfo != null ? oasOperationInfo.getSummary() : null,
+                        extraOasOperationInfo.getSummary()
+                )
+        );
         // description
-        oasOperation.setDescription(extraOasOperationInfo.getDescription());
+        oasOperation.setDescription(
+                overrideIfNotBlank(
+                        oasOperationInfo != null ? oasOperationInfo.getDescription() : null,
+                        extraOasOperationInfo.getDescription()
+                )
+        );
         // tags
         oasOperation.setTags(Collections.singletonList(extraOasOperationInfo.getOperationTag()));
         // parameters
@@ -234,6 +244,11 @@ public class JsonApiOperationsCustomizer {
         addOperationExtensions(oasOperation, extraOasOperationInfo.getUrlCompatibleUniqueName(), supportedIncludes);
 
         return oasOperation;
+    }
+
+    private String overrideIfNotBlank(String override,
+                                      String generated) {
+        return StringUtils.isNotBlank(override) ? override : generated;
     }
 
     private Class<?> getPayloadType(Object oasOperationInfoObject) {
@@ -402,18 +417,28 @@ public class JsonApiOperationsCustomizer {
         }
         List<SecurityRequirement> securityRequirements = new ArrayList<>();
         if (securityConfig.isClientCredentialsSupported()) {
-            String schemeName = resolveSecuritySchemeName(OasProperties.OAuth2::clientCredentials);
-            if (schemeName != null) {
-                securityRequirements.add(new SecurityRequirement().addList(schemeName));
-            }
+            addSecurityRequirement(
+                    securityRequirements,
+                    resolveSecuritySchemeName(OasProperties.OAuth2::clientCredentials),
+                    securityConfig.getRequiredScopes()
+            );
         }
         if (securityConfig.isPkceSupported()) {
-            String schemeName = resolveSecuritySchemeName(OasProperties.OAuth2::authorizationCodeWithPkce);
-            if (schemeName != null) {
-                securityRequirements.add(new SecurityRequirement().addList(schemeName, securityConfig.getRequiredScopes()));
-            }
+            addSecurityRequirement(
+                    securityRequirements,
+                    resolveSecuritySchemeName(OasProperties.OAuth2::authorizationCodeWithPkce),
+                    securityConfig.getRequiredScopes()
+            );
         }
         return securityRequirements;
+    }
+
+    private void addSecurityRequirement(List<SecurityRequirement> securityRequirements,
+                                        String schemeName,
+                                        List<String> requiredScopes) {
+        if (schemeName != null) {
+            securityRequirements.add(new SecurityRequirement().addList(schemeName, requiredScopes));
+        }
     }
 
     private String resolveSecuritySchemeName(Function<OasProperties.OAuth2, OasProperties.OAuth2GrantFlow> grantFlowAccessor) {

@@ -24,14 +24,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static pro.api4.jsonapi4j.plugin.oas.OasSecuritySchemaExtensions.X_SCOPES_REQUIRED_ENTITLEMENTS_EXTENSION;
-import static java.util.stream.Collectors.toMap;
 
 @Data
 public class CommonOpenApiCustomizer {
@@ -199,7 +194,7 @@ public class CommonOpenApiCustomizer {
                                                     .authorizationUrl(authorizationCodeWithPkceFlow.authorizationUrl())
                                                     .scopes(getScopes(authorizationCodeWithPkceFlow))
                                     )
-                            ).extensions(getScopesExtensions(authorizationCodeWithPkceFlow))
+                            )
             );
         }
 
@@ -215,24 +210,6 @@ public class CommonOpenApiCustomizer {
             ));
         }
         return scopes;
-    }
-
-    private Map<String, Object> getScopesExtensions(OAuth2GrantFlow oauth2GrantFlow) {
-        if (oauth2GrantFlow.scopes() != null && !oauth2GrantFlow.scopes().isEmpty()) {
-            Map<String, Object> extensions = new LinkedHashMap<>();
-            extensions.put(
-                    X_SCOPES_REQUIRED_ENTITLEMENTS_EXTENSION,
-                    oauth2GrantFlow.scopes().stream()
-                            .collect(
-                                    toMap(
-                                            OasProperties.OAuth2Scope::name,
-                                            OasProperties.OAuth2Scope::requiredEntitlements
-                                    )
-                            )
-            );
-            return extensions;
-        }
-        return Collections.emptyMap();
     }
 
 }

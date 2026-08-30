@@ -118,8 +118,6 @@ public interface OasProperties extends PluginProperties {
 
         String description();
 
-        List<String> requiredEntitlements();
-
     }
 
     interface Server {

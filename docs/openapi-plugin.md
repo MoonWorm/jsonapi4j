@@ -41,7 +41,7 @@ To add metadata beyond what the framework generates automatically (e.g., `info`,
 |-----------|-----------|---------|
 | `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
 | `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Customizes the relationship's OpenAPI schema |
-| `@OasOperationInfo` | On operation class or individual operation methods | Customizes OpenAPI operation metadata (summary, description, tags) |
+| `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary and description, and declares extra query/path parameters and OAuth2 security requirements |
 
 Example:
 
@@ -86,6 +86,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 | `jsonapi4j.oas.oauth2.clientCredentials.name` | not set | OAuth2 client credentials scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.clientCredentials.description` | not set | OAuth2 client credentials description. |
 | `jsonapi4j.oas.oauth2.clientCredentials.tokenUrl` | not set | OAuth2 client credentials token URL. |
+| `jsonapi4j.oas.oauth2.clientCredentials.scopes[*].name` | not set | OAuth2 scope name. |
+| `jsonapi4j.oas.oauth2.clientCredentials.scopes[*].description` | not set | OAuth2 scope description. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.name` | not set | OAuth2 authorization code + PKCE scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.description` | not set | OAuth2 authorization code + PKCE description. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.tokenUrl` | not set | OAuth2 authorization code + PKCE token URL. |

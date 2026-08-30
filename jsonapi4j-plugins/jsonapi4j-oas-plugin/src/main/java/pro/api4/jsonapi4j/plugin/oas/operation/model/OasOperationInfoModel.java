@@ -15,6 +15,10 @@ import java.util.List;
 public class OasOperationInfoModel {
 
     @Builder.Default
+    private String summary = "";
+    @Builder.Default
+    private String description = "";
+    @Builder.Default
     private SecurityConfig securityConfig = SecurityConfig.builder().build();
     @Builder.Default
     private List<Parameter> parameters = Collections.emptyList();
@@ -61,6 +65,8 @@ public class OasOperationInfoModel {
             return null;
         }
         return OasOperationInfoModel.builder()
+                .summary(oasOperationInfo.summary())
+                .description(oasOperationInfo.description())
                 .securityConfig(
                         SecurityConfig.builder()
                                 .clientCredentialsSupported(oasOperationInfo.securityConfig().clientCredentialsSupported())

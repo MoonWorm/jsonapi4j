@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2GrantFlow;
+import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2Scope;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
@@ -20,19 +21,26 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import java.util.List;
 
 /**
- * Builds a single-resource {@link JsonApi4j} whose only operation declares both OAuth2 grant flows, together with the
- * {@link OasProperties} that name the corresponding security schemes. Shared by the tests that assert operation-level
- * security requirements name the schemes exactly as {@link CommonOpenApiCustomizer} declares them.
+ * Builds a single-resource {@link JsonApi4j} around one {@link OasOperationInfo}-annotated read operation, together
+ * with the {@link OasProperties} naming the security schemes those annotations refer to. Shared by the customizer
+ * tests that assert what an annotated operation contributes to the generated document.
  */
-final class OasSecurityTestFixtures {
+final class OasOperationTestFixtures {
 
     static final String SECURED_RESOURCE_TYPE = "secured";
     static final String SCOPE = "secured.read";
+    static final String CUSTOM_SUMMARY = "Fetch one secured thing";
+    static final String CUSTOM_DESCRIPTION = "Returns the secured thing the caller asked for.";
 
-    private OasSecurityTestFixtures() {
+    private OasOperationTestFixtures() {
     }
 
     static JsonApi4j jsonApi4j(OasProperties oasProperties) {
+        return jsonApi4j(oasProperties, new SecuredOperations());
+    }
+
+    static JsonApi4j jsonApi4j(OasProperties oasProperties,
+                               ResourceOperations<SecuredAttributes> operations) {
         List<JsonApi4jPlugin> plugins = List.of(new JsonApiOasPlugin(oasProperties));
         return JsonApi4j.builder()
                 .plugins(plugins)
@@ -40,7 +48,7 @@ final class OasSecurityTestFixtures {
                         .resource(new SecuredResource())
                         .build())
                 .operationsRegistry(OperationsRegistry.builder(plugins)
-                        .operations(new SecuredOperations())
+                        .operations(operations)
                         .build())
                 .build();
     }
@@ -64,7 +72,15 @@ final class OasSecurityTestFixtures {
         grantFlow.setName(name);
         grantFlow.setTokenUrl("http://foo.bar/tokenUrl");
         grantFlow.setAuthorizationUrl("http://foo.bar/authorizationUrl");
+        grantFlow.setScopes(List.of(scope()));
         return grantFlow;
+    }
+
+    private static DefaultOAuth2Scope scope() {
+        DefaultOAuth2Scope scope = new DefaultOAuth2Scope();
+        scope.setName(SCOPE);
+        scope.setDescription("Read-only access to secured data");
+        return scope;
     }
 
     @JsonApiResource(resourceType = SECURED_RESOURCE_TYPE)
@@ -95,6 +111,17 @@ final class OasSecurityTestFixtures {
     )
     public static class SecuredOperations implements ResourceOperations<SecuredAttributes> {
 
+        @Override
+        public SecuredAttributes readById(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class DescribedOperations implements ResourceOperations<SecuredAttributes> {
+
+        @OasOperationInfo(summary = CUSTOM_SUMMARY, description = CUSTOM_DESCRIPTION)
         @Override
         public SecuredAttributes readById(JsonApiRequest request) {
             return new SecuredAttributes(request.getResourceId());

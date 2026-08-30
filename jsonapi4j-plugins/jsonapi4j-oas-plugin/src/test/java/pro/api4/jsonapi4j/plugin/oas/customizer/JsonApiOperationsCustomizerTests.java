@@ -7,18 +7,24 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.DescribedOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizerTestFixtures.build;
-import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.SCOPE;
-import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.SECURED_RESOURCE_TYPE;
-import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.jsonApi4j;
-import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.oasProperties;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_DESCRIPTION;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_SUMMARY;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SCOPE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SECURED_RESOURCE_TYPE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4j;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.oasProperties;
 
 /**
  * Two guarantees this customizer owes the generated document: the reserved meta types registered by
@@ -59,6 +65,42 @@ class JsonApiOperationsCustomizerTests {
     }
 
     @Nested
+    class SummaryAndDescription {
+
+        @Test
+        void customise_annotationOverridesDeclared_preferThemOverGeneratedText() {
+            Operation operation = describedOperation(new DescribedOperations());
+
+            assertThat(operation.getSummary()).isEqualTo(CUSTOM_SUMMARY);
+            assertThat(operation.getDescription()).isEqualTo(CUSTOM_DESCRIPTION);
+        }
+
+        @Test
+        void customise_noAnnotationOverrides_fallBackToGeneratedText() {
+            Operation operation = describedOperation(new SecuredOperations());
+
+            assertThat(operation.getSummary()).isEqualTo("Get single secured");
+            assertThat(operation.getDescription()).isEqualTo("Retrieves secured details by resource id.");
+        }
+
+        private Operation describedOperation(ResourceOperations<SecuredAttributes> operations) {
+            JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
+
+            OpenAPI openApi = new OpenAPI();
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
+                    ROOT_PATH,
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry(),
+                    null
+            );
+            sut.customise(openApi);
+
+            return securedOperation(openApi);
+        }
+
+    }
+
+    @Nested
     class SecurityRequirements {
 
         @Test
@@ -67,7 +109,15 @@ class JsonApiOperationsCustomizerTests {
 
             assertThat(securityRequirements).hasSize(2);
             assertThat(securityRequirements.get(0)).containsOnlyKeys("m2m");
-            assertThat(securityRequirements.get(1)).containsEntry("user-facing", List.of(SCOPE));
+            assertThat(securityRequirements.get(1)).containsOnlyKeys("user-facing");
+        }
+
+        @Test
+        void customise_requiredScopesDeclared_appliesThemToEveryGrantFlow() {
+            List<SecurityRequirement> securityRequirements = securityRequirementsOf(oasProperties("m2m", "user-facing"));
+
+            assertThat(securityRequirements)
+                    .allSatisfy(requirement -> assertThat(requirement.values()).containsExactly(List.of(SCOPE)));
         }
 
         @Test

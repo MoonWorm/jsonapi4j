@@ -234,7 +234,6 @@ public class DefaultOasProperties implements OasProperties {
     public static class DefaultOAuth2Scope implements OAuth2Scope {
         private String name;
         private String description;
-        private List<String> requiredEntitlements = List.of();
 
         @Override
         public String name() {
@@ -244,11 +243,6 @@ public class DefaultOasProperties implements OasProperties {
         @Override
         public String description() {
             return description;
-        }
-
-        @Override
-        public List<String> requiredEntitlements() {
-            return requiredEntitlements;
         }
 
     }

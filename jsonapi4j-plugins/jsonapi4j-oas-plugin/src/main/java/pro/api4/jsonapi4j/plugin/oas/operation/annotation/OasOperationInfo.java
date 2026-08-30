@@ -16,6 +16,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OasOperationInfo {
 
+    /**
+     * Overrides the operation's generated summary. Left empty, the plugin derives one from the operation type and
+     * the resource name.
+     */
+    String summary() default "";
+
+    /**
+     * Overrides the operation's generated description. Left empty, the plugin derives one from the operation type
+     * and the resource name.
+     */
+    String description() default "";
+
     SecurityConfig securityConfig() default @SecurityConfig;
 
     Parameter[] parameters() default {};
