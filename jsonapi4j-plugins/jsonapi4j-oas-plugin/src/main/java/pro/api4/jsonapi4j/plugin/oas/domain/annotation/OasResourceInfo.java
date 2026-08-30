@@ -14,9 +14,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OasResourceInfo {
 
+    /**
+     * Overrides the singular form the plugin otherwise guesses from the resource type, used in the ids of operations
+     * acting on one resource and in the generated prose. The plural form is the resource type itself and needs no
+     * override.
+     */
     String resourceNameSingle() default "";
-
-    String resourceNamePlural() default  "";
 
     Class<?> attributes() default NoAttributes.class;
 

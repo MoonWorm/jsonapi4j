@@ -90,6 +90,42 @@ class JsonApiOperationsCustomizerTests {
     }
 
     /**
+     * Client generators name their methods after {@code operationId}. Without it they fall back to inventing one from
+     * the path and verb, which makes every generated client break the moment a path changes.
+     */
+    @Nested
+    class OperationIds {
+
+        @Test
+        void customise_everyOperation_getsAnOperationId() {
+            assertThat(writeOperationPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .allSatisfy(operation -> assertThat(operation.getOperationId()).isNotBlank());
+        }
+
+        @Test
+        void customise_operations_getDistinctOperationIds() {
+            List<String> operationIds = writeOperationPaths().values().stream()
+                    .flatMap(pathItem -> pathItem.readOperations().stream())
+                    .map(Operation::getOperationId)
+                    .toList();
+
+            assertThat(operationIds).doesNotHaveDuplicates();
+        }
+
+        @Test
+        void customise_operation_namesItAfterTheOperationAndResource() {
+            Paths paths = writeOperationPaths();
+
+            assertThat(paths.get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getPost().getOperationId())
+                    .isEqualTo("create-single-secured");
+            assertThat(paths.get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}").getDelete().getOperationId())
+                    .isEqualTo("delete-single-secured");
+        }
+
+    }
+
+    /**
      * An operation whose only documented outcomes are failures is incomplete as a contract and useless to a client
      * generator, so a success response is published even when the operation answers with no body.
      */

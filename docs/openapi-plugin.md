@@ -90,6 +90,27 @@ optional on create but mandatory on update. To document a body the framework can
 `@OasOperationInfo(payloadType = YourPayload.class)` — the declared type replaces the derived one and its schema is
 registered automatically.
 
+### Operation Ids
+
+Every operation gets an `operationId`, derived from what it does and what it acts on:
+
+```
+get-all-users                        create-single-user
+get-single-user                      update-single-user
+get-user-relatives-relationship      delete-user-relatives-relationship
+```
+
+Client generators name their methods after it, so it is part of your published contract — treat a rename as a
+breaking change.
+
+Your `resourceType` stays exactly as you declared it, plural as JSON:API asks: it is what paths, tags, schema names
+and the `type` member are built from, and `get-all-users` uses it as-is. A singular form appears only where the plural
+would read wrong — in the ids of operations acting on one resource (`get-single-user`) and in the generated summaries
+and descriptions ("Retrieves user details by resource id."). The plugin guesses it from the resource type
+(`countries` → `country`, `addresses` → `address`, `status` → `status`, left alone when unrecognised). Set
+`@OasResourceInfo(resourceNameSingle = …)` on the resource whenever that guess reads wrong. There is no override for
+the plural — that is the resource type itself.
+
 ### Responses
 
 Every operation documents the status it answers with, including the writes that return no body:

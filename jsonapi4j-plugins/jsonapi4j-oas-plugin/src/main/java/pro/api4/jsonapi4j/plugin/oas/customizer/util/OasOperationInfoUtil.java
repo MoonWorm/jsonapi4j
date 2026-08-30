@@ -25,8 +25,7 @@ public final class OasOperationInfoUtil {
     }
 
     public static Info resolveOperationOasInfo(OperationMeta operationMeta,
-                                               String customResourceNameSingle,
-                                               String customResourceNamePlural) {
+                                               String customResourceNameSingle) {
         OperationType operationType = operationMeta.getOperationType();
         ResourceType resourceType = operationMeta.getResourceType();
         RelationshipName relationshipName = operationMeta.getRelationshipName();
@@ -35,16 +34,14 @@ public final class OasOperationInfoUtil {
                 operationType,
                 resourceType,
                 relationshipName,
-                customResourceNameSingle,
-                customResourceNamePlural
+                customResourceNameSingle
         );
         String operationTag = resolveOperationTag(resourceType);
         String operationSummary = resolveOperationSummary(
                 operationType,
                 resourceType,
                 relationshipName,
-                customResourceNameSingle,
-                customResourceNamePlural
+                customResourceNameSingle
         );
         String operationDescription = resolveOperationDescription(
                 operationType,
@@ -109,12 +106,11 @@ public final class OasOperationInfoUtil {
     private static String resolveOperationUrlCompatibleName(OperationType operationType,
                                                             ResourceType resourceType,
                                                             RelationshipName relationshipName,
-                                                            String customResourceNameSingle,
-                                                            String customResourceNamePlural) {
+                                                            String customResourceNameSingle) {
         if (OperationType.READ_RESOURCE_BY_ID == operationType) {
             return "get-single-" + resourceNameSingular(resourceType, customResourceNameSingle);
         } else if (OperationType.READ_MULTIPLE_RESOURCES == operationType) {
-            return "get-all-" + resourceNamePlural(resourceType, customResourceNamePlural).toLowerCase();
+            return "get-all-" + resourceNamePlural(resourceType).toLowerCase();
         } else if (OperationType.CREATE_RESOURCE == operationType) {
             return "create-single-" + resourceNameSingular(resourceType, customResourceNameSingle);
         } else if (OperationType.UPDATE_RESOURCE == operationType) {
@@ -141,12 +137,11 @@ public final class OasOperationInfoUtil {
     private static String resolveOperationSummary(OperationType operationType,
                                                   ResourceType resourceType,
                                                   RelationshipName relationshipName,
-                                                  String customResourceNameSingle,
-                                                  String customResourceNamePlural) {
+                                                  String customResourceNameSingle) {
         if (OperationType.READ_RESOURCE_BY_ID == operationType) {
             return "Get single " + resourceNameSingular(resourceType, customResourceNameSingle);
         } else if (OperationType.READ_MULTIPLE_RESOURCES == operationType) {
-            return "Get all " + resourceNamePlural(resourceType, customResourceNamePlural);
+            return "Get all " + resourceNamePlural(resourceType);
         } else if (OperationType.CREATE_RESOURCE == operationType) {
             return "Create single " + resourceNameSingular(resourceType, customResourceNameSingle);
         } else if (OperationType.UPDATE_RESOURCE == operationType) {
@@ -224,26 +219,46 @@ public final class OasOperationInfoUtil {
     private static String resourceNameSingular(ResourceType resourceType,
                                                String customResourceNameSingle) {
         return StringUtils.isBlank(customResourceNameSingle)
-                ? OasOperationInfoUtil.removeLastCharIfPlural(resourceType)
+                ? singularize(resourceType)
                 : customResourceNameSingle;
     }
 
-    private static String resourceNamePlural(ResourceType resourceType,
-                                             String customResourceNamePlural) {
-        return StringUtils.isBlank(customResourceNamePlural)
-                ? uncapitalize(resourceType.getType())
-                : customResourceNamePlural;
+    /**
+     * The plural form is the resource type itself — JSON:API asks for it to be plural, so there is nothing to guess
+     * and nothing to override.
+     */
+    private static String resourceNamePlural(ResourceType resourceType) {
+        return uncapitalize(resourceType.getType());
     }
 
-    private static String removeLastCharIfPlural(ResourceType resourceType) {
-        String str = resourceType.getType();
-        if (StringUtils.isBlank(str)) {
-            return str;
+    /**
+     * Singularizes a resource type for use in operation names and prose.
+     * <p>
+     * Handles the English plural endings that a resource type is likely to use; anything it cannot recognise is left
+     * alone, on the grounds that an unchanged word reads better than a mangled one. This is a convenience, not a
+     * linguistic engine — declare {@link pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo#resourceNameSingle()}
+     * whenever the guess would be wrong, since the result reaches clients as generated method names.
+     */
+    static String singularize(ResourceType resourceType) {
+        String type = uncapitalize(resourceType.getType());
+        if (StringUtils.isBlank(type) || !type.endsWith("s")) {
+            return type;
         }
-        if (str.charAt(str.length() - 1) == 's') {
-            return str.substring(0, str.length() - 1);
+        // countries -> country, but days -> day
+        if (type.endsWith("ies") && type.length() > 3) {
+            return type.substring(0, type.length() - 3) + "y";
         }
-        return uncapitalize(str);
+        // addresses -> address, boxes -> box, batches -> batch
+        for (String ending : new String[]{"sses", "xes", "zes", "ches", "shes"}) {
+            if (type.endsWith(ending)) {
+                return type.substring(0, type.length() - 2);
+            }
+        }
+        // status, bonus - not plurals at all
+        if (type.endsWith("us") || type.endsWith("ss")) {
+            return type;
+        }
+        return type.substring(0, type.length() - 1);
     }
 
     public static ResponseType resolveOperationResponseType(OperationType operationType) {

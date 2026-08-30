@@ -44,7 +44,6 @@ import java.util.function.Function;
 
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
-import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.URL_COMPATIBLE_UNIQUE_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensions.X_OPERATION_PROPERTIES;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveRelationshipOperationPath;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveResourceOperationPath;
@@ -187,12 +186,13 @@ public class JsonApiOperationsCustomizer {
         Object oasResourceInfoObject = MapUtils.emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
         OasOperationInfoUtil.Info extraOasOperationInfo = OasOperationInfoUtil.resolveOperationOasInfo(
                 operationMeta,
-                getResourceCustomNameSingle(oasResourceInfoObject),
-                getResourceCustomNamePlural(oasResourceInfoObject)
+                getResourceCustomNameSingle(oasResourceInfoObject)
         );
         List<String> supportedIncludes = getSupportedIncludes(extraOasOperationInfo);
 
         Operation oasOperation = new Operation();
+        // operationId — what client generators name the method after, so every operation gets one
+        oasOperation.setOperationId(extraOasOperationInfo.getUrlCompatibleUniqueName());
         // summary
         oasOperation.setSummary(
                 overrideIfNotBlank(
@@ -249,7 +249,7 @@ public class JsonApiOperationsCustomizer {
             }
         }
         // oas extensions
-        addOperationExtensions(oasOperation, extraOasOperationInfo.getUrlCompatibleUniqueName(), supportedIncludes);
+        addOperationExtensions(oasOperation, supportedIncludes);
 
         return oasOperation;
     }
@@ -285,15 +285,6 @@ public class JsonApiOperationsCustomizer {
         if (oasResourceInfoObject instanceof OasResourceInfoModel oasResourceInfo) {
             if (StringUtils.isNotBlank(oasResourceInfo.getResourceNameSingle())) {
                 return oasResourceInfo.getResourceNameSingle();
-            }
-        }
-        return null;
-    }
-
-    private String getResourceCustomNamePlural(Object oasResourceInfoObject) {
-        if (oasResourceInfoObject instanceof OasResourceInfoModel oasResourceInfo) {
-            if (StringUtils.isNotBlank(oasResourceInfo.getResourceNamePlural())) {
-                return oasResourceInfo.getResourceNamePlural();
             }
         }
         return null;
@@ -561,31 +552,23 @@ public class JsonApiOperationsCustomizer {
         return cursorParam;
     }
 
+    /**
+     * Publishes the relationships an operation accepts in {@code include}. The operation's unique name used to live
+     * here too, under a vendor key no tooling knows; it is now the standard {@code operationId}.
+     */
     private void addOperationExtensions(Operation operation,
-                                        String urlCompatibleUniqueName,
                                         List<String> supportedIncludes) {
-        if (CollectionUtils.isNotEmpty(supportedIncludes)) {
-            if (operation.getExtensions() == null) {
-                Map<String, Object> extensions = new LinkedHashMap<>();
-                operation.setExtensions(extensions);
-            }
-
-            if (!operation.getExtensions().containsKey(X_OPERATION_PROPERTIES)) {
-                Map<String, Object> operationExtensions = new LinkedHashMap<>();
-                operation.getExtensions().put(X_OPERATION_PROPERTIES, operationExtensions);
-            }
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> operationExtensions
-                    = (Map<String, Object>) operation.getExtensions().get(X_OPERATION_PROPERTIES);
-
-            if (StringUtils.isNotEmpty(urlCompatibleUniqueName)) {
-                operationExtensions.put(URL_COMPATIBLE_UNIQUE_NAME, urlCompatibleUniqueName);
-            }
-            if (CollectionUtils.isNotEmpty(supportedIncludes)) {
-                operationExtensions.put(JSONAPI_AVAILABLE_RELATIONSHIPS, supportedIncludes);
-            }
+        if (CollectionUtils.isEmpty(supportedIncludes)) {
+            return;
         }
+        if (operation.getExtensions() == null) {
+            operation.setExtensions(new LinkedHashMap<>());
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> operationExtensions = (Map<String, Object>) operation.getExtensions()
+                .computeIfAbsent(X_OPERATION_PROPERTIES, key -> new LinkedHashMap<String, Object>());
+        operationExtensions.put(JSONAPI_AVAILABLE_RELATIONSHIPS, supportedIncludes);
     }
 
 }

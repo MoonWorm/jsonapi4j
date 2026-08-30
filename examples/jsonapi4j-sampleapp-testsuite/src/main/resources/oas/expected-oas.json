@@ -900,6 +900,7 @@
     "/jsonapi/countries" : {
       "get" : {
         "description" : "Retrieves all country details with available filters (if applicable).",
+        "operationId" : "get-all-countries",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
           "example" : "currencies",
@@ -1094,14 +1095,14 @@
         "summary" : "Get all countries",
         "tags" : [ "Countries" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "currencies" ],
-          "url-compatible-unique-name" : "get-all-countries"
+          "jsonapi-available-relationships" : [ "currencies" ]
         }
       }
     },
     "/jsonapi/countries/{id}" : {
       "get" : {
         "description" : "Retrieves country details by resource id.",
+        "operationId" : "get-single-country",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
           "example" : "currencies",
@@ -1273,14 +1274,14 @@
         "summary" : "Get single country",
         "tags" : [ "Countries" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "currencies" ],
-          "url-compatible-unique-name" : "get-single-country"
+          "jsonapi-available-relationships" : [ "currencies" ]
         }
       }
     },
     "/jsonapi/countries/{id}/relationships/currencies" : {
       "get" : {
         "description" : "Retrieves currencies to-many relationship details of the related country resource.",
+        "operationId" : "get-country-currencies-relationship",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
           "example" : "currencies",
@@ -1460,14 +1461,14 @@
         "summary" : "Relationship: currencies",
         "tags" : [ "Countries" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "currencies" ],
-          "url-compatible-unique-name" : "get-country-currencies-relationship"
+          "jsonapi-available-relationships" : [ "currencies" ]
         }
       }
     },
     "/jsonapi/currencies" : {
       "get" : {
         "description" : "Retrieves all currency details with available filters (if applicable).",
+        "operationId" : "get-all-currencies",
         "parameters" : [ {
           "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
           "in" : "query",
@@ -1641,6 +1642,7 @@
     "/jsonapi/users" : {
       "get" : {
         "description" : "Retrieves all user details with available filters (if applicable).",
+        "operationId" : "get-all-users",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
           "example" : "citizenships",
@@ -1823,12 +1825,12 @@
         "summary" : "Get all users",
         "tags" : [ "Users" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ],
-          "url-compatible-unique-name" : "get-all-users"
+          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ]
         }
       },
       "post" : {
         "description" : "Creates a new instance of user's resource with relationships (if applicable).",
+        "operationId" : "create-single-user",
         "parameters" : [ ],
         "requestBody" : {
           "content" : {
@@ -2007,6 +2009,7 @@
     "/jsonapi/users/{id}" : {
       "delete" : {
         "description" : "Deletes the existing instance of user's resource.",
+        "operationId" : "delete-single-user",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -2159,6 +2162,7 @@
       },
       "get" : {
         "description" : "Retrieves user details by resource id.",
+        "operationId" : "get-single-user",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
           "example" : "citizenships",
@@ -2330,12 +2334,12 @@
         "summary" : "Get single user",
         "tags" : [ "Users" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ],
-          "url-compatible-unique-name" : "get-single-user"
+          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ]
         }
       },
       "patch" : {
         "description" : "Updates the existing instance of user's resource.",
+        "operationId" : "update-single-user",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -2515,6 +2519,7 @@
     "/jsonapi/users/{id}/relationships/citizenships" : {
       "delete" : {
         "description" : "Removes members from citizenships to-many relationship of the related user resource.",
+        "operationId" : "delete-user-citizenships-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -2687,6 +2692,7 @@
       },
       "get" : {
         "description" : "Retrieves citizenships to-many relationship details of the related user resource.",
+        "operationId" : "get-user-citizenships-relationship",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships",
           "example" : "citizenships",
@@ -2866,12 +2872,12 @@
         "summary" : "Relationship: citizenships",
         "tags" : [ "Users" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "citizenships" ],
-          "url-compatible-unique-name" : "get-user-citizenships-relationship"
+          "jsonapi-available-relationships" : [ "citizenships" ]
         }
       },
       "patch" : {
         "description" : "Manages citizenships to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-citizenships-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -3044,6 +3050,7 @@
       },
       "post" : {
         "description" : "Adds members to citizenships to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "operationId" : "add-user-citizenships-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -3218,6 +3225,7 @@
     "/jsonapi/users/{id}/relationships/placeOfBirth" : {
       "get" : {
         "description" : "Retrieves placeOfBirth to-one relationship details of the related user resource.",
+        "operationId" : "get-user-placeofbirth-relationship",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth",
           "example" : "placeOfBirth",
@@ -3389,12 +3397,12 @@
         "summary" : "Relationship: placeOfBirth(read)",
         "tags" : [ "Users" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "placeOfBirth" ],
-          "url-compatible-unique-name" : "get-user-placeofbirth-relationship"
+          "jsonapi-available-relationships" : [ "placeOfBirth" ]
         }
       },
       "patch" : {
         "description" : "Manages placeOfBirth to-one relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-placeofbirth-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -3569,6 +3577,7 @@
     "/jsonapi/users/{id}/relationships/relatives" : {
       "delete" : {
         "description" : "Removes members from relatives to-many relationship of the related user resource.",
+        "operationId" : "delete-user-relatives-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -3741,6 +3750,7 @@
       },
       "get" : {
         "description" : "Retrieves relatives to-many relationship details of the related user resource.",
+        "operationId" : "get-user-relatives-relationship",
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives",
           "example" : "relatives",
@@ -3920,12 +3930,12 @@
         "summary" : "Relationship: relatives",
         "tags" : [ "Users" ],
         "x-operation-properties" : {
-          "jsonapi-available-relationships" : [ "relatives" ],
-          "url-compatible-unique-name" : "get-user-relatives-relationship"
+          "jsonapi-available-relationships" : [ "relatives" ]
         }
       },
       "patch" : {
         "description" : "Manages relatives to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-relatives-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",
@@ -4098,6 +4108,7 @@
       },
       "post" : {
         "description" : "Adds members to relatives to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "operationId" : "add-user-relatives-relationship",
         "parameters" : [ {
           "description" : "Resource id. Required",
           "in" : "path",

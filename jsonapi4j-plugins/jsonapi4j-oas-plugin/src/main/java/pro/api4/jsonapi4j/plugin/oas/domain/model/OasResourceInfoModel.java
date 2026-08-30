@@ -13,8 +13,6 @@ public class OasResourceInfoModel {
     @Builder.Default
     private String resourceNameSingle = "";
     @Builder.Default
-    private String resourceNamePlural = "";
-    @Builder.Default
     private Class<?> attributes = NoAttributes.class;
 
     public static OasResourceInfoModel fromAnnotation(OasResourceInfo oasResourceInfo) {
@@ -23,7 +21,6 @@ public class OasResourceInfoModel {
         }
         return OasResourceInfoModel.builder()
                 .resourceNameSingle(oasResourceInfo.resourceNameSingle())
-                .resourceNamePlural(oasResourceInfo.resourceNamePlural())
                 .attributes(oasResourceInfo.attributes())
                 .build();
     }
