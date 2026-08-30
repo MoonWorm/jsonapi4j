@@ -56,6 +56,22 @@ class JsonApiResponseSchemaCustomizerTests {
     }
 
     /**
+     * The single-resource and multiple-resources documents describe what an operation returns, so they are published
+     * for the operations that return them rather than for any resource that happens to have operations at all.
+     */
+    @Nested
+    class DocumentsPerOperation {
+
+        @Test
+        void customise_readByIdNotConfigured_publishesNoSingleResourceDoc() {
+            Map<String, Schema> schemas = responseSchemas(OasLinkageMetaTestFixtures.jsonApi4jWithWrites());
+
+            assertThat(schemas).doesNotContainKeys("OwnedSingleResourceDoc", "OwnedMultipleResourcesDoc");
+        }
+
+    }
+
+    /**
      * A relationship declaring resource linkage meta gets a document of its own, whose linkage carries a typed
      * {@code meta}. Both the document and everything it pulls in must end up registered — a schema that is referenced
      * and never registered is a dangling {@code $ref}.

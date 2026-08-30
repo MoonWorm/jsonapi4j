@@ -2,6 +2,9 @@ package pro.api4.jsonapi4j.http;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+import java.util.Optional;
+
 /**
  * Enumeration of HTTP status codes used and produced by the framework.
  * <p>
@@ -92,6 +95,19 @@ public enum HttpStatusCodes {
     HttpStatusCodes(int code, String description) {
         this.code = code;
         this.description = description;
+    }
+
+    /**
+     * Looks a status up by its numeric code, so a caller holding a bare {@code int} — such as the one
+     * {@link pro.api4.jsonapi4j.operation.OperationType#getHttpStatus()} returns — can recover its description.
+     *
+     * @param code numeric HTTP status code
+     * @return the matching constant, or empty when this enum lists no such code
+     */
+    public static Optional<HttpStatusCodes> fromCode(int code) {
+        return Arrays.stream(values())
+                .filter(status -> status.code == code)
+                .findFirst();
     }
 
 }

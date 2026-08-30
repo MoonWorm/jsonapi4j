@@ -36,63 +36,65 @@ public class CommonOpenApiCustomizer {
     private final OperationsRegistry operationsRegistry;
 
     public void customise(OpenAPI openApi) {
+        // tags come from the registries, so they are the one thing that survives an absent config section
+        enrichTags(openApi);
+        if (oasProperties == null) {
+            return;
+        }
         enrichOpenApiInfo(openApi);
         enrichExternalDocs(openApi);
         enrichServers(openApi);
-        enrichTags(openApi);
         enrichSecuritySchemas(openApi);
     }
 
     private void enrichOpenApiInfo(OpenAPI openApi) {
-        if (oasProperties != null) {
-            if (oasProperties.info() != null) {
-                if (openApi.getInfo() == null) {
-                    openApi.setInfo(new Info());
-                }
-                if (StringUtils.isNotBlank(oasProperties.info().title())) {
-                    openApi.getInfo().setTitle(oasProperties.info().title());
-                }
-                if (StringUtils.isNotBlank(oasProperties.info().version())) {
-                    openApi.getInfo().setVersion(oasProperties.info().version());
-                }
-                if (StringUtils.isNotBlank(oasProperties.info().description())) {
-                    openApi.getInfo().setDescription(oasProperties.info().description());
-                }
-                if (StringUtils.isNotBlank(oasProperties.info().termsOfService())) {
-                    openApi.getInfo().setTermsOfService(oasProperties.info().termsOfService());
-                }
-                if (MapUtils.isEmpty(oasProperties.info().extensions())) {
-                    openApi.getInfo().setExtensions(oasProperties.info().extensions());
-                }
+        if (oasProperties.info() != null) {
+            if (openApi.getInfo() == null) {
+                openApi.setInfo(new Info());
+            }
+            if (StringUtils.isNotBlank(oasProperties.info().title())) {
+                openApi.getInfo().setTitle(oasProperties.info().title());
+            }
+            if (StringUtils.isNotBlank(oasProperties.info().version())) {
+                openApi.getInfo().setVersion(oasProperties.info().version());
+            }
+            if (StringUtils.isNotBlank(oasProperties.info().description())) {
+                openApi.getInfo().setDescription(oasProperties.info().description());
+            }
+            if (StringUtils.isNotBlank(oasProperties.info().termsOfService())) {
+                openApi.getInfo().setTermsOfService(oasProperties.info().termsOfService());
+            }
+            if (MapUtils.isNotEmpty(oasProperties.info().extensions())) {
+                openApi.getInfo().setExtensions(oasProperties.info().extensions());
+            }
 
-                if (oasProperties.info().contact() != null) {
-                    if (openApi.getInfo().getContact() == null) {
-                        openApi.getInfo().setContact(new Contact());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().contact().name())) {
-                        openApi.getInfo().getContact().setName(oasProperties.info().contact().name());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().contact().url())) {
-                        openApi.getInfo().getContact().setUrl(oasProperties.info().contact().url());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().contact().email())) {
-                        openApi.getInfo().getContact().setEmail(oasProperties.info().contact().email());
-                    }
+            if (oasProperties.info().contact() != null) {
+                if (openApi.getInfo().getContact() == null) {
+                    openApi.getInfo().setContact(new Contact());
                 }
+                if (StringUtils.isNotBlank(oasProperties.info().contact().name())) {
+                    openApi.getInfo().getContact().setName(oasProperties.info().contact().name());
+                }
+                if (StringUtils.isNotBlank(oasProperties.info().contact().url())) {
+                    openApi.getInfo().getContact().setUrl(oasProperties.info().contact().url());
+                }
+                if (StringUtils.isNotBlank(oasProperties.info().contact().email())) {
+                    openApi.getInfo().getContact().setEmail(oasProperties.info().contact().email());
+                }
+            }
 
-                if (oasProperties.info().license() != null) {
-                    if (openApi.getInfo().getLicense() == null) {
-                        openApi.getInfo().setLicense(new License());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().license().name())) {
-                        openApi.getInfo().getLicense().setName(oasProperties.info().license().name());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().license().url())) {
-                        openApi.getInfo().getLicense().setUrl(oasProperties.info().license().url());
-                    }
-                    if (StringUtils.isNotBlank(oasProperties.info().license().identifier())) {
-                        openApi.getInfo().getLicense().setIdentifier(oasProperties.info().license().identifier());
-                    }
+            if (oasProperties.info().license() != null) {
+                if (openApi.getInfo().getLicense() == null) {
+                    openApi.getInfo().setLicense(new License());
+                }
+                if (StringUtils.isNotBlank(oasProperties.info().license().name())) {
+                    openApi.getInfo().getLicense().setName(oasProperties.info().license().name());
+                }
+                if (StringUtils.isNotBlank(oasProperties.info().license().url())) {
+                    openApi.getInfo().getLicense().setUrl(oasProperties.info().license().url());
+                }
+                if (StringUtils.isNotBlank(oasProperties.info().license().identifier())) {
+                    openApi.getInfo().getLicense().setIdentifier(oasProperties.info().license().identifier());
                 }
             }
         }
@@ -153,7 +155,7 @@ public class CommonOpenApiCustomizer {
             if (openApi.getComponents() == null) {
                 openApi.setComponents(new Components());
             }
-            if (openApi.getComponents().getSchemas() == null) {
+            if (openApi.getComponents().getSecuritySchemes() == null) {
                 openApi.getComponents().setSecuritySchemes(new HashMap<>());
             }
             openApi.getComponents().getSecuritySchemes().putAll(

@@ -2,25 +2,85 @@
   "components" : {
     "examples" : {
       "Bad_Request_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"550e8401-e29b-41d4-a716-446655440000\",\n      \"status\": \"400\",\n      \"code\": \"INVALID_ENUM_VALUE\",\n      \"detail\": \"countryCca2 must be a valid ISO2 string\",\n      \"source\": {\n        \"parameter\": \"countryCca2\"\n      }\n    },\n    {\n      \"id\": \"770e8402-e29b-41d4-a716-446655440000\",\n      \"status\": \"400\",\n      \"code\": \"VALUE_INVALID_FORMAT\",\n      \"detail\": \"region should be a valid region string: ['europe', 'asia', 'africa', etc.]\",\n      \"source\": {\n        \"parameter\": \"filter[region]\"\n      }\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "INVALID_ENUM_VALUE",
+            "detail" : "countryCca2 must be a valid ISO2 string",
+            "id" : "550e8401-e29b-41d4-a716-446655440000",
+            "source" : {
+              "parameter" : "countryCca2"
+            },
+            "status" : "400"
+          }, {
+            "code" : "VALUE_INVALID_FORMAT",
+            "detail" : "region should be a valid region string: ['europe', 'asia', 'africa', etc.]",
+            "id" : "770e8402-e29b-41d4-a716-446655440000",
+            "source" : {
+              "parameter" : "filter[region]"
+            },
+            "status" : "400"
+          } ]
+        }
       },
       "Internal_Server_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"120e8403-e29b-41d4-a716-446655440000\",\n      \"status\": \"500\",\n      \"code\": \"INTERNAL_SERVER_ERROR\",\n      \"detail\": \"The service encountered an error\"\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "INTERNAL_SERVER_ERROR",
+            "detail" : "The service encountered an error",
+            "id" : "120e8403-e29b-41d4-a716-446655440000",
+            "status" : "500"
+          } ]
+        }
       },
       "Method_Not_Supported_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"ddc96100-efe7-4217-b9d5-e36877c6197a\",\n      \"status\": \"405\",\n      \"code\": \"METHOD_NOT_SUPPORTED\",\n      \"detail\": \"HTTP method is not supported: PATCH. Ensure a proper HTTP method for an HTTP request is used: GET, POST\"\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "METHOD_NOT_SUPPORTED",
+            "detail" : "HTTP method is not supported: PATCH. Ensure a proper HTTP method for an HTTP request is used: GET, POST",
+            "id" : "ddc96100-efe7-4217-b9d5-e36877c6197a",
+            "status" : "405"
+          } ]
+        }
       },
       "Not_Acceptable_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"e9e3c771-f8fb-4f36-a01e-713d2f98dd43\",\n      \"status\": \"406\",\n      \"code\": \"NOT_ACCEPTABLE\",\n      \"detail\": \"Not acceptable. The server doesn't support any of the requested by client acceptable content types.\"\n    }\n  ]\n}"
+        "value" : {
+          "errors" : [ {
+            "code" : "NOT_ACCEPTABLE",
+            "detail" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types.",
+            "id" : "e9e3c771-f8fb-4f36-a01e-713d2f98dd43",
+            "status" : "406"
+          } ]
+        }
       },
       "Resource_Not_Found_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"770e8406-e29b-41d4-a716-446655440000\",\n      \"status\": \"404\",\n      \"code\": \"NOT_FOUND\",\n      \"detail\": \"'users' resource of a given id (43023048) is not found\"\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "NOT_FOUND",
+            "detail" : "'users' resource of a given id (43023048) is not found",
+            "id" : "770e8406-e29b-41d4-a716-446655440000",
+            "status" : "404"
+          } ]
+        }
       },
       "Too_Many_Requests_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"880e8407-e29b-41d4-a716-446655440321\",\n      \"status\": \"429\",\n      \"code\": \"TOO_MANY_REQUESTS\",\n      \"detail\": \"Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.\"\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "TOO_MANY_REQUESTS",
+            "detail" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "id" : "880e8407-e29b-41d4-a716-446655440321",
+            "status" : "429"
+          } ]
+        }
       },
       "Unsupported_Media_Type_Errors_Doc" : {
-        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"880e8407-e29b-41d4-a716-446655440000\",\n      \"status\": \"415\",\n      \"code\": \"UNSUPPORTED_MEDIA_TYPE\",\n      \"detail\": \"Unsupported Media Type: application/json. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - application/vnd.api+json.\"\n    }\n  ]\n}\n"
+        "value" : {
+          "errors" : [ {
+            "code" : "UNSUPPORTED_MEDIA_TYPE",
+            "detail" : "Unsupported Media Type: application/json. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - application/vnd.api+json.",
+            "id" : "880e8407-e29b-41d4-a716-446655440000",
+            "status" : "415"
+          } ]
+        }
       }
     },
     "schemas" : {
@@ -895,7 +955,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -1074,7 +1134,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -1261,7 +1321,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -1438,7 +1498,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -1624,7 +1684,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -1789,7 +1849,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "Created. The request has been fulfilled and a new resource has been created."
           },
           "400" : {
             "content" : {
@@ -1957,6 +2017,9 @@
           }
         } ],
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2128,7 +2191,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -2293,6 +2356,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2469,6 +2535,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2658,7 +2727,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -2823,6 +2892,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2992,6 +3064,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -3175,7 +3250,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -3340,6 +3415,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -3511,6 +3589,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -3700,7 +3781,7 @@
                 }
               }
             },
-            "description" : "Happy path scenario"
+            "description" : "OK. The request has succeeded."
           },
           "400" : {
             "content" : {
@@ -3865,6 +3946,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -4034,6 +4118,9 @@
           "required" : true
         },
         "responses" : {
+          "204" : {
+            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+          },
           "400" : {
             "content" : {
               "application/vnd.api+json" : {

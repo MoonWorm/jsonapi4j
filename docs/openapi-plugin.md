@@ -90,6 +90,19 @@ optional on create but mandatory on update. To document a body the framework can
 `@OasOperationInfo(payloadType = YourPayload.class)` — the declared type replaces the derived one and its schema is
 registered automatically.
 
+### Responses
+
+Every operation documents the status it answers with, including the writes that return no body:
+
+| Operation | Success response |
+|-----------|------------------|
+| `GET` (resource, collection, relationship) | `200` with the corresponding document |
+| `POST /{type}` | `201` with `<Type>SingleResourceDoc` |
+| `PATCH` / `DELETE`, and every relationship write | `204`, no body |
+
+Error responses carry a ready example per status code, embedded as JSON so that spec linters and mock servers read
+them as documents rather than as strings.
+
 ### Available Properties
 
 | Property name                               | Default value | Description                                                                                                             |

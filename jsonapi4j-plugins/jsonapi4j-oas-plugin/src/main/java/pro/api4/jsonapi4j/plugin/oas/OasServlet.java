@@ -35,8 +35,14 @@ public class OasServlet extends HttpServlet {
     private String rootPath;
     private OasProperties oasProperties;
 
-    private String cachedOasJson;
-    private String cachedOasYaml;
+    /**
+     * A servlet instance is shared by every request thread, so these need safe publication: without {@code volatile}
+     * a thread may keep reading {@code null} after another has filled the cache, and rebuild the document for nothing.
+     * Concurrent first requests may still each build one — the result is identical either way, so the cost is wasted
+     * work rather than a wrong answer, and that is cheaper than serialising every request behind a lock.
+     */
+    private volatile String cachedOasJson;
+    private volatile String cachedOasYaml;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -59,12 +65,10 @@ public class OasServlet extends HttpServlet {
                            HttpServletResponse resp) throws IOException {
 
         String format = getFormat(req);
-        if (format.equalsIgnoreCase(YAML_FORMAT) && cachedOasYaml != null) {
-            writeCachedOasYamlToResponse(resp);
-            return;
-        }
-        if (format.equalsIgnoreCase(JSON_FORMAT) && cachedOasJson != null) {
-            writeCachedOasJsonToResponse(resp);
+        boolean yaml = format.equals(YAML_FORMAT);
+        String cached = yaml ? cachedOasYaml : cachedOasJson;
+        if (cached != null) {
+            writeToResponse(resp, yaml, cached);
             return;
         }
 
@@ -79,7 +83,7 @@ public class OasServlet extends HttpServlet {
                 oasProperties
         ).customise(openAPI);
         new ErrorExamplesCustomizer().customise(openAPI);
-        writeOasToResponse(resp, format, openAPI);
+        writeOasToResponse(resp, yaml, openAPI);
     }
 
     private String getFormat(HttpServletRequest req) {
@@ -91,16 +95,12 @@ public class OasServlet extends HttpServlet {
 
     }
 
-    private void writeCachedOasYamlToResponse(HttpServletResponse resp) throws IOException {
-        resp.setContentType(YAML_CONTENT_TYPE);
+    private void writeToResponse(HttpServletResponse resp,
+                                 boolean yaml,
+                                 String oasString) throws IOException {
+        resp.setContentType(yaml ? YAML_CONTENT_TYPE : JSON_CONTENT_TYPE);
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        resp.getWriter().write(cachedOasYaml);
-    }
-
-    private void writeCachedOasJsonToResponse(HttpServletResponse resp) throws IOException {
-        resp.setContentType(JSON_CONTENT_TYPE);
-        resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        resp.getWriter().write(cachedOasJson);
+        resp.getWriter().write(oasString);
     }
 
     /**
@@ -109,18 +109,15 @@ public class OasServlet extends HttpServlet {
      * a plain mapper serializes them as if they were OpenAPI keywords, which they are not.
      */
     private void writeOasToResponse(HttpServletResponse resp,
-                                    String format,
+                                    boolean yaml,
                                     OpenAPI openAPI) throws IOException {
-        boolean yaml = format.equals(YAML_FORMAT);
-        resp.setContentType(yaml ? YAML_CONTENT_TYPE : JSON_CONTENT_TYPE);
-        resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
         String oasString = yaml ? Yaml.pretty(openAPI) : Json.pretty(openAPI);
         if (yaml) {
             cachedOasYaml = oasString;
         } else {
             cachedOasJson = oasString;
         }
-        resp.getWriter().write(oasString);
+        writeToResponse(resp, yaml, oasString);
     }
 
 }

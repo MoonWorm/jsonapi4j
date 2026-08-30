@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -7,10 +9,11 @@ import io.swagger.v3.oas.models.examples.Example;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class ErrorExamplesCustomizer {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final String BAD_REQUEST_ERRORS_DOC = "Bad_Request_Errors_Doc";
     public static final String RESOURCE_NOT_FOUND_ERRORS_DOC = "Resource_Not_Found_Errors_Doc";
@@ -44,14 +47,20 @@ public class ErrorExamplesCustomizer {
                 .addExamples(RESOURCE_NOT_FOUND_ERRORS_DOC, new Example().value(readExampleFromResource("resourceNotFoundErrorsDoc.json")));
     }
 
-    private String readExampleFromResource(String fileName) {
+    /**
+     * Parses the example rather than embedding its source text. Handing the raw {@code String} to
+     * {@link Example#value(Object)} publishes the example as a JSON string literal, which Swagger UI happens to render
+     * as if it were JSON but no machine reads that way: the example then contradicts the media type's schema, and
+     * tools that build mock responses from the document return the escaped text instead of an error document.
+     */
+    private JsonNode readExampleFromResource(String fileName) {
         String path = "oas/errorExamples/" + fileName;
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
             if (is == null) {
                 throw new IllegalArgumentException("wrong path");
             }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            return OBJECT_MAPPER.readTree(is);
         } catch (IOException e) {
             return null;
         }

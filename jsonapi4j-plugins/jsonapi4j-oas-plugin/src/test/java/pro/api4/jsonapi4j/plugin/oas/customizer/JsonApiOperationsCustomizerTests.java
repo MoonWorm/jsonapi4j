@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,10 @@ class JsonApiOperationsCustomizerTests {
         return openApi.getPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}").getGet();
     }
 
+    private static Paths writeOperationPaths() {
+        return documentedPaths(new WriteOperations());
+    }
+
     private static Paths documentedPaths(ResourceOperations<SecuredAttributes> operations) {
         JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
 
@@ -80,6 +85,47 @@ class JsonApiOperationsCustomizerTests {
 
             Set<String> paths = openApi.getPaths() == null ? Set.of() : openApi.getPaths().keySet();
             assertThat(paths).isEmpty();
+        }
+
+    }
+
+    /**
+     * An operation whose only documented outcomes are failures is incomplete as a contract and useless to a client
+     * generator, so a success response is published even when the operation answers with no body.
+     */
+    @Nested
+    class SuccessResponses {
+
+        @Test
+        void customise_operationReturningNoBody_documentsItsSuccessStatus() {
+            ApiResponse response = successResponseOf(writeOperationPaths()
+                    .get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}").getPatch(), "204");
+
+            assertThat(response.getDescription()).startsWith("No Content.");
+            assertThat(response.getContent()).isNull();
+        }
+
+        @Test
+        void customise_operationReturningABody_documentsStatusAndContent() {
+            ApiResponse response = successResponseOf(writeOperationPaths()
+                    .get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getPost(), "201");
+
+            assertThat(response.getDescription()).startsWith("Created.");
+            assertThat(response.getContent().get(JsonApiMediaType.MEDIA_TYPE).getSchema().get$ref())
+                    .isEqualTo("#/components/schemas/SecuredSingleResourceDoc");
+        }
+
+        @Test
+        void customise_everyOperation_documentsAtLeastOneSuccessResponse() {
+            assertThat(writeOperationPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .allSatisfy(operation -> assertThat(operation.getResponses().keySet())
+                            .anySatisfy(status -> assertThat(status).startsWith("2")));
+        }
+
+        private ApiResponse successResponseOf(Operation operation,
+                                              String status) {
+            return operation.getResponses().get(status);
         }
 
     }
@@ -151,10 +197,6 @@ class JsonApiOperationsCustomizerTests {
 
             assertThat(bodySchemaRefOf(paths.get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getPost()))
                     .isEqualTo("#/components/schemas/CustomPayload");
-        }
-
-        private Paths writeOperationPaths() {
-            return documentedPaths(new WriteOperations());
         }
 
         private String bodySchemaRefOf(Operation operation) {

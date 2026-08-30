@@ -329,16 +329,14 @@ public class JsonApiOperationsCustomizer {
                                            String happyPathResponseDocSchemaName,
                                            Set<HttpStatusCodes> supportedHttpErrorCodes) {
         ApiResponses responses = new ApiResponses();
-        if (StringUtils.isNotBlank(happyPathResponseDocSchemaName)) {
-            List<? extends ResponseHeader> responseHeaders = getCustomResponseHeadersFor(status);
-            responses.addApiResponse(
-                    status,
-                    generateHappyPathResponse(
-                            happyPathResponseDocSchemaName,
-                            responseHeaders
-                    )
-            );
-        }
+        responses.addApiResponse(
+                status,
+                generateHappyPathResponse(
+                        status,
+                        happyPathResponseDocSchemaName,
+                        getCustomResponseHeadersFor(status)
+                )
+        );
         responses.putAll(generateErrorResponses(supportedHttpErrorCodes));
         return responses;
     }
@@ -354,9 +352,26 @@ public class JsonApiOperationsCustomizer {
                 .orElse(null);
     }
 
-    private ApiResponse generateHappyPathResponse(String responseDocSchemaName,
+    /**
+     * Builds the operation's success response. Operations that return no body — every write except create — still get
+     * one: the status code is what the operation answers with, and an operation whose only documented outcomes are
+     * failures is useless to a client generator and incomplete as a contract. Only the body is conditional.
+     */
+    private ApiResponse generateHappyPathResponse(String status,
+                                                  String responseDocSchemaName,
                                                   List<? extends ResponseHeader> responseHeaders) {
-        return generateResponse("Happy path scenario", responseDocSchemaName, null, responseHeaders);
+        return generateResponse(
+                describeHttpStatus(status),
+                responseDocSchemaName,
+                null,
+                responseHeaders
+        );
+    }
+
+    private String describeHttpStatus(String status) {
+        return HttpStatusCodes.fromCode(Integer.parseInt(status))
+                .map(HttpStatusCodes::getDescription)
+                .orElse("Happy path scenario");
     }
 
     private Map<String, ApiResponse> generateErrorResponses(Set<HttpStatusCodes> supportedHttpErrorCodes) {
