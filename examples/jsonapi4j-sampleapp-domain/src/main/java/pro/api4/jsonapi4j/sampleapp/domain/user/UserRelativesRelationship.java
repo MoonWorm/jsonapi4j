@@ -6,20 +6,17 @@ import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 
-import java.util.Map;
-
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIVES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
 @JsonApiRelationship(relationshipName = RELATIVES, parentResource = UserResource.class)
 @OasRelationshipInfo(
-        relationshipTypes = {UserResource.class}
+        relationshipTypes = {UserResource.class},
+        resourceLinkageMetaType = RelativeLinkageMeta.class
 )
 public class UserRelativesRelationship implements ToManyRelationship<RelativeRef> {
 
     public static final String RELATIVES = "relatives";
-
-    public static final String RELATIONSHIP_TYPE_META_KEY = "relationshipType";
 
     @Override
     public String resolveResourceIdentifierType(RelativeRef userRelationshipInfo) {
@@ -33,7 +30,7 @@ public class UserRelativesRelationship implements ToManyRelationship<RelativeRef
 
     @Override
     public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, RelativeRef userRelationshipInfo) {
-        return Map.of(RELATIONSHIP_TYPE_META_KEY, userRelationshipInfo.getRelationshipType());
+        return new RelativeLinkageMeta(userRelationshipInfo.getRelationshipType());
     }
 
 }

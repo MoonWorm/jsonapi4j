@@ -3,15 +3,12 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
-import pro.api4.jsonapi4j.config.RawConfigAccessor;
 import pro.api4.jsonapi4j.domain.ResourceType;
-import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
-import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
@@ -35,17 +32,16 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef.RelationshipType;
 import pro.api4.jsonapi4j.sampleapp.domain.user.Address;
+import pro.api4.jsonapi4j.sampleapp.domain.user.RelativeLinkageMeta;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import static pro.api4.jsonapi4j.operation.validation.Validate.assertThat;
@@ -55,7 +51,6 @@ import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
-import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIONSHIP_TYPE_META_KEY;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIVES;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 
@@ -74,37 +69,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     public static Optional<RelationshipType> parseRelationshipType(ResourceIdentifierObject ri) {
-        if (!(ri.getMeta() instanceof Map<?, ?> m)) {
-            return Optional.empty();
-        }
-        @SuppressWarnings("unchecked")
-        Map<String, Object> meta = (Map<String, Object>) m;
-        return new RawConfigAccessor(meta).strValue(RELATIONSHIP_TYPE_META_KEY)
-                .map(relationshipType -> RelationshipType.valueOf(relationshipType.toUpperCase()));
+        return RelativeLinkageMeta.fromLinkageMeta(ri.getMeta()).map(RelativeLinkageMeta::relationshipType);
     }
 
     public static void validateRelationsMeta(Object meta) {
-        if (meta instanceof Map<?, ?> m) {
-            Object relationshipTypeObj = m.get(RELATIONSHIP_TYPE_META_KEY);
-            if (relationshipTypeObj == null) {
-                return;
-            }
-            if (relationshipTypeObj instanceof String relationshipType && StringUtils.isNotBlank(relationshipType)) {
-                try {
-                    RelationshipType.valueOf(relationshipType.toUpperCase());
-                } catch (Exception ex) {
-                    throw new JsonApiRequestValidationException(
-                            DefaultErrorCodes.INVALID_ENUM_VALUE,
-                            "Meta 'relationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", "))
-                    );
-                }
-            } else {
-                throw new JsonApiRequestValidationException(
-                        DefaultErrorCodes.INVALID_ENUM_VALUE,
-                        "Meta 'relationshipType' object only accepts string values: " + Arrays.stream(RelationshipType.values()).map(Enum::name).collect(Collectors.joining(", "))
-                );
-            }
-        }
+        RelativeLinkageMeta.fromLinkageMeta(meta);
     }
 
     @OasOperationInfo(

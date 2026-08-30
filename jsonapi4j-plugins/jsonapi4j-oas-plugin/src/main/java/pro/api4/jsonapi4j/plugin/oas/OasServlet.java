@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -9,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
@@ -103,17 +103,19 @@ public class OasServlet extends HttpServlet {
         resp.getWriter().write(cachedOasJson);
     }
 
+    /**
+     * Renders through swagger's own mappers rather than a plain Jackson one. They carry the mixins that keep the
+     * library's bookkeeping fields — {@code exampleSetFlag}, {@code types}, {@code jsonSchema} — out of the document;
+     * a plain mapper serializes them as if they were OpenAPI keywords, which they are not.
+     */
     private void writeOasToResponse(HttpServletResponse resp,
                                     String format,
                                     OpenAPI openAPI) throws IOException {
-        ObjectMapper objectMapper = format.equals(YAML_FORMAT)
-                ? JsonApi4jConfigReader.getYamlObjectMapper()
-                : JsonApi4jConfigReader.getJsonObjectMapper();
-        String contentType = format.equals(YAML_FORMAT) ? YAML_CONTENT_TYPE : JSON_CONTENT_TYPE;
-        resp.setContentType(contentType);
+        boolean yaml = format.equals(YAML_FORMAT);
+        resp.setContentType(yaml ? YAML_CONTENT_TYPE : JSON_CONTENT_TYPE);
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        String oasString = objectMapper.writeValueAsString(openAPI);
-        if (format.equals(YAML_FORMAT)) {
+        String oasString = yaml ? Yaml.pretty(openAPI) : Json.pretty(openAPI);
+        if (yaml) {
             cachedOasYaml = oasString;
         } else {
             cachedOasJson = oasString;

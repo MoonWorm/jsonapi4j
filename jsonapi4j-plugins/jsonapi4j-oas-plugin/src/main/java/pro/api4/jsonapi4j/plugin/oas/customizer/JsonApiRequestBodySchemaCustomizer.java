@@ -13,6 +13,8 @@ import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.RegisteredOperation;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
@@ -42,6 +44,8 @@ import static pro.api4.jsonapi4j.operation.OperationType.UPDATE_TO_ONE_RELATIONS
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.attributesSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.createRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.createResourceSchemaName;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.customToManyRelationshipsRequestDocSchemaName;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.customToOneRelationshipRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.requestRelationshipsSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.toManyRelationshipsRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.toOneRelationshipRequestDocSchemaName;
@@ -70,7 +74,8 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 @Data
 public class JsonApiRequestBodySchemaCustomizer {
 
-    private static final Set<OperationType> TO_MANY_RELATIONSHIP_WRITES = Set.of(
+    private static final Set<OperationType> RELATIONSHIP_WRITES = Set.of(
+            UPDATE_TO_ONE_RELATIONSHIP,
             UPDATE_TO_MANY_RELATIONSHIPS,
             ADD_TO_MANY_RELATIONSHIP,
             DELETE_TO_MANY_RELATIONSHIP
@@ -107,25 +112,29 @@ public class JsonApiRequestBodySchemaCustomizer {
         boolean updateConfigured = configuredOperations.contains(UPDATE_RESOURCE);
         boolean resourceWriteConfigured = createConfigured || updateConfigured;
 
-        boolean toOneDocNeeded = configuredOperations.contains(UPDATE_TO_ONE_RELATIONSHIP)
-                || (resourceWriteConfigured && !domainRegistry.getToOneRelationships(resourceType).isEmpty());
-        boolean toManyDocNeeded = configuredOperations.stream().anyMatch(TO_MANY_RELATIONSHIP_WRITES::contains)
-                || (resourceWriteConfigured && !domainRegistry.getToManyRelationships(resourceType).isEmpty());
+        Map<String, Schema> relationshipProperties = new LinkedHashMap<>();
+        registerRelationshipRequestDocs(
+                resourceType,
+                domainRegistry.getToOneRelationships(resourceType),
+                true,
+                resourceWriteConfigured,
+                relationshipProperties,
+                openApi
+        );
+        registerRelationshipRequestDocs(
+                resourceType,
+                domainRegistry.getToManyRelationships(resourceType),
+                false,
+                resourceWriteConfigured,
+                relationshipProperties,
+                openApi
+        );
 
-        if (toOneDocNeeded || toManyDocNeeded) {
-            registerSchemaIfNotExists(generateSchemaFromType(ResourceIdentifierObject.class), openApi);
-        }
-        if (toOneDocNeeded) {
-            registerSchemaIfNotExists(toOneRelationshipRequestDocSchema(), openApi);
-        }
-        if (toManyDocNeeded) {
-            registerSchemaIfNotExists(toManyRelationshipsRequestDocSchema(), openApi);
-        }
         if (!resourceWriteConfigured) {
             return;
         }
 
-        String relationshipsSchemaName = registerRequestRelationshipsSchema(resourceType, openApi);
+        String relationshipsSchemaName = registerRequestRelationshipsSchema(resourceType, relationshipProperties, openApi);
         if (createConfigured) {
             registerResourceRequestSchemas(
                     resourceType,
@@ -164,21 +173,77 @@ public class JsonApiRequestBodySchemaCustomizer {
         );
     }
 
+    /**
+     * Registers the linkage document each relationship accepts, and records the {@code $ref} to it so the resource
+     * request schemas can point at the right one. A relationship declaring its own linkage meta gets a schema of its
+     * own; the rest share the generic pair.
+     */
+    private void registerRelationshipRequestDocs(ResourceType resourceType,
+                                                 List<? extends RegisteredRelationship<?>> relationships,
+                                                 boolean toOne,
+                                                 boolean resourceWriteConfigured,
+                                                 Map<String, Schema> relationshipProperties,
+                                                 OpenAPI openApi) {
+        for (RegisteredRelationship<?> relationship : relationships) {
+            RelationshipName relationshipName = relationship.getRelationshipName();
+            if (!resourceWriteConfigured && !isRelationshipBodyOperationConfigured(resourceType, relationshipName)) {
+                continue;
+            }
+
+            Class<?> linkageMetaType = OasLinkageMetaUtil.resolveLinkageMetaType(relationship);
+            String docSchemaName;
+            if (linkageMetaType == null) {
+                registerSchemaIfNotExists(generateSchemaFromType(ResourceIdentifierObject.class), openApi);
+                Schema<?> docSchema = toOne ? toOneRelationshipRequestDocSchema() : toManyRelationshipsRequestDocSchema();
+                registerSchemaIfNotExists(docSchema, openApi);
+                docSchemaName = docSchema.getName();
+            } else {
+                docSchemaName = registerCustomRelationshipRequestDoc(
+                        resourceType,
+                        relationshipName,
+                        toOne,
+                        linkageMetaType,
+                        openApi
+                );
+            }
+            relationshipProperties.put(relationshipName.getName(), new Schema<>().$ref(docSchemaName));
+        }
+    }
+
+    private String registerCustomRelationshipRequestDoc(ResourceType resourceType,
+                                                        RelationshipName relationshipName,
+                                                        boolean toOne,
+                                                        Class<?> linkageMetaType,
+                                                        OpenAPI openApi) {
+        PrimaryAndNestedSchemas identifierSchemas = OasLinkageMetaUtil.customResourceIdentifierSchemas(
+                resourceType,
+                relationshipName,
+                linkageMetaType
+        );
+        registerSchemaIfNotExists(identifierSchemas.getPrimarySchema(), openApi);
+        identifierSchemas.getNestedSchemas().forEach(s -> registerSchemaIfNotExists(s, openApi));
+
+        String identifierSchemaName = identifierSchemas.getPrimarySchema().getName();
+        Schema<?> docSchema = toOne
+                ? requestDocSchema(
+                        customToOneRelationshipRequestDocSchemaName(resourceType, relationshipName),
+                        linkageDataSchema(identifierSchemaName))
+                : requestDocSchema(
+                        customToManyRelationshipsRequestDocSchemaName(resourceType, relationshipName),
+                        new ArraySchema().items(new Schema<>().$ref(identifierSchemaName)));
+        registerSchemaIfNotExists(docSchema, openApi);
+        return docSchema.getName();
+    }
+
+    private boolean isRelationshipBodyOperationConfigured(ResourceType resourceType,
+                                                          RelationshipName relationshipName) {
+        return RELATIONSHIP_WRITES.stream()
+                .anyMatch(operationType -> operationsRegistry.isRelationshipOperationConfigured(resourceType, relationshipName, operationType));
+    }
+
     private String registerRequestRelationshipsSchema(ResourceType resourceType,
+                                                      Map<String, Schema> properties,
                                                       OpenAPI openApi) {
-        Map<String, Schema> properties = new LinkedHashMap<>();
-        for (RegisteredRelationship<?> relationship : domainRegistry.getToOneRelationships(resourceType)) {
-            properties.put(
-                    relationship.getRelationshipName().getName(),
-                    new Schema<>().$ref(toOneRelationshipRequestDocSchemaName())
-            );
-        }
-        for (RegisteredRelationship<?> relationship : domainRegistry.getToManyRelationships(resourceType)) {
-            properties.put(
-                    relationship.getRelationshipName().getName(),
-                    new Schema<>().$ref(toManyRelationshipsRequestDocSchemaName())
-            );
-        }
         if (properties.isEmpty()) {
             return null;
         }
@@ -220,11 +285,18 @@ public class JsonApiRequestBodySchemaCustomizer {
     }
 
     private Schema<?> toOneRelationshipRequestDocSchema() {
+        return requestDocSchema(
+                toOneRelationshipRequestDocSchemaName(),
+                linkageDataSchema(ResourceIdentifierObject.class.getSimpleName())
+        );
+    }
+
+    private Schema<?> linkageDataSchema(String resourceIdentifierSchemaName) {
         Schema<Object> dataSchema = new Schema<>();
-        dataSchema.setAllOf(List.of(new Schema<>().$ref(ResourceIdentifierObject.class.getSimpleName())));
+        dataSchema.setAllOf(List.of(new Schema<>().$ref(resourceIdentifierSchemaName)));
         dataSchema.setNullable(true);
         dataSchema.setDescription("Resource linkage, or null to clear the relationship");
-        return requestDocSchema(toOneRelationshipRequestDocSchemaName(), dataSchema);
+        return dataSchema;
     }
 
     private Schema<?> toManyRelationshipsRequestDocSchema() {

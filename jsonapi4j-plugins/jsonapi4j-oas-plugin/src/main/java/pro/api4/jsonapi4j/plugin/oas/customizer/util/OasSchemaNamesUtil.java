@@ -46,16 +46,32 @@ public final class OasSchemaNamesUtil {
      * resource linkage for relationship writes.
      */
     public static String requestBodyDocSchemaName(ResourceType resourceType,
-                                                  OperationType operationType) {
+                                                  RelationshipName relationshipName,
+                                                  OperationType operationType,
+                                                  boolean linkageMetaDeclared) {
         return switch (operationType) {
             case CREATE_RESOURCE -> createRequestDocSchemaName(resourceType);
             case UPDATE_RESOURCE -> updateRequestDocSchemaName(resourceType);
-            case UPDATE_TO_ONE_RELATIONSHIP -> toOneRelationshipRequestDocSchemaName();
+            case UPDATE_TO_ONE_RELATIONSHIP -> linkageMetaDeclared
+                    ? customToOneRelationshipRequestDocSchemaName(resourceType, relationshipName)
+                    : toOneRelationshipRequestDocSchemaName();
             case UPDATE_TO_MANY_RELATIONSHIPS, ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP ->
-                    toManyRelationshipsRequestDocSchemaName();
+                    linkageMetaDeclared
+                            ? customToManyRelationshipsRequestDocSchemaName(resourceType, relationshipName)
+                            : toManyRelationshipsRequestDocSchemaName();
             case READ_RESOURCE_BY_ID, READ_MULTIPLE_RESOURCES, DELETE_RESOURCE, READ_TO_ONE_RELATIONSHIP,
                  READ_TO_MANY_RELATIONSHIP -> null;
         };
+    }
+
+    public static String customToOneRelationshipRequestDocSchemaName(ResourceType resourceType,
+                                                                     RelationshipName relationshipName) {
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ToOneRelationshipRequestDoc";
+    }
+
+    public static String customToManyRelationshipsRequestDocSchemaName(ResourceType resourceType,
+                                                                       RelationshipName relationshipName) {
+        return capitalize(resourceType.getType()) + capitalize(relationshipName.getName()) + "ToManyRelationshipsRequestDoc";
     }
 
     public static String createRequestDocSchemaName(ResourceType resourceType) {
@@ -80,7 +96,8 @@ public final class OasSchemaNamesUtil {
 
     /**
      * Unlike its response counterpart, a relationship request body is pure resource linkage — it carries no
-     * {@code included} whose contents would vary by resource type. One schema therefore serves every resource.
+     * {@code included} whose contents would vary by resource type. One schema therefore serves every resource, unless
+     * the relationship declares its own linkage meta, which does make the body relationship-specific.
      */
     public static String toOneRelationshipRequestDocSchemaName() {
         return "ToOneRelationshipRequestDoc";

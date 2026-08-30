@@ -27,6 +27,7 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
@@ -217,7 +218,7 @@ public class JsonApiOperationsCustomizer {
                 )
         );
         // request body
-        String payloadSchemaName = resolveRequestBodySchemaName(oasOperationInfo, resourceType, operationType);
+        String payloadSchemaName = resolveRequestBodySchemaName(oasOperationInfo, operationMeta);
         if (StringUtils.isNotBlank(payloadSchemaName)) {
             oasOperation.setRequestBody(
                     new RequestBody()
@@ -264,14 +265,20 @@ public class JsonApiOperationsCustomizer {
      * operation. Returns {@code null} for operations that carry no body.
      */
     private String resolveRequestBodySchemaName(OasOperationInfoModel oasOperationInfo,
-                                                ResourceType resourceType,
-                                                OperationType operationType) {
+                                                OperationMeta operationMeta) {
         if (oasOperationInfo != null
                 && oasOperationInfo.getPayloadType() != null
                 && oasOperationInfo.getPayloadType() != NotApplicable.class) {
             return getSchemaName(oasOperationInfo.getPayloadType());
         }
-        return OasSchemaNamesUtil.requestBodyDocSchemaName(resourceType, operationType);
+        ResourceType resourceType = operationMeta.getResourceType();
+        RelationshipName relationshipName = operationMeta.getRelationshipName();
+        return OasSchemaNamesUtil.requestBodyDocSchemaName(
+                resourceType,
+                relationshipName,
+                operationMeta.getOperationType(),
+                OasLinkageMetaUtil.resolveLinkageMetaType(domainRegistry, resourceType, relationshipName) != null
+        );
     }
 
     private String getResourceCustomNameSingle(Object oasResourceInfoObject) {

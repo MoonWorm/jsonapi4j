@@ -40,7 +40,7 @@ To add metadata beyond what the framework generates automatically (e.g., `info`,
 | Annotation | Placement | Purpose |
 |-----------|-----------|---------|
 | `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
-| `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Customizes the relationship's OpenAPI schema |
+| `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Declares the resource types the relationship links to, and the type of the `meta` its resource linkage carries |
 | `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary, description and request body type, and declares extra query/path parameters and OAuth2 security requirements |
 
 Example:
@@ -79,7 +79,11 @@ Every write operation gets a request body derived from what JSON:API prescribes 
 
 `<Type>` is the resource type capitalized, so `users` yields `UsersCreateRequestDoc`. The relationship bodies carry no
 `<Type>` prefix because they are pure resource linkage — `{"data": {"id": …, "type": …}}` — which looks the same
-whatever resource it points at, so one schema serves them all.
+whatever resource it points at, so one schema serves them all. The exception is a relationship declaring
+`@OasRelationshipInfo(resourceLinkageMetaType = …)`: its linkage carries a typed `meta`, which makes the body specific
+to that relationship, so it gets `<Type><Relationship>ToOneRelationshipRequestDoc` /
+`<Type><Relationship>ToManyRelationshipsRequestDoc` instead. The same typed identifier is reused in responses, so a
+client sees one shape for the linkage whichever direction it travels.
 
 These are separate from the response documents on purpose: a request carries no `links` or `included`, and `id` is
 optional on create but mandatory on update. To document a body the framework cannot derive, set

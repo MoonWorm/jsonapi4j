@@ -72,6 +72,49 @@ class JsonApiRequestBodySchemaCustomizerTests {
 
     }
 
+    /**
+     * A relationship declaring linkage meta cannot share the generic linkage document — its {@code meta} is typed, so
+     * the body is specific to that relationship.
+     */
+    @Nested
+    class LinkageMetaRequestSchemas {
+
+        @Test
+        void customise_relationshipsWithLinkageMeta_getTheirOwnRequestDocs() {
+            Map<String, Schema> schemas = linkageMetaSchemas();
+
+            assertThat(schemas).containsKeys(
+                    "OwnedKeeperToOneRelationshipRequestDoc",
+                    "OwnedWatchersToManyRelationshipsRequestDoc"
+            );
+            assertThat(schemas).doesNotContainKeys("ToOneRelationshipRequestDoc", "ToManyRelationshipsRequestDoc");
+        }
+
+        @Test
+        void customise_relationshipWithLinkageMeta_pointsItsLinkageAtTheTypedIdentifier() {
+            Map<String, Schema> schemas = linkageMetaSchemas();
+
+            Schema toManyData = (Schema) schemas.get("OwnedWatchersToManyRelationshipsRequestDoc").getProperties().get("data");
+            assertThat(toManyData.getItems().get$ref())
+                    .isEqualTo("#/components/schemas/OwnedWatchersResourceIdentifier");
+            assertThat(schemas).containsKeys("OwnedWatchersResourceIdentifier", "OwnedWatchersResourceIdentifierMeta");
+        }
+
+        private Map<String, Schema> linkageMetaSchemas() {
+            JsonApi4j jsonApi4j = OasLinkageMetaTestFixtures.jsonApi4jWithWrites();
+
+            OpenAPI openApi = new OpenAPI();
+            JsonApiRequestBodySchemaCustomizer sut = new JsonApiRequestBodySchemaCustomizer(
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry()
+            );
+            sut.customise(openApi);
+
+            return openApi.getComponents().getSchemas();
+        }
+
+    }
+
     @Nested
     class CustomPayloadSchemas {
 
