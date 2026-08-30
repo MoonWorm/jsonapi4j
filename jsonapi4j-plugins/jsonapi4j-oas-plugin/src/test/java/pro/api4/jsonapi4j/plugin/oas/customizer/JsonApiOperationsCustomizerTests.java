@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,9 +12,12 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CustomPayloadOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.DescribedOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import java.util.List;
 import java.util.Set;
@@ -39,6 +44,21 @@ class JsonApiOperationsCustomizerTests {
 
     private static Operation securedOperation(OpenAPI openApi) {
         return openApi.getPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}").getGet();
+    }
+
+    private static Paths documentedPaths(ResourceOperations<SecuredAttributes> operations) {
+        JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
+
+        OpenAPI openApi = new OpenAPI();
+        JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
+                ROOT_PATH,
+                jsonApi4j.getDomainRegistry(),
+                jsonApi4j.getOperationsRegistry(),
+                null
+        );
+        sut.customise(openApi);
+
+        return openApi.getPaths();
     }
 
     @Nested
@@ -96,6 +116,53 @@ class JsonApiOperationsCustomizerTests {
             sut.customise(openApi);
 
             return securedOperation(openApi);
+        }
+
+    }
+
+    @Nested
+    class RequestBodies {
+
+        @Test
+        void customise_createOperation_documentsDerivedRequestBody() {
+            PathItem pathItem = writeOperationPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE);
+
+            assertThat(bodySchemaRefOf(pathItem.getPost())).isEqualTo("#/components/schemas/SecuredCreateRequestDoc");
+            assertThat(pathItem.getPost().getRequestBody().getRequired()).isTrue();
+        }
+
+        @Test
+        void customise_updateOperation_documentsDerivedRequestBody() {
+            PathItem pathItem = writeOperationPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}");
+
+            assertThat(bodySchemaRefOf(pathItem.getPatch())).isEqualTo("#/components/schemas/SecuredUpdateRequestDoc");
+        }
+
+        @Test
+        void customise_deleteResourceOperation_documentsNoRequestBody() {
+            PathItem pathItem = writeOperationPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}");
+
+            assertThat(pathItem.getDelete().getRequestBody()).isNull();
+        }
+
+        @Test
+        void customise_payloadTypeDeclared_overridesDerivedRequestBody() {
+            Paths paths = documentedPaths(new CustomPayloadOperations());
+
+            assertThat(bodySchemaRefOf(paths.get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getPost()))
+                    .isEqualTo("#/components/schemas/CustomPayload");
+        }
+
+        private Paths writeOperationPaths() {
+            return documentedPaths(new WriteOperations());
+        }
+
+        private String bodySchemaRefOf(Operation operation) {
+            return operation.getRequestBody()
+                    .getContent()
+                    .get(JsonApiMediaType.MEDIA_TYPE)
+                    .getSchema()
+                    .get$ref();
         }
 
     }

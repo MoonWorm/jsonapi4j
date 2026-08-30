@@ -239,9 +239,6 @@ public class JsonApiResponseSchemaCustomizer {
         if (relationshipNames.isEmpty()) {
             return Optional.empty();
         }
-        relationshipNames = relationshipNames.stream().sorted().toList();
-        relationshipsSchema.setRequired(relationshipNames);
-
         relationshipsSchema.setProperties(relationshipsSchemaProperties);
         relationshipsSchema.setName(relationshipsSchemaName(resourceType));
 

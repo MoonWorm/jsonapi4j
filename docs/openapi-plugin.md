@@ -41,7 +41,7 @@ To add metadata beyond what the framework generates automatically (e.g., `info`,
 |-----------|-----------|---------|
 | `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
 | `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Customizes the relationship's OpenAPI schema |
-| `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary and description, and declares extra query/path parameters and OAuth2 security requirements |
+| `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary, description and request body type, and declares extra query/path parameters and OAuth2 security requirements |
 
 Example:
 
@@ -64,6 +64,27 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 }
 ```
+
+### Request Bodies
+
+Every write operation gets a request body derived from what JSON:API prescribes for it — nothing to declare:
+
+| Operation | Request body schema |
+|-----------|---------------------|
+| `POST /{type}` | `<Type>CreateRequestDoc` — `id` optional, so the client may generate it |
+| `PATCH /{type}/{id}` | `<Type>UpdateRequestDoc` — `id` required |
+| `PATCH /{type}/{id}/relationships/{name}` (to-one) | `ToOneRelationshipRequestDoc` — linkage, nullable to clear |
+| `POST`/`PATCH`/`DELETE` `/{type}/{id}/relationships/{name}` (to-many) | `ToManyRelationshipsRequestDoc` — array of linkage |
+| `DELETE /{type}/{id}` | none |
+
+`<Type>` is the resource type capitalized, so `users` yields `UsersCreateRequestDoc`. The relationship bodies carry no
+`<Type>` prefix because they are pure resource linkage — `{"data": {"id": …, "type": …}}` — which looks the same
+whatever resource it points at, so one schema serves them all.
+
+These are separate from the response documents on purpose: a request carries no `links` or `included`, and `id` is
+optional on create but mandatory on update. To document a body the framework cannot derive, set
+`@OasOperationInfo(payloadType = YourPayload.class)` — the declared type replaces the derived one and its schema is
+registered automatically.
 
 ### Available Properties
 

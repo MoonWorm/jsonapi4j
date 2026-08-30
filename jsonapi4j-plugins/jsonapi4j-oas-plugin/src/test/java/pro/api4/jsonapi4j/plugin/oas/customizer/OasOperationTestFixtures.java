@@ -129,4 +129,36 @@ final class OasOperationTestFixtures {
 
     }
 
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class WriteOperations implements ResourceOperations<SecuredAttributes> {
+
+        @Override
+        public SecuredAttributes create(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+        @Override
+        public void update(JsonApiRequest request) {
+        }
+
+        @Override
+        public void delete(JsonApiRequest request) {
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class CustomPayloadOperations implements ResourceOperations<SecuredAttributes> {
+
+        @OasOperationInfo(payloadType = CustomPayload.class)
+        @Override
+        public SecuredAttributes create(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+    }
+
+    public record CustomPayload(String reference) {
+    }
+
 }

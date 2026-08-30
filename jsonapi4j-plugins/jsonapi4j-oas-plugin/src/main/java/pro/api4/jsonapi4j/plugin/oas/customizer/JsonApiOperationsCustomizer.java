@@ -217,9 +217,16 @@ public class JsonApiOperationsCustomizer {
                 )
         );
         // request body
-        String payloadSchemaName = getSchemaName(getPayloadType(oasOperationInfoObject));
+        String payloadSchemaName = resolveRequestBodySchemaName(oasOperationInfo, resourceType, operationType);
         if (StringUtils.isNotBlank(payloadSchemaName)) {
-            oasOperation.setRequestBody(new RequestBody().content(new Content().addMediaType(JsonApiMediaType.MEDIA_TYPE, new MediaType().schema(new Schema().$ref(payloadSchemaName)))));
+            oasOperation.setRequestBody(
+                    new RequestBody()
+                            .required(true)
+                            .content(new Content().addMediaType(
+                                    JsonApiMediaType.MEDIA_TYPE,
+                                    new MediaType().schema(new Schema().$ref(payloadSchemaName))
+                            ))
+            );
         }
         // responses
         String happyPathResponseDocSchemaName = OasSchemaNamesUtil.happyPathResponseDocSchemaName(
@@ -251,13 +258,20 @@ public class JsonApiOperationsCustomizer {
         return StringUtils.isNotBlank(override) ? override : generated;
     }
 
-    private Class<?> getPayloadType(Object oasOperationInfoObject) {
-        if (oasOperationInfoObject instanceof OasOperationInfo oasOperationInfo) {
-            if (oasOperationInfo.payloadType() != NotApplicable.class) {
-                return oasOperationInfo.payloadType();
-            }
+    /**
+     * Resolves the schema documenting the operation's request body: the type declared via
+     * {@link OasOperationInfo#payloadType()} when there is one, and otherwise the body JSON:API prescribes for this
+     * operation. Returns {@code null} for operations that carry no body.
+     */
+    private String resolveRequestBodySchemaName(OasOperationInfoModel oasOperationInfo,
+                                                ResourceType resourceType,
+                                                OperationType operationType) {
+        if (oasOperationInfo != null
+                && oasOperationInfo.getPayloadType() != null
+                && oasOperationInfo.getPayloadType() != NotApplicable.class) {
+            return getSchemaName(oasOperationInfo.getPayloadType());
         }
-        return null;
+        return OasSchemaNamesUtil.requestBodyDocSchemaName(resourceType, operationType);
     }
 
     private String getResourceCustomNameSingle(Object oasResourceInfoObject) {

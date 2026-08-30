@@ -126,8 +126,7 @@
             "$ref" : "#/components/schemas/ToManyRelationshipsDoc",
             "exampleSetFlag" : false
           }
-        },
-        "required" : [ "currencies" ]
+        }
       },
       "CountriesResource" : {
         "exampleSetFlag" : false,
@@ -993,6 +992,22 @@
         },
         "type" : "object"
       },
+      "ToManyRelationshipsRequestDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
       "ToOneRelationshipDoc" : {
         "exampleSetFlag" : false,
         "properties" : {
@@ -1052,6 +1067,22 @@
         },
         "type" : "object"
       },
+      "ToOneRelationshipRequestDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject",
+              "exampleSetFlag" : false
+            } ],
+            "description" : "Resource linkage, or null to clear the relationship",
+            "exampleSetFlag" : false,
+            "nullable" : true
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
       "UsersAttributes" : {
         "exampleSetFlag" : false,
         "properties" : {
@@ -1088,6 +1119,59 @@
           }
         },
         "required" : [ "creditCardNumber", "email", "fullName" ],
+        "type" : "object"
+      },
+      "UsersCreateRequestDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersCreateResource",
+            "exampleSetFlag" : false
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersCreateResource" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersAttributes",
+            "exampleSetFlag" : false
+          },
+          "id" : {
+            "description" : "Client-generated resource identifier. Optional — omit it to let the server assign one",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRequestRelationships",
+            "exampleSetFlag" : false
+          },
+          "type" : {
+            "description" : "Resource type",
+            "example" : "users",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "type" ],
         "type" : "object"
       },
       "UsersMultipleResourcesDoc" : {
@@ -1175,8 +1259,26 @@
             "$ref" : "#/components/schemas/ToManyRelationshipsDoc",
             "exampleSetFlag" : false
           }
+        }
+      },
+      "UsersRequestRelationships" : {
+        "description" : "Relationship linkage to write alongside the resource. Every member is optional — omit one to leave that relationship untouched.",
+        "exampleSetFlag" : false,
+        "properties" : {
+          "citizenships" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+            "exampleSetFlag" : false
+          },
+          "placeOfBirth" : {
+            "$ref" : "#/components/schemas/ToOneRelationshipRequestDoc",
+            "exampleSetFlag" : false
+          },
+          "relatives" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+            "exampleSetFlag" : false
+          }
         },
-        "required" : [ "citizenships", "placeOfBirth", "relatives" ]
+        "type" : "object"
       },
       "UsersResource" : {
         "exampleSetFlag" : false,
@@ -1446,6 +1548,59 @@
             "types" : [ "object" ]
           }
         },
+        "type" : "object"
+      },
+      "UsersUpdateRequestDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersUpdateResource",
+            "exampleSetFlag" : false
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersUpdateResource" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersAttributes",
+            "exampleSetFlag" : false
+          },
+          "id" : {
+            "description" : "Resource unique identifier. Must match the id in the URL path",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRequestRelationships",
+            "exampleSetFlag" : false
+          },
+          "type" : {
+            "description" : "Resource type",
+            "example" : "users",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "id", "type" ],
         "type" : "object"
       }
     },
@@ -2614,6 +2769,18 @@
       "post" : {
         "description" : "Creates a new instance of user's resource with relationships (if applicable).",
         "parameters" : [ ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersCreateRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "201" : {
             "content" : {
@@ -3212,6 +3379,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersUpdateRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -3409,6 +3588,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -3821,6 +4012,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -4011,6 +4214,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -4415,6 +4630,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToOneRelationshipRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -4607,6 +4834,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -5019,6 +5258,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
@@ -5209,6 +5460,18 @@
             "types" : [ "string" ]
           }
         } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "exampleSetFlag" : false,
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc",
+                "exampleSetFlag" : false
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "400" : {
             "content" : {
