@@ -1738,7 +1738,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Get all countries",
         "tags" : [ "Countries" ]
@@ -1952,7 +1952,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Get single country",
         "tags" : [ "Countries" ]
@@ -2176,7 +2176,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Relationship: currencies",
         "tags" : [ "Countries" ]
@@ -2382,7 +2382,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Get all currencies",
         "tags" : [ "Currencies" ]
@@ -2611,7 +2611,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Get all users",
         "tags" : [ "Users" ]
@@ -2808,7 +2808,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Create single user",
         "tags" : [ "Users" ]
@@ -2987,7 +2987,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Delete single user",
         "tags" : [ "Users" ]
@@ -3199,7 +3199,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Get single user",
         "tags" : [ "Users" ]
@@ -3394,7 +3394,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Update single user",
         "tags" : [ "Users" ]
@@ -3808,7 +3808,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Relationship: citizenships",
         "tags" : [ "Users" ]
@@ -4402,7 +4402,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Relationship: placeOfBirth(read)",
         "tags" : [ "Users" ]
@@ -5006,7 +5006,7 @@
         "security" : [ {
           "Client_Credentials" : [ ]
         }, {
-          "Authorization_Code_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ ]
         } ],
         "summary" : "Relationship: relatives",
         "tags" : [ "Users" ]

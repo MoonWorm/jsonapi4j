@@ -46,7 +46,7 @@ public class SpringJsonApi4jSpringDocConfig {
                 jsonApi4JProperties.rootPath(),
                 domainRegistry,
                 operationsRegistry,
-                oasProperties.customResponseHeaders()
+                oasProperties
         );
     }
 

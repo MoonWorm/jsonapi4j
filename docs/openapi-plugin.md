@@ -83,10 +83,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 | `jsonapi4j.oas.info.license.identifier` | not set | OpenAPI info.license.identifier (SPDX). |
 | `jsonapi4j.oas.externalDocumentation.url` | not set | OpenAPI external docs URL. |
 | `jsonapi4j.oas.externalDocumentation.description` | not set | OpenAPI external docs description. |
-| `jsonapi4j.oas.oauth2.clientCredentials.name` | not set | OAuth2 client credentials scheme name. |
+| `jsonapi4j.oas.oauth2.clientCredentials.name` | not set | OAuth2 client credentials scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.clientCredentials.description` | not set | OAuth2 client credentials description. |
 | `jsonapi4j.oas.oauth2.clientCredentials.tokenUrl` | not set | OAuth2 client credentials token URL. |
-| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.name` | not set | OAuth2 authorization code + PKCE scheme name. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.name` | not set | OAuth2 authorization code + PKCE scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.description` | not set | OAuth2 authorization code + PKCE description. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.tokenUrl` | not set | OAuth2 authorization code + PKCE token URL. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.authorizationUrl` | not set | OAuth2 authorization URL (PKCE flow). |

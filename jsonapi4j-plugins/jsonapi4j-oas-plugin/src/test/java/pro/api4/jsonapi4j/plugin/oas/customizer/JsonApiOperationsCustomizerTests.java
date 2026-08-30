@@ -1,40 +1,143 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizerTestFixtures.build;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.SCOPE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.SECURED_RESOURCE_TYPE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.jsonApi4j;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasSecurityTestFixtures.oasProperties;
 
 /**
- * Guards that {@link JsonApiOperationsCustomizer} never documents operation paths for the reserved meta types that get
- * registered when {@code jsonapi4j.meta.enabled=true}.
- * <p>
- * The customizer derives the meta partition from {@link DomainRegistry#getMetaResourceTypes()}, so a registry whose
- * only configured operations are the meta ones yields no paths at all.
+ * Two guarantees this customizer owes the generated document: the reserved meta types registered by
+ * {@code jsonapi4j.meta.enabled=true} never get operation paths (the customizer derives that partition from
+ * {@link DomainRegistry#getMetaResourceTypes()}), and every operation-level security requirement names a scheme that
+ * {@link CommonOpenApiCustomizer} actually declares under {@code components.securitySchemes} — an undeclared name is a
+ * dangling reference that silently breaks the Swagger UI authorize button.
  */
 class JsonApiOperationsCustomizerTests {
 
-    @Test
-    void operationPaths_excludeReservedMetaTypes() {
-        JsonApi4j withMeta = build(true);
-        assertThat(withMeta.getDomainRegistry().isMetaEnabled()).isTrue();
+    private static final String ROOT_PATH = "/jsonapi";
 
-        OpenAPI openApi = new OpenAPI();
-        new JsonApiOperationsCustomizer(
-                "/jsonapi",
-                withMeta.getDomainRegistry(),
-                withMeta.getOperationsRegistry(),
-                List.of()
-        ).customise(openApi);
-
-        // the only configured operations are the meta ones, and every one of them is excluded — so no paths at all
-        Set<String> paths = openApi.getPaths() == null ? Set.of() : openApi.getPaths().keySet();
-        assertThat(paths).isEmpty();
+    private static Operation securedOperation(OpenAPI openApi) {
+        return openApi.getPaths().get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}").getGet();
     }
+
+    @Nested
+    class MetaTypes {
+
+        @Test
+        void customise_metaEnabledRegistry_documentsNoPaths() {
+            JsonApi4j withMeta = build(true);
+            assertThat(withMeta.getDomainRegistry().isMetaEnabled()).isTrue();
+
+            OpenAPI openApi = new OpenAPI();
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
+                    ROOT_PATH,
+                    withMeta.getDomainRegistry(),
+                    withMeta.getOperationsRegistry(),
+                    null
+            );
+            sut.customise(openApi);
+
+            Set<String> paths = openApi.getPaths() == null ? Set.of() : openApi.getPaths().keySet();
+            assertThat(paths).isEmpty();
+        }
+
+    }
+
+    @Nested
+    class SecurityRequirements {
+
+        @Test
+        void customise_grantFlowsConfigured_namesSchemesFromConfig() {
+            List<SecurityRequirement> securityRequirements = securityRequirementsOf(oasProperties("m2m", "user-facing"));
+
+            assertThat(securityRequirements).hasSize(2);
+            assertThat(securityRequirements.get(0)).containsOnlyKeys("m2m");
+            assertThat(securityRequirements.get(1)).containsEntry("user-facing", List.of(SCOPE));
+        }
+
+        @Test
+        void customise_grantFlowsConfigured_namesOnlyDeclaredSecuritySchemes() {
+            // given
+            DefaultOasProperties oasProperties = oasProperties("m2m", "user-facing");
+            JsonApi4j jsonApi4j = jsonApi4j(oasProperties);
+            OpenAPI openApi = new OpenAPI();
+
+            // when
+            new CommonOpenApiCustomizer(
+                    oasProperties,
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry()
+            ).customise(openApi);
+            new JsonApiOperationsCustomizer(
+                    ROOT_PATH,
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry(),
+                    oasProperties
+            ).customise(openApi);
+
+            // then
+            assertThat(securedOperation(openApi).getSecurity())
+                    .isNotEmpty()
+                    .allSatisfy(requirement -> assertThat(openApi.getComponents().getSecuritySchemes())
+                            .containsKeys(requirement.keySet().toArray(new String[0])));
+        }
+
+        @Test
+        void customise_pkceNotConfigured_skipsPkceRequirement() {
+            List<SecurityRequirement> securityRequirements = securityRequirementsOf(oasProperties("m2m", null));
+
+            assertThat(securityRequirements).hasSize(1);
+            assertThat(securityRequirements.get(0)).containsOnlyKeys("m2m");
+        }
+
+        @Test
+        void customise_clientCredentialsNotConfigured_skipsClientCredentialsRequirement() {
+            List<SecurityRequirement> securityRequirements = securityRequirementsOf(oasProperties(null, "user-facing"));
+
+            assertThat(securityRequirements).hasSize(1);
+            assertThat(securityRequirements.get(0)).containsOnlyKeys("user-facing");
+        }
+
+        @Test
+        void customise_noGrantFlowConfigured_documentsNoSecurity() {
+            assertThat(securityRequirementsOf(oasProperties(null, null))).isNull();
+        }
+
+        @Test
+        void customise_noOasProperties_documentsNoSecurity() {
+            assertThat(securityRequirementsOf(null)).isNull();
+        }
+
+        private List<SecurityRequirement> securityRequirementsOf(OasProperties oasProperties) {
+            JsonApi4j jsonApi4j = jsonApi4j(oasProperties == null ? new DefaultOasProperties() : oasProperties);
+
+            OpenAPI openApi = new OpenAPI();
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
+                    ROOT_PATH,
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry(),
+                    oasProperties
+            );
+            sut.customise(openApi);
+
+            return securedOperation(openApi).getSecurity();
+        }
+
+    }
+
 }

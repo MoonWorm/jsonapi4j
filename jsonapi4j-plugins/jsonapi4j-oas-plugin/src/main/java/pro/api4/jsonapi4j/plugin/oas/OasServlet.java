@@ -17,7 +17,6 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
@@ -77,7 +76,7 @@ public class OasServlet extends HttpServlet {
                 rootPath,
                 domainRegistry,
                 operationsRegistry,
-                oasProperties != null ? oasProperties.customResponseHeaders() : Collections.emptyList()
+                oasProperties
         ).customise(openAPI);
         new ErrorExamplesCustomizer().customise(openAPI);
         writeOasToResponse(resp, format, openAPI);
