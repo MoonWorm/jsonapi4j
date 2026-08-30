@@ -26,6 +26,15 @@ import static java.util.stream.Collectors.toMap;
 public final class ReflectionUtils {
 
     /**
+     * Marker interfaces the supported containers put on the proxies they generate. Matched by name so that
+     * neither container has to be on the classpath.
+     */
+    private static final Set<String> PROXY_MARKER_INTERFACES = Set.of(
+            "io.quarkus.arc.ClientProxy",
+            "org.springframework.aop.SpringProxy"
+    );
+
+    /**
      * Fields of a class and its superclasses, keyed by name, computed once per class.
      *
      * <p>A class's fields cannot change while the JVM runs, and this walk sits behind every reflective read
@@ -280,6 +289,36 @@ public final class ReflectionUtils {
             currentType = currentType.getSuperclass();
         }
         return type;
+    }
+
+    /**
+     * The user's class behind any container-generated proxy.
+     *
+     * <p>CDI containers hand normal-scoped beans over as generated subclasses of the bean class. Such a
+     * subclass redeclares every method it delegates, so reflection performed on it describes the proxy
+     * rather than the code the user wrote — {@link #isMethodOverridden} in particular reports methods
+     * inherited as interface defaults as if they were implemented.
+     *
+     * <p>Only generated classes are stripped, recognised by the marker interface their container puts on
+     * them - nothing a hand-written class implements. An ordinary superclass in a user's own hierarchy is
+     * therefore left alone, so an operation may still inherit its implementation from a base class.
+     *
+     * @param type target type, possibly a proxy
+     * @return the closest non-proxy ancestor, or {@code type} itself when it is not a proxy
+     */
+    public static Class<?> unwrapProxyClass(Class<?> type) {
+        Validate.notNull(type, "type must not be null");
+        Class<?> currentType = type;
+        while (currentType != null && currentType != Object.class && isProxyClass(currentType)) {
+            currentType = currentType.getSuperclass();
+        }
+        return currentType == null || currentType == Object.class ? type : currentType;
+    }
+
+    private static boolean isProxyClass(Class<?> type) {
+        return Arrays.stream(type.getInterfaces())
+                .map(Class::getName)
+                .anyMatch(PROXY_MARKER_INTERFACES::contains);
     }
 
     /**

@@ -78,6 +78,40 @@ public class OperationsRegistryTests {
     }
 
     @Test
+    public void resource_partiallyImplemented_registersOnlyTheImplementedOperations() {
+        // given - when
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestPartialResourceOperations())
+                .build();
+
+        // then
+        ResourceType fooResource = new ResourceType("foo");
+        assertThat(sut.getAllOperations()).hasSize(1);
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_MULTIPLE_RESOURCES)).isTrue();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_RESOURCE_BY_ID)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.CREATE_RESOURCE)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.UPDATE_RESOURCE)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.DELETE_RESOURCE)).isFalse();
+    }
+
+    @Test
+    public void resource_partiallyImplementedBehindAContainerProxy_registersOnlyTheImplementedOperations() {
+        // given - when
+        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+                .operation(new TestPartialResourceOperationsClientProxy())
+                .build();
+
+        // then
+        ResourceType fooResource = new ResourceType("foo");
+        assertThat(sut.getAllOperations()).hasSize(1);
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_MULTIPLE_RESOURCES)).isTrue();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_RESOURCE_BY_ID)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.CREATE_RESOURCE)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.UPDATE_RESOURCE)).isFalse();
+        assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.DELETE_RESOURCE)).isFalse();
+    }
+
+    @Test
     public void registerSomeOperations_checkAllMethodsWorksAsExpected() {
         // given - when
         TestReadByIdOperation readByIdOperation = new TestReadByIdOperation();
@@ -247,6 +281,50 @@ public class OperationsRegistryTests {
     }
 
     private static class TestResourceOperationNoneImplemented implements ResourceOperations<String> {
+
+    }
+
+    @JsonApiResourceOperation(resource = TestFooResource.class)
+    private static class TestPartialResourceOperations implements ResourceOperations<String> {
+
+        @Override
+        public PaginationAwareResponse<String> readPage(JsonApiRequest request) {
+            return PaginationAwareResponse.fromItemsNotPageable(Collections.emptyList());
+        }
+
+    }
+
+    /**
+     * Mirrors what a CDI container generates for a normal-scoped bean: a subclass that redeclares every
+     * method it delegates, including the ones the bean leaves as {@link ResourceOperations} defaults.
+     */
+    private static class TestPartialResourceOperationsClientProxy extends TestPartialResourceOperations
+            implements io.quarkus.arc.ClientProxy {
+
+        @Override
+        public String readById(JsonApiRequest request) {
+            return super.readById(request);
+        }
+
+        @Override
+        public PaginationAwareResponse<String> readPage(JsonApiRequest request) {
+            return super.readPage(request);
+        }
+
+        @Override
+        public String create(JsonApiRequest request) {
+            return super.create(request);
+        }
+
+        @Override
+        public void update(JsonApiRequest request) {
+            super.update(request);
+        }
+
+        @Override
+        public void delete(JsonApiRequest request) {
+            super.delete(request);
+        }
 
     }
 

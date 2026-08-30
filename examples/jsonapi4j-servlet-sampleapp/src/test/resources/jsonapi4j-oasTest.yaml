@@ -1,0 +1,72 @@
+rootPath: /jsonapi
+
+cd:
+  enabled: false
+ac:
+  enabled: false
+sf:
+  enabled: false
+
+oas:
+  enabled: true
+  info:
+    title: JSON:API Users & Countries
+    version: 1.0.0
+    description: JSON:API Users & Countries Sample App
+    contact:
+      name: John Doe
+      url: http://users.foo.bar/john
+      email: john.doe@foo.bar
+    license:
+      name: Apache 2.0
+      url: https://www.apache.org/licenses/LICENSE-2.0
+  externalDocumentation:
+    url: http://foo.bar.docs/article-1
+    description: Extra documentation description
+
+  oauth2:
+    clientCredentials:
+      name: Client_Credentials
+      description: Use this grant flow to access non-personalized data.
+      tokenUrl: http://foo.bar/tokenUrl
+    authorizationCodeWithPkce:
+      name: Authorization_Code_With_PKCE
+      description: Use this grant flow to access personalized user data.
+      tokenUrl: http://foo.bar/tokenUrl
+      authorizationUrl: http://foo.bar/authorizationUrl
+      scopes:
+        - name: users.read
+          description: Read-only access to a user data
+  servers:
+    - name: Localhost
+      enabled: true
+      url: http://localhost:8080
+    - name: Staging
+      enabled: false
+      url: https://api.stage.com
+    - name: Production
+      enabled: false
+      url: https://api.com
+  customResponseHeaders:
+    - httpStatusCode: 429
+      headers:
+        - name: X-RateLimit-Remaining
+          description: Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.
+          required: true
+          schema: integer
+          example: 5
+        - name: X-RateLimit-Burst-Capacity
+          description: Initial number of tokens, and max number of tokens that can be replenished.
+          required: true
+          schema: integer
+          example: 20
+        - name: X-RateLimit-Replenish-Rate
+          description: Number of tokens replenished per second.
+          required: true
+          schema: integer
+          example: 5
+        - name: X-RateLimit-Requested-Tokens
+          description: Request cost in tokens.
+          required: true
+          schema: integer
+          example: 5

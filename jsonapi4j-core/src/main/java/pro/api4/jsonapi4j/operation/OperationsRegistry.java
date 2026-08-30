@@ -504,44 +504,45 @@ public class OperationsRegistry {
 
         public OperationsRegistryBuilder operation(ResourceOperation operation) {
             Validate.notNull(operation, "Operation must not be null");
+            Class<?> operationClass = ReflectionUtils.unwrapProxyClass(operation.getClass());
             Set<RegisteredOperation<?>> registeredAs = new HashSet<>();
             if (operation instanceof ReadResourceByIdOperation<?> o
-                    && isOperationImplemented(READ_RESOURCE_BY_ID, operation.getClass())) {
+                    && isOperationImplemented(READ_RESOURCE_BY_ID, operationClass)) {
                 RegisteredOperation<ReadResourceByIdOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_RESOURCE_BY_ID, ReadResourceByIdOperation.class);
                 readResourceByIdOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadMultipleResourcesOperation<?> o
-                    && isOperationImplemented(READ_MULTIPLE_RESOURCES, operation.getClass())) {
+                    && isOperationImplemented(READ_MULTIPLE_RESOURCES, operationClass)) {
                 RegisteredOperation<ReadMultipleResourcesOperation<?>> ro
                         = enrichWithMetaInfo(o, READ_MULTIPLE_RESOURCES, ReadMultipleResourcesOperation.class);
                 readMultipleResourcesOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof CreateResourceOperation<?> o
-                    && isOperationImplemented(CREATE_RESOURCE, operation.getClass())) {
+                    && isOperationImplemented(CREATE_RESOURCE, operationClass)) {
                 RegisteredOperation<CreateResourceOperation<?>> ro
                         = enrichWithMetaInfo(o, CREATE_RESOURCE, CreateResourceOperation.class);
                 createResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateResourceOperation o
-                    && isOperationImplemented(UPDATE_RESOURCE, operation.getClass())) {
+                    && isOperationImplemented(UPDATE_RESOURCE, operationClass)) {
                 RegisteredOperation<UpdateResourceOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_RESOURCE, UpdateResourceOperation.class);
                 updateResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof DeleteResourceOperation o
-                    && isOperationImplemented(DELETE_RESOURCE, operation.getClass())) {
+                    && isOperationImplemented(DELETE_RESOURCE, operationClass)) {
                 RegisteredOperation<DeleteResourceOperation> ro
                         = enrichWithMetaInfo(o, DELETE_RESOURCE, DeleteResourceOperation.class);
                 deleteResourceOperations.put(ro.getOperationMeta().getResourceType(), ro);
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadToOneRelationshipOperation<?, ?> o
-                    && isOperationImplemented(READ_TO_ONE_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(READ_TO_ONE_RELATIONSHIP, operationClass)) {
                 RegisteredOperation<ReadToOneRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_ONE_RELATIONSHIP, ReadToOneRelationshipOperation.class);
                 readToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -549,7 +550,7 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof ReadToManyRelationshipOperation<?, ?> o
-                    && isOperationImplemented(READ_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(READ_TO_MANY_RELATIONSHIP, operationClass)) {
                 RegisteredOperation<ReadToManyRelationshipOperation<?, ?>> ro
                         = enrichWithMetaInfo(o, READ_TO_MANY_RELATIONSHIP, ReadToManyRelationshipOperation.class);
                 readToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -557,7 +558,7 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateToOneRelationshipOperation o
-                    && isOperationImplemented(UPDATE_TO_ONE_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(UPDATE_TO_ONE_RELATIONSHIP, operationClass)) {
                 RegisteredOperation<UpdateToOneRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_ONE_RELATIONSHIP, UpdateToOneRelationshipOperation.class);
                 updateToOneRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -565,7 +566,7 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof UpdateToManyRelationshipOperation o
-                    && isOperationImplemented(UPDATE_TO_MANY_RELATIONSHIPS, operation.getClass())) {
+                    && isOperationImplemented(UPDATE_TO_MANY_RELATIONSHIPS, operationClass)) {
                 RegisteredOperation<UpdateToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, UPDATE_TO_MANY_RELATIONSHIPS, UpdateToManyRelationshipOperation.class);
                 updateToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -573,7 +574,7 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof AddToManyRelationshipOperation o
-                    && isOperationImplemented(ADD_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(ADD_TO_MANY_RELATIONSHIP, operationClass)) {
                 RegisteredOperation<AddToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, ADD_TO_MANY_RELATIONSHIP, AddToManyRelationshipOperation.class);
                 addToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())
@@ -581,7 +582,7 @@ public class OperationsRegistry {
                 registeredAs.add(ro);
             }
             if (operation instanceof DeleteToManyRelationshipOperation o
-                    && isOperationImplemented(DELETE_TO_MANY_RELATIONSHIP, operation.getClass())) {
+                    && isOperationImplemented(DELETE_TO_MANY_RELATIONSHIP, operationClass)) {
                 RegisteredOperation<DeleteToManyRelationshipOperation> ro
                         = enrichWithMetaInfo(o, DELETE_TO_MANY_RELATIONSHIP, DeleteToManyRelationshipOperation.class);
                 deleteToManyRelationshipOperations.computeIfAbsent(ro.getOperationMeta().getResourceType(), rt -> new HashMap<>())

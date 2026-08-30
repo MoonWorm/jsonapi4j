@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+jsonapi4j:
+  rootPath: /jsonapi
+  oas:
+    enabled: true
+    info:
+      description: JSON:API Users & Countries Sample App
+  cd:
+    enabled: false
+  ac:
+    enabled: false
+  sf:
+    enabled: false

@@ -88,3 +88,6 @@ HELP.md
 bin/
 
 .claude/
+
+# Announcement / social drafts — local only
+posts/

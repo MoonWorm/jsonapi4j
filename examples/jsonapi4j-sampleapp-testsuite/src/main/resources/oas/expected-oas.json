@@ -1,0 +1,5407 @@
+{
+  "components" : {
+    "examples" : {
+      "Bad_Request_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"550e8401-e29b-41d4-a716-446655440000\",\n      \"status\": \"400\",\n      \"code\": \"INVALID_ENUM_VALUE\",\n      \"detail\": \"countryCca2 must be a valid ISO2 string\",\n      \"source\": {\n        \"parameter\": \"countryCca2\"\n      }\n    },\n    {\n      \"id\": \"770e8402-e29b-41d4-a716-446655440000\",\n      \"status\": \"400\",\n      \"code\": \"VALUE_INVALID_FORMAT\",\n      \"detail\": \"region should be a valid region string: ['europe', 'asia', 'africa', etc.]\",\n      \"source\": {\n        \"parameter\": \"filter[region]\"\n      }\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      },
+      "Internal_Server_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"120e8403-e29b-41d4-a716-446655440000\",\n      \"status\": \"500\",\n      \"code\": \"INTERNAL_SERVER_ERROR\",\n      \"detail\": \"The service encountered an error\"\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      },
+      "Method_Not_Supported_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"ddc96100-efe7-4217-b9d5-e36877c6197a\",\n      \"status\": \"405\",\n      \"code\": \"METHOD_NOT_SUPPORTED\",\n      \"detail\": \"HTTP method is not supported: PATCH. Ensure a proper HTTP method for an HTTP request is used: GET, POST\"\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      },
+      "Not_Acceptable_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"e9e3c771-f8fb-4f36-a01e-713d2f98dd43\",\n      \"status\": \"406\",\n      \"code\": \"NOT_ACCEPTABLE\",\n      \"detail\": \"Not acceptable. The server doesn't support any of the requested by client acceptable content types.\"\n    }\n  ]\n}",
+        "valueSetFlag" : true
+      },
+      "Resource_Not_Found_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"770e8406-e29b-41d4-a716-446655440000\",\n      \"status\": \"404\",\n      \"code\": \"NOT_FOUND\",\n      \"detail\": \"'users' resource of a given id (43023048) is not found\"\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      },
+      "Too_Many_Requests_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"880e8407-e29b-41d4-a716-446655440321\",\n      \"status\": \"429\",\n      \"code\": \"TOO_MANY_REQUESTS\",\n      \"detail\": \"Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.\"\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      },
+      "Unsupported_Media_Type_Errors_Doc" : {
+        "value" : "{\n  \"errors\": [\n    {\n      \"id\": \"880e8407-e29b-41d4-a716-446655440000\",\n      \"status\": \"415\",\n      \"code\": \"UNSUPPORTED_MEDIA_TYPE\",\n      \"detail\": \"Unsupported Media Type: application/json. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - application/vnd.api+json.\"\n    }\n  ]\n}\n",
+        "valueSetFlag" : true
+      }
+    },
+    "schemas" : {
+      "CountriesAttributes" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "name" : {
+            "description" : "Country's official name",
+            "example" : "Belgium",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "region" : {
+            "description" : "Country's region",
+            "example" : "Europe",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "name", "region" ],
+        "type" : "object"
+      },
+      "CountriesMultipleResourcesDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/CountriesResource",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "CountriesRelationships" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "currencies" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsDoc",
+            "exampleSetFlag" : false
+          }
+        },
+        "required" : [ "currencies" ]
+      },
+      "CountriesResource" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/CountriesAttributes",
+            "exampleSetFlag" : false
+          },
+          "id" : {
+            "description" : "Resource unique identifier",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/CountriesRelationships",
+            "exampleSetFlag" : false
+          },
+          "type" : {
+            "description" : "Resource type",
+            "example" : "countries",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "CountriesSingleResourceDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/CountriesResource",
+            "exampleSetFlag" : false
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "CountriesToManyRelationshipsDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource",
+                "exampleSetFlag" : false
+              }, {
+                "$ref" : "#/components/schemas/CountriesResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "CurrenciesAttributes" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "name" : {
+            "description" : "Currency's full name",
+            "example" : "South Korean won",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "symbol" : {
+            "description" : "Currency's symbol",
+            "example" : "€",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "name", "symbol" ],
+        "type" : "object"
+      },
+      "CurrenciesMultipleResourcesDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/CurrenciesResource",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceObjectObjectObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "CurrenciesResource" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/CurrenciesAttributes",
+            "exampleSetFlag" : false
+          },
+          "id" : {
+            "description" : "Resource unique identifier",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "type" : {
+            "description" : "Resource type",
+            "example" : "currencies",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "CurrenciesSingleResourceDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/CurrenciesResource",
+            "exampleSetFlag" : false
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceObjectObjectObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ErrorObject" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "code" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "detail" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "id" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/ErrorSourceObject",
+            "exampleSetFlag" : false
+          },
+          "status" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "title" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ErrorSourceObject" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "header" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "parameter" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "path" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "pointer" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ErrorsDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "errors" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ErrorObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "HomeAddress" : {
+        "description" : "An address. Carrying a door code makes it a home address, which is reflected in the response; omit it for an ordinary one.",
+        "exampleSetFlag" : false,
+        "properties" : {
+          "city" : {
+            "description" : "City",
+            "example" : "Oslo",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "doorCode" : {
+            "description" : "Door code",
+            "example" : "1234",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "zip" : {
+            "description" : "Postal code",
+            "example" : "0150",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "JsonApiObject" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "ext" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "format" : "uri",
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "profile" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "format" : "uri",
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "version" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "LinksObject" : {
+        "additionalProperties" : {
+          "exampleSetFlag" : false,
+          "oneOf" : [ {
+            "description" : "A URL string",
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }, {
+            "exampleSetFlag" : false,
+            "properties" : {
+              "describedby" : {
+                "exampleSetFlag" : false,
+                "format" : "uri",
+                "type" : "string",
+                "types" : [ "string" ]
+              },
+              "href" : {
+                "exampleSetFlag" : false,
+                "type" : "string",
+                "types" : [ "string" ]
+              },
+              "hreflang" : {
+                "exampleSetFlag" : false,
+                "jsonSchema" : {
+                  "type" : "object"
+                },
+                "type" : "object",
+                "types" : [ "object" ]
+              },
+              "meta" : {
+                "exampleSetFlag" : false,
+                "jsonSchema" : {
+                  "type" : "object"
+                },
+                "type" : "object",
+                "types" : [ "object" ]
+              },
+              "rel" : {
+                "exampleSetFlag" : false,
+                "type" : "string",
+                "types" : [ "string" ]
+              },
+              "title" : {
+                "exampleSetFlag" : false,
+                "type" : "string",
+                "types" : [ "string" ]
+              },
+              "type" : {
+                "exampleSetFlag" : false,
+                "type" : "string",
+                "types" : [ "string" ]
+              }
+            },
+            "required" : [ "href" ],
+            "type" : "object"
+          } ]
+        },
+        "description" : "A JSON:API links object. May contain additional custom links beyond the standard ones.",
+        "exampleSetFlag" : false,
+        "type" : "object"
+      },
+      "ResourceIdentifierObject" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "id" : {
+            "description" : "Linked resourc unique identifier",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "type" : {
+            "description" : "Linked resource type",
+            "example" : "articles",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ResourceObjectObjectObject" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "id" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "relationships" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "type" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ToManyRelationshipsDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceObjectObjectObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "ToOneRelationshipDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/ResourceIdentifierObject",
+            "exampleSetFlag" : false
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceObjectObjectObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "UsersAttributes" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number",
+            "example" : "123456789",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "creditCardNumber", "email", "fullName" ],
+        "type" : "object"
+      },
+      "UsersMultipleResourcesDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/UsersResource",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource",
+                "exampleSetFlag" : false
+              }, {
+                "$ref" : "#/components/schemas/UsersResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "UsersRelationships" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "citizenships" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsDoc",
+            "exampleSetFlag" : false
+          },
+          "placeOfBirth" : {
+            "$ref" : "#/components/schemas/ToOneRelationshipDoc",
+            "exampleSetFlag" : false
+          },
+          "relatives" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsDoc",
+            "exampleSetFlag" : false
+          }
+        },
+        "required" : [ "citizenships", "placeOfBirth", "relatives" ]
+      },
+      "UsersResource" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersAttributes",
+            "exampleSetFlag" : false
+          },
+          "id" : {
+            "description" : "Resource unique identifier",
+            "example" : "12345",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "lid" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRelationships",
+            "exampleSetFlag" : false
+          },
+          "type" : {
+            "description" : "Resource type",
+            "example" : "users",
+            "exampleSetFlag" : true,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "UsersSingleResourceDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersResource",
+            "exampleSetFlag" : false
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource",
+                "exampleSetFlag" : false
+              }, {
+                "$ref" : "#/components/schemas/UsersResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "UsersToManyRelationshipsDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject",
+              "exampleSetFlag" : false
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource",
+                "exampleSetFlag" : false
+              }, {
+                "$ref" : "#/components/schemas/UsersResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      },
+      "UsersToOneRelationshipDoc" : {
+        "exampleSetFlag" : false,
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/ResourceIdentifierObject",
+            "exampleSetFlag" : false
+          },
+          "included" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "exampleSetFlag" : false,
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource",
+                "exampleSetFlag" : false
+              }, {
+                "$ref" : "#/components/schemas/UsersResource",
+                "exampleSetFlag" : false
+              } ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject",
+            "exampleSetFlag" : false
+          },
+          "links" : {
+            "additionalProperties" : {
+              "exampleSetFlag" : false,
+              "jsonSchema" : {
+                "type" : "object"
+              },
+              "type" : "object",
+              "types" : [ "object" ]
+            },
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "properties" : {
+                "empty" : {
+                  "type" : "boolean"
+                }
+              },
+              "type" : "object"
+            },
+            "properties" : {
+              "empty" : {
+                "exampleSetFlag" : false,
+                "type" : "boolean",
+                "types" : [ "boolean" ]
+              }
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          },
+          "meta" : {
+            "exampleSetFlag" : false,
+            "jsonSchema" : {
+              "type" : "object"
+            },
+            "type" : "object",
+            "types" : [ "object" ]
+          }
+        },
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "Authorization_Code_With_PKCE" : {
+        "description" : "Use this grant flow to access personalized user data.",
+        "extensions" : {
+          "x-scopes-required-entitlements" : {
+            "users.read" : [ ]
+          }
+        },
+        "flows" : {
+          "authorizationCode" : {
+            "authorizationUrl" : "http://foo.bar/authorizationUrl",
+            "scopes" : {
+              "users.read" : "Read-only access to a user data"
+            },
+            "tokenUrl" : "http://foo.bar/tokenUrl"
+          }
+        },
+        "type" : "OAUTH2"
+      },
+      "Client_Credentials" : {
+        "description" : "Use this grant flow to access non-personalized data.",
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : { },
+            "tokenUrl" : "http://foo.bar/tokenUrl"
+          }
+        },
+        "type" : "OAUTH2"
+      }
+    }
+  },
+  "externalDocs" : {
+    "description" : "Extra documentation description",
+    "url" : "http://foo.bar.docs/article-1"
+  },
+  "info" : {
+    "contact" : {
+      "email" : "john.doe@foo.bar",
+      "name" : "John Doe",
+      "url" : "http://users.foo.bar/john"
+    },
+    "description" : "JSON:API Users & Countries Sample App",
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title" : "JSON:API Users & Countries",
+    "version" : "1.0.0"
+  },
+  "openapi" : "3.0.1",
+  "paths" : {
+    "/jsonapi/countries" : {
+      "get" : {
+        "description" : "Retrieves all country details with available filters (if applicable).",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "currencies" ],
+            "url-compatible-unique-name" : "get-all-countries"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "example" : "currencies",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "currencies",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "Allows to filter countries based on id attribute value",
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "US",
+              "exampleSetFlag" : true,
+              "type" : "string"
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Allows to filter countries based on region attribute value",
+          "in" : "query",
+          "name" : "filter[region]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "Asia",
+              "exampleSetFlag" : true,
+              "type" : "string"
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesMultipleResourcesDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Get all countries",
+        "tags" : [ "Countries" ]
+      }
+    },
+    "/jsonapi/countries/{id}" : {
+      "get" : {
+        "description" : "Retrieves country details by resource id.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "currencies" ],
+            "url-compatible-unique-name" : "get-single-country"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "example" : "currencies",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "currencies",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Country unique identifier (ISO 3166)",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesSingleResourceDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Get single country",
+        "tags" : [ "Countries" ]
+      }
+    },
+    "/jsonapi/countries/{id}/relationships/currencies" : {
+      "get" : {
+        "description" : "Retrieves currencies to-many relationship details of the related country resource.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "currencies" ],
+            "url-compatible-unique-name" : "get-country-currencies-relationship"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "example" : "currencies",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "currencies",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "Country unique identifier (ISO 3166)",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesToManyRelationshipsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: currencies",
+        "tags" : [ "Countries" ]
+      }
+    },
+    "/jsonapi/currencies" : {
+      "get" : {
+        "description" : "Retrieves all currency details with available filters (if applicable).",
+        "parameters" : [ {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "Allows to filter currencies based on id attribute value",
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "NOK",
+              "exampleSetFlag" : true,
+              "type" : "string"
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrenciesMultipleResourcesDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Get all currencies",
+        "tags" : [ "Currencies" ]
+      }
+    },
+    "/jsonapi/users" : {
+      "get" : {
+        "description" : "Retrieves all user details with available filters (if applicable).",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ],
+            "url-compatible-unique-name" : "get-all-users"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
+          "example" : "citizenships",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "citizenships",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "Allows to filter users based on id attribute value",
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "3",
+              "exampleSetFlag" : true,
+              "type" : "string"
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersMultipleResourcesDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Get all users",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Creates a new instance of user's resource with relationships (if applicable).",
+        "parameters" : [ ],
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersSingleResourceDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Create single user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}" : {
+      "delete" : {
+        "description" : "Deletes the existing instance of user's resource.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Delete single user",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves user details by resource id.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ],
+            "url-compatible-unique-name" : "get-single-user"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
+          "example" : "citizenships",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "citizenships",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "User unique identifier",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersSingleResourceDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Get single user",
+        "tags" : [ "Users" ]
+      },
+      "patch" : {
+        "description" : "Updates the existing instance of user's resource.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Update single user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/citizenships" : {
+      "delete" : {
+        "description" : "Removes members from citizenships to-many relationship of the related user resource.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: citizenships (delete)",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves citizenships to-many relationship details of the related user resource.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "citizenships" ],
+            "url-compatible-unique-name" : "get-user-citizenships-relationship"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships",
+          "example" : "citizenships",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "citizenships",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "User unique identifier",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToManyRelationshipsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: citizenships",
+        "tags" : [ "Users" ]
+      },
+      "patch" : {
+        "description" : "Manages citizenships to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: citizenships (create/update/delete)",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Adds members to citizenships to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: citizenships (add)",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/placeOfBirth" : {
+      "get" : {
+        "description" : "Retrieves placeOfBirth to-one relationship details of the related user resource.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "placeOfBirth" ],
+            "url-compatible-unique-name" : "get-user-placeofbirth-relationship"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth",
+          "example" : "placeOfBirth",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "placeOfBirth",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "User unique identifier",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToOneRelationshipDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: placeOfBirth(read)",
+        "tags" : [ "Users" ]
+      },
+      "patch" : {
+        "description" : "Manages placeOfBirth to-one relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: placeOfBirth (create/update/delete)",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/relatives" : {
+      "delete" : {
+        "description" : "Removes members from relatives to-many relationship of the related user resource.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: relatives (delete)",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves relatives to-many relationship details of the related user resource.",
+        "extensions" : {
+          "x-operation-properties" : {
+            "jsonapi-available-relationships" : [ "relatives" ],
+            "url-compatible-unique-name" : "get-user-relatives-relationship"
+          }
+        },
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives",
+          "example" : "relatives",
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "items" : {
+              "example" : "relatives",
+              "exampleSetFlag" : true,
+              "type" : "string",
+              "types" : [ "string" ]
+            },
+            "type" : "array",
+            "types" : [ "array" ]
+          }
+        }, {
+          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+          "in" : "query",
+          "name" : "page[cursor]",
+          "required" : false,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        }, {
+          "description" : "User unique identifier",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToManyRelationshipsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Happy path scenario"
+          },
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: relatives",
+        "tags" : [ "Users" ]
+      },
+      "patch" : {
+        "description" : "Manages relatives to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: relatives (create/update/delete)",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Adds members to relatives to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "parameters" : [ {
+          "description" : "Resource id. Required",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "exampleSetFlag" : false,
+            "type" : "string",
+            "types" : [ "string" ]
+          }
+        } ],
+        "responses" : {
+          "400" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Bad_Request_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+          },
+          "404" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Resource_Not_Found_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Resource not found. The requested operation or resource is not found."
+          },
+          "405" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Method_Not_Supported_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+          },
+          "406" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Not_Acceptable_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "415" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Unsupported_Media_Type_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+          },
+          "429" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Too_Many_Requests_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "headers" : {
+              "X-RateLimit-Burst-Capacity" : {
+                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+                "example" : "20",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Remaining" : {
+                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Replenish-Rate" : {
+                "description" : "Number of tokens replenished per second.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              },
+              "X-RateLimit-Requested-Tokens" : {
+                "description" : "Request cost in tokens.",
+                "example" : "5",
+                "required" : true,
+                "schema" : {
+                  "exampleSetFlag" : false,
+                  "format" : "int32",
+                  "type" : "integer",
+                  "types" : [ "integer" ]
+                }
+              }
+            }
+          },
+          "500" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "exampleSetFlag" : false,
+                "examples" : {
+                  "Internal_Server_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc",
+                    "valueSetFlag" : false
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc",
+                  "exampleSetFlag" : false
+                }
+              }
+            },
+            "description" : "Internal Server Error. Something went wrong on the server party."
+          }
+        },
+        "summary" : "Relationship: relatives (add)",
+        "tags" : [ "Users" ]
+      }
+    }
+  },
+  "servers" : [ {
+    "description" : "Localhost",
+    "url" : "http://localhost:8080"
+  } ],
+  "tags" : [ {
+    "name" : "Countries"
+  }, {
+    "name" : "Currencies"
+  }, {
+    "name" : "Users"
+  } ]
+}

@@ -428,6 +428,79 @@ public class ReflectionUtilsTests {
 
     }
 
+    @Nested
+    class ProxyUnwrapping {
+
+        @Test
+        void unwrapProxyClass_plainClass_returnsItself() {
+            assertThat(ReflectionUtils.unwrapProxyClass(Bean.class)).isEqualTo(Bean.class);
+        }
+
+        @Test
+        void unwrapProxyClass_userSubclass_returnsTheSubclass() {
+            assertThat(ReflectionUtils.unwrapProxyClass(BeanSubclass.class)).isEqualTo(BeanSubclass.class);
+        }
+
+        @Test
+        void unwrapProxyClass_containerProxy_returnsTheProxiedBean() {
+            assertThat(ReflectionUtils.unwrapProxyClass(BeanClientProxy.class)).isEqualTo(Bean.class);
+        }
+
+        @Test
+        void isMethodOverridden_containerProxyRedeclaringADefaultMethod_reportsItUnimplemented() {
+            assertThat(ReflectionUtils.isMethodOverridden(BeanClientProxy.class, "unimplemented")).isTrue();
+
+            assertThat(ReflectionUtils.isMethodOverridden(
+                    ReflectionUtils.unwrapProxyClass(BeanClientProxy.class), "unimplemented"
+            )).isFalse();
+        }
+
+        @Test
+        void isMethodOverridden_containerProxyOverAnImplementedMethod_reportsItImplemented() {
+            assertThat(ReflectionUtils.isMethodOverridden(
+                    ReflectionUtils.unwrapProxyClass(BeanClientProxy.class), "implemented"
+            )).isTrue();
+        }
+
+    }
+
+    interface BeanContract {
+
+        default void implemented() {
+        }
+
+        default void unimplemented() {
+        }
+
+    }
+
+    private static class Bean implements BeanContract {
+
+        @Override
+        public void implemented() {
+        }
+
+    }
+
+    private static class BeanSubclass extends Bean {
+    }
+
+    /**
+     * Mirrors what a CDI container generates: a subclass of the bean that redeclares every method it
+     * delegates, including the ones the bean inherits as interface defaults.
+     */
+    private static class BeanClientProxy extends Bean implements io.quarkus.arc.ClientProxy {
+
+        @Override
+        public void implemented() {
+        }
+
+        @Override
+        public void unimplemented() {
+        }
+
+    }
+
     @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
     @interface Marker {
     }
