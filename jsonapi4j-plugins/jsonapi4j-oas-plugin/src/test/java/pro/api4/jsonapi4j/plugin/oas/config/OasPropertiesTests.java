@@ -4,11 +4,18 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.MetaConfigComposer;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -80,7 +87,7 @@ public class OasPropertiesTests {
         public void validate_licenseUrlAndIdentifier_reportsCrossPropertiesError() {
             sut.getInfo().getLicense().setIdentifier("Apache-2.0");
 
-            PluginPropertiesValidationResult result = sut.validate();
+            PropertiesValidationResult result = sut.validate();
 
             assertThat(result.getPropertyErrors()).isEmpty();
             assertThat(result.getCrossPropertiesErrors()).hasSize(1);
@@ -89,6 +96,7 @@ public class OasPropertiesTests {
         @Test
         public void validate_extensionWithoutXPrefix_reportsError() {
             sut.getInfo().setExtensions(Map.of("build", "42"));
+            sut.getInfo().setTermsOfService("https://foo.bar/terms");
 
             assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.oas.info.extensions.build");
         }
@@ -173,7 +181,7 @@ public class OasPropertiesTests {
             sut.getOauth2().getClientCredentials().setName("OAuth2");
             sut.getOauth2().getAuthorizationCodeWithPkce().setName("OAuth2");
 
-            PluginPropertiesValidationResult result = sut.validate();
+            PropertiesValidationResult result = sut.validate();
 
             assertThat(result.getPropertyErrors()).isEmpty();
             assertThat(result.getCrossPropertiesErrors()).hasSize(1);
@@ -213,12 +221,142 @@ public class OasPropertiesTests {
         public void validate_sameHttpStatusCodeDeclaredTwice_reportsCrossPropertiesError() {
             sut.setCustomResponseHeaders(List.of(rateLimitHeaders(), rateLimitHeaders()));
 
-            PluginPropertiesValidationResult result = sut.validate();
+            PropertiesValidationResult result = sut.validate();
 
             assertThat(result.getPropertyErrors()).isEmpty();
             assertThat(result.getCrossPropertiesErrors()).hasSize(1);
         }
 
+    }
+
+    @Nested
+    class CrossCheckAgainstRootPath {
+
+        @Test
+        public void validateAgainst_oasRootPathUnderRootPath_returnsNoErrors() {
+            assertThat(sut.validateAgainst(rootProperties("/jsonapi")).hasErrors()).isFalse();
+        }
+
+        @Test
+        public void validateAgainst_oasRootPathOutsideRootPath_reportsCrossPropertiesError() {
+            sut.setOasRootPath("/openapi");
+
+            PropertiesValidationResult result = sut.validateAgainst(rootProperties("/jsonapi"));
+
+            assertThat(result.getPropertyErrors()).isEmpty();
+            assertThat(result.getCrossPropertiesErrors()).hasSize(1);
+        }
+
+        @Test
+        public void validateAgainst_oasRootPathSharesPrefixButNotSegment_reportsCrossPropertiesError() {
+            sut.setOasRootPath("/jsonapidocs");
+
+            assertThat(sut.validateAgainst(rootProperties("/jsonapi")).getCrossPropertiesErrors()).hasSize(1);
+        }
+
+        @Test
+        public void validateAgainst_rootPathIsSlash_returnsNoErrors() {
+            sut.setOasRootPath("/oas");
+
+            assertThat(sut.validateAgainst(rootProperties("/")).hasErrors()).isFalse();
+        }
+
+        @Test
+        public void validateAgainst_pluginDisabled_returnsNoErrors() {
+            sut.setEnabled(false);
+            sut.setOasRootPath("/openapi");
+
+            assertThat(sut.validateAgainst(rootProperties("/jsonapi")).hasErrors()).isFalse();
+        }
+
+        @Test
+        public void validateAgainst_oasRootPathAlreadyInvalid_reportsNothingExtra() {
+            sut.setOasRootPath("openapi");
+
+            assertThat(sut.validateAgainst(rootProperties("/jsonapi")).hasErrors()).isFalse();
+        }
+
+        @Test
+        public void validateAgainst_noRootProperties_returnsNoErrors() {
+            assertThat(sut.validateAgainst(null).hasErrors()).isFalse();
+        }
+
+    }
+
+    @Nested
+    class ReportedPropertyPaths {
+
+        @Test
+        public void validate_everyReportedPath_pointsAtARealConfigKey() {
+            // given
+            sut.getInfo().setExtensions(Map.of("build", "42"));
+            sut.getInfo().setTermsOfService("https://foo.bar/terms");
+            Map<String, Object> effectiveConfig = MetaConfigComposer.compose(
+                    new DefaultJsonApi4jProperties(),
+                    List.of(new JsonApiOasPlugin(sut))
+            );
+            breakEveryValue(sut);
+
+            // when
+            Set<String> reportedPaths = sut.validate().getPropertyErrors().keySet();
+
+            // then
+            assertThat(reportedPaths).isNotEmpty();
+            reportedPaths.forEach(path ->
+                    assertThat(resolves(effectiveConfig, path)).as(path).isTrue()
+            );
+        }
+
+        private void breakEveryValue(DefaultOasProperties properties) {
+            properties.setOasRootPath("oas");
+            properties.getInfo().setTitle(" ");
+            properties.getInfo().setVersion(" ");
+            properties.getInfo().setTermsOfService("/terms");
+            properties.getInfo().getContact().setUrl("/john");
+            properties.getInfo().getContact().setEmail("john.doe.foo.bar");
+            properties.getInfo().getLicense().setName(" ");
+            properties.getInfo().getLicense().setUrl("/license");
+            properties.getExternalDocumentation().setUrl(" ");
+            properties.getServers().getFirst().setUrl(" ");
+            properties.getOauth2().getClientCredentials().setName(" ");
+            properties.getOauth2().getClientCredentials().setTokenUrl(" ");
+            properties.getOauth2().getAuthorizationCodeWithPkce().setName(" ");
+            properties.getOauth2().getAuthorizationCodeWithPkce().setTokenUrl(" ");
+            properties.getOauth2().getAuthorizationCodeWithPkce().setAuthorizationUrl(" ");
+            properties.getOauth2().getAuthorizationCodeWithPkce().getScopes().getFirst().setName(" ");
+            properties.getCustomResponseHeaders().getFirst().setHttpStatusCode("4XX");
+            properties.getCustomResponseHeaders().getFirst().getHeaders().getFirst().setName(" ");
+            properties.getCustomResponseHeaders().getFirst().getHeaders().getFirst().setSchema("number");
+        }
+
+    }
+
+    private static boolean resolves(Map<String, Object> effectiveConfig, String reportedPath) {
+        Object current = effectiveConfig;
+        for (String segment : reportedPath.replaceFirst("^jsonapi4j\\.", "").split("\\.")) {
+            Matcher indexed = INDEXED_SEGMENT.matcher(segment);
+            String name = indexed.matches() ? indexed.group(1) : segment;
+            if (!(current instanceof Map<?, ?> node) || !node.containsKey(name)) {
+                return false;
+            }
+            current = node.get(name);
+            if (indexed.matches()) {
+                int index = Integer.parseInt(indexed.group(2));
+                if (!(current instanceof List<?> elements) || index >= elements.size()) {
+                    return false;
+                }
+                current = elements.get(index);
+            }
+        }
+        return true;
+    }
+
+    private static final Pattern INDEXED_SEGMENT = Pattern.compile("(.+)\\[(\\d+)]");
+
+    private static JsonApi4jProperties rootProperties(String rootPath) {
+        DefaultJsonApi4jProperties properties = new DefaultJsonApi4jProperties();
+        properties.setRootPath(rootPath);
+        return properties;
     }
 
     private static DefaultOasProperties validProperties() {

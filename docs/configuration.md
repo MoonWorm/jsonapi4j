@@ -147,12 +147,12 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. |
+| `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. Must be an absolute path with no trailing slash — it is mounted as a servlet mapping, and is [validated at startup](#startup-validation). |
 | `jsonapi4j.meta.enabled` | `false` | Enables the built-in [Meta API](/meta-api/) — a runtime introspection endpoint exposing the app's resources, relationships, operations, plugins, and effective config. Opt-in. |
 
 ## Validation Properties
 
-JsonApi4j includes a built-in structural validator that enforces limits on common request parameters. These properties configure the thresholds used by the built-in validator.
+JsonApi4j includes a built-in structural validator that enforces limits on common request parameters. These properties configure the thresholds used by the built-in validator. Every limit must be greater than zero — a zero rejects every request carrying the parameter it caps rather than lifting the cap — and this is [checked at startup](#startup-validation).
 
 | Property | Default | Description |
 |----------|---------|-------------|
@@ -176,9 +176,19 @@ Each plugin adds its own properties under the `jsonapi4j` namespace. Refer to th
 
 ### Startup Validation
 
-Every plugin validates its own section when the application starts. A misconfigured plugin fails the
-boot with a `PluginMisconfigurationException` that lists **all** the problems found across **all**
-plugins at once, each pointing at the exact property key:
+Every configuration section validates itself when the application starts — the root `jsonapi4j` section
+first, then each enabled plugin. Errors are collected per section and reported all at once, each pointing
+at the exact property key, so one restart is enough to see everything wrong with a section.
+
+Root configuration problems fail the boot with a `RootConfigMisconfigurationException`:
+
+```
+JsonApi4j root configuration ('jsonapi4j') is invalid. Fix the configuration and restart:
+Property errors:
+  - 'jsonapi4j.rootPath': must start with '/', but was 'jsonapi'
+```
+
+Plugin problems fail it with a `PluginMisconfigurationException`, listing every misconfigured plugin:
 
 ```
 Registered plugins are misconfigured. Fix the configuration and restart:
@@ -191,12 +201,19 @@ Cross-properties errors:
 ```
 
 The checks cover mandatory values, ranges, URL and path formats, and combinations that are individually
-valid but contradict each other (mutually exclusive license fields, two OAuth2 flows sharing one name,
-duplicate response-header status codes). A **disabled** plugin is never validated — parked configuration
-does not break a boot.
+valid but contradict each other — mutually exclusive license fields, two OAuth2 flows sharing one name,
+duplicate response-header status codes. A plugin is also checked **against the root configuration**, which
+is how `jsonapi4j.oas.oasRootPath` is kept under `jsonapi4j.rootPath`. A **disabled** plugin is never
+validated — parked configuration does not break a boot.
 
-A custom plugin gets the same treatment by overriding `validate()` on its `PluginProperties`
-implementation and returning the collected `PluginPropertiesValidationResult`.
+The root section is validated before the plugins, because plugins are checked against it: a broken
+`rootPath` would otherwise produce a page of misleading follow-up errors.
+
+Custom configuration gets the same treatment. Both `JsonApi4jProperties` and every plugin's
+`PluginProperties` extend `ValidatableProperties`: override `validate()` and return the collected
+`PropertiesValidationResult`, built with the shared `requireNotBlank` / `requirePositive` /
+`requireHttpUrl` / `requireServletPath` vocabulary. A plugin that also has to agree with the root
+configuration overrides `validateAgainst(JsonApi4jProperties)` instead.
 
 ### A config file with everything in it
 

@@ -129,9 +129,11 @@ public class SpringJsonApi4jAutoConfigurer {
             List<JsonApi4jPlugin> defaultPlugins,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
             JsonApiBuildInRequestValidatorFactory validatorFactory,
-            ObjectProvider<MetaContext> metaContextProvider
+            ObjectProvider<MetaContext> metaContextProvider,
+            JsonApi4jProperties properties
     ) {
         return JsonApi4j.builder()
+                .properties(properties)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .plugins(defaultPlugins)

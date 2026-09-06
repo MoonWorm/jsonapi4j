@@ -3,7 +3,9 @@ package pro.api4.jsonapi4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PluginProperties;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult;
+import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
@@ -26,6 +28,7 @@ public class JsonApi4jBuilder {
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
     private JsonApiBuildInRequestValidatorFactory validatorFactory = JsonApiBuildInRequestValidatorFactory.NO_OP;
     private MetaContext metaContext = null;
+    private JsonApi4jProperties properties = new DefaultJsonApi4jProperties();
 
     JsonApi4jBuilder() {}
 
@@ -59,6 +62,12 @@ public class JsonApi4jBuilder {
         return this;
     }
 
+    public JsonApi4jBuilder properties(JsonApi4jProperties properties) {
+        Validate.notNull(properties, "JsonApi4j Properties must not be null");
+        this.properties = properties;
+        return this;
+    }
+
     public JsonApi4jBuilder meta(MetaContext metaContext) {
         this.metaContext = metaContext;
         return this;
@@ -66,6 +75,7 @@ public class JsonApi4jBuilder {
 
     public JsonApi4j build() {
         validateIntegrity();
+        validateRootConfig();
         validatePluginConfigs();
         if (metaContext != null) {
             domainRegistry = DomainRegistry.copy(plugins, domainRegistry).withMeta().build();
@@ -75,7 +85,7 @@ public class JsonApi4jBuilder {
         // Materialize the validator against the final (meta-augmented) domain registry, so it never validates
         // requests against a stale, pre-meta view of the registered resources/relationships.
         JsonApiBuildInRequestValidator validator = validatorFactory.create(domainRegistry);
-        return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor, validator, metaContext);
+        return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor, validator, metaContext, properties);
     }
 
     private void validateIntegrity() {
@@ -94,8 +104,26 @@ public class JsonApi4jBuilder {
     }
 
     /**
+     * Fails the build when the root {@code jsonapi4j} configuration is unusable. Runs before the plugin checks:
+     * plugins are validated <em>against</em> the root configuration, so a broken root path would only produce
+     * misleading follow-up errors.
+     */
+    private void validateRootConfig() {
+        PropertiesValidationResult result = properties.validate();
+        if (result.hasErrors()) {
+            throw new RootConfigMisconfigurationException(MessageFormat.format(
+                    "JsonApi4j root configuration (''{0}'') is invalid. Fix the configuration and restart:\n{1}",
+                    JsonApi4jProperties.CONFIG_PREFIX,
+                    result
+            ));
+        }
+    }
+
+    /**
      * Fails the build when any enabled plugin is misconfigured, reporting every plugin's errors at once - a boot that
-     * dies on the first bad key costs one restart per typo.
+     * dies on the first bad key costs one restart per typo. Each plugin is checked on its own
+     * ({@link PluginProperties#validate()}) and against the root configuration
+     * ({@link PluginProperties#validateAgainst(JsonApi4jProperties)}), both landing in one report.
      */
     private void validatePluginConfigs() {
         StringBuilder errors = new StringBuilder();
@@ -103,14 +131,17 @@ public class JsonApi4jBuilder {
                 .filter(JsonApi4jPlugin::enabled)
                 .filter(plugin -> plugin.configProperties() != null)
                 .forEach(plugin -> {
-                    PluginProperties properties = plugin.configProperties();
-                    PluginPropertiesValidationResult result = properties.validate();
+                    PluginProperties pluginProperties = plugin.configProperties();
+                    PropertiesValidationResult result = PropertiesValidationResult.builder()
+                            .addAll(pluginProperties.validate())
+                            .addAll(pluginProperties.validateAgainst(properties))
+                            .build();
                     if (result.hasErrors()) {
                         errors.append(MessageFormat.format(
                                 "{0} (''{1}.{2}''):\n{3}",
                                 plugin.pluginName(),
                                 JsonApi4jProperties.CONFIG_PREFIX,
-                                properties.section(),
+                                pluginProperties.section(),
                                 result
                         ));
                     }

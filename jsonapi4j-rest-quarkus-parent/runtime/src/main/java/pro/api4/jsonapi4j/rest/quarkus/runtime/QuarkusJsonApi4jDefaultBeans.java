@@ -167,9 +167,11 @@ public class QuarkusJsonApi4jDefaultBeans {
                         List<JsonApi4jPlugin> plugins,
                         @Named("jsonApi4jExecutorService") ExecutorService executorService,
                         JsonApiBuildInRequestValidatorFactory validatorFactory,
-                        Instance<MetaContext> metaContext) {
+                        Instance<MetaContext> metaContext,
+                        QuarkusJsonApi4jProperties rootProperties) {
         LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
+                .properties(rootProperties.toJsonApi4jProperties())
                 .plugins(plugins)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)

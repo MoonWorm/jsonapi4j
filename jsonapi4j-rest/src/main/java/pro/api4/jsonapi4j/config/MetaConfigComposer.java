@@ -23,7 +23,7 @@ public final class MetaConfigComposer {
 
     private static final ObjectMapper MAPPER = JsonApi4jConfigReader.getJsonObjectMapper()
             .copy()
-            .addMixIn(PluginProperties.class, PluginPropertiesMixIn.class);
+            .addMixIn(ValidatableProperties.class, ValidatablePropertiesMixIn.class);
 
     private MetaConfigComposer() {
     }
@@ -50,8 +50,13 @@ public final class MetaConfigComposer {
         return MAPPER.convertValue(config, MAP_TYPE);
     }
 
-    @JsonIgnoreProperties("section")
-    private interface PluginPropertiesMixIn {
+    /**
+     * Keeps the {@link ValidatableProperties} contract itself out of the emitted config: an implementation is free
+     * to be a record, whose {@code section} / {@code propertyPathPrefix} components would otherwise surface as
+     * configuration keys.
+     */
+    @JsonIgnoreProperties({"section", "propertyPathPrefix"})
+    private interface ValidatablePropertiesMixIn {
     }
 
 }

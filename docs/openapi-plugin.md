@@ -163,7 +163,7 @@ them as documents rather than as strings.
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.oas.enabled` | `true` | Enables/disables OAS plugin and OAS endpoint exposure. |
-| `jsonapi4j.oas.oasRootPath` | `/jsonapi/oas` | Root path for generated OpenAPI spec endpoint. |
+| `jsonapi4j.oas.oasRootPath` | `/jsonapi/oas` | Root path for generated OpenAPI spec endpoint. Must sit under `jsonapi4j.rootPath` — enforced at startup, because the Spring Boot integration derives the mount point from `rootPath` while Quarkus and the Servlet integration mount it on this value. |
 | `jsonapi4j.oas.info.title` | `JsonApi4j API Sample Title` | OpenAPI info.title. |
 | `jsonapi4j.oas.info.description` | not set | OpenAPI info.description. |
 | `jsonapi4j.oas.info.version` | `1.0.0` | OpenAPI info.version. |

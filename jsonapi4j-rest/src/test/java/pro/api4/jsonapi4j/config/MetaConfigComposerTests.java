@@ -31,7 +31,7 @@ class MetaConfigComposerTests {
         assertThat(asList(cd.get("propagation")))
                 .containsExactly("FIELDS", "CUSTOM_QUERY_PARAMS", "HEADERS");
         assertThat(cd).containsEntry("enabled", true);
-        assertThat(cd).doesNotContainKey("section");
+        assertThat(cd).doesNotContainKeys("section", "propertyPathPrefix");
     }
 
     @Test

@@ -4,11 +4,18 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.MetaConfigComposer;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult;
+import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties.DefaultCache;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -141,7 +148,7 @@ public class CompoundDocsPropertiesTests {
             sut.setHttpConnectTimeoutMs(5000);
             sut.setHttpTotalTimeoutMs(1000);
 
-            PluginPropertiesValidationResult result = sut.validate();
+            PropertiesValidationResult result = sut.validate();
 
             assertThat(result.getPropertyErrors()).isEmpty();
             assertThat(result.getCrossPropertiesErrors()).hasSize(1);
@@ -163,6 +170,69 @@ public class CompoundDocsPropertiesTests {
         }
 
     }
+
+    @Nested
+    class ReportedPropertyPaths {
+
+        @Test
+        public void validate_everyReportedPath_pointsAtARealConfigKey() {
+            // given
+            Map<String, Object> effectiveConfig = effectiveConfigOf(sut);
+            breakEveryValue(sut);
+
+            // when
+            Set<String> reportedPaths = sut.validate().getPropertyErrors().keySet();
+
+            // then
+            assertThat(reportedPaths).isNotEmpty();
+            reportedPaths.forEach(path ->
+                    assertThat(resolves(effectiveConfig, path)).as(path).isTrue()
+            );
+        }
+
+        private void breakEveryValue(DefaultCompoundDocsProperties properties) {
+            properties.setMaxHops(0);
+            properties.setMaxIncludedResources(0);
+            properties.setDefaultMaxBatchSize(0);
+            properties.setHttpConnectTimeoutMs(0);
+            properties.setHttpTotalTimeoutMs(0);
+            properties.setErrorStrategy(null);
+            properties.setPropagation(null);
+            properties.setMapping(Map.of("users", "/jsonapi"));
+            properties.setBatchSizeMapping(Map.of("users", 0));
+            properties.getCache().setMaxSize(0);
+        }
+
+    }
+
+    private static Map<String, Object> effectiveConfigOf(CompoundDocsProperties properties) {
+        return MetaConfigComposer.compose(
+                new DefaultJsonApi4jProperties(),
+                List.of(new JsonApiCompoundDocsPlugin(properties))
+        );
+    }
+
+    private static boolean resolves(Map<String, Object> effectiveConfig, String reportedPath) {
+        Object current = effectiveConfig;
+        for (String segment : reportedPath.replaceFirst("^jsonapi4j\\.", "").split("\\.")) {
+            Matcher indexed = INDEXED_SEGMENT.matcher(segment);
+            String name = indexed.matches() ? indexed.group(1) : segment;
+            if (!(current instanceof Map<?, ?> node) || !node.containsKey(name)) {
+                return false;
+            }
+            current = node.get(name);
+            if (indexed.matches()) {
+                int index = Integer.parseInt(indexed.group(2));
+                if (!(current instanceof List<?> elements) || index >= elements.size()) {
+                    return false;
+                }
+                current = elements.get(index);
+            }
+        }
+        return true;
+    }
+
+    private static final Pattern INDEXED_SEGMENT = Pattern.compile("(.+)\\[(\\d+)]");
 
     private static DefaultCompoundDocsProperties validProperties() {
         DefaultCompoundDocsProperties properties = new DefaultCompoundDocsProperties();

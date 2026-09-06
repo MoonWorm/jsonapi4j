@@ -1,9 +1,12 @@
 package pro.api4.jsonapi4j;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PluginProperties;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
 
 import java.util.List;
@@ -15,6 +18,42 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JsonApi4jBuilderTests {
 
     private final JsonApi4jBuilder sut = JsonApi4j.builder();
+
+    @Test
+    public void build_noPropertiesSet_buildsSuccessfully() {
+        assertThatCode(sut::build).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void build_invalidRootProperties_throwsRootConfigMisconfigurationException() {
+        sut.properties(rootPropertiesWithRootPath("jsonapi"));
+
+        assertThatThrownBy(sut::build)
+                .isInstanceOf(RootConfigMisconfigurationException.class)
+                .hasMessageContaining("jsonapi4j.rootPath");
+    }
+
+    @Test
+    public void build_rootAndPluginBothInvalid_reportsRootFirst() {
+        sut.properties(rootPropertiesWithRootPath("jsonapi"))
+                .plugins(List.of(new TestPlugin("SfPlugin", new TestProperties("sf", true), true)));
+
+        assertThatThrownBy(sut::build).isInstanceOf(RootConfigMisconfigurationException.class);
+    }
+
+    @Test
+    public void build_pluginCrossCheckFails_throwsPluginMisconfigurationException() {
+        sut.plugins(List.of(new TestPlugin("SfPlugin", new CrossCheckingProperties("sf"), true)));
+
+        assertThatThrownBy(sut::build)
+                .isInstanceOf(PluginMisconfigurationException.class)
+                .hasMessageContaining("does not agree with '/jsonapi'");
+    }
+
+    @Test
+    public void properties_null_throwsNullPointerException() {
+        assertThatThrownBy(() -> sut.properties(null)).isInstanceOf(NullPointerException.class);
+    }
 
     @Test
     public void build_pluginExposesNoConfigProperties_buildsSuccessfully() {
@@ -59,6 +98,25 @@ public class JsonApi4jBuilderTests {
                 .satisfies(e -> assertThat(e.getMessage()).contains("SfPlugin", "CdPlugin"));
     }
 
+    private static JsonApi4jProperties rootPropertiesWithRootPath(String rootPath) {
+        DefaultJsonApi4jProperties properties = new DefaultJsonApi4jProperties();
+        properties.setRootPath(rootPath);
+        return properties;
+    }
+
+    private record CrossCheckingProperties(String section) implements PluginProperties {
+
+        @Override
+        public PropertiesValidationResult validateAgainst(JsonApi4jProperties rootProperties) {
+            return PropertiesValidationResult.builder()
+                    .addCrossPropertiesError(String.format(
+                            "'%s' does not agree with '%s'", propertyPath("path"), rootProperties.rootPath()
+                    ))
+                    .build();
+        }
+
+    }
+
     private record TestPlugin(String name,
                               PluginProperties properties,
                               boolean enabled) implements JsonApi4jPlugin {
@@ -78,11 +136,11 @@ public class JsonApi4jBuilderTests {
     private record TestProperties(String section, boolean broken) implements PluginProperties {
 
         @Override
-        public PluginPropertiesValidationResult validate() {
+        public PropertiesValidationResult validate() {
             if (!broken) {
-                return PluginPropertiesValidationResult.empty();
+                return PropertiesValidationResult.empty();
             }
-            return PluginPropertiesValidationResult.builder()
+            return PropertiesValidationResult.builder()
                     .requireNotBlank(propertyPath("brokenProperty"), null)
                     .build();
         }

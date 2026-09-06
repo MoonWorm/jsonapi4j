@@ -12,7 +12,7 @@ import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 @ToString
 public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 
-    private String rootPath;
+    private String rootPath = DEFAULT_ROOT_PATH;
     private DefaultValidationProperties validation = new DefaultValidationProperties();
     private DefaultMetaProperties meta = new DefaultMetaProperties();
 

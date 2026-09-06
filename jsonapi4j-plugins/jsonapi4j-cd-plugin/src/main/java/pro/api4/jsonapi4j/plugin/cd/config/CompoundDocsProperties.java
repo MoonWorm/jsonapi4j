@@ -4,14 +4,27 @@ import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.config.PluginProperties;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
-import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult.PluginPropertiesValidationResultBuilder;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult;
+import pro.api4.jsonapi4j.config.PropertiesValidationResult.PropertiesValidationResultBuilder;
 
 import java.util.*;
 
 public interface CompoundDocsProperties extends PluginProperties {
 
     String CD_PROPERTY = "cd";
+
+    String ENABLED_PROPERTY = "enabled";
+    String MAX_HOPS_PROPERTY = "maxHops";
+    String MAX_INCLUDED_RESOURCES_PROPERTY = "maxIncludedResources";
+    String ERROR_STRATEGY_PROPERTY = "errorStrategy";
+    String MAPPING_PROPERTY = "mapping";
+    String BATCH_SIZE_MAPPING_PROPERTY = "batchSizeMapping";
+    String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
+    String PROPAGATION_PROPERTY = "propagation";
+    String DEDUPLICATE_RESOURCES_PROPERTY = "deduplicateResources";
+    String HTTP_CONNECT_TIMEOUT_MS_PROPERTY = "httpConnectTimeoutMs";
+    String HTTP_TOTAL_TIMEOUT_MS_PROPERTY = "httpTotalTimeoutMs";
+    String CACHE_PROPERTY = "cache";
 
     @Override
     default String section() {
@@ -80,18 +93,18 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     @Override
-    default PluginPropertiesValidationResult validate() {
+    default PropertiesValidationResult validate() {
         if (!enabled()) {
-            return PluginPropertiesValidationResult.empty();
+            return PropertiesValidationResult.empty();
         }
-        PluginPropertiesValidationResultBuilder builder = PluginPropertiesValidationResult.builder()
-                .requirePositive(propertyPath("maxHops"), maxHops())
-                .requirePositive(propertyPath("maxIncludedResources"), maxIncludedResources())
-                .requirePositive(propertyPath("defaultMaxBatchSize"), defaultMaxBatchSize())
-                .requirePositive(propertyPath("httpConnectTimeoutMs"), httpConnectTimeoutMs())
-                .requirePositive(propertyPath("httpTotalTimeoutMs"), httpTotalTimeoutMs())
-                .requireNotNull(propertyPath("errorStrategy"), errorStrategy())
-                .requireNotNull(propertyPath("propagation"), propagation());
+        PropertiesValidationResultBuilder builder = PropertiesValidationResult.builder()
+                .requirePositive(propertyPath(MAX_HOPS_PROPERTY), maxHops())
+                .requirePositive(propertyPath(MAX_INCLUDED_RESOURCES_PROPERTY), maxIncludedResources())
+                .requirePositive(propertyPath(DEFAULT_MAX_BATCH_SIZE_PROPERTY), defaultMaxBatchSize())
+                .requirePositive(propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs())
+                .requirePositive(propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs())
+                .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
+                .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation());
         validateMapping(builder);
         validateBatchSizeMapping(builder);
         validateCache(builder);
@@ -103,51 +116,51 @@ public interface CompoundDocsProperties extends PluginProperties {
      * Every mapped resource type is fetched over HTTP from another service, so its base URL has to be absolute -
      * a relative one has nothing to resolve against once the include leaves this app.
      */
-    private void validateMapping(PluginPropertiesValidationResultBuilder builder) {
+    private void validateMapping(PropertiesValidationResultBuilder builder) {
         if (mapping() == null) {
-            builder.requireNotNull(propertyPath("mapping"), null);
+            builder.requireNotNull(propertyPath(MAPPING_PROPERTY), null);
             return;
         }
         mapping().forEach((resourceType, baseUrl) -> {
             if (StringUtils.isBlank(resourceType)) {
-                builder.addPropertyError(propertyPath("mapping"), "resource type must not be blank");
+                builder.addPropertyError(propertyPath(MAPPING_PROPERTY), "resource type must not be blank");
                 return;
             }
-            builder.requireHttpUrl(propertyPath("mapping", resourceType), baseUrl);
+            builder.requireHttpUrl(propertyPath(MAPPING_PROPERTY, resourceType), baseUrl);
         });
     }
 
-    private void validateBatchSizeMapping(PluginPropertiesValidationResultBuilder builder) {
+    private void validateBatchSizeMapping(PropertiesValidationResultBuilder builder) {
         if (batchSizeMapping() == null) {
-            builder.requireNotNull(propertyPath("batchSizeMapping"), null);
+            builder.requireNotNull(propertyPath(BATCH_SIZE_MAPPING_PROPERTY), null);
             return;
         }
         batchSizeMapping().forEach((resourceType, batchSize) -> {
             if (StringUtils.isBlank(resourceType)) {
-                builder.addPropertyError(propertyPath("batchSizeMapping"), "resource type must not be blank");
+                builder.addPropertyError(propertyPath(BATCH_SIZE_MAPPING_PROPERTY), "resource type must not be blank");
                 return;
             }
-            builder.requirePositive(propertyPath("batchSizeMapping", resourceType), batchSize);
+            builder.requirePositive(propertyPath(BATCH_SIZE_MAPPING_PROPERTY, resourceType), batchSize);
         });
     }
 
     /**
      * An absent {@code cache} section is fine - the plugin falls back to the cache defaults.
      */
-    private void validateCache(PluginPropertiesValidationResultBuilder builder) {
+    private void validateCache(PropertiesValidationResultBuilder builder) {
         if (cache() == null || !cache().enabled()) {
             return;
         }
-        builder.requirePositive(propertyPath("cache", "maxSize"), cache().maxSize());
+        builder.requirePositive(propertyPath(CACHE_PROPERTY, Cache.MAX_SIZE_PROPERTY), cache().maxSize());
     }
 
-    private void validateTimeoutsBudget(PluginPropertiesValidationResultBuilder builder) {
+    private void validateTimeoutsBudget(PropertiesValidationResultBuilder builder) {
         if (httpConnectTimeoutMs() > 0 && httpTotalTimeoutMs() > 0 && httpTotalTimeoutMs() < httpConnectTimeoutMs()) {
             builder.addCrossPropertiesError(String.format(
                     "'%s' (%d) must not be less than '%s' (%d): the total budget of an include call has to cover " +
                             "connecting to the remote service",
-                    propertyPath("httpTotalTimeoutMs"), httpTotalTimeoutMs(),
-                    propertyPath("httpConnectTimeoutMs"), httpConnectTimeoutMs()
+                    propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs(),
+                    propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs()
             ));
         }
     }
@@ -155,6 +168,9 @@ public interface CompoundDocsProperties extends PluginProperties {
     Cache cache();
 
     interface Cache {
+
+        String ENABLED_PROPERTY = "enabled";
+        String MAX_SIZE_PROPERTY = "maxSize";
 
         String DEFAULT_CACHE_ENABLED = "true";
         String DEFAULT_CACHE_MAX_SIZE = "1000";

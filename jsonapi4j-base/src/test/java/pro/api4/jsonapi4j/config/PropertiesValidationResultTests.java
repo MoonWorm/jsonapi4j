@@ -11,10 +11,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class PluginPropertiesValidationResultTests {
+public class PropertiesValidationResultTests {
 
-    private final PluginPropertiesValidationResult.PluginPropertiesValidationResultBuilder sut =
-            PluginPropertiesValidationResult.builder();
+    private final PropertiesValidationResult.PropertiesValidationResultBuilder sut =
+            PropertiesValidationResult.builder();
 
     @Nested
     class Errors {
@@ -31,7 +31,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void addPropertyError_samePathTwice_keepsBothErrors() {
-            PluginPropertiesValidationResult result = sut
+            PropertiesValidationResult result = sut
                     .addPropertyError("jsonapi4j.cd.mapping.users", "must be set")
                     .addPropertyError("jsonapi4j.cd.mapping.users", "must be an absolute URL")
                     .build();
@@ -49,7 +49,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void empty_always_hasNoErrors() {
-            assertThat(PluginPropertiesValidationResult.empty().hasErrors()).isFalse();
+            assertThat(PropertiesValidationResult.empty().hasErrors()).isFalse();
         }
 
     }
@@ -60,7 +60,7 @@ public class PluginPropertiesValidationResultTests {
         @ParameterizedTest
         @ValueSource(strings = {"", "   "})
         public void requireNotBlank_blankValue_reportsError(String value) {
-            PluginPropertiesValidationResult result = sut.requireNotBlank("jsonapi4j.oas.info.title", value).build();
+            PropertiesValidationResult result = sut.requireNotBlank("jsonapi4j.oas.info.title", value).build();
 
             assertThat(result.getPropertyErrors())
                     .containsExactly(entry("jsonapi4j.oas.info.title", List.of("must be set to a non-blank value")));
@@ -78,7 +78,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void requirePositive_zero_reportsError() {
-            PluginPropertiesValidationResult result = sut.requirePositive("jsonapi4j.cd.maxHops", 0).build();
+            PropertiesValidationResult result = sut.requirePositive("jsonapi4j.cd.maxHops", 0).build();
 
             assertThat(result.getPropertyErrors())
                     .containsExactly(entry("jsonapi4j.cd.maxHops", List.of("must be greater than 0, but was 0")));
@@ -86,7 +86,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void requirePositive_null_reportsMissingValue() {
-            PluginPropertiesValidationResult result = sut.requirePositive("jsonapi4j.cd.maxHops", null).build();
+            PropertiesValidationResult result = sut.requirePositive("jsonapi4j.cd.maxHops", null).build();
 
             assertThat(result.getPropertyErrors())
                     .containsExactly(entry("jsonapi4j.cd.maxHops", List.of("must be set")));
@@ -105,7 +105,7 @@ public class PluginPropertiesValidationResultTests {
         @ParameterizedTest
         @ValueSource(strings = {"/jsonapi", "users.foo.bar", "ftp://users.foo.bar", "http:///jsonapi"})
         public void requireHttpUrl_notAnAbsoluteHttpUrl_reportsError(String value) {
-            PluginPropertiesValidationResult result = sut.requireHttpUrl("jsonapi4j.cd.mapping.users", value).build();
+            PropertiesValidationResult result = sut.requireHttpUrl("jsonapi4j.cd.mapping.users", value).build();
 
             assertThat(result.getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.users");
         }
@@ -118,7 +118,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void requireHttpUrl_malformedUrl_reportsError() {
-            PluginPropertiesValidationResult result = sut.requireHttpUrl("jsonapi4j.cd.mapping.users", "http://foo bar").build();
+            PropertiesValidationResult result = sut.requireHttpUrl("jsonapi4j.cd.mapping.users", "http://foo bar").build();
 
             assertThat(result.getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.users");
         }
@@ -130,7 +130,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void requireOneOfIgnoringCase_unsupportedValue_reportsError() {
-            PluginPropertiesValidationResult result = sut
+            PropertiesValidationResult result = sut
                     .requireOneOfIgnoringCase("jsonapi4j.oas.schema", "number", List.of("string", "integer"))
                     .build();
 
@@ -140,7 +140,7 @@ public class PluginPropertiesValidationResultTests {
 
         @Test
         public void requireOneOfIgnoringCase_supportedValueInAnotherCase_reportsNothing() {
-            PluginPropertiesValidationResult result = sut
+            PropertiesValidationResult result = sut
                     .requireOneOfIgnoringCase("jsonapi4j.oas.schema", "Integer", List.of("string", "integer"))
                     .build();
 
@@ -150,11 +150,72 @@ public class PluginPropertiesValidationResultTests {
     }
 
     @Nested
+    class AddAll {
+
+        @Test
+        public void addAll_otherResultWithBothErrorKinds_absorbsAllOfThem() {
+            PropertiesValidationResult other = PropertiesValidationResult.builder()
+                    .addPropertyError("jsonapi4j.oas.info.title", "must be set to a non-blank value")
+                    .addCrossPropertiesError("flows share a name")
+                    .build();
+
+            PropertiesValidationResult result = sut
+                    .addPropertyError("jsonapi4j.oas.oasRootPath", "must start with '/'")
+                    .addAll(other)
+                    .build();
+
+            assertThat(result.getPropertyErrors())
+                    .containsOnlyKeys("jsonapi4j.oas.oasRootPath", "jsonapi4j.oas.info.title");
+            assertThat(result.getCrossPropertiesErrors()).containsExactly("flows share a name");
+        }
+
+        @Test
+        public void addAll_bothResultsReportTheSamePath_keepsBothErrors() {
+            PropertiesValidationResult other = PropertiesValidationResult.builder()
+                    .addPropertyError("jsonapi4j.cd.mapping.users", "must be an absolute URL")
+                    .build();
+
+            PropertiesValidationResult result = sut
+                    .addPropertyError("jsonapi4j.cd.mapping.users", "must be set")
+                    .addAll(other)
+                    .build();
+
+            assertThat(result.getPropertyErrors())
+                    .containsExactly(entry("jsonapi4j.cd.mapping.users", List.of("must be set", "must be an absolute URL")));
+        }
+
+        @Test
+        public void addAll_emptyResult_reportsNothing() {
+            assertThat(sut.addAll(PropertiesValidationResult.empty()).build().hasErrors()).isFalse();
+        }
+
+    }
+
+    @Nested
+    class RequireServletPath {
+
+        @ParameterizedTest
+        @ValueSource(strings = {"jsonapi", "/jsonapi/", " ", "/jsonapi/*", "/json?api"})
+        public void requireServletPath_notMountable_reportsError(String value) {
+            PropertiesValidationResult result = sut.requireServletPath("jsonapi4j.rootPath", value).build();
+
+            assertThat(result.getPropertyErrors()).containsOnlyKeys("jsonapi4j.rootPath");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"/", "/jsonapi", "/api/v1/jsonapi"})
+        public void requireServletPath_mountable_reportsNothing(String value) {
+            assertThat(sut.requireServletPath("jsonapi4j.rootPath", value).build().hasErrors()).isFalse();
+        }
+
+    }
+
+    @Nested
     class ToString {
 
         @Test
         public void toString_propertyAndCrossPropertiesErrors_rendersBothSections() {
-            PluginPropertiesValidationResult result = sut
+            PropertiesValidationResult result = sut
                     .addPropertyError("jsonapi4j.cd.maxHops", "must be greater than 0, but was 0")
                     .addCrossPropertiesError("'jsonapi4j.cd.httpTotalTimeoutMs' must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs'")
                     .build();

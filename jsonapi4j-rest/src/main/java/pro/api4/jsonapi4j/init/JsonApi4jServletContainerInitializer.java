@@ -187,6 +187,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             // if meta context is null = meta feature is disabled
             MetaContext metaContext = (MetaContext) servletContext.getAttribute(META_CONTEXT_ATT_NAME);
             jsonApi4j = JsonApi4j.builder()
+                    .properties(initJsonApi4jProperties(servletContext))
                     .domainRegistry(domainRegistry)
                     .operationsRegistry(operationsRegistry)
                     .plugins(plugins)

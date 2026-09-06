@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.init;
 
 import jakarta.servlet.ServletContext;
 import lombok.extern.slf4j.Slf4j;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.RawConfigAccessor;
@@ -61,12 +62,17 @@ public final class JsonApi4jPropertiesLoader {
         }
     }
 
+    /**
+     * Loads the root configuration, falling back to {@link DefaultJsonApi4jProperties} when none can be read - an
+     * app with no config file runs on documented defaults rather than on {@code null}, which every caller here
+     * dereferences (the dispatcher mapping, the request validator limits, the meta switch).
+     */
     public static JsonApi4jProperties loadConfigLenient(ServletContext servletContext) {
         try {
             return loadConfig(servletContext);
         } catch (Exception e) {
             log.warn("Failed to load JsonApi4jConfig. Relying on defaults...");
-            return null;
+            return new DefaultJsonApi4jProperties();
         }
     }
 
