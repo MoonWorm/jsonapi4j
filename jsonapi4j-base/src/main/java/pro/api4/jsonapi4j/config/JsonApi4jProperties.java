@@ -19,4 +19,8 @@ public interface JsonApi4jProperties {
 
     MetaProperties meta();
 
+    default void validate() {
+        //TODO: implement and wire
+    }
+
 }

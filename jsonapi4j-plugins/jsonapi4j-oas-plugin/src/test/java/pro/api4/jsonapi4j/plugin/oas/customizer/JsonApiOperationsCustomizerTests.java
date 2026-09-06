@@ -4,6 +4,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
@@ -13,15 +15,20 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CursorOnlyListingOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CustomPayloadOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.ListingOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.DescribedOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizerTestFixtures.build;
@@ -59,7 +66,9 @@ class JsonApiOperationsCustomizerTests {
                 ROOT_PATH,
                 jsonApi4j.getDomainRegistry(),
                 jsonApi4j.getOperationsRegistry(),
-                null
+                null,
+                null,
+                List.of()
         );
         sut.customise(openApi);
 
@@ -79,12 +88,75 @@ class JsonApiOperationsCustomizerTests {
                     ROOT_PATH,
                     withMeta.getDomainRegistry(),
                     withMeta.getOperationsRegistry(),
-                    null
+                    null,
+                    null,
+                    List.of()
             );
             sut.customise(openApi);
 
             Set<String> paths = openApi.getPaths() == null ? Set.of() : openApi.getPaths().keySet();
             assertThat(paths).isEmpty();
+        }
+
+    }
+
+    /**
+     * The framework parses {@code sort} and both pagination styles for every request, but only the operation can act
+     * on them — so they are published from what the operation declared, never from what the request layer accepts.
+     */
+    @Nested
+    class DeclaredQueryParameters {
+
+        @Test
+        void customise_sortableFieldsDeclared_publishesSortWithBothDirections() {
+            Parameter sort = collectionParam(new ListingOperations(), "sort");
+
+            List<Object> allowedValues = new ArrayList<>(((ArraySchema) sort.getSchema()).getItems().getEnum());
+
+            assertThat(allowedValues).containsExactly("id", "-id", "createdAt", "-createdAt");
+        }
+
+        @Test
+        void customise_noSortableFieldsDeclared_publishesNoSort() {
+            assertThat(collectionParamNames(new CursorOnlyListingOperations())).doesNotContain("sort");
+        }
+
+        @Test
+        void customise_limitOffsetDeclared_publishesBothPageParams() {
+            assertThat(collectionParamNames(new ListingOperations()))
+                    .contains("page[cursor]", "page[limit]", "page[offset]");
+        }
+
+        @Test
+        void customise_paginationNotDeclared_publishesCursorOnly() {
+            assertThat(collectionParamNames(new CursorOnlyListingOperations()))
+                    .contains("page[cursor]")
+                    .doesNotContain("page[limit]", "page[offset]");
+        }
+
+        @Test
+        void customise_limitParam_carriesItsDefaultAndBounds() {
+            Parameter limit = collectionParam(new ListingOperations(), "page[limit]");
+
+            // IntegerSchema narrows the long default to an int when it takes it
+            assertThat(limit.getSchema().getDefault()).isEqualTo(20);
+            assertThat(limit.getSchema().getMinimum()).isEqualTo(BigDecimal.ONE);
+        }
+
+        private Set<String> collectionParamNames(ResourceOperations<SecuredAttributes> operations) {
+            return collectionParams(operations).stream().map(Parameter::getName).collect(Collectors.toSet());
+        }
+
+        private Parameter collectionParam(ResourceOperations<SecuredAttributes> operations,
+                                          String name) {
+            return collectionParams(operations).stream()
+                    .filter(parameter -> name.equals(parameter.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no '" + name + "' parameter was published"));
+        }
+
+        private List<Parameter> collectionParams(ResourceOperations<SecuredAttributes> operations) {
+            return documentedPaths(operations).get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getGet().getParameters();
         }
 
     }
@@ -193,7 +265,9 @@ class JsonApiOperationsCustomizerTests {
                     ROOT_PATH,
                     jsonApi4j.getDomainRegistry(),
                     jsonApi4j.getOperationsRegistry(),
-                    null
+                    null,
+                    null,
+                    List.of()
             );
             sut.customise(openApi);
 
@@ -282,7 +356,9 @@ class JsonApiOperationsCustomizerTests {
                     ROOT_PATH,
                     jsonApi4j.getDomainRegistry(),
                     jsonApi4j.getOperationsRegistry(),
-                    oasProperties
+                    oasProperties,
+                    null,
+                    List.of()
             ).customise(openApi);
 
             // then
@@ -326,7 +402,9 @@ class JsonApiOperationsCustomizerTests {
                     ROOT_PATH,
                     jsonApi4j.getDomainRegistry(),
                     jsonApi4j.getOperationsRegistry(),
-                    oasProperties
+                    oasProperties,
+                    null,
+                    List.of()
             );
             sut.customise(openApi);
 

@@ -902,7 +902,7 @@
         "description" : "Retrieves all country details with available filters (if applicable).",
         "operationId" : "get-all-countries",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
           "in" : "query",
           "name" : "include",
@@ -910,6 +910,29 @@
           "schema" : {
             "items" : {
               "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[currencies]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -1104,7 +1127,7 @@
         "description" : "Retrieves country details by resource id.",
         "operationId" : "get-single-country",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
           "in" : "query",
           "name" : "include",
@@ -1112,6 +1135,29 @@
           "schema" : {
             "items" : {
               "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[currencies]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -1283,7 +1329,7 @@
         "description" : "Retrieves currencies to-many relationship details of the related country resource.",
         "operationId" : "get-country-currencies-relationship",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
           "in" : "query",
           "name" : "include",
@@ -1291,6 +1337,29 @@
           "schema" : {
             "items" : {
               "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[currencies]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -1470,6 +1539,17 @@
         "description" : "Retrieves all currency details with available filters (if applicable).",
         "operationId" : "get-all-currencies",
         "parameters" : [ {
+          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[currencies]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
           "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
           "in" : "query",
           "name" : "page[cursor]",
@@ -1644,7 +1724,7 @@
         "description" : "Retrieves all user details with available filters (if applicable).",
         "operationId" : "get-all-users",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
           "in" : "query",
           "name" : "include",
@@ -1652,6 +1732,29 @@
           "schema" : {
             "items" : {
               "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -1663,6 +1766,43 @@
           "required" : false,
           "schema" : {
             "type" : "string"
+          }
+        }, {
+          "description" : "Maximum number of items to return in a single page. Optional",
+          "in" : "query",
+          "name" : "page[limit]",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int64",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Number of items to skip before collecting the page. Optional",
+          "in" : "query",
+          "name" : "page[offset]",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sort order. Prefix a field with '-' for descending, e.g. '-fullName'. Optional",
+          "example" : "fullName",
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "fullName", "-fullName", "email", "-email" ],
+              "type" : "string"
+            },
+            "maxItems" : 5,
+            "type" : "array"
           }
         }, {
           "description" : "Allows to filter users based on id attribute value",
@@ -1831,7 +1971,29 @@
       "post" : {
         "description" : "Creates a new instance of user's resource with relationships (if applicable).",
         "operationId" : "create-single-user",
-        "parameters" : [ ],
+        "parameters" : [ {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/vnd.api+json" : {
@@ -2016,6 +2178,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -2164,7 +2327,7 @@
         "description" : "Retrieves user details by resource id.",
         "operationId" : "get-single-user",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
           "in" : "query",
           "name" : "include",
@@ -2172,6 +2335,29 @@
           "schema" : {
             "items" : {
               "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -2346,6 +2532,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -2526,6 +2713,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -2694,7 +2882,7 @@
         "description" : "Retrieves citizenships to-many relationship details of the related user resource.",
         "operationId" : "get-user-citizenships-relationship",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
           "in" : "query",
           "name" : "include",
@@ -2702,6 +2890,29 @@
           "schema" : {
             "items" : {
               "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -2884,6 +3095,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3057,6 +3269,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3227,7 +3440,7 @@
         "description" : "Retrieves placeOfBirth to-one relationship details of the related user resource.",
         "operationId" : "get-user-placeofbirth-relationship",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth. Dotted paths reach further levels (e.g. 'placeOfBirth.<relationship>'); this document describes the first level only",
           "example" : "placeOfBirth",
           "in" : "query",
           "name" : "include",
@@ -3235,6 +3448,29 @@
           "schema" : {
             "items" : {
               "example" : "placeOfBirth",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -3409,6 +3645,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3584,6 +3821,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3752,7 +3990,7 @@
         "description" : "Retrieves relatives to-many relationship details of the related user resource.",
         "operationId" : "get-user-relatives-relationship",
         "parameters" : [ {
-          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives",
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives. Dotted paths reach further levels (e.g. 'relatives.<relationship>'); this document describes the first level only",
           "example" : "relatives",
           "in" : "query",
           "name" : "include",
@@ -3760,6 +3998,29 @@
           "schema" : {
             "items" : {
               "example" : "relatives",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[users]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        }, {
+          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+          "in" : "query",
+          "name" : "fields[countries]",
+          "required" : false,
+          "schema" : {
+            "items" : {
               "type" : "string"
             },
             "type" : "array"
@@ -3942,6 +4203,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -4115,6 +4377,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],

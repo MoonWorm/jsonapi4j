@@ -17,6 +17,10 @@ import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 @Data
 public class UserAttributes {
 
+    public static final String FULL_NAME_FIELD_NAME = "fullName";
+    public static final String EMAIL_FIELD_NAME = "email";
+
+
     @Schema(description = "First and last name together", example = "John Smith", requiredMode = REQUIRED)
     private final String fullName;
 

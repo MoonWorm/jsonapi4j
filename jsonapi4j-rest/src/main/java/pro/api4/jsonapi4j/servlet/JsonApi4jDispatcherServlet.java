@@ -2,16 +2,14 @@ package pro.api4.jsonapi4j.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletConfig;
-import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.UnavailableException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.JsonApi4jReportGenerator;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
@@ -26,10 +24,11 @@ import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.ResponseHeaders;
 import pro.api4.jsonapi4j.servlet.response.ResponseStatus;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
@@ -49,21 +48,26 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         log.info("Initializing {} ...", JsonApi4jDispatcherServlet.class.getSimpleName());
+
         super.init(config);
 
-        JsonApi4jProperties properties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-        Validate.notNull(properties, "JsonApi4jProperties can't be null");
+        this.jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
+        this.errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
+        this.objectMapper = (ObjectMapper) config.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
 
-        this.jsonApi4j = composeJsonApi4j(config.getServletContext());
+        List<String> missingComponents = missingMandatoryComponents();
+        if (!missingComponents.isEmpty()) {
+            throw new UnavailableException(String.format(
+                    "%s can't be initialized. Mandatory components are missing from the servlet context: %s. "
+                            + "Ensure the JsonApi4j container initializer or auto-configuration has run.",
+                    JsonApi4jDispatcherServlet.class.getSimpleName(),
+                    String.join(", ", missingComponents)
+            ));
+        }
 
         log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
 
-        this.errorHandlerFactory = composeErrorHandlerFactory(config.getServletContext());
-
-        this.objectMapper = composeObjectMapper(config.getServletContext());
-
         this.jsonApiRequestSupplier = composeJsonApiRequestSupplier(
-                config.getServletContext(),
                 objectMapper,
                 jsonApi4j.getDomainRegistry()
         );
@@ -71,33 +75,21 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         log.info("{} has been initialized", JsonApi4jDispatcherServlet.class.getSimpleName());
     }
 
-    private ObjectMapper composeObjectMapper(ServletContext context) {
-        ObjectMapper objectMapper = initObjectMapper(context);
-        Validate.notNull(objectMapper, "ObjectMapper can't be null");
-        return objectMapper;
-    }
-
-    private JsonApi4j composeJsonApi4j(ServletContext context) {
-        JsonApi4j jsonApi4j = (JsonApi4j) context.getAttribute(JSONAPI4J_ATT_NAME);
-        Validate.notNull(jsonApi4j, "JsonApi4j can't be null");
-        log.debug("Applied {} from Servlet Context under {} attribute", JsonApi4j.class.getSimpleName(), JSONAPI4J_ATT_NAME);
-        return jsonApi4j;
-    }
-
-    private ErrorHandlerFactoriesRegistry composeErrorHandlerFactory(ServletContext context) {
-        ErrorHandlerFactoriesRegistry errorHandlerFactory = (ErrorHandlerFactoriesRegistry) context.getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
-        if (errorHandlerFactory == null) {
-            log.debug("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
-            ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry = new JsonApi4jErrorHandlerFactoriesRegistry();
-            errorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
-            return errorHandlerFactoriesRegistry;
+    private List<String> missingMandatoryComponents() {
+        List<String> missing = new ArrayList<>();
+        if (jsonApi4j == null) {
+            missing.add(JsonApi4j.class.getSimpleName());
         }
-        log.debug("Applied {} from Servlet Context under {} attribute", ErrorHandlerFactoriesRegistry.class.getSimpleName(), ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
-        return errorHandlerFactory;
+        if (errorHandlerFactory == null) {
+            missing.add(ErrorHandlerFactoriesRegistry.class.getSimpleName());
+        }
+        if (objectMapper == null) {
+            missing.add(ObjectMapper.class.getSimpleName());
+        }
+        return Collections.unmodifiableList(missing);
     }
 
-    private HttpServletRequestJsonApiRequestSupplier composeJsonApiRequestSupplier(ServletContext context,
-                                                                                   ObjectMapper objectMapper,
+    private HttpServletRequestJsonApiRequestSupplier composeJsonApiRequestSupplier(ObjectMapper objectMapper,
                                                                                    DomainRegistry domainRegistry) {
         OperationDetailsResolver operationDetailsResolver = new OperationDetailsResolver(domainRegistry);
         HttpServletRequestJsonApiRequestSupplier jsonApiRequestSupplier = new HttpServletRequestJsonApiRequestSupplier(

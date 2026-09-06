@@ -14,17 +14,21 @@ import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletRegistration;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.meta.context.MetaContext;
-import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
-import pro.api4.jsonapi4j.JsonApiBuildInRequestValidator;
 import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
+import pro.api4.jsonapi4j.meta.context.MetaContext;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.Collections;
@@ -45,7 +49,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_PROPERTIES_ATT_NAME = "jsonApi4jProperties";
     public static final String JSONAPI4J_ATT_NAME = "jsonApi4j";
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
-    public static final String VALIDATOR_ATT_NAME = "jsonApi4jValidator";
     public static final String VALIDATOR_FACTORY_ATT_NAME = "jsonApi4jValidatorFactory";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
@@ -54,60 +57,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
     public static final String META_CONTEXT_ATT_NAME = "jsonapi4jMetaContext";
-
-    public static ExecutorService initExecutorService(ServletContext servletContext) {
-        ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
-        if (es == null) {
-            log.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
-            es = Executors.newCachedThreadPool();
-            servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
-        }
-        return es;
-    }
-
-    public static JsonApiBuildInRequestValidatorFactory initValidatorFactory(ServletContext servletContext) {
-        JsonApiBuildInRequestValidatorFactory factory =
-                (JsonApiBuildInRequestValidatorFactory) servletContext.getAttribute(VALIDATOR_FACTORY_ATT_NAME);
-        if (factory != null) {
-            return factory;
-        }
-        // Back-compat: honor a host-set ready validator instance. Note it validates against whatever registry it was
-        // built with, so it will not see the meta-augmented resource/relationship types.
-        JsonApiBuildInRequestValidator validator = (JsonApiBuildInRequestValidator) servletContext.getAttribute(VALIDATOR_ATT_NAME);
-        if (validator != null) {
-            return domainRegistry -> validator;
-        }
-        log.warn("JsonApi4jValidatorFactory not found in servlet context. Setting a default one ({}).", DefaultJsonApiBuildInRequestValidator.class.getSimpleName());
-        ObjectMapper objectMapper = initObjectMapper(servletContext);
-        JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
-        factory = domainRegistry -> DefaultJsonApiBuildInRequestValidator.builder()
-                .objectMapper(objectMapper)
-                .properties(properties.validation())
-                .domainRegistry(domainRegistry)
-                .build();
-        servletContext.setAttribute(VALIDATOR_FACTORY_ATT_NAME, factory);
-        return factory;
-    }
-
-    public static DomainRegistry initDomainRegistry(ServletContext servletContext) {
-        DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
-        if (dr == null) {
-            log.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
-            dr = DomainRegistry.empty();
-            servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, dr);
-        }
-        return dr;
-    }
-
-    public static OperationsRegistry initOperationRegistry(ServletContext servletContext) {
-        OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
-        if (or == null) {
-            log.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
-            or = OperationsRegistry.empty();
-            servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, or);
-        }
-        return or;
-    }
 
     public static ObjectMapper initObjectMapper(ServletContext servletContext) {
         ObjectMapper om = (ObjectMapper) servletContext.getAttribute(OBJECT_MAPPER_ATT_NAME);
@@ -141,7 +90,81 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return properties;
     }
 
-    public static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+    public static ExecutorService initExecutorService(ServletContext servletContext) {
+        ExecutorService es = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
+        if (es == null) {
+            log.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
+            es = Executors.newCachedThreadPool();
+            servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
+        }
+        return es;
+    }
+
+    private static JsonApiBuildInRequestValidatorFactory initValidatorFactory(ServletContext servletContext) {
+        JsonApiBuildInRequestValidatorFactory factory =
+                (JsonApiBuildInRequestValidatorFactory) servletContext.getAttribute(VALIDATOR_FACTORY_ATT_NAME);
+        if (factory != null) {
+            return factory;
+        }
+        log.warn("JsonApi4jValidatorFactory not found in servlet context. Setting a default one ({}).", DefaultJsonApiBuildInRequestValidator.class.getSimpleName());
+        ObjectMapper objectMapper = initObjectMapper(servletContext);
+        JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
+        factory = domainRegistry -> DefaultJsonApiBuildInRequestValidator.builder()
+                .objectMapper(objectMapper)
+                .properties(properties.validation())
+                .domainRegistry(domainRegistry)
+                .build();
+        servletContext.setAttribute(VALIDATOR_FACTORY_ATT_NAME, factory);
+        return factory;
+    }
+
+    private static DomainRegistry initDomainRegistry(ServletContext servletContext) {
+        DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
+        if (dr == null) {
+            log.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
+            dr = DomainRegistry.empty();
+            servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, dr);
+        }
+        return dr;
+    }
+
+    private static OperationsRegistry initOperationRegistry(ServletContext servletContext) {
+        OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
+        if (or == null) {
+            log.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
+            or = OperationsRegistry.empty();
+            servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, or);
+        }
+        return or;
+    }
+
+    private static ErrorHandlerFactoriesRegistry initErrorHandlerFactory(ServletContext context) {
+        ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry
+                = (ErrorHandlerFactoriesRegistry) context.getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
+        if (errorHandlerFactoriesRegistry == null) {
+            log.warn("AggregatableErrorHandlerFactory not found in servlet context. Applying a default ErrorHandlerFactory.");
+            errorHandlerFactoriesRegistry = new JsonApi4jErrorHandlerFactoriesRegistry();
+            errorHandlerFactoriesRegistry.registerAll(new DefaultErrorHandlerFactory());
+            context.setAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME, errorHandlerFactoriesRegistry);
+        }
+        return errorHandlerFactoriesRegistry;
+    }
+
+    private static PrincipalResolver initPrincipalResolver(ServletContext servletContext) {
+        PrincipalResolver principalResolver = (PrincipalResolver) servletContext.getAttribute(PRINCIPAL_RESOLVER_ATT_NAME);
+        if (principalResolver == null) {
+            log.warn(
+                    "{} not found in servlet context. Applying a default one ({}).",
+                    PrincipalResolver.class.getSimpleName(),
+                    DefaultPrincipalResolver.class.getSimpleName()
+            );
+            principalResolver = new DefaultPrincipalResolver();
+            servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, principalResolver);
+        }
+        return principalResolver;
+    }
+
+    private static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
         //noinspection unchecked
         List<JsonApi4jPlugin> plugins = (List<JsonApi4jPlugin>) servletContext.getAttribute(PLUGINS_ATT_NAME);
         if (plugins == null) {
@@ -152,7 +175,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return plugins;
     }
 
-    public static JsonApi4j initJsonApi4j(ServletContext servletContext) {
+    private static JsonApi4j initJsonApi4j(ServletContext servletContext) {
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j == null) {
             log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
@@ -178,10 +201,13 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
     @Override
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
+        // ------------------
+        // init
+        // ------------------
         JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
-
         initObjectMapper(servletContext);
-
+        initErrorHandlerFactory(servletContext);
+        initPrincipalResolver(servletContext);
         initJsonApi4j(servletContext);
 
         // ------------------
@@ -203,16 +229,27 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
 
     private void registerDispatcherServlet(ServletContext servletContext,
                                            String servletMapping) {
-        ServletRegistration existing = servletContext.getServletRegistration(JSONAPI4J_DISPATCHER_SERVLET_NAME);
-        if (existing != null) {
-            log.warn("Dispatcher servlet already registered, skipping registration.");
-            return;
-        }
         ServletRegistration.Dynamic dispatcherServlet = servletContext.addServlet(
                 JSONAPI4J_DISPATCHER_SERVLET_NAME,
                 new JsonApi4jDispatcherServlet()
         );
-        dispatcherServlet.addMapping(servletMapping);
+        if (dispatcherServlet == null) {
+            log.info(
+                    "{} is already registered. Skipping registration.",
+                    JsonApi4jDispatcherServlet.class.getSimpleName()
+            );
+            return;
+        }
+        Set<String> conflictingMappings = dispatcherServlet.addMapping(servletMapping);
+        if (!conflictingMappings.isEmpty()) {
+            log.warn(
+                    "{} could not be mapped on {} - already mapped to a different servlet. Requests to these patterns"
+                            + " will not reach JsonApi4j.",
+                    JsonApi4jDispatcherServlet.class.getSimpleName(),
+                    conflictingMappings
+            );
+            return;
+        }
         log.info("{} has been successfully registered under {} root path", JsonApi4jDispatcherServlet.class.getSimpleName(), servletMapping);
     }
 
@@ -221,6 +258,13 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME,
                 new PrincipalResolvingFilter()
         );
+        if (filter == null) {
+            log.info(
+                    "{} is already registered. Skipping registration.",
+                    PrincipalResolvingFilter.class.getSimpleName()
+            );
+            return;
+        }
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
                 false, // supposed to be matched before any declared filter mappings of the ServletContext
@@ -233,6 +277,13 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME,
                 new RequestBodyCachingFilter()
         );
+        if (filter == null) {
+            log.info(
+                    "{} is already registered. Skipping registration.",
+                    RequestBodyCachingFilter.class.getSimpleName()
+            );
+            return;
+        }
         filter.addMappingForUrlPatterns(
                 null, // DispatcherType.REQUEST is used by default
                 false, // supposed to be matched before any declared filter mappings of the ServletContext

@@ -2,11 +2,13 @@ package pro.api4.jsonapi4j.sampleapp.operations.user;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.data.ToManyRelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ToOneRelationshipObject;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
@@ -24,7 +26,9 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.request.SortAwareRequest.SortOrder;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
@@ -38,6 +42,7 @@ import pro.api4.jsonapi4j.sampleapp.domain.user.UserResource;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +54,8 @@ import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
 
 import static pro.api4.jsonapi4j.principal.entitlement.DefaultEntitlements.ADMIN;
 import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes.EMAIL_FIELD_NAME;
+import static pro.api4.jsonapi4j.sampleapp.domain.user.UserAttributes.FULL_NAME_FIELD_NAME;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserCitizenshipsRelationship.CITIZENSHIPS;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship.PLACE_OF_BIRTH;
 import static pro.api4.jsonapi4j.sampleapp.domain.user.UserRelativesRelationship.RELATIVES;
@@ -60,16 +67,18 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 
     private final UserDb userDb;
 
+    private static final Map<String, Comparator<UserDbEntity>> SORTABLE_ATTRIBUTES = Map.of(
+            FULL_NAME_FIELD_NAME, Comparator.comparing(user -> user.getFirstName() + " " + user.getLastName(),
+                    String.CASE_INSENSITIVE_ORDER),
+            EMAIL_FIELD_NAME, Comparator.comparing(UserDbEntity::getEmail, String.CASE_INSENSITIVE_ORDER)
+    );
+
     public static List<RelativeRef> parseRelations(List<ResourceIdentifierObject> data) {
         List<RelativeRef> relations = new ArrayList<>();
         for (ResourceIdentifierObject ri : ListUtils.emptyIfNull(data)) {
             parseRelationshipType(ri).ifPresent(rt -> relations.add(new RelativeRef(ri.getId(), rt)));
         }
         return relations;
-    }
-
-    public static Optional<RelationshipType> parseRelationshipType(ResourceIdentifierObject ri) {
-        return RelativeLinkageMeta.fromLinkageMeta(ri.getMeta()).map(RelativeLinkageMeta::relationshipType);
     }
 
     public static void validateRelationsMeta(Object meta) {
@@ -104,6 +113,8 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                     clientCredentialsSupported = true,
                     pkceSupported = true
             ),
+            sortableFields = {FULL_NAME_FIELD_NAME, EMAIL_FIELD_NAME},
+            pagination = {PaginationStyle.CURSOR, PaginationStyle.LIMIT_OFFSET},
             parameters = {
                     @Parameter(
                             name = "filter[id]",
@@ -121,21 +132,22 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
                     userDb.readByIds(request.getFilters().get(ID_FILTER_NAME))
             );
         } else {
+            Comparator<UserDbEntity> order = toComparator(request.getSortBy());
             if (StringUtils.isNotBlank(request.getCursor())) {
-                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor());
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getCursor(), order);
                 return PaginationAwareResponse.cursorAware(
                         pagedResult.getEntities(),
                         pagedResult.getCursor()
                 );
             } else if (request.getLimit() != null && request.getOffset() != null) {
-                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getLimit(), request.getOffset());
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(request.getLimit(), request.getOffset(), order);
                 return PaginationAwareResponse.limitOffsetAware(
                         pagedResult.getEntities(),
                         pagedResult.getTotalItems()
                 );
             } else {
                 // fallback to 'null' cursor pagination
-                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(null);
+                UserDb.DbPage<UserDbEntity> pagedResult = userDb.readAllUsers(null, order);
                 return PaginationAwareResponse.cursorAware(
                         pagedResult.getEntities(),
                         pagedResult.getCursor()
@@ -266,6 +278,17 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
     }
 
     @Override
+    public void validateReadMultiple(JsonApiRequest request) {
+        forRequest(request)
+                .parameters(params -> params
+                        .withSortValidator(sortBy -> sortBy.ifPresent().satisfies(requested ->
+                                requested.keySet().forEach(attribute -> assertThat(attribute)
+                                        .withErrorCode(DefaultErrorCodes.INVALID_ENUM_VALUE)
+                                        .isOneOf(SORTABLE_ATTRIBUTES.keySet().toArray(new String[0]))))))
+                .validate();
+    }
+
+    @Override
     public void validateCreate(JsonApiRequest request) {
         forRequest(request)
                 .singleResourceBody(UserAttributes.class, body -> body
@@ -370,6 +393,25 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         v.withResourceIdValidator(id -> id.exists(resourceId -> userDb.readById(resourceId) != null))
                 .withResourceTypeValidator(type -> type.isOneOf(USERS))
                 .withResourceIdentifierMetaValidator(meta -> meta.satisfies(UserOperations::validateRelationsMeta));
+    }
+
+    private static Optional<RelationshipType> parseRelationshipType(ResourceIdentifierObject ri) {
+        return RelativeLinkageMeta.fromLinkageMeta(ri.getMeta()).map(RelativeLinkageMeta::relationshipType);
+    }
+
+    private static Comparator<UserDbEntity> toComparator(Map<String, SortOrder> sortBy) {
+        Comparator<UserDbEntity> result = null;
+        for (Map.Entry<String, SortOrder> entry : MapUtils.emptyIfNull(sortBy).entrySet()) {
+            Comparator<UserDbEntity> next = SORTABLE_ATTRIBUTES.get(entry.getKey());
+            if (next == null) {
+                continue;
+            }
+            if (entry.getValue() == SortOrder.DESC) {
+                next = next.reversed();
+            }
+            result = result == null ? next : result.thenComparing(next);
+        }
+        return result;
     }
 
 }

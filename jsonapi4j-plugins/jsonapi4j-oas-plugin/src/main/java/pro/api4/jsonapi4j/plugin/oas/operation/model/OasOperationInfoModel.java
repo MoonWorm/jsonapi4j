@@ -5,7 +5,9 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -18,6 +20,10 @@ public class OasOperationInfoModel {
     private String summary = "";
     @Builder.Default
     private String description = "";
+    @Builder.Default
+    private List<String> sortableFields = Collections.emptyList();
+    @Builder.Default
+    private Set<PaginationStyle> paginationStyles = EnumSet.of(PaginationStyle.CURSOR);
     @Builder.Default
     private SecurityConfig securityConfig = SecurityConfig.builder().build();
     @Builder.Default
@@ -60,6 +66,12 @@ public class OasOperationInfoModel {
         private Type type = Type.STRING;
     }
 
+    private static Set<PaginationStyle> toOrderedStyles(PaginationStyle[] styles) {
+        return styles.length == 0
+                ? EnumSet.noneOf(PaginationStyle.class)
+                : EnumSet.copyOf(Arrays.asList(styles));
+    }
+
     public static OasOperationInfoModel fromAnnotation(OasOperationInfo oasOperationInfo) {
         if (oasOperationInfo == null) {
             return null;
@@ -87,6 +99,8 @@ public class OasOperationInfoModel {
                                         .build())
                                 .toList()
                 )
+                .sortableFields(Arrays.asList(oasOperationInfo.sortableFields()))
+                .paginationStyles(toOrderedStyles(oasOperationInfo.pagination()))
                 .payloadType(oasOperationInfo.payloadType())
                 .build();
     }

@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.QuarkusJsonApi4jProperties;
 
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.*;
 
@@ -18,9 +17,6 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 public class QuarkusJsonApi4jCompoundDocsServletContextListener implements ServletContextListener {
 
     private static final Logger log = LoggerFactory.getLogger(QuarkusJsonApi4jCompoundDocsServletContextListener.class);
-
-    @Inject
-    Provider<QuarkusJsonApi4jProperties> jsonApi4jPropertiesProvider;
 
     @Inject
     Provider<QuarkusJsonApi4jCompoundDocsProperties> quarkusCdPropertiesProvider;
@@ -35,9 +31,6 @@ public class QuarkusJsonApi4jCompoundDocsServletContextListener implements Servl
     public void contextInitialized(ServletContextEvent e) {
         log.info("Initializing CD Servlet Context for JsonApi4j Quarkus extension...");
         ServletContext servletContext = e.getServletContext();
-
-        servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jPropertiesProvider.get().rootPath());
-        log.debug("JsonApi4j Root Path has been set as '{}' Servlet Context Attribute.", COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME);
 
         QuarkusJsonApi4jCompoundDocsProperties quarkusCdProperties = quarkusCdPropertiesProvider.get();
         servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME, quarkusCdProperties.toCdProperties());

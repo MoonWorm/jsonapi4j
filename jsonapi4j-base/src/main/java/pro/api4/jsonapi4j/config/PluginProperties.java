@@ -14,4 +14,11 @@ public interface PluginProperties {
      */
     String section();
 
+    /**
+     * validates config is correct e.g. all mandatory fields are set, proper format, etc.
+     */
+    default void validate() {
+
+    }
+
 }

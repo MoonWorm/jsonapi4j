@@ -4,11 +4,10 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Data;
-import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.domain.*;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
-import pro.api4.jsonapi4j.plugin.oas.domain.model.OasRelationshipInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.model.document.LinkObject;
 import pro.api4.jsonapi4j.model.document.LinksObject;
@@ -20,7 +19,6 @@ import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
@@ -388,43 +386,18 @@ public class JsonApiResponseSchemaCustomizer {
             ResourceType parentResourceType,
             boolean includingParentResourceType
     ) {
-        Stream<ResourceType> toManyRelationshipResourceTypes = domainRegistry
-                .getToManyRelationships(parentResourceType)
-                .stream()
-                .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
-                .filter(Objects::nonNull)
-                .filter(r -> r instanceof OasRelationshipInfoModel)
-                .map(r -> (OasRelationshipInfoModel) r)
-                .flatMap(r -> r.getRelationshipTypes().stream())
-                .map(r -> domainRegistry.getResource(r))
-                .map(RegisteredResource::getResourceType);
-        Stream<ResourceType> toOneRelationshipResourceTypes = domainRegistry
-                .getToOneRelationships(parentResourceType)
-                .stream()
-                .map(relType -> MapUtils.emptyIfNull(relType.getPluginInfo()).get(JsonApiOasPlugin.NAME))
-                .filter(Objects::nonNull)
-                .filter(r -> r instanceof OasRelationshipInfoModel)
-                .map(r -> (OasRelationshipInfoModel) r)
-                .flatMap(r -> r.getRelationshipTypes().stream())
-                .map(r -> domainRegistry.getResource(r))
-                .map(RegisteredResource::getResourceType);
-        List<ResourceType> resourcesForRelationships = Stream.concat(
-                toManyRelationshipResourceTypes,
-                toOneRelationshipResourceTypes
-        ).toList();
-
-        if (resourcesForRelationships.isEmpty()) {
+        Set<ResourceType> includableTypes = OasIncludableTypesUtil.includableResourceTypes(
+                domainRegistry,
+                parentResourceType
+        );
+        if (includableTypes.isEmpty()) {
             return Optional.empty();
         }
 
-        Stream<ResourceType> parentResourceTypeStream = includingParentResourceType
-                ? Stream.of(parentResourceType)
-                : Stream.empty();
-
-        List<ResourceType> resultingResourceTypes = Stream.concat(
-                resourcesForRelationships.stream(),
-                parentResourceTypeStream
-        ).distinct().toList();
+        Set<ResourceType> resultingResourceTypes = new LinkedHashSet<>(includableTypes);
+        if (includingParentResourceType) {
+            resultingResourceTypes.add(parentResourceType);
+        }
 
         List<Schema> schemaRefs = resultingResourceTypes
                 .stream()

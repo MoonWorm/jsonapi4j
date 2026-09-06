@@ -14,7 +14,6 @@ import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
-import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.oas",
@@ -33,14 +32,8 @@ public class SpringJsonApi4jOasPluginConfig {
     }
 
     @Bean
-    public ServletContextInitializer jsonApi4jOasServletContextInitializer(
-            JsonApi4jProperties jsonApi4jProperties,
-            OasProperties oasProperties
-    ) {
-        return servletContext -> {
-            servletContext.setAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.rootPath());
-            servletContext.setAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME, oasProperties);
-        };
+    public ServletContextInitializer jsonApi4jOasServletContextInitializer(OasProperties oasProperties) {
+        return servletContext -> servletContext.setAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME, oasProperties);
     }
 
     @Bean(name = "jsonApi4jOasServlet")

@@ -8,20 +8,23 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.commons.lang3.Validate;
+import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
-import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_ROOT_PATH_ATT_NAME;
 
+@Slf4j
 public class OasServlet extends HttpServlet {
 
     private static final String FORMAT_QUERY_PARAM = "format";
@@ -32,6 +35,8 @@ public class OasServlet extends HttpServlet {
 
     private DomainRegistry domainRegistry;
     private OperationsRegistry operationsRegistry;
+    private JsonApi4jProperties jsonApi4jProperties;
+    private List<JsonApi4jPlugin> plugins;
     private String rootPath;
     private OasProperties oasProperties;
 
@@ -46,24 +51,46 @@ public class OasServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
+        log.info("Initializing {} ...", OasServlet.class.getSimpleName());
+
         super.init(config);
 
-        rootPath = (String) config.getServletContext().getAttribute(OAS_PLUGIN_ROOT_PATH_ATT_NAME);
-        Validate.notNull(rootPath, "rootPath property can't be null");
-
         oasProperties = (OasProperties) config.getServletContext().getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
-        Validate.notNull(oasProperties, "oas property section can't be null");
+
+        if (oasProperties == null || !oasProperties.enabled()) {
+            log.info(
+                    "{} has not been initialized, oasProperties is null or {} is disabled",
+                    OasServlet.class.getSimpleName(),
+                    JsonApiOasPlugin.class.getSimpleName()
+            );
+            return;
+        }
+
+        jsonApi4jProperties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
+
+        rootPath = jsonApi4jProperties.rootPath();
 
         JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
-        Validate.notNull(jsonApi4j, "JsonApi4j must be assembled before the OAS servlet initializes");
         domainRegistry = jsonApi4j.getDomainRegistry();
         operationsRegistry = jsonApi4j.getOperationsRegistry();
+        plugins = jsonApi4j.getPlugins();
+
+        log.info("{} has been initialized", OasServlet.class.getSimpleName());
     }
 
     @Override
     protected void service(HttpServletRequest req,
                            HttpServletResponse resp) throws IOException {
-
+        if (oasProperties == null || !oasProperties.enabled()) {
+            log.debug(
+                    "{} has not been initialized, {} is null or {} is disabled",
+                    OasServlet.class.getSimpleName(),
+                    OasProperties.class.getSimpleName(),
+                    JsonApiOasPlugin.class.getSimpleName()
+            );
+            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
+        }
         String format = getFormat(req);
         boolean yaml = format.equals(YAML_FORMAT);
         String cached = yaml ? cachedOasYaml : cachedOasJson;
@@ -80,7 +107,9 @@ public class OasServlet extends HttpServlet {
                 rootPath,
                 domainRegistry,
                 operationsRegistry,
-                oasProperties
+                oasProperties,
+                jsonApi4jProperties.validation(),
+                plugins
         ).customise(openAPI);
         new ErrorExamplesCustomizer().customise(openAPI);
         writeOasToResponse(resp, yaml, openAPI);

@@ -1,11 +1,16 @@
 package pro.api4.jsonapi4j.sampleapp.testsuite.domain.user;
 
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
+import pro.api4.jsonapi4j.request.SortAwareRequest;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
@@ -112,6 +117,65 @@ public abstract class ReadMultipleUsersOperationTests {
                 .body("data[1].relationships.citizenships.data", hasSize(1))
                 .body("data[1].relationships.placeOfBirth.data.id", equalTo("FI"))
                 .body("data[1].relationships.relatives.data", hasSize(2));
+    }
+
+    private List<String> fullNamesOf(String sortBy, int limit, int offset) {
+        return given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(SortAwareRequest.SORT_PARAM, sortBy)
+                .queryParam(LimitOffsetAwareRequest.LIMIT_PARAM, limit)
+                .queryParam(LimitOffsetAwareRequest.OFFSET_PARAM, offset)
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .extract()
+                .jsonPath()
+                .getList("data.attributes.fullName", String.class);
+    }
+
+    @Test
+    public void test_sortByFullNameAscending() {
+        List<String> fullNames = fullNamesOf("fullName", 100, 0);
+
+        assertThat(fullNames).hasSizeGreaterThan(1).isSortedAccordingTo(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    @Test
+    public void test_sortByFullNameDescending() {
+        List<String> fullNames = fullNamesOf("-fullName", 100, 0);
+
+        assertThat(fullNames).hasSizeGreaterThan(1)
+                .isSortedAccordingTo(String.CASE_INSENSITIVE_ORDER.reversed());
+    }
+
+    @Test
+    public void test_sortAppliesBeforePaging() {
+        // the page is a window over the sorted set, not a sorted window over the stored one
+        List<String> allSorted = fullNamesOf("fullName", 100, 0);
+        List<String> secondPage = fullNamesOf("fullName", 2, 2);
+
+        assertThat(secondPage).isEqualTo(allSorted.subList(2, 4));
+    }
+
+    @Test
+    public void test_limitOffsetPagination() {
+        List<String> firstPage = fullNamesOf("fullName", 2, 0);
+        List<String> secondPage = fullNamesOf("fullName", 2, 2);
+
+        assertThat(firstPage).hasSize(2);
+        assertThat(secondPage).hasSize(2).doesNotContainAnyElementsOf(firstPage);
+    }
+
+    @Test
+    public void test_sortByUnknownAttribute() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(SortAwareRequest.SORT_PARAM, "creditCardNumber")
+                .get("http://localhost:" + appPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(400)
+                .body("errors[0].code", equalTo("INVALID_ENUM_VALUE"));
     }
 
 }

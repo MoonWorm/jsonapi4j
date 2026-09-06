@@ -5,7 +5,7 @@ cd:
 ac:
   enabled: false
 sf:
-  enabled: false
+  enabled: true
 
 oas:
   enabled: true

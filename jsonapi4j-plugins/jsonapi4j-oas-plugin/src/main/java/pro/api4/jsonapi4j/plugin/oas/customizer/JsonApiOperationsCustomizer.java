@@ -27,6 +27,9 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
+import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
@@ -35,12 +38,18 @@ import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
+import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
+import pro.api4.jsonapi4j.request.SortAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.plugin.oas.OasOperationExtensionProperties.JSONAPI_AVAILABLE_RELATIONSHIPS;
@@ -54,10 +63,18 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 @Data
 public class JsonApiOperationsCustomizer {
 
+    /**
+     * Name of the sparse fieldsets plugin. Matched as a string because plugins are peers — the OAS plugin describes
+     * what another plugin contributes to the API without depending on it.
+     */
+    private static final String SPARSE_FIELDSETS_PLUGIN_NAME = "JsonApiSparseFieldsetsPlugin";
+
     private final String rootPath;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final OasProperties oasProperties;
+    private final ValidationProperties validationProperties;
+    private final List<JsonApi4jPlugin> plugins;
 
     public void customise(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
@@ -212,7 +229,7 @@ public class JsonApiOperationsCustomizer {
         // parameters
         oasOperation.setParameters(
                 generateParameters(
-                        oasOperationInfo != null ? oasOperationInfo.getParameters() : Collections.emptyList(),
+                        oasOperationInfo,
                         supportedIncludes,
                         extraOasOperationInfo
                 )
@@ -305,12 +322,15 @@ public class JsonApiOperationsCustomizer {
         return Collections.emptyList();
     }
 
-    private List<Parameter> generateParameters(List<OasOperationInfoModel.Parameter> customParameters,
+    private List<Parameter> generateParameters(OasOperationInfoModel oasOperationInfo,
                                                List<String> supportedIncludes,
                                                OasOperationInfoUtil.Info extraOperationInfo) {
+        List<OasOperationInfoModel.Parameter> customParameters = oasOperationInfo != null
+                ? oasOperationInfo.getParameters()
+                : Collections.emptyList();
         Map<String, Parameter> parameters = new LinkedHashMap<>();
         // generate Json:Api default parameters first
-        generateJsonApiParameters(supportedIncludes, extraOperationInfo).forEach(p -> parameters.put(p.getName(), p));
+        generateJsonApiParameters(supportedIncludes, extraOperationInfo, oasOperationInfo).forEach(p -> parameters.put(p.getName(), p));
         // custom parameters can override Json:Api default parameters
         generateCustomParameters(customParameters).forEach(p -> parameters.put(p.getName(), p));
         return List.copyOf(parameters.values());
@@ -499,18 +519,130 @@ public class JsonApiOperationsCustomizer {
     }
 
     private List<Parameter> generateJsonApiParameters(List<String> availableIncludes,
-                                                      OasOperationInfoUtil.Info extraOperationInfo) {
+                                                      OasOperationInfoUtil.Info extraOperationInfo,
+                                                      OasOperationInfoModel oasOperationInfo) {
         List<Parameter> params = new ArrayList<>();
-        if (availableIncludes != null && !availableIncludes.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(availableIncludes)) {
             params.add(createIncludeParam(availableIncludes));
         }
+        params.addAll(createSparseFieldsetsParams(extraOperationInfo));
         if (extraOperationInfo.isPaginationSupported()) {
-            params.add(createCursorParam());
+            for (PaginationStyle style : paginationStylesOf(oasOperationInfo)) {
+                params.addAll(createPaginationParams(style));
+            }
         }
+        createSortParam(sortableFieldsOf(oasOperationInfo)).ifPresent(params::add);
         if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
             params.add(createDefaultIdPathParam());
         }
         return params;
+    }
+
+    private List<String> sortableFieldsOf(OasOperationInfoModel oasOperationInfo) {
+        return oasOperationInfo == null ? List.of() : emptyIfNull(oasOperationInfo.getSortableFields()).stream().toList();
+    }
+
+    private Set<PaginationStyle> paginationStylesOf(OasOperationInfoModel oasOperationInfo) {
+        return oasOperationInfo == null || CollectionUtils.isEmpty(oasOperationInfo.getPaginationStyles())
+                ? EnumSet.of(PaginationStyle.CURSOR)
+                : oasOperationInfo.getPaginationStyles();
+    }
+
+    private List<Parameter> createSparseFieldsetsParams(OasOperationInfoUtil.Info extraOperationInfo) {
+        if (!isSparseFieldsetsEnabled() || extraOperationInfo.getResponseType() == OasOperationInfoUtil.ResponseType.VOID) {
+            return List.of();
+        }
+        return OasIncludableTypesUtil.sparseFieldsetsResourceTypes(domainRegistry, extraOperationInfo.getResourceType())
+                .stream()
+                .map(this::createSparseFieldsetParam)
+                .toList();
+    }
+
+    private boolean isSparseFieldsetsEnabled() {
+        return emptyIfNull(plugins).stream()
+                .anyMatch(plugin -> SPARSE_FIELDSETS_PLUGIN_NAME.equals(plugin.pluginName()) && plugin.enabled());
+    }
+
+    private Parameter createSparseFieldsetParam(ResourceType resourceType) {
+        Parameter fieldsParam = new Parameter();
+        fieldsParam.setName(SparseFieldsetsAwareRequest.getFieldsParam(resourceType.getType()));
+        fieldsParam.setIn("query");
+        fieldsParam.setRequired(false);
+        fieldsParam.setDescription(String.format(
+                "Limits the attributes returned for '%s' resources to the listed ones. Nested paths are allowed "
+                        + "(address.city). See the %s schema for what can be asked for. An empty value returns no attributes.",
+                resourceType.getType(),
+                OasSchemaNamesUtil.attributesSchemaName(resourceType)
+        ));
+        fieldsParam.setSchema(new ArraySchema().items(new StringSchema()));
+        return fieldsParam;
+    }
+
+    private List<Parameter> createPaginationParams(PaginationStyle style) {
+        return style == PaginationStyle.CURSOR
+                ? List.of(createCursorParam())
+                : List.of(createLimitParam(), createOffsetParam());
+    }
+
+    private Parameter createLimitParam() {
+        Parameter limitParam = new Parameter();
+        limitParam.setName(LimitOffsetAwareRequest.LIMIT_PARAM);
+        limitParam.setIn("query");
+        limitParam.setRequired(false);
+        limitParam.setDescription("Maximum number of items to return in a single page. Optional");
+        IntegerSchema schema = new IntegerSchema();
+        schema.setFormat("int64");
+        schema.setMinimum(BigDecimal.ONE);
+        schema.setDefault(LimitOffsetAwareRequest.DEFAULT_LIMIT);
+        if (validationProperties != null) {
+            schema.setMaximum(BigDecimal.valueOf(validationProperties.limitMaxValue()));
+        }
+        limitParam.setSchema(schema);
+        return limitParam;
+    }
+
+    private Parameter createOffsetParam() {
+        Parameter offsetParam = new Parameter();
+        offsetParam.setName(LimitOffsetAwareRequest.OFFSET_PARAM);
+        offsetParam.setIn("query");
+        offsetParam.setRequired(false);
+        offsetParam.setDescription("Number of items to skip before collecting the page. Optional");
+        IntegerSchema schema = new IntegerSchema();
+        schema.setFormat("int64");
+        schema.setMinimum(BigDecimal.ZERO);
+        schema.setDefault(LimitOffsetAwareRequest.DEFAULT_OFFSET);
+        offsetParam.setSchema(schema);
+        return offsetParam;
+    }
+
+    /**
+     * Publishes {@code sort} only when the operation declared what it can sort by — the framework parses the
+     * parameter for every request, but acting on it is the operation's business.
+     */
+    private Optional<Parameter> createSortParam(List<String> sortableFields) {
+        if (CollectionUtils.isEmpty(sortableFields)) {
+            return Optional.empty();
+        }
+        List<String> allowedValues = sortableFields.stream()
+                .flatMap(field -> Stream.of(field, "-" + field))
+                .toList();
+
+        Parameter sortParam = new Parameter();
+        sortParam.setName(SortAwareRequest.SORT_PARAM);
+        sortParam.setIn("query");
+        sortParam.setRequired(false);
+        sortParam.setDescription("Sort order. Prefix a field with '-' for descending, e.g. '-"
+                + sortableFields.getFirst() + "'. Optional");
+
+        StringSchema itemSchema = new StringSchema();
+        allowedValues.forEach(itemSchema::addEnumItem);
+        ArraySchema schema = new ArraySchema().items(itemSchema);
+        if (validationProperties != null) {
+            schema.setMaxItems(validationProperties.maxElementsInSortByParam());
+        }
+        sortParam.setSchema(schema);
+        sortParam.setExample(allowedValues.get(0));
+        return Optional.of(sortParam);
     }
 
     private Parameter createIncludeParam(List<String> availableRelationships) {
@@ -521,13 +653,17 @@ public class JsonApiOperationsCustomizer {
 
         String example = availableRelationships.stream().findFirst().orElse(null);
 
-        String description = "Allows clients to customize which related resources should be returned in compound docs" +
-                ". Available relationships: " + String.join(", ", availableRelationships);
+        String description = "Allows clients to customize which related resources should be returned in compound docs"
+                + ". Available relationships: " + String.join(", ", availableRelationships)
+                + ". Dotted paths reach further levels (e.g. '" + example + ".<relationship>'); this document describes"
+                + " the first level only";
 
         includeQueryParam.setDescription(description);
-        includeQueryParam.setSchema(
-                new ArraySchema().items(new StringSchema().example(example)))
-        ;
+        ArraySchema includeSchema = new ArraySchema().items(new StringSchema().example(example));
+        if (validationProperties != null) {
+            includeSchema.setMaxItems(validationProperties.maxElementsInIncludeParam());
+        }
+        includeQueryParam.setSchema(includeSchema);
         includeQueryParam.setExample(example);
 
         return includeQueryParam;
@@ -548,14 +684,14 @@ public class JsonApiOperationsCustomizer {
         cursorParam.setName("id");
         cursorParam.setIn("path");
         cursorParam.setDescription("Resource id. Required");
-        cursorParam.setSchema(new StringSchema());
+        StringSchema idSchema = new StringSchema();
+        if (validationProperties != null) {
+            idSchema.setMaxLength(validationProperties.resourceIdMaxLength());
+        }
+        cursorParam.setSchema(idSchema);
         return cursorParam;
     }
 
-    /**
-     * Publishes the relationships an operation accepts in {@code include}. The operation's unique name used to live
-     * here too, under a vendor key no tooling knows; it is now the standard {@code operationId}.
-     */
     private void addOperationExtensions(Operation operation,
                                         List<String> supportedIncludes) {
         if (CollectionUtils.isEmpty(supportedIncludes)) {

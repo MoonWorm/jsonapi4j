@@ -66,7 +66,6 @@ public class SpringJsonApi4jCompoundDocsConfig {
             @Autowired(required = false) CompoundDocsResourceCache cache
     ) {
         return servletContext -> {
-            servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_ROOT_PATH_ATT_NAME, jsonApi4jProperties.rootPath());
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME, cdProperties);
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME, domainSettingsResolver);
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME, cache);

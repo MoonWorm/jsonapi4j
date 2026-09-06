@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.oas.operation.annotation;
 
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.Type;
 
 import java.lang.annotation.ElementType;
@@ -27,6 +28,20 @@ public @interface OasOperationInfo {
      * and the resource name.
      */
     String description() default "";
+
+    /**
+     * Attribute paths this operation can sort by. Declaring them publishes the {@code sort} query parameter and
+     * enumerates what it accepts; leaving them empty means the operation does not sort, and no parameter is
+     * published — the framework parses {@code sort} for every request, but only the operation can honour it.
+     */
+    String[] sortableFields() default {};
+
+    /**
+     * Pagination styles this operation honours. Defaults to {@link PaginationStyle#CURSOR}, which is what the
+     * framework has always documented; add {@link PaginationStyle#LIMIT_OFFSET} when the operation reads
+     * {@code page[limit]} and {@code page[offset]}. Ignored for operations that are not paginated.
+     */
+    PaginationStyle[] pagination() default {PaginationStyle.CURSOR};
 
     SecurityConfig securityConfig() default @SecurityConfig;
 

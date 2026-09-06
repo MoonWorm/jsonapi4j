@@ -265,24 +265,32 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public DbPage<UserDbEntity> readAllUsers(String cursor) {
+    public DbPage<UserDbEntity> readAllUsers(String cursor, Comparator<UserDbEntity> order) {
         LimitOffsetToCursorAdapter adapter = new LimitOffsetToCursorAdapter(cursor).withDefaultLimit(2);
         LimitOffsetToCursorAdapter.LimitAndOffset limitAndOffset = adapter.decodeLimitAndOffset();
 
         long effectiveFrom = limitAndOffset.getOffset() < users.size() ? limitAndOffset.getOffset() : users.size() - 1;
         long effectiveTo = Math.min(effectiveFrom + limitAndOffset.getLimit(), users.size());
 
-        List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
+        List<UserDbEntity> result = orderedUsers(order).subList((int) effectiveFrom, (int) effectiveTo);
         String nextCursor = adapter.nextCursor(users.size());
         return new DbPage<>(result, nextCursor);
     }
 
     @Override
-    public DbPage<UserDbEntity> readAllUsers(long limit, long offset) {
+    public DbPage<UserDbEntity> readAllUsers(long limit, long offset, Comparator<UserDbEntity> order) {
         long effectiveFrom = offset < users.size() ? offset : users.size() - 1;
         long effectiveTo = Math.min(effectiveFrom + limit, users.size());
 
-        List<UserDbEntity> result = new ArrayList<>(users.values()).subList((int) effectiveFrom, (int) effectiveTo);
+        List<UserDbEntity> result = orderedUsers(order).subList((int) effectiveFrom, (int) effectiveTo);
         return new DbPage<>(result, users.size());
+    }
+
+    private List<UserDbEntity> orderedUsers(Comparator<UserDbEntity> order) {
+        List<UserDbEntity> all = new ArrayList<>(users.values());
+        if (order != null) {
+            all.sort(order);
+        }
+        return all;
     }
 }

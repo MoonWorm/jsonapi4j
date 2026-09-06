@@ -111,6 +111,40 @@ and descriptions ("Retrieves user details by resource id."). The plugin guesses 
 `@OasResourceInfo(resourceNameSingle = …)` on the resource whenever that guess reads wrong. There is no override for
 the plural — that is the resource type itself.
 
+### Query Parameters
+
+The framework parses `sort`, `page[…]` and `fields[…]` for every request, but only the operation can act on them —
+so the document publishes what the operation declares, never what the request layer merely accepts.
+
+| Parameter | Published when |
+|-----------|----------------|
+| `include` | the resource has relationships with a read operation |
+| `fields[TYPE]` | the sparse fieldsets plugin is enabled and the operation returns resources |
+| `page[cursor]` | the operation is paginated — the default |
+| `page[limit]`, `page[offset]` | `@OasOperationInfo(pagination = {CURSOR, LIMIT_OFFSET})` |
+| `sort` | `@OasOperationInfo(sortableFields = {"fullName", "email"})` |
+| `filter[…]` | declared through `@OasOperationInfo(parameters = …)` — only the operation knows its filters |
+
+```java
+@OasOperationInfo(
+        sortableFields = {"fullName", "email"},
+        pagination = {PaginationStyle.CURSOR, PaginationStyle.LIMIT_OFFSET}
+)
+public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) { … }
+```
+
+`sortableFields` becomes the parameter's allowed values in both directions — `fullName`, `-fullName`, `email`,
+`-email`. Pagination defaults to cursor alone, so an operation that does not read `page[limit]` never advertises it.
+
+One `fields[TYPE]` parameter is published per type the document can carry: the primary resource plus what it can
+include. That is one level — a client may nest includes (`include=citizenships.currencies`) and select fields on what
+comes back, but the document describes the immediate contract and leaves the rest of the graph to be discovered from
+the related resource's own operations. The `included` schema describes the same single level, so the two never
+disagree.
+
+Limits configured under `jsonapi4j.validation` are projected into the schemas: `page[limit]` carries its `maximum`,
+`sort` and `include` their `maxItems`, and the `id` path parameter its `maxLength`.
+
 ### Responses
 
 Every operation documents the status it answers with, including the writes that return no body:

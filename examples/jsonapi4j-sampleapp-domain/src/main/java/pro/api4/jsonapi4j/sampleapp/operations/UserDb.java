@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,9 +65,9 @@ public interface UserDb {
 
     void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth);
 
-    DbPage<UserDbEntity> readAllUsers(String cursor);
+    DbPage<UserDbEntity> readAllUsers(String cursor, Comparator<UserDbEntity> order);
 
-    DbPage<UserDbEntity> readAllUsers(long limit, long offset);
+    DbPage<UserDbEntity> readAllUsers(long limit, long offset, Comparator<UserDbEntity> order);
 
     class DbPage<E> {
 
