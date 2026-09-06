@@ -174,6 +174,30 @@ Each plugin adds its own properties under the `jsonapi4j` namespace. Refer to th
 | OpenAPI | `jsonapi4j.oas.*` | [OpenAPI Plugin](/openapi-plugin/#available-properties) |
 | Compound Documents | `jsonapi4j.cd.*` | [Compound Documents Plugin](/compound-docs-plugin/#available-properties) |
 
+### Startup Validation
+
+Every plugin validates its own section when the application starts. A misconfigured plugin fails the
+boot with a `PluginMisconfigurationException` that lists **all** the problems found across **all**
+plugins at once, each pointing at the exact property key:
+
+```
+Registered plugins are misconfigured. Fix the configuration and restart:
+JsonApiCompoundDocsPlugin ('jsonapi4j.cd'):
+Property errors:
+  - 'jsonapi4j.cd.maxHops': must be greater than 0, but was 0
+  - 'jsonapi4j.cd.mapping.users': must be an absolute http(s) URL with a host, but was '/jsonapi'
+Cross-properties errors:
+  - 'jsonapi4j.cd.httpTotalTimeoutMs' (1000) must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs' (5000): the total budget of an include call has to cover connecting to the remote service
+```
+
+The checks cover mandatory values, ranges, URL and path formats, and combinations that are individually
+valid but contradict each other (mutually exclusive license fields, two OAuth2 flows sharing one name,
+duplicate response-header status codes). A **disabled** plugin is never validated — parked configuration
+does not break a boot.
+
+A custom plugin gets the same treatment by overriding `validate()` on its `PluginProperties`
+implementation and returning the collected `PluginPropertiesValidationResult`.
+
 ### A config file with everything in it
 
 Each sample application ships a configuration file listing every property with its default, so the whole

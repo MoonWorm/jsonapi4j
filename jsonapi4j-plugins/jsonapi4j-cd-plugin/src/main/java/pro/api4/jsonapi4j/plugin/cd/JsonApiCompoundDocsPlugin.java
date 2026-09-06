@@ -25,6 +25,11 @@ public class JsonApiCompoundDocsPlugin implements JsonApi4jPlugin {
     }
 
     @Override
+    public boolean enabled() {
+        return compoundDocsProperties.enabled();
+    }
+
+    @Override
     public CompoundDocsProperties configProperties() {
         return compoundDocsProperties;
     }

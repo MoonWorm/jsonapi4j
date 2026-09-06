@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.sf.config;
 
 import pro.api4.jsonapi4j.config.PluginProperties;
+import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
 
 public interface SfProperties extends PluginProperties {
 
@@ -23,6 +24,19 @@ public interface SfProperties extends PluginProperties {
 
     default RequestedFieldsDontExistMode requestedFieldsDontExistMode() {
         return RequestedFieldsDontExistMode.valueOf(DEFAULT_REQUESTED_FIELDS_DONT_EXIST_MODE);
+    }
+
+    @Override
+    default PluginPropertiesValidationResult validate() {
+        if (!enabled()) {
+            return PluginPropertiesValidationResult.empty();
+        }
+        return PluginPropertiesValidationResult.builder()
+                .requireNotNull(
+                        propertyPath(REQUESTED_FIELDS_DONT_EXIST_MODE_PROPERTY),
+                        requestedFieldsDontExistMode()
+                )
+                .build();
     }
 
     /**

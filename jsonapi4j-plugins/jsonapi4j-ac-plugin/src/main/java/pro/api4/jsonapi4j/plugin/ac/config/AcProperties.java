@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.ac.config;
 
 import pro.api4.jsonapi4j.config.PluginProperties;
+import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
 
 public interface AcProperties extends PluginProperties {
 
@@ -50,6 +51,16 @@ public interface AcProperties extends PluginProperties {
      */
     default AnonymizationReportLevel anonymizationReport() {
         return AnonymizationReportLevel.valueOf(DEFAULT_ANONYMIZATION_REPORT);
+    }
+
+    @Override
+    default PluginPropertiesValidationResult validate() {
+        if (!enabled()) {
+            return PluginPropertiesValidationResult.empty();
+        }
+        return PluginPropertiesValidationResult.builder()
+                .requireNotNull(propertyPath(ANONYMIZATION_REPORT_PROPERTY), anonymizationReport())
+                .build();
     }
 
 }

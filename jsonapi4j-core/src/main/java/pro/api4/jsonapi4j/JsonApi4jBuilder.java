@@ -1,12 +1,16 @@
 package pro.api4.jsonapi4j;
 
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.PluginProperties;
+import pro.api4.jsonapi4j.config.PluginPropertiesValidationResult;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 
 import java.text.MessageFormat;
@@ -62,6 +66,7 @@ public class JsonApi4jBuilder {
 
     public JsonApi4j build() {
         validateIntegrity();
+        validatePluginConfigs();
         if (metaContext != null) {
             domainRegistry = DomainRegistry.copy(plugins, domainRegistry).withMeta().build();
             MetaRuntime metaRuntime = new MetaRuntime(metaContext, plugins, domainRegistry, operationsRegistry);
@@ -86,6 +91,35 @@ public class JsonApi4jBuilder {
                 );
             }
         });
+    }
+
+    /**
+     * Fails the build when any enabled plugin is misconfigured, reporting every plugin's errors at once - a boot that
+     * dies on the first bad key costs one restart per typo.
+     */
+    private void validatePluginConfigs() {
+        StringBuilder errors = new StringBuilder();
+        plugins.stream()
+                .filter(JsonApi4jPlugin::enabled)
+                .filter(plugin -> plugin.configProperties() != null)
+                .forEach(plugin -> {
+                    PluginProperties properties = plugin.configProperties();
+                    PluginPropertiesValidationResult result = properties.validate();
+                    if (result.hasErrors()) {
+                        errors.append(MessageFormat.format(
+                                "{0} (''{1}.{2}''):\n{3}",
+                                plugin.pluginName(),
+                                JsonApi4jProperties.CONFIG_PREFIX,
+                                properties.section(),
+                                result
+                        ));
+                    }
+                });
+        if (!errors.isEmpty()) {
+            throw new PluginMisconfigurationException(
+                    "Registered plugins are misconfigured. Fix the configuration and restart:\n" + errors
+            );
+        }
     }
 
 }
