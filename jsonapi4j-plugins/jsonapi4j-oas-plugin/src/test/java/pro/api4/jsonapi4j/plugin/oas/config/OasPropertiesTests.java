@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.*;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -293,7 +294,7 @@ public class OasPropertiesTests {
             sut.getInfo().setTermsOfService("https://foo.bar/terms");
             Map<String, Object> effectiveConfig = MetaConfigComposer.compose(
                     new DefaultJsonApi4jProperties(),
-                    List.of(new JsonApiOasPlugin(sut))
+                    PluginRegistry.builder().register(new JsonApiOasPlugin(sut)).build()
             );
             breakEveryValue(sut);
 

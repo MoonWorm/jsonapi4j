@@ -23,6 +23,7 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.Secured
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -68,7 +69,7 @@ class JsonApiOperationsCustomizerTests {
                 jsonApi4j.getOperationsRegistry(),
                 null,
                 null,
-                List.of()
+                PluginRegistry.empty()
         );
         sut.customise(openApi);
 
@@ -90,7 +91,7 @@ class JsonApiOperationsCustomizerTests {
                     withMeta.getOperationsRegistry(),
                     null,
                     null,
-                    List.of()
+                    PluginRegistry.empty()
             );
             sut.customise(openApi);
 
@@ -267,7 +268,7 @@ class JsonApiOperationsCustomizerTests {
                     jsonApi4j.getOperationsRegistry(),
                     null,
                     null,
-                    List.of()
+                    PluginRegistry.empty()
             );
             sut.customise(openApi);
 
@@ -358,7 +359,7 @@ class JsonApiOperationsCustomizerTests {
                     jsonApi4j.getOperationsRegistry(),
                     oasProperties,
                     null,
-                    List.of()
+                    PluginRegistry.empty()
             ).customise(openApi);
 
             // then
@@ -404,7 +405,7 @@ class JsonApiOperationsCustomizerTests {
                     jsonApi4j.getOperationsRegistry(),
                     oasProperties,
                     null,
-                    List.of()
+                    PluginRegistry.empty()
             );
             sut.customise(openApi);
 

@@ -18,6 +18,7 @@ import pro.api4.jsonapi4j.meta.domain.resources.ResourcesResource;
 import pro.api4.jsonapi4j.meta.domain.resources.StateResourcesRelationship;
 import pro.api4.jsonapi4j.meta.domain.state.StateResource;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.text.MessageFormat;
@@ -66,14 +67,14 @@ public class DomainRegistry {
                 .toList();
     }
 
-    public static DomainRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
-        return new DomainRegistryBuilder(plugins);
+    public static DomainRegistryBuilder builder(PluginRegistry pluginRegistry) {
+        return new DomainRegistryBuilder(pluginRegistry);
     }
 
-    public static DomainRegistryBuilder copy(List<JsonApi4jPlugin> plugins,
+    public static DomainRegistryBuilder copy(PluginRegistry pluginRegistry,
                                              DomainRegistry domainRegistry) {
         return new DomainRegistryBuilder(
-                plugins,
+                pluginRegistry,
                 domainRegistry.resources,
                 domainRegistry.allRelationships,
                 domainRegistry.toOneRelationships,
@@ -84,7 +85,7 @@ public class DomainRegistry {
     }
 
     public static DomainRegistry empty() {
-        return DomainRegistry.builder(Collections.emptyList())
+        return DomainRegistry.builder(PluginRegistry.empty())
                 .resources(Collections.emptySet())
                 .relationships(Collections.emptySet())
                 .build();
@@ -237,7 +238,7 @@ public class DomainRegistry {
     @Slf4j
     public static class DomainRegistryBuilder {
 
-        private final List<JsonApi4jPlugin> plugins;
+        private final PluginRegistry pluginRegistry;
 
         private final Map<ResourceType, RegisteredResource<Resource<?>>> resources;
         private final Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships;
@@ -247,14 +248,14 @@ public class DomainRegistry {
         private final Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass;
         private final Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass;
 
-        private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins,
+        private DomainRegistryBuilder(PluginRegistry pluginRegistry,
                                       Map<ResourceType, RegisteredResource<Resource<?>>> resources,
                                       Map<ResourceType, Map<RelationshipName, RegisteredRelationship<? extends Relationship<?>>>> allRelationships,
                                       Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToOneRelationship<?>>>> toOneRelationships,
                                       Map<ResourceType, Map<RelationshipName, RegisteredRelationship<ToManyRelationship<?>>>> toManyRelationships,
                                       Map<Class<?>, RegisteredResource<Resource<?>>> resourcesByClass,
                                       Map<Class<?>, RegisteredRelationship<Relationship<?>>> relationshipsByClass) {
-            this.plugins = plugins;
+            this.pluginRegistry = pluginRegistry;
 
             this.resources = new HashMap<>(resources);
             this.allRelationships = new HashMap<>(allRelationships);
@@ -265,8 +266,8 @@ public class DomainRegistry {
             this.relationshipsByClass = new HashMap<>(relationshipsByClass);
         }
 
-        private DomainRegistryBuilder(List<JsonApi4jPlugin> plugins) {
-            this.plugins = plugins;
+        private DomainRegistryBuilder(PluginRegistry pluginRegistry) {
+            this.pluginRegistry = pluginRegistry;
 
             this.resources = new HashMap<>();
             this.allRelationships = new HashMap<>();
@@ -429,12 +430,10 @@ public class DomainRegistry {
 
         private RegisteredResource<Resource<?>> enrichWithMetaInfo(Resource<?> resource) {
             Map<String, Object> pluginsInfo = new HashMap<>();
-            for (JsonApi4jPlugin plugin : this.plugins) {
-                if (plugin.enabled()) {
-                    Object pluginInfo = plugin.extractPluginInfoFromResource(resource);
-                    if (pluginInfo != null) {
-                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
-                    }
+            for (JsonApi4jPlugin plugin : this.pluginRegistry.getActivePlugins()) {
+                Object pluginInfo = plugin.extractPluginInfoFromResource(resource);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
                 }
             }
             return RegisteredResource.builder()
@@ -456,12 +455,10 @@ public class DomainRegistry {
                     : RelationshipType.TO_MANY;
 
             Map<String, Object> pluginsInfo = new HashMap<>();
-            for (JsonApi4jPlugin plugin : this.plugins) {
-                if (plugin.enabled()) {
-                    Object pluginInfo = plugin.extractPluginInfoFromRelationship(relationship);
-                    if (pluginInfo != null) {
-                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
-                    }
+            for (JsonApi4jPlugin plugin : this.pluginRegistry.getActivePlugins()) {
+                Object pluginInfo = plugin.extractPluginInfoFromRelationship(relationship);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
                 }
             }
             return RegisteredRelationship.<T>builder()

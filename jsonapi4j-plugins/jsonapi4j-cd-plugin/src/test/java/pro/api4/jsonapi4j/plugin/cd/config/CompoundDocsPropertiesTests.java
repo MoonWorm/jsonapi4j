@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties.DefaultCache;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -208,7 +209,7 @@ public class CompoundDocsPropertiesTests {
     private static Map<String, Object> effectiveConfigOf(CompoundDocsProperties properties) {
         return MetaConfigComposer.compose(
                 new DefaultJsonApi4jProperties(),
-                List.of(new JsonApiCompoundDocsPlugin(properties))
+                PluginRegistry.builder().register(new JsonApiCompoundDocsPlugin(properties)).build()
         );
     }
 

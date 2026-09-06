@@ -59,7 +59,7 @@ public class MetaIntrospector implements PluginsIntrospector,
 
     @Override
     public List<PluginAttributes> plugins() {
-        return runtime.getPlugins().stream()
+        return runtime.getPluginRegistry().getAllPlugins().stream()
                 .map(p -> new PluginAttributes(
                         p.pluginName(),
                         p.enabled(),

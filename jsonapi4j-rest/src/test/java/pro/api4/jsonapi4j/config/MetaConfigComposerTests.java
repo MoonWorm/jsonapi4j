@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.config;
 
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -17,10 +18,12 @@ class MetaConfigComposerTests {
 
         Map<String, Object> settings = MetaConfigComposer.compose(
                 root,
-                List.of(new TestPlugin(new TestCompoundDocsProperties(
-                        true,
-                        List.of("FIELDS", "CUSTOM_QUERY_PARAMS", "HEADERS")
-                )))
+                PluginRegistry.builder()
+                        .register(new TestPlugin(new TestCompoundDocsProperties(
+                                true,
+                                List.of("FIELDS", "CUSTOM_QUERY_PARAMS", "HEADERS")
+                        )))
+                        .build()
         );
 
         assertThat(settings).containsEntry("rootPath", "/jsonapi");
@@ -38,7 +41,7 @@ class MetaConfigComposerTests {
     void compose_skipsPluginsWithoutConfig() {
         Map<String, Object> settings = MetaConfigComposer.compose(
                 new DefaultJsonApi4jProperties(),
-                List.of(new TestPlugin(null))
+                PluginRegistry.builder().register(new TestPlugin(null)).build()
         );
 
         assertThat(settings).doesNotContainKey("cd");

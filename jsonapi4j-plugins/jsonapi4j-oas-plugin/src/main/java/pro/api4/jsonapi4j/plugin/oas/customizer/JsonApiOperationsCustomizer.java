@@ -28,7 +28,7 @@ import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
@@ -74,7 +74,7 @@ public class JsonApiOperationsCustomizer {
     private final OperationsRegistry operationsRegistry;
     private final OasProperties oasProperties;
     private final ValidationProperties validationProperties;
-    private final List<JsonApi4jPlugin> plugins;
+    private final PluginRegistry pluginRegistry;
 
     public void customise(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
@@ -559,8 +559,7 @@ public class JsonApiOperationsCustomizer {
     }
 
     private boolean isSparseFieldsetsEnabled() {
-        return emptyIfNull(plugins).stream()
-                .anyMatch(plugin -> SPARSE_FIELDSETS_PLUGIN_NAME.equals(plugin.pluginName()) && plugin.enabled());
+        return pluginRegistry != null && pluginRegistry.isActivePlugin(SPARSE_FIELDSETS_PLUGIN_NAME);
     }
 
     private Parameter createSparseFieldsetParam(ResourceType resourceType) {

@@ -1,14 +1,12 @@
 package pro.api4.jsonapi4j.domain;
 
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.domain.exception.DomainMisconfigurationException;
-import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.domain.plugins.PluginsResource;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,7 +19,7 @@ public class DomainRegistryTests {
 
     @Test
     public void build_validateIntegrityForToOneRelationship_throwsException() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToOneRelationship()).build())
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("(TestToOneRelationship) relationship belongs to an unregistered (foo) resource. Please register (foo) resource or double-check if parent resource has been correctly specified.");
@@ -29,7 +27,7 @@ public class DomainRegistryTests {
 
     @Test
     public void build_validateIntegrityForToManyRelationship_throwsException() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToManyRelationship()).build())
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("(TestToManyRelationship) relationship belongs to an unregistered (foo) resource. Please register (foo) resource or double-check if parent resource has been correctly specified.");
@@ -37,7 +35,7 @@ public class DomainRegistryTests {
 
     @Test
     public void resource_missingAnnotation_throwsException() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .resource(new TestResourceWithoutAnnotation()))
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("Each resource implementation must has @JsonApiResource annotation placed on the type level.");
@@ -45,7 +43,7 @@ public class DomainRegistryTests {
 
     @Test
     public void relationship_toOneMissingAnnotation_throwsException() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToManyRelationshipWithoutAnnotation()))
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("Each relationship implementation must has @JsonApiRelationship annotation placed on the type level.");
@@ -53,7 +51,7 @@ public class DomainRegistryTests {
 
     @Test
     public void relationship_toManyMissingAnnotation_throwsException() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToManyRelationshipWithoutAnnotation()))
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("Each relationship implementation must has @JsonApiRelationship annotation placed on the type level.");
@@ -62,7 +60,7 @@ public class DomainRegistryTests {
     @Test
     public void resource_multipleWithTheSameName_throwsException() {
         // given - when
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .resource(new TestResourceFoo())
                 .resource(new TestResourceSimilarFoo()))
                 .isInstanceOf(DomainMisconfigurationException.class)
@@ -72,7 +70,7 @@ public class DomainRegistryTests {
     @Test
     public void relationship_multipleToOneWithTheSameName_throwsException() {
         // given - when
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToOneRelationship())
                 .relationship(new TestToOneRelationshipSimilar()))
                 .isInstanceOf(DomainMisconfigurationException.class)
@@ -82,11 +80,34 @@ public class DomainRegistryTests {
     @Test
     public void relationship_multipleToManyWithTheSameName_throwsException() {
         // given - when
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .relationship(new TestToManyRelationship())
                 .relationship(new TestToManyRelationshipSimilar()))
                 .isInstanceOf(DomainMisconfigurationException.class)
                 .hasMessage("Multiple similar (tO2) relationship declarations found for (foo) resource type");
+    }
+
+    @Test
+    public void build_enabledPlugin_contributesItsExtractedInfo() {
+        // given - when
+        DomainRegistry sut = DomainRegistry.builder(PluginRegistry.builder().register(new TestPlugin(true)).build())
+                .resource(new TestResourceFoo())
+                .build();
+
+        // then
+        assertThat(sut.getResource(new ResourceType("foo")).getPluginInfo())
+                .containsEntry("TestPlugin", "extracted");
+    }
+
+    @Test
+    public void build_disabledPlugin_contributesNoInfo() {
+        // given - when
+        DomainRegistry sut = DomainRegistry.builder(PluginRegistry.builder().register(new TestPlugin(false)).build())
+                .resource(new TestResourceFoo())
+                .build();
+
+        // then
+        assertThat(sut.getResource(new ResourceType("foo")).getPluginInfo()).isEmpty();
     }
 
     @Test
@@ -103,7 +124,7 @@ public class DomainRegistryTests {
     public void resourceAndNoRelationships_checkAllMethodsWorksAsExpected() {
         // given - when
         TestResourceFoo testResource = new TestResourceFoo();
-        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
+        DomainRegistry sut = DomainRegistry.builder(PluginRegistry.empty())
                 .resource(testResource)
                 .build();
 
@@ -119,7 +140,7 @@ public class DomainRegistryTests {
         TestResourceFoo testResource = new TestResourceFoo();
         TestToOneRelationship testToOneRelationship = new TestToOneRelationship();
         TestToManyRelationship testToManyRelationship = new TestToManyRelationship();
-        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
+        DomainRegistry sut = DomainRegistry.builder(PluginRegistry.empty())
                 .resource(testResource)
                 .relationship(testToOneRelationship)
                 .relationship(testToManyRelationship)
@@ -149,7 +170,7 @@ public class DomainRegistryTests {
 
     @Test
     void metaEnabled_exposesReservedResourcesAsAStrictSubset() {
-        DomainRegistry sut = DomainRegistry.builder(Collections.emptyList())
+        DomainRegistry sut = DomainRegistry.builder(PluginRegistry.empty())
                 .withMeta()
                 .build();
 
@@ -162,7 +183,7 @@ public class DomainRegistryTests {
 
     @Test
     void metaEnabled_tryingToAddReservedMetaType() {
-        assertThatThrownBy(() -> DomainRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> DomainRegistry.builder(PluginRegistry.empty())
                 .resource(new TestResourceWithReservedMetaName())
                 .withMeta()
                 .build()
@@ -173,7 +194,7 @@ public class DomainRegistryTests {
 
     @Test
     void metaDisabled_metaAccessorsAreEmpty() {
-        DomainRegistry domain = DomainRegistry.builder(Collections.emptyList()).build();
+        DomainRegistry domain = DomainRegistry.builder(PluginRegistry.empty()).build();
 
         assertThat(domain.isMetaEnabled()).isFalse();
         assertThat(domain.getMetaResources()).isEmpty();
@@ -195,6 +216,20 @@ public class DomainRegistryTests {
         @Override
         public String resolveResourceId(String dataSourceDto) {
             return UUID.randomUUID().toString();
+        }
+
+    }
+
+    private record TestPlugin(boolean enabled) implements JsonApi4jPlugin {
+
+        @Override
+        public String pluginName() {
+            return "TestPlugin";
+        }
+
+        @Override
+        public Object extractPluginInfoFromResource(Resource<?> resource) {
+            return "extracted";
         }
 
     }

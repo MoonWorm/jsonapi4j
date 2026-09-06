@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,14 +30,15 @@ public final class MetaConfigComposer {
 
     /**
      * @param root    the root jsonapi4j properties (e.g. {@code rootPath}, {@code validation}, {@code meta})
-     * @param plugins the registered plugins; each may contribute its {@link PluginProperties} via
-     *                {@link JsonApi4jPlugin#configProperties()}
+     * @param pluginRegistry the registered plugins - every one of them, enabled or not; each may contribute its
+     *                {@link PluginProperties} via {@link JsonApi4jPlugin#configProperties()}
      * @return an ordered, nested map with the root config at the top level and every non-null plugin section keyed
      * by its {@link PluginProperties#section()}
      */
-    public static Map<String, Object> compose(JsonApi4jProperties root, List<JsonApi4jPlugin> plugins) {
+    public static Map<String, Object> compose(JsonApi4jProperties root,
+                                              PluginRegistry pluginRegistry) {
         Map<String, Object> settings = new LinkedHashMap<>(toMap(root));
-        for (JsonApi4jPlugin plugin : plugins) {
+        for (JsonApi4jPlugin plugin : pluginRegistry.getAllPlugins()) {
             PluginProperties properties = plugin.configProperties();
             if (properties != null) {
                 settings.put(properties.section(), toMap(properties));

@@ -6,8 +6,8 @@ import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,8 +22,8 @@ final class OasCustomizerTestFixtures {
 
     static JsonApi4j build(boolean metaEnabled) {
         var builder = JsonApi4j.builder()
-                .domainRegistry(DomainRegistry.builder(List.of()).build())
-                .operationsRegistry(OperationsRegistry.builder(List.of()).build());
+                .domainRegistry(DomainRegistry.builder(PluginRegistry.empty()).build())
+                .operationsRegistry(OperationsRegistry.builder(PluginRegistry.empty()).build());
         if (metaEnabled) {
             builder.meta(MetaContext.of(
                     Map.of(JsonApi4jProperties.ROOT_PATH_PROPERTY, JsonApi4jProperties.DEFAULT_ROOT_PATH),

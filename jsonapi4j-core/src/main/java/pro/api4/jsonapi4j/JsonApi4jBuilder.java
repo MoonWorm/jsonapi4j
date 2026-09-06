@@ -2,7 +2,6 @@ package pro.api4.jsonapi4j;
 
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
@@ -11,18 +10,15 @@ import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.Executor;
 
 public class JsonApi4jBuilder {
 
-    private List<JsonApi4jPlugin> plugins = Collections.emptyList();
+    private PluginRegistry pluginRegistry = PluginRegistry.empty();
     private DomainRegistry domainRegistry = DomainRegistry.empty();
     private OperationsRegistry operationsRegistry = OperationsRegistry.empty();
     private Executor executor = ResourceProcessorContext.DEFAULT_EXECUTOR;
@@ -32,9 +28,9 @@ public class JsonApi4jBuilder {
 
     JsonApi4jBuilder() {}
 
-    public JsonApi4jBuilder plugins(List<JsonApi4jPlugin> plugins) {
-        Validate.notNull(plugins, "Plugins must not be null");
-        this.plugins = plugins;
+    public JsonApi4jBuilder pluginRegistry(PluginRegistry pluginRegistry) {
+        Validate.notNull(pluginRegistry, "Plugin Registry must not be null");
+        this.pluginRegistry = pluginRegistry;
         return this;
     }
 
@@ -78,14 +74,14 @@ public class JsonApi4jBuilder {
         validateRootConfig();
         validatePluginConfigs();
         if (metaContext != null) {
-            domainRegistry = DomainRegistry.copy(plugins, domainRegistry).withMeta().build();
-            MetaRuntime metaRuntime = new MetaRuntime(metaContext, plugins, domainRegistry, operationsRegistry);
-            operationsRegistry = OperationsRegistry.copy(plugins, operationsRegistry).withMeta(metaRuntime).build();
+            domainRegistry = DomainRegistry.copy(pluginRegistry, domainRegistry).withMeta().build();
+            MetaRuntime metaRuntime = new MetaRuntime(metaContext, pluginRegistry, domainRegistry, operationsRegistry);
+            operationsRegistry = OperationsRegistry.copy(pluginRegistry, operationsRegistry).withMeta(metaRuntime).build();
         }
         // Materialize the validator against the final (meta-augmented) domain registry, so it never validates
         // requests against a stale, pre-meta view of the registered resources/relationships.
         JsonApiBuildInRequestValidator validator = validatorFactory.create(domainRegistry);
-        return new JsonApi4j(plugins, domainRegistry, operationsRegistry, executor, validator, metaContext, properties);
+        return new JsonApi4j(pluginRegistry, domainRegistry, operationsRegistry, executor, validator, metaContext, properties);
     }
 
     private void validateIntegrity() {
@@ -120,37 +116,11 @@ public class JsonApi4jBuilder {
     }
 
     /**
-     * Fails the build when any enabled plugin is misconfigured, reporting every plugin's errors at once - a boot that
-     * dies on the first bad key costs one restart per typo. Each plugin is checked on its own
-     * ({@link PluginProperties#validate()}) and against the root configuration
-     * ({@link PluginProperties#validateAgainst(JsonApi4jProperties)}), both landing in one report.
+     * Fails the build when any enabled plugin is misconfigured. The checks themselves live on the
+     * {@link PluginRegistry}, which owns the plugins and knows which of them are active.
      */
     private void validatePluginConfigs() {
-        StringBuilder errors = new StringBuilder();
-        plugins.stream()
-                .filter(JsonApi4jPlugin::enabled)
-                .filter(plugin -> plugin.configProperties() != null)
-                .forEach(plugin -> {
-                    PluginProperties pluginProperties = plugin.configProperties();
-                    PropertiesValidationResult result = PropertiesValidationResult.builder()
-                            .addAll(pluginProperties.validate())
-                            .addAll(pluginProperties.validateAgainst(properties))
-                            .build();
-                    if (result.hasErrors()) {
-                        errors.append(MessageFormat.format(
-                                "{0} (''{1}.{2}''):\n{3}",
-                                plugin.pluginName(),
-                                JsonApi4jProperties.CONFIG_PREFIX,
-                                pluginProperties.section(),
-                                result
-                        ));
-                    }
-                });
-        if (!errors.isEmpty()) {
-            throw new PluginMisconfigurationException(
-                    "Registered plugins are misconfigured. Fix the configuration and restart:\n" + errors
-            );
-        }
+        pluginRegistry.validateConfigs(properties);
     }
 
 }

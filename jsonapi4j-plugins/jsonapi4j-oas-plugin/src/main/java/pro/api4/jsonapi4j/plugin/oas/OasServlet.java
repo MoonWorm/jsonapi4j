@@ -12,14 +12,13 @@ import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
@@ -36,7 +35,7 @@ public class OasServlet extends HttpServlet {
     private DomainRegistry domainRegistry;
     private OperationsRegistry operationsRegistry;
     private JsonApi4jProperties jsonApi4jProperties;
-    private List<JsonApi4jPlugin> plugins;
+    private PluginRegistry pluginRegistry;
     private String rootPath;
     private OasProperties oasProperties;
 
@@ -73,7 +72,7 @@ public class OasServlet extends HttpServlet {
         JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
         domainRegistry = jsonApi4j.getDomainRegistry();
         operationsRegistry = jsonApi4j.getOperationsRegistry();
-        plugins = jsonApi4j.getPlugins();
+        pluginRegistry = jsonApi4j.getPluginRegistry();
 
         log.info("{} has been initialized", OasServlet.class.getSimpleName());
     }
@@ -109,7 +108,7 @@ public class OasServlet extends HttpServlet {
                 operationsRegistry,
                 oasProperties,
                 jsonApi4jProperties.validation(),
-                plugins
+                pluginRegistry
         ).customise(openAPI);
         new ErrorExamplesCustomizer().customise(openAPI);
         writeOasToResponse(resp, yaml, openAPI);

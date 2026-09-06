@@ -24,6 +24,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
@@ -79,17 +80,17 @@ public class OperationsRegistry {
         this.relationshipNamesWithAnyOperationConfigured = relationshipNamesWithAnyOperationConfigured;
     }
 
-    public static OperationsRegistryBuilder builder(List<JsonApi4jPlugin> plugins) {
-        return new OperationsRegistryBuilder(plugins);
+    public static OperationsRegistryBuilder builder(PluginRegistry pluginRegistry) {
+        return new OperationsRegistryBuilder(pluginRegistry);
     }
 
-    public static OperationsRegistryBuilder copy(List<JsonApi4jPlugin> plugins,
+    public static OperationsRegistryBuilder copy(PluginRegistry pluginRegistry,
                                                  OperationsRegistry operationsRegistry) {
-        return new OperationsRegistryBuilder(plugins, operationsRegistry);
+        return new OperationsRegistryBuilder(pluginRegistry, operationsRegistry);
     }
 
     public static OperationsRegistry empty() {
-        return builder(Collections.emptyList()).build();
+        return builder(PluginRegistry.empty()).build();
     }
 
     public Set<ResourceType> getResourceTypesWithAnyOperationConfigured() {
@@ -432,7 +433,7 @@ public class OperationsRegistry {
     @Slf4j
     public static class OperationsRegistryBuilder {
 
-        private final List<JsonApi4jPlugin> plugins;
+        private final PluginRegistry pluginRegistry;
 
         private final Map<ResourceType, RegisteredOperation<ReadResourceByIdOperation<?>>> readResourceByIdOperations;
         private final Map<ResourceType, RegisteredOperation<ReadMultipleResourcesOperation<?>>> readMultipleResourcesOperations;
@@ -448,8 +449,8 @@ public class OperationsRegistry {
         private final Set<ResourceType> resourceTypesWithAnyOperationConfigured;
         private final Map<ResourceType, Set<RelationshipName>> relationshipNamesWithAnyOperationConfigured;
 
-        private OperationsRegistryBuilder(List<JsonApi4jPlugin> plugins) {
-            this.plugins = plugins;
+        private OperationsRegistryBuilder(PluginRegistry pluginRegistry) {
+            this.pluginRegistry = pluginRegistry;
 
             this.readResourceByIdOperations = new HashMap<>();
             this.readMultipleResourcesOperations = new HashMap<>();
@@ -468,9 +469,9 @@ public class OperationsRegistry {
             this.relationshipNamesWithAnyOperationConfigured = new HashMap<>();
         }
 
-        private OperationsRegistryBuilder(List<JsonApi4jPlugin> plugins,
+        private OperationsRegistryBuilder(PluginRegistry pluginRegistry,
                                           OperationsRegistry operationsRegistry) {
-            this.plugins = plugins;
+            this.pluginRegistry = pluginRegistry;
 
             this.readResourceByIdOperations = new HashMap<>(operationsRegistry.readResourceByIdOperations);
             this.readMultipleResourcesOperations = new HashMap<>(operationsRegistry.readMultipleResourcesOperations);
@@ -705,12 +706,10 @@ public class OperationsRegistry {
                 relationshipName = resolveRelationshipName(jsonApiRelationshipOperation.relationship());
             }
             Map<String, Object> pluginsInfo = new HashMap<>();
-            for (JsonApi4jPlugin plugin : this.plugins) {
-                if (plugin.enabled()) {
-                    Object pluginInfo = plugin.extractPluginInfoFromOperation(operation, operationClass);
-                    if (pluginInfo != null) {
-                        pluginsInfo.put(plugin.pluginName(), pluginInfo);
-                    }
+            for (JsonApi4jPlugin plugin : this.pluginRegistry.getActivePlugins()) {
+                Object pluginInfo = plugin.extractPluginInfoFromOperation(operation, operationClass);
+                if (pluginInfo != null) {
+                    pluginsInfo.put(plugin.pluginName(), pluginInfo);
                 }
             }
             return RegisteredOperation.<T>builder()

@@ -14,6 +14,7 @@ import pro.api4.jsonapi4j.meta.domain.state.StateResource;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistryReportGenerator;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.List;
 
@@ -35,7 +36,7 @@ public class JsonApi4jReportGenerator {
             """;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
-    private final List<JsonApi4jPlugin> plugins;
+    private final PluginRegistry pluginRegistry;
     private final MetaHelper metaHelper;
 
     /**
@@ -45,7 +46,7 @@ public class JsonApi4jReportGenerator {
     public JsonApi4jReportGenerator(JsonApi4j jsonApi4j) {
         this.domainRegistry = jsonApi4j.getDomainRegistry();
         this.operationsRegistry = jsonApi4j.getOperationsRegistry();
-        this.plugins = jsonApi4j.getPlugins();
+        this.pluginRegistry = jsonApi4j.getPluginRegistry();
         this.metaHelper = new MetaHelper(jsonApi4j.getMetaContext());
     }
 
@@ -90,8 +91,8 @@ public class JsonApi4jReportGenerator {
 
     private String generatePluginsReport() {
         StringBuilder sb = new StringBuilder();
-        List<String> enabledPlugins = plugins.stream()
-                .filter(JsonApi4jPlugin::enabled)
+        List<String> enabledPlugins = pluginRegistry.getActivePlugins()
+                .stream()
                 .map(JsonApi4jPlugin::pluginName)
                 .toList();
         sb.append("\n--- Plugins (").append(enabledPlugins.size()).append(") ---")

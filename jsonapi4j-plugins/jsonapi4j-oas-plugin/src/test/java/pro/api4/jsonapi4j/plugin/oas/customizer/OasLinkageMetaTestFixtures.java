@@ -12,12 +12,11 @@ import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
-import java.util.List;
 
 /**
  * A resource carrying one to-one and one to-many relationship, both declaring resource linkage meta. Exists because
@@ -44,14 +43,14 @@ final class OasLinkageMetaTestFixtures {
                 .build());
     }
 
-    private static List<JsonApi4jPlugin> plugins() {
-        return List.of(new JsonApiOasPlugin(new DefaultOasProperties()));
+    private static PluginRegistry plugins() {
+        return PluginRegistry.builder().register(new JsonApiOasPlugin(new DefaultOasProperties())).build();
     }
 
     private static JsonApi4j build(OperationsRegistry operationsRegistry) {
-        List<JsonApi4jPlugin> plugins = plugins();
+        PluginRegistry plugins = plugins();
         return JsonApi4j.builder()
-                .plugins(plugins)
+                .pluginRegistry(plugins)
                 .domainRegistry(DomainRegistry.builder(plugins)
                         .resource(new OwnedResource())
                         .relationship(new KeeperRelationship())

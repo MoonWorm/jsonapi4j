@@ -129,19 +129,17 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
         // PHASE: onDataPreRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
-                if (visitors != null) {
-                    DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            buildCtx(effectiveRequest, plugin, null, null)
-                    );
-                    if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                        //noinspection unchecked
-                        effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
-                    } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
-                    }
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                        buildCtx(effectiveRequest, plugin, null, null)
+                );
+                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
                 }
             }
         }
@@ -152,19 +150,17 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
         // PHASE: onDataPostRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
-                if (visitors != null) {
-                    DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            buildCtx(effectiveRequest, plugin, dataSourceDto, null)
-                    );
-                    if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                        //noinspection unchecked
-                        effectiveRequest = ((DataPostRetrievalPhase<REQUEST>) dataPostRetrievalPhase).getResult();
-                    } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
-                    }
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                        buildCtx(effectiveRequest, plugin, dataSourceDto, null)
+                );
+                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPostRetrievalPhase<REQUEST>) dataPostRetrievalPhase).getResult();
+                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
                 }
             }
         }
@@ -208,19 +204,17 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
         // PHASE: onRelationshipsPreRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
-                if (visitors != null) {
-                    RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
-                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
-                    );
-                    if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
-                        //noinspection unchecked
-                        doc = ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
-                    } else if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
-                    }
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                RelationshipsPreRetrievalPhase<?> relationshipsPreRetrievalPhase = visitors.onRelationshipsPreRetrieval(
+                        buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
+                );
+                if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
+                } else if (relationshipsPreRetrievalPhase.getContinuation() == RelationshipsPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((RelationshipsPreRetrievalPhase<DOC>) relationshipsPreRetrievalPhase).getResult();
                 }
             }
         }
@@ -244,19 +238,17 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
         // PHASE: onRelationshipsPostRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
-                if (visitors != null) {
-                    RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
-                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
-                    );
-                    if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
-                        //noinspection unchecked
-                        doc = ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
-                    } else if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
-                    }
+            SingleResourceVisitors visitors = plugin.getPlugin().singleResourceVisitors();
+            if (visitors != null) {
+                RelationshipsPostRetrievalPhase<?> relationshipsPostRetrievalPhase = visitors.onRelationshipsPostRetrieval(
+                        buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
+                );
+                if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
+                } else if (relationshipsPostRetrievalPhase.getContinuation() == RelationshipsPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((RelationshipsPostRetrievalPhase<DOC>) relationshipsPostRetrievalPhase).getResult();
                 }
             }
         }

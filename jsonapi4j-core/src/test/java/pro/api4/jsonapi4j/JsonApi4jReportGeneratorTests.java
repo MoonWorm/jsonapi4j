@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.config.Integration;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +28,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void noPlugins_reportsZeroPlugins() {
         // given
-        JsonApi4j jsonApi4j = buildJsonApi4j(Collections.emptyList());
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.empty());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -42,7 +43,7 @@ class JsonApi4jReportGeneratorTests {
         // given
         JsonApi4jPlugin plugin1 = mockPlugin("access-control", true);
         JsonApi4jPlugin plugin2 = mockPlugin("sparse-fieldsets", true);
-        JsonApi4j jsonApi4j = buildJsonApi4j(List.of(plugin1, plugin2));
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.builder().register(plugin1).register(plugin2).build());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -58,7 +59,7 @@ class JsonApi4jReportGeneratorTests {
         // given
         JsonApi4jPlugin enabled = mockPlugin("access-control", true);
         JsonApi4jPlugin disabled = mockPlugin("openapi", false);
-        JsonApi4j jsonApi4j = buildJsonApi4j(List.of(enabled, disabled));
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.builder().register(enabled).register(disabled).build());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -74,7 +75,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void fullReport_containsAllSections() {
         // given
-        JsonApi4j jsonApi4j = buildJsonApi4j(Collections.emptyList());
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.empty());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -131,7 +132,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void metaDisabled_omitsLiveIntrospectionUrls() {
         // given
-        JsonApi4j jsonApi4j = buildJsonApi4j(Collections.emptyList());
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.empty());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -146,12 +147,12 @@ class JsonApi4jReportGeneratorTests {
     void metaEnabled_excludesMetaFromDomainAndOperationsSections() {
         // given — a JsonApi4j whose only registered components are the built-in meta ones (Compound Docs enabled)
         MetaContext metaContext = MetaContext.of(metaConfig(true), Integration.SPRING);
-        DomainRegistry domainRegistry = DomainRegistry.builder(Collections.emptyList()).build();
-        OperationsRegistry operationsRegistry = OperationsRegistry.builder(Collections.emptyList()).build();
+        DomainRegistry domainRegistry = DomainRegistry.builder(PluginRegistry.empty()).build();
+        OperationsRegistry operationsRegistry = OperationsRegistry.builder(PluginRegistry.empty()).build();
         JsonApi4j jsonApi4j = JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .plugins(Collections.emptyList())
+                .pluginRegistry(PluginRegistry.empty())
                 .meta(metaContext)
                 .build();
 
@@ -170,7 +171,7 @@ class JsonApi4jReportGeneratorTests {
     @Test
     void noMetaContext_omitsLiveIntrospectionUrls() {
         // given
-        JsonApi4j jsonApi4j = buildJsonApi4j(Collections.emptyList());
+        JsonApi4j jsonApi4j = buildJsonApi4j(PluginRegistry.empty());
 
         // when (legacy single-arg constructor)
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -206,7 +207,7 @@ class JsonApi4jReportGeneratorTests {
         JsonApi4j jsonApi4j = JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .plugins(Collections.emptyList())
+                .pluginRegistry(PluginRegistry.empty())
                 .build();
 
         // when
@@ -251,7 +252,7 @@ class JsonApi4jReportGeneratorTests {
         JsonApi4j jsonApi4j = JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .plugins(Collections.emptyList())
+                .pluginRegistry(PluginRegistry.empty())
                 .build();
 
         // when
@@ -265,9 +266,9 @@ class JsonApi4jReportGeneratorTests {
 
     // --- Helpers ---
 
-    private JsonApi4j buildJsonApi4j(List<JsonApi4jPlugin> plugins) {
+    private JsonApi4j buildJsonApi4j(PluginRegistry plugins) {
         return JsonApi4j.builder()
-                .plugins(plugins)
+                .pluginRegistry(plugins)
                 .build();
     }
 
@@ -283,7 +284,7 @@ class JsonApi4jReportGeneratorTests {
 
     private JsonApi4j buildJsonApi4jWithMeta(MetaContext metaContext) {
         return JsonApi4j.builder()
-                .plugins(Collections.emptyList())
+                .pluginRegistry(PluginRegistry.empty())
                 .meta(metaContext)
                 .build();
     }

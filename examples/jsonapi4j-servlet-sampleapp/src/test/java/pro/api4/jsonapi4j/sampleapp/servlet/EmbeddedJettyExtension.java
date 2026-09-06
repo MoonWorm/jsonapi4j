@@ -6,9 +6,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
-
-import java.util.List;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import static pro.api4.jsonapi4j.sampleapp.servlet.ServletJsonapi4jSampleApp.*;
 
@@ -41,10 +39,10 @@ public class EmbeddedJettyExtension implements BeforeAllCallback, AfterAllCallba
 
         JsonApi4jServletContainerInitializer jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
 
-        List<JsonApi4jPlugin> plugins = ServletJsonapi4jSampleApp.initPlugins(handler.getServletContext());
-        initMetaContext(plugins, handler.getServletContext());
-        initDomainRegistry(plugins, handler.getServletContext());
-        initOperationRegistry(plugins, handler.getServletContext());
+        PluginRegistry pluginRegistry = ServletJsonapi4jSampleApp.initPluginRegistry(handler.getServletContext());
+        initMetaContext(pluginRegistry, handler.getServletContext());
+        initDomainRegistry(pluginRegistry, handler.getServletContext());
+        initOperationRegistry(pluginRegistry, handler.getServletContext());
 
         jsonApi4jInitializer.onStartup(null, handler.getServletContext());
 

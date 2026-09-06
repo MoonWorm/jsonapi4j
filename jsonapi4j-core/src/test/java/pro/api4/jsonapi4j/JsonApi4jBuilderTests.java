@@ -8,8 +8,7 @@ import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
-
-import java.util.List;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -36,14 +35,18 @@ public class JsonApi4jBuilderTests {
     @Test
     public void build_rootAndPluginBothInvalid_reportsRootFirst() {
         sut.properties(rootPropertiesWithRootPath("jsonapi"))
-                .plugins(List.of(new TestPlugin("SfPlugin", new TestProperties("sf", true), true)));
+                .pluginRegistry(PluginRegistry.builder()
+                        .register(new TestPlugin("SfPlugin", new TestProperties("sf", true), true))
+                        .build());
 
         assertThatThrownBy(sut::build).isInstanceOf(RootConfigMisconfigurationException.class);
     }
 
     @Test
     public void build_pluginCrossCheckFails_throwsPluginMisconfigurationException() {
-        sut.plugins(List.of(new TestPlugin("SfPlugin", new CrossCheckingProperties("sf"), true)));
+        sut.pluginRegistry(PluginRegistry.builder()
+                .register(new TestPlugin("SfPlugin", new CrossCheckingProperties("sf"), true))
+                .build());
 
         assertThatThrownBy(sut::build)
                 .isInstanceOf(PluginMisconfigurationException.class)
@@ -57,21 +60,25 @@ public class JsonApi4jBuilderTests {
 
     @Test
     public void build_pluginExposesNoConfigProperties_buildsSuccessfully() {
-        sut.plugins(List.of(new TestPlugin("NoConfigPlugin", null, true)));
+        sut.pluginRegistry(PluginRegistry.builder().register(new TestPlugin("NoConfigPlugin", null, true)).build());
 
         assertThatCode(sut::build).doesNotThrowAnyException();
     }
 
     @Test
     public void build_pluginWithValidConfig_buildsSuccessfully() {
-        sut.plugins(List.of(new TestPlugin("ValidPlugin", new TestProperties("sf", false), true)));
+        sut.pluginRegistry(PluginRegistry.builder()
+                .register(new TestPlugin("ValidPlugin", new TestProperties("sf", false), true))
+                .build());
 
         assertThatCode(sut::build).doesNotThrowAnyException();
     }
 
     @Test
     public void build_pluginWithInvalidConfig_throwsPluginMisconfigurationException() {
-        sut.plugins(List.of(new TestPlugin("SfPlugin", new TestProperties("sf", true), true)));
+        sut.pluginRegistry(PluginRegistry.builder()
+                .register(new TestPlugin("SfPlugin", new TestProperties("sf", true), true))
+                .build());
 
         assertThatThrownBy(sut::build)
                 .isInstanceOf(PluginMisconfigurationException.class)
@@ -81,17 +88,19 @@ public class JsonApi4jBuilderTests {
 
     @Test
     public void build_disabledPluginWithInvalidConfig_buildsSuccessfully() {
-        sut.plugins(List.of(new TestPlugin("SfPlugin", new TestProperties("sf", true), false)));
+        sut.pluginRegistry(PluginRegistry.builder()
+                .register(new TestPlugin("SfPlugin", new TestProperties("sf", true), false))
+                .build());
 
         assertThatCode(sut::build).doesNotThrowAnyException();
     }
 
     @Test
-    public void build_severalPluginsWithInvalidConfig_reportsAllOfThem() {
-        sut.plugins(List.of(
-                new TestPlugin("SfPlugin", new TestProperties("sf", true), true),
-                new TestPlugin("CdPlugin", new TestProperties("cd", true), true)
-        ));
+    public void build_severalPluginRegistryWithInvalidConfig_reportsAllOfThem() {
+        sut.pluginRegistry(PluginRegistry.builder()
+                .register(new TestPlugin("SfPlugin", new TestProperties("sf", true), true))
+                .register(new TestPlugin("CdPlugin", new TestProperties("cd", true), true))
+                .build());
 
         assertThatThrownBy(sut::build)
                 .isInstanceOf(PluginMisconfigurationException.class)

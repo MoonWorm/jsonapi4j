@@ -8,10 +8,9 @@ import org.springframework.context.annotation.Configuration;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 
-import java.util.List;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.sampleapp.config.swagger.customizers.*;
 
@@ -44,7 +43,7 @@ public class SpringJsonApi4jSpringDocConfig {
             OasProperties oasProperties,
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry,
-            List<JsonApi4jPlugin> plugins
+            PluginRegistry pluginRegistry
     ) {
         return new JsonApiOperationsCustomizer(
                 jsonApi4JProperties.rootPath(),
@@ -52,7 +51,7 @@ public class SpringJsonApi4jSpringDocConfig {
                 operationsRegistry,
                 oasProperties,
                 jsonApi4JProperties.validation(),
-                plugins
+                pluginRegistry
         );
     }
 

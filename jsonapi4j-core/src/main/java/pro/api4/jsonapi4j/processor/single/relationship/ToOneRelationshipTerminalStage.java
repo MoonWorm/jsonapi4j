@@ -50,19 +50,17 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // PHASE: onDataPreRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
-                if (visitors != null) {
-                    DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
-                            buildCtx(effectiveRequest, plugin, null, null)
-                    );
-                    if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
-                        //noinspection unchecked
-                        effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
-                    } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
-                    }
+            ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
+            if (visitors != null) {
+                DataPreRetrievalPhase<?> dataPreRetrievalPhase = visitors.onDataPreRetrieval(
+                        buildCtx(effectiveRequest, plugin, null, null)
+                );
+                if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.MUTATE_REQUEST) {
+                    //noinspection unchecked
+                    effectiveRequest = ((DataPreRetrievalPhase<REQUEST>) dataPreRetrievalPhase).getResult();
+                } else if (dataPreRetrievalPhase.getContinuation() == DataPreRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPreRetrievalPhase<DOC>) dataPreRetrievalPhase).getResult();
                 }
             }
         }
@@ -101,19 +99,17 @@ public class ToOneRelationshipTerminalStage<REQUEST, DATA_SOURCE_DTO> {
 
         // PHASE: onDataPostRetrieval
         for (PluginSettings plugin : plugins) {
-            if (plugin.getPlugin().enabled()) {
-                ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
-                if (visitors != null) {
-                    DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
-                            buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
-                    );
-                    if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
-                        //noinspection unchecked
-                        doc = ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
-                    } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
-                        //noinspection unchecked
-                        return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
-                    }
+            ToOneRelationshipVisitors visitors = plugin.getPlugin().toOneRelationshipVisitors();
+            if (visitors != null) {
+                DataPostRetrievalPhase<?> dataPostRetrievalPhase = visitors.onDataPostRetrieval(
+                        buildCtx(effectiveRequest, plugin, dataSourceDto, doc)
+                );
+                if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.MUTATE_DOC) {
+                    //noinspection unchecked
+                    doc = ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
+                } else if (dataPostRetrievalPhase.getContinuation() == DataPostRetrievalPhase.Continuation.RETURN_DOC) {
+                    //noinspection unchecked
+                    return ((DataPostRetrievalPhase<DOC>) dataPostRetrievalPhase).getResult();
                 }
             }
         }

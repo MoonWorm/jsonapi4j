@@ -21,6 +21,7 @@ import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperation;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
@@ -95,28 +96,24 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Produces
     @Singleton
     @DefaultBean
-    List<JsonApi4jPlugin> jsonApi4jPlugins(Instance<JsonApi4jPlugin> plugins) {
+    PluginRegistry pluginRegistry(Instance<JsonApi4jPlugin> plugins) {
         LOG.info("Discovering JsonApi4j plugins...");
-        List<JsonApi4jPlugin> result = plugins.stream()
-                .sorted(Comparator
-                        .comparingInt(JsonApi4jPlugin::precedence)
-                        .thenComparing(p -> p.getClass().getName()))
-                .toList();
+        PluginRegistry pluginRegistry = PluginRegistry.builder().registerAll(plugins.stream().toList()).build();
         LOG.info(
                 "Discovered {} JsonApi4j plugins: {}",
-                result.size(),
-                result.stream().map(p -> p.getClass().getSimpleName()).collect(Collectors.joining(", "))
+                pluginRegistry.getAllPlugins().size(),
+                pluginRegistry.getAllPlugins().stream().map(p -> p.getClass().getSimpleName()).collect(Collectors.joining(", "))
         );
-        return result;
+        return pluginRegistry;
     }
 
     @IfBuildProperty(name = CONFIG_PREFIX + "." + META_PROPERTY + ".enabled", stringValue = "true")
     @Produces
     @Singleton
     @DefaultBean
-    MetaContext jsonApi4jMetaContext(List<JsonApi4jPlugin> plugins, QuarkusJsonApi4jProperties rootProperties) {
+    MetaContext jsonApi4jMetaContext(PluginRegistry pluginRegistry, QuarkusJsonApi4jProperties rootProperties) {
         MetaContext context = MetaContext.of(
-                MetaConfigComposer.compose(rootProperties.toJsonApi4jProperties(), plugins),
+                MetaConfigComposer.compose(rootProperties.toJsonApi4jProperties(), pluginRegistry),
                 QUARKUS
         );
         LOG.info("Composing {} (meta API enabled)", MetaRuntime.class.getSimpleName());
@@ -128,7 +125,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     @DefaultBean
     DomainRegistry domainRegistry(Instance<Resource<?>> resources,
                                   Instance<Relationship<?>> relationships,
-                                  List<JsonApi4jPlugin> plugins) {
+                                  PluginRegistry pluginRegistry) {
         Set<Resource<?>> availableResources = resources.stream().collect(Collectors.toSet());
         Set<Relationship<?>> availableRelationships = relationships.stream().collect(Collectors.toSet());
         LOG.info(
@@ -137,7 +134,7 @@ public class QuarkusJsonApi4jDefaultBeans {
                 availableResources.size(),
                 availableRelationships.size()
         );
-        return DomainRegistry.builder(plugins)
+        return DomainRegistry.builder(pluginRegistry)
                 .resources(availableResources)
                 .relationships(availableRelationships)
                 .build();
@@ -147,14 +144,14 @@ public class QuarkusJsonApi4jDefaultBeans {
     @Singleton
     @DefaultBean
     OperationsRegistry operationsRegistry(Instance<ResourceOperation> operations,
-                                          List<JsonApi4jPlugin> plugins) {
+                                          PluginRegistry pluginRegistry) {
         Set<ResourceOperation> availableOperations = operations.stream().collect(Collectors.toSet());
         LOG.info(
                 "Composing {}: found {} operations",
                 OperationsRegistry.class.getSimpleName(),
                 availableOperations.size()
         );
-        return OperationsRegistry.builder(plugins)
+        return OperationsRegistry.builder(pluginRegistry)
                 .operations(availableOperations)
                 .build();
     }
@@ -164,7 +161,7 @@ public class QuarkusJsonApi4jDefaultBeans {
     @DefaultBean
     JsonApi4j jsonApi4j(DomainRegistry domainRegistry,
                         OperationsRegistry operationsRegistry,
-                        List<JsonApi4jPlugin> plugins,
+                        PluginRegistry pluginRegistry,
                         @Named("jsonApi4jExecutorService") ExecutorService executorService,
                         JsonApiBuildInRequestValidatorFactory validatorFactory,
                         Instance<MetaContext> metaContext,
@@ -172,7 +169,7 @@ public class QuarkusJsonApi4jDefaultBeans {
         LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
                 .properties(rootProperties.toJsonApi4jProperties())
-                .plugins(plugins)
+                .pluginRegistry(pluginRegistry)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
                 .executor(executorService)

@@ -7,7 +7,6 @@ import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2;
@@ -19,6 +18,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Secur
 import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.List;
 
@@ -43,9 +43,9 @@ final class OasOperationTestFixtures {
 
     static JsonApi4j jsonApi4j(OasProperties oasProperties,
                                ResourceOperations<SecuredAttributes> operations) {
-        List<JsonApi4jPlugin> plugins = List.of(new JsonApiOasPlugin(oasProperties));
+        PluginRegistry plugins = PluginRegistry.builder().register(new JsonApiOasPlugin(oasProperties)).build();
         return JsonApi4j.builder()
-                .plugins(plugins)
+                .pluginRegistry(plugins)
                 .domainRegistry(DomainRegistry.builder(plugins)
                         .resource(new SecuredResource())
                         .build())

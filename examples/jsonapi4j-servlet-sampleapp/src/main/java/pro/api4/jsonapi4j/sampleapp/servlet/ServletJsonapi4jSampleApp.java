@@ -10,7 +10,8 @@ import pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.plugin.PluginRegistry.PluginRegistryBuilder;
 import pro.api4.jsonapi4j.plugin.ac.DefaultAccessControlEvaluator;
 import pro.api4.jsonapi4j.plugin.ac.JsonApiAccessControlPlugin;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
@@ -42,7 +43,6 @@ import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
 
-import java.util.List;
 import java.util.Map;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
@@ -61,7 +61,7 @@ public class ServletJsonapi4jSampleApp {
 
         JsonApi4jServletContainerInitializer jsonApi4jInitializer = new JsonApi4jServletContainerInitializer();
 
-        List<JsonApi4jPlugin> plugins = initPlugins(context.getServletContext());
+        PluginRegistry plugins = initPluginRegistry(context.getServletContext());
 
         initMetaContext(plugins, context.getServletContext());
 
@@ -76,7 +76,7 @@ public class ServletJsonapi4jSampleApp {
         server.join();
     }
 
-    static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
+    static PluginRegistry initPluginRegistry(ServletContext servletContext) {
         // get full config as raw map
         Map<String, Object> jsonApi4jPropertiesRaw = JsonApi4jPropertiesLoader.loadRawConfig(servletContext).getProperties();
 
@@ -88,24 +88,25 @@ public class ServletJsonapi4jSampleApp {
         JsonApiOasServletContainerInitializer oasPluginInitializer = new JsonApiOasServletContainerInitializer();
         oasPluginInitializer.onStartup(null, servletContext);
 
-        // build plugins
-        List<JsonApi4jPlugin> plugins = List.of(
-                new JsonApiAccessControlPlugin(
+        // plugins
+        PluginRegistryBuilder pluginRegistryBuilder = PluginRegistry.builder();
+        pluginRegistryBuilder.register(new JsonApiAccessControlPlugin(
                         new DefaultAccessControlEvaluator(),
                         DefaultAcProperties.toAcProperties(jsonApi4jPropertiesRaw)
-                ),
-                new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)),
-                new JsonApiOasPlugin(DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw)),
-                new JsonApiCompoundDocsPlugin(DefaultCompoundDocsProperties.toCdProperties(jsonApi4jPropertiesRaw))
+                )
         );
+        pluginRegistryBuilder.register(new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)));
+        pluginRegistryBuilder.register(new JsonApiOasPlugin(DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw)));
+        pluginRegistryBuilder.register(new JsonApiCompoundDocsPlugin(DefaultCompoundDocsProperties.toCdProperties(jsonApi4jPropertiesRaw)));
+        PluginRegistry pluginRegistry = pluginRegistryBuilder.build();
 
         // set to the context
-        servletContext.setAttribute(PLUGINS_ATT_NAME, plugins);
+        servletContext.setAttribute(PLUGIN_REGISTRY_ATT_NAME, pluginRegistry);
 
-        return plugins;
+        return pluginRegistry;
     }
 
-    static void initDomainRegistry(List<JsonApi4jPlugin> plugins,
+    static void initDomainRegistry(PluginRegistry plugins,
                                    ServletContext servletContext) {
         DomainRegistry domainRegistry = DomainRegistry.builder(plugins)
                 .resource(new UserResource())
@@ -119,7 +120,7 @@ public class ServletJsonapi4jSampleApp {
         servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
     }
 
-    static void initOperationRegistry(List<JsonApi4jPlugin> plugins,
+    static void initOperationRegistry(PluginRegistry plugins,
                                       ServletContext servletContext) {
         UserDb userDb = new UserInMemoryDb();
         CountriesClient countriesClient = new CountriesInMemoryClient();
@@ -137,7 +138,7 @@ public class ServletJsonapi4jSampleApp {
         servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
     }
 
-    static void initMetaContext(List<JsonApi4jPlugin> plugins, ServletContext servletContext) {
+    static void initMetaContext(PluginRegistry plugins, ServletContext servletContext) {
         JsonApi4jProperties properties = JsonApi4jPropertiesLoader.loadConfig(servletContext);
         if (!properties.meta().enabled()) {
             return;

@@ -21,7 +21,7 @@ import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
@@ -31,8 +31,6 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFa
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +50,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String VALIDATOR_FACTORY_ATT_NAME = "jsonApi4jValidatorFactory";
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
-    public static final String PLUGINS_ATT_NAME = "jsonapi4jPlugins";
+    public static final String PLUGIN_REGISTRY_ATT_NAME = "jsonapi4jPluginRegistry";
     public static final String ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME = "jsonapi4jErrorHandlerFactoriesRegistry";
     public static final String OBJECT_MAPPER_ATT_NAME = "jsonApi4jObjectMapper";
     public static final String PRINCIPAL_RESOLVER_ATT_NAME = "jsonapi4jPrincipalResolver";
@@ -164,13 +162,12 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return principalResolver;
     }
 
-    private static List<JsonApi4jPlugin> initPlugins(ServletContext servletContext) {
-        //noinspection unchecked
-        List<JsonApi4jPlugin> plugins = (List<JsonApi4jPlugin>) servletContext.getAttribute(PLUGINS_ATT_NAME);
+    private static PluginRegistry initPluginRegistry(ServletContext servletContext) {
+        PluginRegistry plugins = (PluginRegistry) servletContext.getAttribute(PLUGIN_REGISTRY_ATT_NAME);
         if (plugins == null) {
-            log.warn("List<JsonApiPlugin> not found in servlet context. Setting an empty list.");
-            plugins = Collections.emptyList();
-            servletContext.setAttribute(PLUGINS_ATT_NAME, plugins);
+            log.warn("{} not found in servlet context. Setting an empty one.", PluginRegistry.class.getSimpleName());
+            plugins = PluginRegistry.empty();
+            servletContext.setAttribute(PLUGIN_REGISTRY_ATT_NAME, plugins);
         }
         return plugins;
     }
@@ -181,7 +178,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
             DomainRegistry domainRegistry = initDomainRegistry(servletContext);
             OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
-            List<JsonApi4jPlugin> plugins = initPlugins(servletContext);
+            PluginRegistry plugins = initPluginRegistry(servletContext);
             ExecutorService executorService = initExecutorService(servletContext);
             JsonApiBuildInRequestValidatorFactory validatorFactory = initValidatorFactory(servletContext);
             // if meta context is null = meta feature is disabled
@@ -190,7 +187,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                     .properties(initJsonApi4jProperties(servletContext))
                     .domainRegistry(domainRegistry)
                     .operationsRegistry(operationsRegistry)
-                    .plugins(plugins)
+                    .pluginRegistry(plugins)
                     .executor(executorService)
                     .validatorFactory(validatorFactory)
                     .meta(metaContext)

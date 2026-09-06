@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.Collections;
 import java.util.Set;
@@ -22,7 +23,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void resource_noneImplemented_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestResourceOperationNoneImplemented()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestResourceOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
@@ -30,7 +31,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void relationship_toOneNoneImplemented_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestToOneRelationshipOperationNoneImplemented()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestToOneRelationshipOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
@@ -38,7 +39,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void relationship_toManyNoneImplemented_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestToManyRelationshipOperationNoneImplemented()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("Unsupported operation type: (pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestToManyRelationshipOperationNoneImplemented). The operation must implement one of the supported operations: ReadResourceByIdOperation, ReadMultipleResourcesOperation, CreateResourceOperation, UpdateResourceOperation, DeleteResourceOperation, ReadToOneRelationshipOperation, ReadToManyRelationshipOperation, UpdateToOneRelationshipOperation, UpdateToManyRelationshipOperation, AddToManyRelationshipOperation, DeleteToManyRelationshipOperation");
@@ -46,7 +47,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void resource_missingAnnotation_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestResourceOperationWithoutAnnotation()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("(TestResourceOperationWithoutAnnotation) operation must be annotated with @JsonApiResourceOperation");
@@ -54,7 +55,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void relationship_toOneMissingAnnotation_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestToOneRelationshipOperationWithoutAnnotation()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("(TestToOneRelationshipOperationWithoutAnnotation) operation must be annotated with @JsonApiRelationshipOperation");
@@ -62,7 +63,7 @@ public class OperationsRegistryTests {
 
     @Test
     public void relationship_toManyMissingAnnotation_throwsException() {
-        assertThatThrownBy(() -> OperationsRegistry.builder(Collections.emptyList())
+        assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestToManyRelationshipOperationWithoutAnnotation()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("(TestToManyRelationshipOperationWithoutAnnotation) operation must be annotated with @JsonApiRelationshipOperation");
@@ -80,7 +81,7 @@ public class OperationsRegistryTests {
     @Test
     public void resource_partiallyImplemented_registersOnlyTheImplementedOperations() {
         // given - when
-        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+        OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestPartialResourceOperations())
                 .build();
 
@@ -97,7 +98,7 @@ public class OperationsRegistryTests {
     @Test
     public void resource_partiallyImplementedBehindAContainerProxy_registersOnlyTheImplementedOperations() {
         // given - when
-        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+        OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(new TestPartialResourceOperationsClientProxy())
                 .build();
 
@@ -125,7 +126,7 @@ public class OperationsRegistryTests {
         TestUpdateToManyRelationshipOperation updateToManyRelationshipOperation = new TestUpdateToManyRelationshipOperation();
         TestAddToManyRelationshipOperation addToManyRelationshipOperation = new TestAddToManyRelationshipOperation();
         TestDeleteToManyRelationshipOperation deleteToManyRelationshipOperation = new TestDeleteToManyRelationshipOperation();
-        OperationsRegistry sut = OperationsRegistry.builder(Collections.emptyList())
+        OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
                 .operation(readByIdOperation)
                 .operation(readMultipleResourcesOperation)
                 .operation(createResourceOperation)

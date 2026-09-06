@@ -41,6 +41,7 @@ import pro.api4.jsonapi4j.operation.UpdateToManyRelationshipOperation;
 import pro.api4.jsonapi4j.operation.UpdateToOneRelationshipOperation;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApiPluginInfo;
 import pro.api4.jsonapi4j.plugin.PluginSettings;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -74,7 +75,6 @@ import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -103,7 +103,7 @@ import static java.util.stream.Collectors.toMap;
 @Getter
 public class JsonApi4j {
 
-    private final List<JsonApi4jPlugin> plugins;
+    private final PluginRegistry pluginRegistry;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
     private final Executor executor;
@@ -345,7 +345,7 @@ public class JsonApi4j {
             RegisteredResource<?> registeredResource,
             RegisteredRelationship<?> registeredRelationship) {
         List<PluginSettings> result = new ArrayList<>();
-        for (JsonApi4jPlugin plugin : plugins) {
+        for (JsonApi4jPlugin plugin : pluginRegistry.getActivePlugins()) {
             OperationMeta operationMeta = registeredOperation.getOperationMeta();
             JsonApiPluginInfo info = new JsonApiPluginInfo(
                     operationMeta.getPluginInfo().get(plugin.pluginName()),
@@ -354,7 +354,7 @@ public class JsonApi4j {
             );
             result.add(PluginSettings.builder().operationMeta(operationMeta).plugin(plugin).info(info).build());
         }
-        return result.stream().sorted(Comparator.comparingInt(p -> p.getPlugin().precedence())).toList();
+        return result;
     }
 
     public class ResourceTypeStepSelected {

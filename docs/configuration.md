@@ -266,7 +266,7 @@ public class CustomConfig {
 JsonApi4j jsonApi4j = JsonApi4j.builder()
         .domainRegistry(domainRegistry)
         .operationsRegistry(operationsRegistry)
-        .plugins(plugins)
+        .plugins(PluginRegistry.builder().registerAll(plugins).build())
         .executor(Executors.newVirtualThreadPerTaskExecutor())
         .build();
 servletContext.setAttribute(JsonApi4jServletContainerInitializer.JSONAPI4J_ATT_NAME, jsonApi4j);

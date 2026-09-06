@@ -26,6 +26,7 @@ import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
@@ -80,25 +81,25 @@ public class SpringJsonApi4jAutoConfigurer {
     }
 
     @Bean
-    public List<JsonApi4jPlugin> defaultPlugins(ObjectProvider<List<JsonApi4jPlugin>> pluginsProvider) {
+    public PluginRegistry pluginRegistry(ObjectProvider<List<JsonApi4jPlugin>> pluginsProvider) {
         List<JsonApi4jPlugin> plugins = pluginsProvider.getIfAvailable();
-        return plugins == null ? Collections.emptyList() : plugins;
+        return PluginRegistry.builder().registerAll(plugins == null ? Collections.emptyList() : plugins).build();
     }
 
     @ConditionalOnProperty(prefix = CONFIG_PREFIX + "." + META_PROPERTY, name = "enabled", havingValue = "true")
     @ConditionalOnMissingBean(MetaContext.class)
     @Bean
-    public MetaContext jsonApi4jMetaContext(JsonApi4jProperties properties, List<JsonApi4jPlugin> defaultPlugins) {
-        return MetaContext.of(MetaConfigComposer.compose(properties, defaultPlugins), SPRING);
+    public MetaContext jsonApi4jMetaContext(JsonApi4jProperties properties, PluginRegistry pluginRegistry) {
+        return MetaContext.of(MetaConfigComposer.compose(properties, pluginRegistry), SPRING);
     }
 
     @ConditionalOnMissingBean(DomainRegistry.class)
     @Bean
     public DomainRegistry jsonApi4jDomainRegistry(
-            List<JsonApi4jPlugin> defaultPlugins,
+            PluginRegistry pluginRegistry,
             SpringContextJsonApi4jDomainScanner domainScanner
     ) {
-        DomainRegistry.DomainRegistryBuilder builder = DomainRegistry.builder(defaultPlugins)
+        DomainRegistry.DomainRegistryBuilder builder = DomainRegistry.builder(pluginRegistry)
                 .resources(domainScanner.getResources())
                 .relationships(domainScanner.getRelationships());
         return builder.build();
@@ -108,9 +109,9 @@ public class SpringJsonApi4jAutoConfigurer {
     @Bean
     public OperationsRegistry jsonApi4jOperationsRegistry(
             SpringContextJsonApi4jOperationsScanner operationsScanner,
-            List<JsonApi4jPlugin> defaultPlugins
+            PluginRegistry pluginRegistry
     ) {
-        return OperationsRegistry.builder(defaultPlugins)
+        return OperationsRegistry.builder(pluginRegistry)
                 .operations(operationsScanner.getOperations())
                 .build();
     }
@@ -126,7 +127,7 @@ public class SpringJsonApi4jAutoConfigurer {
     public JsonApi4j jsonApi4j(
             DomainRegistry domainRegistry,
             OperationsRegistry operationsRegistry,
-            List<JsonApi4jPlugin> defaultPlugins,
+            PluginRegistry pluginRegistry,
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
             JsonApiBuildInRequestValidatorFactory validatorFactory,
             ObjectProvider<MetaContext> metaContextProvider,
@@ -136,7 +137,7 @@ public class SpringJsonApi4jAutoConfigurer {
                 .properties(properties)
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .plugins(defaultPlugins)
+                .pluginRegistry(pluginRegistry)
                 .executor(jsonApiExecutorService)
                 .validatorFactory(validatorFactory)
                 .meta(metaContextProvider.getIfAvailable())
