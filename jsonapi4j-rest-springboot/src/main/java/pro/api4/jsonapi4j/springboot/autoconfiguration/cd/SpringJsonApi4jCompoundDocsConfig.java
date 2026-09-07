@@ -52,10 +52,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
     @ConditionalOnMissingBean(CompoundDocsResourceCache.class)
     @ConditionalOnProperty(name = "jsonapi4j.cd.cache.enabled", matchIfMissing = true)
     public CompoundDocsResourceCache jsonApi4jCompoundDocsResourceCache(CompoundDocsProperties cdProperties) {
-        int maxSize = cdProperties.cache() != null
-                ? cdProperties.cache().maxSize()
-                : Integer.parseInt(CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE);
-        return new InMemoryCompoundDocsResourceCache(maxSize);
+        return new InMemoryCompoundDocsResourceCache(cdProperties.cacheMaxSize());
     }
 
     @Bean

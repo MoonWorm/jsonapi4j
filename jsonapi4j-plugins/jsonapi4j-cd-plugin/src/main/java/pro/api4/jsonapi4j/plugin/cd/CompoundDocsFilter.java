@@ -55,8 +55,8 @@ public class CompoundDocsFilter implements Filter {
                     cdProperties.deduplicateResources(),
                     cdProperties.httpConnectTimeoutMs(),
                     cdProperties.httpTotalTimeoutMs(),
-                    cdProperties.cache() != null ? cdProperties.cache().enabled() : Boolean.parseBoolean(CompoundDocsProperties.Cache.DEFAULT_CACHE_ENABLED),
-                    cdProperties.cache() != null ? cdProperties.cache().maxSize() : Integer.parseInt(CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE)
+                    cdProperties.cacheEnabled(),
+                    cdProperties.cacheMaxSize()
             );
             log.debug("Effective {} settings: {}", CompoundDocsResolverConfig.class.getSimpleName(), config);
 

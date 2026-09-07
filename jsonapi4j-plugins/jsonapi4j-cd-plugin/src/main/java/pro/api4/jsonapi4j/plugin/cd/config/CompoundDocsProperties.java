@@ -148,10 +148,10 @@ public interface CompoundDocsProperties extends PluginProperties {
      * An absent {@code cache} section is fine - the plugin falls back to the cache defaults.
      */
     private void validateCache(PropertiesValidationResultBuilder builder) {
-        if (cache() == null || !cache().enabled()) {
+        if (!cacheEnabled()) {
             return;
         }
-        builder.requirePositive(propertyPath(CACHE_PROPERTY, Cache.MAX_SIZE_PROPERTY), cache().maxSize());
+        builder.requirePositive(propertyPath(CACHE_PROPERTY, Cache.MAX_SIZE_PROPERTY), cacheMaxSize());
     }
 
     private void validateTimeoutsBudget(PropertiesValidationResultBuilder builder) {
@@ -166,6 +166,22 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     Cache cache();
+
+    /**
+     * Whether resolved includes are cached. The {@code cache} section is optional, so an absent one means the
+     * documented default applies - read this rather than {@link #cache()} to get that fallback for free.
+     */
+    default boolean cacheEnabled() {
+        return cache() == null ? Boolean.parseBoolean(Cache.DEFAULT_CACHE_ENABLED) : cache().enabled();
+    }
+
+    /**
+     * How many resolved resources the cache holds, falling back to the documented default when the {@code cache}
+     * section is absent.
+     */
+    default int cacheMaxSize() {
+        return cache() == null ? Integer.parseInt(Cache.DEFAULT_CACHE_MAX_SIZE) : cache().maxSize();
+    }
 
     interface Cache {
 

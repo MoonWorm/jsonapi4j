@@ -11,9 +11,7 @@ import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
-import pro.api4.jsonapi4j.rest.quarkus.runtime.cd.QuarkusJsonApi4jCompoundDocsProperties.CacheConfig;
 
-import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.Cache.DEFAULT_CACHE_MAX_SIZE;
 
 /**
  * Optional beans that are only registered when jsonapi4j-oas-plugin is available in the app classpath.
@@ -27,7 +25,10 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
     @Singleton
     @DefaultBean
     JsonApiCompoundDocsPlugin jsonApiCdPlugin(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
-        LOG.info("CD Plugin Enabled. Composing {}...", JsonApiCompoundDocsPlugin.class.getSimpleName());
+        LOG.info(
+                "{} Plugin Enabled. Composing the plugin...",
+                JsonApiCompoundDocsPlugin.class.getSimpleName()
+        );
         return new JsonApiCompoundDocsPlugin(cdProperties.toCdProperties());
     }
 
@@ -35,7 +36,11 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
     @Singleton
     @DefaultBean
     DomainSettingsResolver jsonApiCdDomainSettingsResolver(QuarkusJsonApi4jCompoundDocsProperties cdProperties) {
-        LOG.info("CD Plugin Enabled. Composing {}...", DomainSettingsResolver.class.getSimpleName());
+        LOG.info(
+                "{} Enabled. Composing {}...",
+                JsonApiCompoundDocsPlugin.class.getSimpleName(),
+                DomainSettingsResolver.class.getSimpleName()
+        );
         return DefaultDomainSettingsResolver.from(
                 cdProperties.mapping(),
                 cdProperties.batchSizeMapping(),
@@ -50,12 +55,12 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
     CompoundDocsResourceCache jsonApi4jCompoundDocsResourceCache(
             QuarkusJsonApi4jCompoundDocsProperties cdProperties
     ) {
-        LOG.info("CD Plugin Enabled. Composing default {}...", CompoundDocsResourceCache.class.getSimpleName());
-        return new InMemoryCompoundDocsResourceCache(
-                cdProperties.cache()
-                        .map(CacheConfig::maxSize)
-                        .orElse(Integer.parseInt(DEFAULT_CACHE_MAX_SIZE))
+        LOG.info(
+                "{} Enabled. Composing default {}...",
+                JsonApiCompoundDocsPlugin.class.getSimpleName(),
+                CompoundDocsResourceCache.class.getSimpleName()
         );
+        return new InMemoryCompoundDocsResourceCache(cdProperties.toCdProperties().cacheMaxSize());
     }
 
 }
