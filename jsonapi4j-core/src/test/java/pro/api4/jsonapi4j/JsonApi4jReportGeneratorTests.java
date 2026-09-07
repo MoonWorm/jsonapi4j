@@ -22,6 +22,7 @@ class JsonApi4jReportGeneratorTests {
 
     private static final ResourceType USERS = new ResourceType("users");
     private static final RelationshipName CITIZENSHIPS = new RelationshipName("citizenships");
+    private static final String COMPOUND_DOCS_PLUGIN_NAME = "JsonApiCompoundDocsPlugin";
 
     // --- Plugins section ---
 
@@ -91,9 +92,9 @@ class JsonApi4jReportGeneratorTests {
 
     @Test
     void metaEnabled_rendersRelativeLinksDistributedAcrossSections() {
-        // given — Compound Docs enabled, so the one-request ?include=… link resolves
-        MetaContext metaContext = MetaContext.of(metaConfig(true), Integration.SPRING);
-        JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext);
+        // given — Compound Docs plugin active, so the one-request ?include=… link resolves
+        MetaContext metaContext = MetaContext.of(metaConfig(), Integration.SPRING);
+        JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext, compoundDocsRegistry());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -111,9 +112,9 @@ class JsonApi4jReportGeneratorTests {
 
     @Test
     void metaEnabled_compoundDocsDisabled_rendersBareStateLinkWithNote() {
-        // given — meta on, but Compound Docs off: ?include=… would be a no-op
-        MetaContext metaContext = MetaContext.of(metaConfig(false), Integration.SPRING);
-        JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext);
+        // given — meta on, but no Compound Docs plugin: ?include=… would be a no-op
+        MetaContext metaContext = MetaContext.of(metaConfig(), Integration.SPRING);
+        JsonApi4j jsonApi4j = buildJsonApi4jWithMeta(metaContext, PluginRegistry.empty());
 
         // when
         String report = new JsonApi4jReportGenerator(jsonApi4j).generateStateReport();
@@ -145,14 +146,15 @@ class JsonApi4jReportGeneratorTests {
 
     @Test
     void metaEnabled_excludesMetaFromDomainAndOperationsSections() {
-        // given — a JsonApi4j whose only registered components are the built-in meta ones (Compound Docs enabled)
-        MetaContext metaContext = MetaContext.of(metaConfig(true), Integration.SPRING);
-        DomainRegistry domainRegistry = DomainRegistry.builder(PluginRegistry.empty()).build();
-        OperationsRegistry operationsRegistry = OperationsRegistry.builder(PluginRegistry.empty()).build();
+        // given — a JsonApi4j whose only registered components are the built-in meta ones (Compound Docs plugin active)
+        MetaContext metaContext = MetaContext.of(metaConfig(), Integration.SPRING);
+        PluginRegistry plugins = compoundDocsRegistry();
+        DomainRegistry domainRegistry = DomainRegistry.builder(plugins).build();
+        OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins).build();
         JsonApi4j jsonApi4j = JsonApi4j.builder()
                 .domainRegistry(domainRegistry)
                 .operationsRegistry(operationsRegistry)
-                .pluginRegistry(PluginRegistry.empty())
+                .pluginRegistry(plugins)
                 .meta(metaContext)
                 .build();
 
@@ -273,18 +275,21 @@ class JsonApi4jReportGeneratorTests {
     }
 
     /**
-     * Effective config snapshot for a meta-enabled context: the root path plus the {@code cd.enabled} flag the report
-     * reads to decide whether {@code ?include=…} compound-document links resolve.
+     * Effective config snapshot for a meta-enabled context. Only the root path matters to the report - whether
+     * {@code ?include=…} compound-document links resolve is decided by the Compound Docs plugin being active in the
+     * {@link PluginRegistry}, not by configuration.
      */
-    private static Map<String, Object> metaConfig(boolean compoundDocsEnabled) {
-        return Map.of(
-                JsonApi4jProperties.ROOT_PATH_PROPERTY, JsonApi4jProperties.DEFAULT_ROOT_PATH,
-                "cd", Map.of("enabled", compoundDocsEnabled));
+    private static Map<String, Object> metaConfig() {
+        return Map.of(JsonApi4jProperties.ROOT_PATH_PROPERTY, JsonApi4jProperties.DEFAULT_ROOT_PATH);
     }
 
-    private JsonApi4j buildJsonApi4jWithMeta(MetaContext metaContext) {
+    private PluginRegistry compoundDocsRegistry() {
+        return PluginRegistry.builder().register(mockPlugin(COMPOUND_DOCS_PLUGIN_NAME, true)).build();
+    }
+
+    private JsonApi4j buildJsonApi4jWithMeta(MetaContext metaContext, PluginRegistry plugins) {
         return JsonApi4j.builder()
-                .pluginRegistry(PluginRegistry.empty())
+                .pluginRegistry(plugins)
                 .meta(metaContext)
                 .build();
     }

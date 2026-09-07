@@ -93,7 +93,7 @@
 
         <!--plugins-->
         <flatten-maven-plugin.version>1.5.0</flatten-maven-plugin.version>
-        <maven-surefire-plugin.version>3.0.0-M6</maven-surefire-plugin.version>
+        <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <jandex-maven-plugin.version>3.5.3</jandex-maven-plugin.version>
         <maven.compiler.release>23</maven.compiler.release>
