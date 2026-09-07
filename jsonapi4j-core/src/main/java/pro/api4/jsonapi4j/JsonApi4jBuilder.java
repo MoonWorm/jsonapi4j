@@ -75,7 +75,7 @@ public class JsonApi4jBuilder {
         validatePluginConfigs();
         if (metaContext != null) {
             domainRegistry = DomainRegistry.copy(pluginRegistry, domainRegistry).withMeta().build();
-            MetaRuntime metaRuntime = new MetaRuntime(metaContext, pluginRegistry, domainRegistry, operationsRegistry);
+            MetaRuntime metaRuntime = new MetaRuntime(metaContext, properties, pluginRegistry, domainRegistry, operationsRegistry);
             operationsRegistry = OperationsRegistry.copy(pluginRegistry, operationsRegistry).withMeta(metaRuntime).build();
         }
         // Materialize the validator against the final (meta-augmented) domain registry, so it never validates

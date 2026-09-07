@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.http.HttpStatusCodes;
+
+import java.util.List;
 
 import java.util.Map;
 
@@ -42,6 +45,22 @@ class ErrorExamplesCustomizerTests {
     void customise_registersAnExampleForEveryDocumentedErrorCode() {
         assertThat(registeredExamples().keySet())
                 .containsExactlyInAnyOrderElementsOf(ErrorExamplesCustomizer.CODES_TO_EXAMPLE_NAME.values());
+    }
+
+
+    /**
+     * The map drives the order error responses and their examples are written in. It must iterate deterministically:
+     * a {@code Map.of(...)} here would randomize the order per JVM run and shuffle the published document between
+     * restarts.
+     */
+    @Test
+    public void codesToExampleName_always_iteratesInAscendingStatusCodeOrder() {
+        List<Integer> codes = ErrorExamplesCustomizer.CODES_TO_EXAMPLE_NAME.keySet()
+                .stream()
+                .map(HttpStatusCodes::getCode)
+                .toList();
+
+        assertThat(codes).isSorted();
     }
 
 }

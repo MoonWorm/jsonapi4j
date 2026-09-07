@@ -1,7 +1,7 @@
 package pro.api4.jsonapi4j;
 
 import lombok.RequiredArgsConstructor;
-import pro.api4.jsonapi4j.config.RawConfigAccessor;
+import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.domain.DomainRegistry.MetaDomain;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
@@ -47,7 +47,7 @@ public class JsonApi4jReportGenerator {
         this.domainRegistry = jsonApi4j.getDomainRegistry();
         this.operationsRegistry = jsonApi4j.getOperationsRegistry();
         this.pluginRegistry = jsonApi4j.getPluginRegistry();
-        this.metaHelper = new MetaHelper(jsonApi4j.getMetaContext());
+        this.metaHelper = new MetaHelper(jsonApi4j.getMetaContext(), jsonApi4j.getPluginRegistry(), jsonApi4j.getProperties());
     }
 
     /**
@@ -161,12 +161,14 @@ public class JsonApi4jReportGenerator {
     private static class MetaHelper {
 
         /**
-         * The {@code jsonapi4j.cd} config subtree and its {@code enabled} flag. These belong to the Compound Docs plugin
-         * (which core cannot depend on), so they are referenced here as plain config keys read from the effective snapshot.
+         * Matched as a string because the Compound Docs plugin is optional and lives in another module - core
+         * describes what it contributes without depending on it.
          */
-        private static final String CD_SECTION = "cd";
-        private static final String CD_ENABLED_KEY = "enabled";
+        private static final String COMPOUND_DOCS_PLUGIN_NAME = "JsonApiCompoundDocsPlugin";
+
         private final MetaContext metaContext;
+        private final PluginRegistry plugins;
+        private final JsonApi4jProperties properties;
 
         boolean metaEnabled() {
             return metaContext != null;
@@ -212,14 +214,11 @@ public class JsonApi4jReportGenerator {
         }
 
         private String metaUrl(String pathAndQuery) {
-            return metaContext.getRootPath() + pathAndQuery;
+            return properties.rootPath() + pathAndQuery;
         }
 
         private boolean compoundDocsEnabled() {
-            return new RawConfigAccessor(metaContext.getConfig())
-                    .section(CD_SECTION)
-                    .flatMap(cd -> cd.boolValue(CD_ENABLED_KEY))
-                    .orElse(false);
+            return plugins.isActivePlugin(COMPOUND_DOCS_PLUGIN_NAME);
         }
 
     }

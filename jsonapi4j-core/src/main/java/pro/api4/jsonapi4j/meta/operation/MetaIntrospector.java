@@ -173,7 +173,7 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     private String pathTemplate(String resourceType, String relationshipName, OperationType operationType) {
-        String rootPath = runtime.getContext().getRootPath();
+        String rootPath = runtime.getProperties().rootPath();
         return switch (operationType) {
             case READ_MULTIPLE_RESOURCES, CREATE_RESOURCE -> String.format("%s/%s", rootPath, resourceType);
             case READ_RESOURCE_BY_ID, UPDATE_RESOURCE, DELETE_RESOURCE ->

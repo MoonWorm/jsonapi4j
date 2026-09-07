@@ -3,7 +3,6 @@ package pro.api4.jsonapi4j.meta.context;
 import lombok.*;
 import pro.api4.jsonapi4j.config.Integration;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.config.RawConfigAccessor;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 
 import java.util.Collections;
@@ -67,16 +66,6 @@ public class MetaContext {
                 resolveJavaVersion(),
                 Collections.unmodifiableMap(effectiveConfig)
         );
-    }
-
-    /**
-     * @return the configured JSON:API root path (e.g. {@code /jsonapi}), falling back to
-     * {@link JsonApi4jProperties#DEFAULT_ROOT_PATH}; introspection links are rendered relative to it.
-     */
-    public String getRootPath() {
-        return new RawConfigAccessor(config)
-                .strValue(JsonApi4jProperties.ROOT_PATH_PROPERTY)
-                .orElse(JsonApi4jProperties.DEFAULT_ROOT_PATH);
     }
 
 }

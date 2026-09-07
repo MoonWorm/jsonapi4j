@@ -9,12 +9,11 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 import java.util.Map;
 import java.util.Set;
 
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initJsonApi4jProperties;
-import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @Slf4j
 public class JsonApiOasServletContainerInitializer implements ServletContainerInitializer {
@@ -75,7 +74,6 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
     public void onStartup(Set<Class<?>> hooks, ServletContext servletContext) {
         OasProperties oasProperties = initOasProperties(servletContext);
         if (oasProperties.enabled()) {
-            initJsonApi4jProperties(servletContext);
             registerOasServlet(servletContext, oasProperties);
         } else {
             log.info(

@@ -86,16 +86,6 @@ public class PluginRegistryTests {
             assertThat(sut.isActivePlugin("NoSuchPlugin")).isFalse();
         }
 
-        @Test
-        public void byName_disabledPlugin_isStillFound() {
-            assertThat(sut.getByName("DisabledPlugin")).isPresent();
-        }
-
-        @Test
-        public void byName_unknownPlugin_returnsEmpty() {
-            assertThat(sut.getByName("NoSuchPlugin")).isEmpty();
-        }
-
     }
 
     @Nested

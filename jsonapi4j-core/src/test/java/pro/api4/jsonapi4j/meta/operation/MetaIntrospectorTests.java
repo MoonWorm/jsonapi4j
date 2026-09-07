@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.meta.operation;
 
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.Integration;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
@@ -19,6 +20,7 @@ public class MetaIntrospectorTests {
 
     private final MetaIntrospector sut = new MetaIntrospector(new MetaRuntime(
             MetaContext.of(Map.of(), Integration.SERVLET),
+            new DefaultJsonApi4jProperties(),
             PluginRegistry.builder()
                     .register(new TestPlugin("EnabledPlugin", true))
                     .register(new TestPlugin("DisabledPlugin", false))

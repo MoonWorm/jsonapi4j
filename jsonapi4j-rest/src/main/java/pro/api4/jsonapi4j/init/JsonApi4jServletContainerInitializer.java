@@ -49,6 +49,15 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String JSONAPI4J_ATT_NAME = "jsonApi4j";
     public static final String EXECUTOR_SERVICE_ATT_NAME = "jsonApi4jExecutorService";
     public static final String VALIDATOR_FACTORY_ATT_NAME = "jsonApi4jValidatorFactory";
+
+    /**
+     * Inputs a servlet host sets <em>before</em> startup to hand the framework its own pieces:
+     * {@link #DOMAIN_REGISTRY_ATT_NAME}, {@link #OPERATION_REGISTRY_ATT_NAME}, {@link #PLUGIN_REGISTRY_ATT_NAME},
+     * {@link #META_CONTEXT_ATT_NAME} and {@link #VALIDATOR_FACTORY_ATT_NAME}. Each is read once while
+     * {@code JsonApi4j} is assembled and never again - afterwards everything they carry is reachable from the
+     * assembled instance, which lives under {@link #JSONAPI4J_ATT_NAME}. Absent ones fall back to a default that
+     * is used but not stored back.
+     */
     public static final String DOMAIN_REGISTRY_ATT_NAME = "jsonapi4jDomainRegistry";
     public static final String OPERATION_REGISTRY_ATT_NAME = "jsonapi4jOperationRegistry";
     public static final String PLUGIN_REGISTRY_ATT_NAME = "jsonapi4jPluginRegistry";
@@ -113,16 +122,14 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                 .properties(properties.validation())
                 .domainRegistry(domainRegistry)
                 .build();
-        servletContext.setAttribute(VALIDATOR_FACTORY_ATT_NAME, factory);
         return factory;
     }
 
     private static DomainRegistry initDomainRegistry(ServletContext servletContext) {
         DomainRegistry dr = (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME);
         if (dr == null) {
-            log.warn("DomainRegistry not found in servlet context. Setting an empty DomainRegistry.");
+            log.warn("DomainRegistry not found in servlet context. Using an empty DomainRegistry.");
             dr = DomainRegistry.empty();
-            servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, dr);
         }
         return dr;
     }
@@ -130,9 +137,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private static OperationsRegistry initOperationRegistry(ServletContext servletContext) {
         OperationsRegistry or = (OperationsRegistry) servletContext.getAttribute(OPERATION_REGISTRY_ATT_NAME);
         if (or == null) {
-            log.warn("JsonApiOperationsRegistry not found in servlet context. Setting an empty JsonApiOperationsRegistry.");
+            log.warn("JsonApiOperationsRegistry not found in servlet context. Using an empty JsonApiOperationsRegistry.");
             or = OperationsRegistry.empty();
-            servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, or);
         }
         return or;
     }
@@ -166,9 +172,8 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     private static PluginRegistry initPluginRegistry(ServletContext servletContext) {
         PluginRegistry plugins = (PluginRegistry) servletContext.getAttribute(PLUGIN_REGISTRY_ATT_NAME);
         if (plugins == null) {
-            log.warn("{} not found in servlet context. Setting an empty one.", PluginRegistry.class.getSimpleName());
+            log.warn("{} not found in servlet context. Using an empty one.", PluginRegistry.class.getSimpleName());
             plugins = PluginRegistry.empty();
-            servletContext.setAttribute(PLUGIN_REGISTRY_ATT_NAME, plugins);
         }
         return plugins;
     }

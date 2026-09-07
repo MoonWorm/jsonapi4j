@@ -58,7 +58,7 @@ public class PluginRegistry {
         return activePlugins;
     }
 
-    public Optional<JsonApi4jPlugin> getByName(String pluginName) {
+    private Optional<JsonApi4jPlugin> getByName(String pluginName) {
         return Optional.ofNullable(pluginsByName.get(pluginName));
     }
 
