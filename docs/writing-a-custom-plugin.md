@@ -263,6 +263,68 @@ With the plugin registered, API responses automatically mask annotated fields:
 
 No changes to your operations, resources, or domain model — just the annotation and the plugin.
 
+## Giving the Plugin Configuration
+
+A plugin that reads settings implements `PluginProperties`, which names the `jsonapi4j.*` subtree it owns:
+
+```java
+public interface FieldMaskingProperties extends PluginProperties {
+
+    String FM_PROPERTY = "fm";
+    String MASK_CHARACTER_PROPERTY = "maskCharacter";
+
+    @Override
+    default String section() {
+        return FM_PROPERTY;      // binds jsonapi4j.fm.*
+    }
+
+    default String maskCharacter() {
+        return "*";
+    }
+
+}
+```
+
+Return it from the plugin's `configProperties()`. Two things follow automatically: the effective values show up in
+the [`config` meta resource](/meta-api/), and the section takes part in [startup
+validation](/configuration/#startup-validation).
+
+To validate it, override `validate()` and build a result with the shared vocabulary — `requireNotBlank`,
+`requirePositive`, `requireHttpUrl`, `requireOneOfIgnoringCase`, `requireServletPath`:
+
+```java
+@Override
+default PropertiesValidationResult validate() {
+    if (!enabled()) {
+        return PropertiesValidationResult.empty();   // parked config never breaks a boot
+    }
+    return PropertiesValidationResult.builder()
+            .requireNotBlank(propertyPath(MASK_CHARACTER_PROPERTY), maskCharacter())
+            .build();
+}
+```
+
+`propertyPath(...)` prefixes your section, so the error points at `jsonapi4j.fm.maskCharacter` — the exact key the
+user wrote. A misconfigured plugin fails the boot with every error in the section at once.
+
+If a setting has to agree with the root configuration, override `validateAgainst(JsonApi4jProperties)` instead;
+it receives the effective `jsonapi4j.rootPath`, validation limits and meta settings.
+
+## The Plugin Registry
+
+Registered plugins are assembled into a `PluginRegistry`, reachable from the framework instance as
+`jsonApi4j.getPluginRegistry()`:
+
+| Method | Use |
+|--------|-----|
+| `getAllPlugins()` | every plugin, enabled or not — introspection and reporting |
+| `getActivePlugins()` | enabled only, in the order they run — precedence, then plugin name |
+| `isActivePlugin(name)` | react to a *peer* plugin without depending on it (matched by name, as the OpenAPI plugin does for sparse fieldsets) |
+| `configOf(SomeProperties.class)` | another plugin's bound configuration, by type |
+
+Two rules the registry enforces at startup: **plugin names must be unique** (the name keys the metadata your
+plugin extracts, and the id of its `plugins` meta resource) and **config sections must be unique**.
+
 ## Recap
 
 | Step | What You Implement | Purpose |
@@ -272,5 +334,6 @@ No changes to your operations, resources, or domain model — just the annotatio
 | Plugin class | `FieldMaskingPlugin` | Entry point — extracts metadata and provides visitors |
 | Visitors | `SingleResourceVisitors`, `MultipleResourcesVisitors` | Hooks into the pipeline to transform the response |
 | Registration | Spring `@Bean` / Quarkus `@Produces` / Builder | Makes the framework aware of your plugin |
+| Configuration *(optional)* | `PluginProperties` + `validate()` | Binds `jsonapi4j.<section>.*`, publishes it to the `config` meta resource, and validates it at startup |
 
 For more on how the pipeline stages work, see [Plugin System](/plugins/) and [Request Processing Pipeline](/request-processing-pipeline/).

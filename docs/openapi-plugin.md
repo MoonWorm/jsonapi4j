@@ -65,6 +65,28 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
 }
 ```
 
+### Using springdoc Instead of the Built-in Endpoint
+
+If your Spring Boot app already serves an OpenAPI document through springdoc, feed it the JsonApi4j customizers
+rather than running both endpoints. springdoc's `OpenApiCustomizer` declares the same `customise(OpenAPI)` method
+the framework's customizers do, so one bean is the whole integration:
+
+```java
+@Bean
+public OpenApiCustomizer jsonApi4jOpenApiCustomizer(JsonApi4j jsonApi4j) {
+    return openApi -> OasDocument.customizers(jsonApi4j).forEach(customizer -> customizer.customise(openApi));
+}
+```
+
+`OasDocument.customizers(...)` returns them in the order they must be applied, so the document springdoc publishes
+matches the one the built-in endpoint would. Everything each customizer needs — the registries, the root
+configuration, the OAS configuration — comes off the `JsonApi4j` bean.
+
+To build a document without springdoc, `OasDocument.generate(jsonApi4j)` returns a finished `OpenAPI`.
+
+See the [Spring Boot sample app](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/java/pro/api4/jsonapi4j/sampleapp/config/swagger/SpringJsonApi4jSpringDocConfig.java)
+for the complete configuration.
+
 ### Request Bodies
 
 Every write operation gets a request body derived from what JSON:API prescribes for it — nothing to declare:

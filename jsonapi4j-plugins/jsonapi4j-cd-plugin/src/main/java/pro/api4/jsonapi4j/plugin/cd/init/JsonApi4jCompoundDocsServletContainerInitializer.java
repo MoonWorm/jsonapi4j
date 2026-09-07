@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initJsonApi4jProperties;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @Slf4j
 public class JsonApi4jCompoundDocsServletContainerInitializer implements ServletContainerInitializer {
@@ -37,7 +38,7 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
 
             JsonApi4jProperties jsonApi4jProperties = initJsonApi4jProperties(servletContext);
             String rootPath = jsonApi4jProperties.rootPath();
-            String dispatcherServletMapping = rootPath + "/*";
+            String dispatcherServletMapping = ServletMappings.toMapping(rootPath);
 
             registerCompoundDocsFilter(
                     servletContext,

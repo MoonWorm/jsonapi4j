@@ -54,6 +54,7 @@ import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONA
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.config.Integration.SPRING;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @Configuration
 @Import(value = {
@@ -197,18 +198,9 @@ public class SpringJsonApi4jAutoConfigurer {
 
     @Bean(name = "jsonApi4jDispatcherServlet")
     public ServletRegistrationBean<?> jsonApi4jDispatcherServlet(JsonApi4jProperties properties) {
-        String jsonapi4jRootPath = properties.rootPath();
-
-        String effectiveServletUrlMapping;
-        if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {
-            effectiveServletUrlMapping = "/*";
-        } else {
-            effectiveServletUrlMapping = jsonapi4jRootPath + "/*";
-        }
-
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
                 new JsonApi4jDispatcherServlet(),
-                effectiveServletUrlMapping
+                ServletMappings.toMapping(properties.rootPath())
         );
         servletRegistration.setLoadOnStartup(1);
         servletRegistration.setName(JSONAPI4J_DISPATCHER_SERVLET_NAME);

@@ -44,6 +44,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 class QuarkusJsonApi4jProcessor {
 
@@ -77,7 +78,7 @@ class QuarkusJsonApi4jProcessor {
 
     @BuildStep
     ServletBuildItem registersJsonApi4jDispatcherServlet(QuarkusJsonApi4jProperties props) {
-        String mapping = toServletMapping(props.rootPath());
+        String mapping = ServletMappings.toMapping(props.rootPath());
         LOG.info("Registering JsonApi4jDispatcherServlet on '{}'", mapping);
         return ServletBuildItem.builder(JSONAPI4J_DISPATCHER_SERVLET_NAME, JsonApi4jDispatcherServlet.class.getName())
                 .addMapping(mapping)
@@ -90,7 +91,7 @@ class QuarkusJsonApi4jProcessor {
                             BuildProducer<ServletBuildItem> servlets) {
 
         if (isOasPluginEnabled(oasProperties)) {
-            String mapping = toServletMapping(oasProperties.oasRootPath());
+            String mapping = ServletMappings.toMapping(oasProperties.oasRootPath());
             LOG.info("{} plugin is enabled in properties ('jsonapi4j.oas.enabled') and related classes are present in classpath, registering OAS Servlet", OAS_PLUGIN_CLASSNAME);
             servlets.produce(
                     ServletBuildItem.builder("jsonApi4jOasServlet", "pro.api4.jsonapi4j.plugin.oas.OasServlet")
@@ -112,7 +113,7 @@ class QuarkusJsonApi4jProcessor {
             return;
         }
 
-        String mapping = toServletMapping(jsonApi4jProperties.rootPath());
+        String mapping = ServletMappings.toMapping(jsonApi4jProperties.rootPath());
         LOG.info("Registering CompoundDocsFilter on '{}'", mapping);
         filters.produce(
                 FilterBuildItem.builder("jsonapi4jCompoundDocsFilter", "pro.api4.jsonapi4j.plugin.cd.CompoundDocsFilter")
@@ -124,7 +125,7 @@ class QuarkusJsonApi4jProcessor {
 
     @BuildStep
     FilterBuildItem registerPrincipalResolvingFilter(QuarkusJsonApi4jProperties props) {
-        String mapping = toServletMapping(props.rootPath());
+        String mapping = ServletMappings.toMapping(props.rootPath());
         LOG.info("Registering PrincipalResolvingFilter on '{}'", mapping);
         return FilterBuildItem.builder(JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME, PrincipalResolvingFilter.class.getName())
                 .addFilterUrlMapping(mapping, DispatcherType.REQUEST)
@@ -134,7 +135,7 @@ class QuarkusJsonApi4jProcessor {
 
     @BuildStep
     FilterBuildItem registerRequestBodyCachingFilter(QuarkusJsonApi4jProperties props) {
-        String mapping = toServletMapping(props.rootPath());
+        String mapping = ServletMappings.toMapping(props.rootPath());
         LOG.info("Registering RequestBodyCachingFilter on '{}'", mapping);
         return FilterBuildItem.builder(
                         JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME,
@@ -547,19 +548,6 @@ class QuarkusJsonApi4jProcessor {
         }
     }
 
-    private static String toServletMapping(String rootPath) {
-        if (rootPath == null) {
-            return "/*";
-        }
-        String normalized = rootPath.trim();
-        if (normalized.isEmpty() || "/".equals(normalized)) {
-            return "/*";
-        }
-        if (!normalized.startsWith("/")) {
-            normalized = "/" + normalized;
-        }
-        return normalized.endsWith("/*") ? normalized : normalized + "/*";
-    }
 
     private static boolean isClassPresent(String className) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();

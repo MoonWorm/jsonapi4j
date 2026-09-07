@@ -1,6 +1,5 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration.oas;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,6 +12,7 @@ import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @ConditionalOnProperty(
         prefix = "jsonapi4j.oas",
@@ -39,21 +39,10 @@ public class SpringJsonApi4jOasPluginConfig {
     public ServletRegistrationBean<?> jsonApi4jOasServlet(OasProperties oasProperties) {
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
                 new OasServlet(),
-                toServletMapping(oasProperties.oasRootPath())
+                ServletMappings.toMapping(oasProperties.oasRootPath())
         );
         servletRegistration.setLoadOnStartup(2);
         return servletRegistration;
-    }
-
-    private static String toServletMapping(String oasRootPath) {
-        if (StringUtils.isBlank(oasRootPath) || "/".equals(oasRootPath.trim())) {
-            return "/*";
-        }
-        String normalized = oasRootPath.trim();
-        if (!normalized.startsWith("/")) {
-            normalized = "/" + normalized;
-        }
-        return normalized.endsWith("/*") ? normalized : normalized + "/*";
     }
 
 }

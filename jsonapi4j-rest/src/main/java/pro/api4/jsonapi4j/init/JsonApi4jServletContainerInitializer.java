@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jPropertiesLoader.loadConfigLenient;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @Slf4j
 public class JsonApi4jServletContainerInitializer implements ServletContainerInitializer {
@@ -211,7 +212,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         // ------------------
         // dispatcher servlet
         // ------------------
-        String dispatcherServletMapping = properties.rootPath() + "/*";
+        String dispatcherServletMapping = ServletMappings.toMapping(properties.rootPath());
         registerDispatcherServlet(
                 servletContext,
                 dispatcherServletMapping

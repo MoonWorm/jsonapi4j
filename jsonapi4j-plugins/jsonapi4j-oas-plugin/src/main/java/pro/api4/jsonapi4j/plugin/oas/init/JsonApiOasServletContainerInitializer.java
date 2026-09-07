@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.initJsonApi4jProperties;
+import pro.api4.jsonapi4j.servlet.ServletMappings;
 
 @Slf4j
 public class JsonApiOasServletContainerInitializer implements ServletContainerInitializer {
@@ -52,7 +53,7 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
             );
             return;
         }
-        String servletMapping = oasProperties.oasRootPath() + "/*";
+        String servletMapping = ServletMappings.toMapping(oasProperties.oasRootPath());
         log.info(
                 "{} is enabled. Registering {} on {} mapping",
                 JsonApiOasPlugin.class.getSimpleName(),
