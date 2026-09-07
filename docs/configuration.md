@@ -203,8 +203,8 @@ Cross-properties errors:
 The checks cover mandatory values, ranges, URL and path formats, and combinations that are individually
 valid but contradict each other — mutually exclusive license fields, two OAuth2 flows sharing one name,
 duplicate response-header status codes. A plugin is also checked **against the root configuration**, which
-is how `jsonapi4j.oas.oasRootPath` is kept under `jsonapi4j.rootPath`. A **disabled** plugin is never
-validated — parked configuration does not break a boot.
+is how a plugin endpoint claiming the same path as `jsonapi4j.rootPath` is caught. A **disabled** plugin is
+never validated — parked configuration does not break a boot.
 
 The root section is validated before the plugins, because plugins are checked against it: a broken
 `rootPath` would otherwise produce a page of misleading follow-up errors.

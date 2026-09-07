@@ -8,7 +8,6 @@ import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
@@ -37,24 +36,24 @@ public class SpringJsonApi4jOasPluginConfig {
     }
 
     @Bean(name = "jsonApi4jOasServlet")
-    public ServletRegistrationBean<?> jsonApi4jOasServlet(
-            JsonApi4jProperties jsonApi4jProperties
-    ) {
-        String jsonapi4jRootPath = jsonApi4jProperties.rootPath();
-
-        String effectiveServletUrlMapping;
-        if (StringUtils.isNotBlank(jsonapi4jRootPath) && jsonapi4jRootPath.trim().equals("/")) {
-            effectiveServletUrlMapping = "/oas/*";
-        } else {
-            effectiveServletUrlMapping = jsonapi4jRootPath + "/oas/*";
-        }
-
+    public ServletRegistrationBean<?> jsonApi4jOasServlet(OasProperties oasProperties) {
         ServletRegistrationBean<?> servletRegistration = new ServletRegistrationBean<>(
                 new OasServlet(),
-                effectiveServletUrlMapping
+                toServletMapping(oasProperties.oasRootPath())
         );
         servletRegistration.setLoadOnStartup(2);
         return servletRegistration;
+    }
+
+    private static String toServletMapping(String oasRootPath) {
+        if (StringUtils.isBlank(oasRootPath) || "/".equals(oasRootPath.trim())) {
+            return "/*";
+        }
+        String normalized = oasRootPath.trim();
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        return normalized.endsWith("/*") ? normalized : normalized + "/*";
     }
 
 }

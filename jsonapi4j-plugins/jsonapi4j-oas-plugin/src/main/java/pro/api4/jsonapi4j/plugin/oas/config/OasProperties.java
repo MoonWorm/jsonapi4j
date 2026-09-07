@@ -77,10 +77,9 @@ public interface OasProperties extends PluginProperties {
     }
 
     /**
-     * The OpenAPI document has to live under the JSON:API root path, and the integrations do not agree on how they
-     * get there: Spring Boot mounts the servlet on {@code jsonapi4j.rootPath + "/oas"} and never reads
-     * {@code oasRootPath}, while Quarkus and the plain Servlet integration mount it on {@code oasRootPath} itself.
-     * A value outside the root path therefore serves the document at a different URL depending on the host.
+     * The OAS servlet is mounted on {@code oasRootPath} and the JSON:API dispatcher on {@code rootPath}, so the two
+     * claiming the exact same path means two servlets fighting over one mapping and one of them silently losing.
+     * Nesting the document inside the API root is fine - the longest path prefix wins.
      */
     @Override
     default PropertiesValidationResult validateAgainst(JsonApi4jProperties rootProperties) {
@@ -89,23 +88,19 @@ public interface OasProperties extends PluginProperties {
         }
         String rootPath = StringUtils.trimToNull(rootProperties.rootPath());
         String oasRootPath = StringUtils.trimToNull(oasRootPath());
-        if (rootPath == null || oasRootPath == null || "/".equals(rootPath) || !oasRootPath.startsWith("/")) {
+        if (rootPath == null || oasRootPath == null || !oasRootPath.equals(rootPath)) {
             return PropertiesValidationResult.empty();
         }
-        if (!oasRootPath.equals(rootPath) && !oasRootPath.startsWith(rootPath + "/")) {
-            return PropertiesValidationResult.builder()
-                    .addCrossPropertiesError(String.format(
-                            "'%s' ('%s') must be under '%s' ('%s') - the Spring Boot integration mounts the OpenAPI " +
-                                    "servlet under the JSON:API root path while Quarkus and the Servlet integration " +
-                                    "mount it on '%s', so a path outside the root path serves the document at a " +
-                                    "different URL depending on the host",
-                            propertyPath(OAS_ROOT_PATH_PROPERTY), oasRootPath,
-                            rootProperties.propertyPath(JsonApi4jProperties.ROOT_PATH_PROPERTY), rootPath,
-                            propertyPath(OAS_ROOT_PATH_PROPERTY)
-                    ))
-                    .build();
-        }
-        return PropertiesValidationResult.empty();
+        return PropertiesValidationResult.builder()
+                .addCrossPropertiesError(String.format(
+                        "'%s' and '%s' are both '%s' - the OpenAPI servlet and the JSON:API dispatcher would be " +
+                                "mounted on the same path. Serve the document from a path of its own, e.g. '%s'.",
+                        propertyPath(OAS_ROOT_PATH_PROPERTY),
+                        rootProperties.propertyPath(JsonApi4jProperties.ROOT_PATH_PROPERTY),
+                        oasRootPath,
+                        oasRootPath + "/oas"
+                ))
+                .build();
     }
 
     private void validateInfo(PropertiesValidationResultBuilder builder) {
