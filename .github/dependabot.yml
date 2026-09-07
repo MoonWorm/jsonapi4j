@@ -1,0 +1,51 @@
+# Weekly dependency PRs. Nothing merges automatically — every PR is reviewed by hand.
+#
+# Minor and patch updates are batched into a single PR per ecosystem to keep review to one pass a week.
+# Major updates are deliberately left ungrouped: each one is a compatibility decision for a published
+# library, and bundling them would make one risky bump block a batch of safe ones.
+#
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+version: 2
+
+updates:
+  # Maven. Directory "/" is enough: Dependabot follows <modules> from the root pom, and every version
+  # is declared as a property there anyway.
+  - package-ecosystem: maven
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: deps
+    groups:
+      maven-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: deps
+    groups:
+      actions-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
