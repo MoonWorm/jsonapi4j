@@ -21,6 +21,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 23
+          cache: maven
       - name: Build with Maven
         run: mvn -B verify
       - name: Upload coverage reports to Codecov
