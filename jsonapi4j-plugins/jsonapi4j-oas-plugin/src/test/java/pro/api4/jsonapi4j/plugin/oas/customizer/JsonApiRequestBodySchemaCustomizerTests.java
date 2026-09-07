@@ -28,10 +28,7 @@ class JsonApiRequestBodySchemaCustomizerTests {
         JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
 
         OpenAPI openApi = new OpenAPI();
-        JsonApiRequestBodySchemaCustomizer sut = new JsonApiRequestBodySchemaCustomizer(
-                jsonApi4j.getDomainRegistry(),
-                jsonApi4j.getOperationsRegistry()
-        );
+        JsonApiRequestBodySchemaCustomizer sut = new JsonApiRequestBodySchemaCustomizer(jsonApi4j);
         sut.customise(openApi);
 
         return openApi.getComponents() == null ? Map.of() : openApi.getComponents().getSchemas();
@@ -104,10 +101,7 @@ class JsonApiRequestBodySchemaCustomizerTests {
             JsonApi4j jsonApi4j = OasLinkageMetaTestFixtures.jsonApi4jWithWrites();
 
             OpenAPI openApi = new OpenAPI();
-            JsonApiRequestBodySchemaCustomizer sut = new JsonApiRequestBodySchemaCustomizer(
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry()
-            );
+            JsonApiRequestBodySchemaCustomizer sut = new JsonApiRequestBodySchemaCustomizer(jsonApi4j);
             sut.customise(openApi);
 
             return openApi.getComponents().getSchemas();

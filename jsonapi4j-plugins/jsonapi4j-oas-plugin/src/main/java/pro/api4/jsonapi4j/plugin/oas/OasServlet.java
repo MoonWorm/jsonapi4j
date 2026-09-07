@@ -10,10 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.plugin.PluginRegistry;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
@@ -32,11 +28,7 @@ public class OasServlet extends HttpServlet {
     private static final String YAML_CONTENT_TYPE = "application/yaml";
     private static final String JSON_CONTENT_TYPE = "application/json";
 
-    private DomainRegistry domainRegistry;
-    private OperationsRegistry operationsRegistry;
-    private JsonApi4jProperties jsonApi4jProperties;
-    private PluginRegistry pluginRegistry;
-    private String rootPath;
+    private JsonApi4j jsonApi4j;
     private OasProperties oasProperties;
 
     /**
@@ -65,14 +57,7 @@ public class OasServlet extends HttpServlet {
             return;
         }
 
-        jsonApi4jProperties = (JsonApi4jProperties) config.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-
-        rootPath = jsonApi4jProperties.rootPath();
-
-        JsonApi4j jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
-        domainRegistry = jsonApi4j.getDomainRegistry();
-        operationsRegistry = jsonApi4j.getOperationsRegistry();
-        pluginRegistry = jsonApi4j.getPluginRegistry();
+        jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
 
         log.info("{} has been initialized", OasServlet.class.getSimpleName());
     }
@@ -98,19 +83,7 @@ public class OasServlet extends HttpServlet {
             return;
         }
 
-        OpenAPI openAPI = new OpenAPI();
-        new CommonOpenApiCustomizer(oasProperties, domainRegistry, operationsRegistry).customise(openAPI);
-        new JsonApiResponseSchemaCustomizer(domainRegistry, operationsRegistry).customise(openAPI);
-        new JsonApiRequestBodySchemaCustomizer(domainRegistry, operationsRegistry).customise(openAPI);
-        new JsonApiOperationsCustomizer(
-                rootPath,
-                domainRegistry,
-                operationsRegistry,
-                oasProperties,
-                jsonApi4jProperties.validation(),
-                pluginRegistry
-        ).customise(openAPI);
-        new ErrorExamplesCustomizer().customise(openAPI);
+        OpenAPI openAPI = OasDocument.generate(jsonApi4j);
         writeOasToResponse(resp, yaml, openAPI);
     }
 

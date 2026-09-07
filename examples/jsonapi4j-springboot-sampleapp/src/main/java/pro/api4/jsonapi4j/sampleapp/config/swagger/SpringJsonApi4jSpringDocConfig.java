@@ -5,15 +5,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
-import pro.api4.jsonapi4j.domain.DomainRegistry;
-import pro.api4.jsonapi4j.operation.OperationsRegistry;
-import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
-import pro.api4.jsonapi4j.sampleapp.config.swagger.customizers.*;
-
+/**
+ * Feeds the JsonApi4j OpenAPI customizers to springdoc.
+ * <p>
+ * Each customizer takes the assembled {@link JsonApi4j} and reads everything it needs from it - the registries, the
+ * root configuration and the OAS plugin's own configuration. springdoc's {@code OpenApiCustomizer} declares the
+ * same {@code customise(OpenAPI)} method, so a method reference is the whole adapter.
+ */
 @ConditionalOnProperty(
         prefix = "jsonapi4j.oas",
         name = "enabled",
@@ -25,55 +27,28 @@ import pro.api4.jsonapi4j.sampleapp.config.swagger.customizers.*;
 public class SpringJsonApi4jSpringDocConfig {
 
     @Bean
-    public OpenApiCustomizer openApiCustomizer(
-            OasProperties oasProperties,
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry
-    ) {
-        return new CommonOpenApiCustomizer(
-                oasProperties,
-                domainRegistry,
-                operationsRegistry
-        );
+    public OpenApiCustomizer openApiCustomizer(JsonApi4j jsonApi4j) {
+        return new CommonOpenApiCustomizer(jsonApi4j)::customise;
     }
 
     @Bean
-    public OpenApiCustomizer jsonApiPathsConfigurer(
-            JsonApi4jProperties jsonApi4JProperties,
-            OasProperties oasProperties,
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry,
-            PluginRegistry pluginRegistry
-    ) {
-        return new JsonApiOperationsCustomizer(
-                jsonApi4JProperties.rootPath(),
-                domainRegistry,
-                operationsRegistry,
-                oasProperties,
-                jsonApi4JProperties.validation(),
-                pluginRegistry
-        );
+    public OpenApiCustomizer jsonApiResponseSchemasConfigurer(JsonApi4j jsonApi4j) {
+        return new JsonApiResponseSchemaCustomizer(jsonApi4j)::customise;
     }
 
     @Bean
-    public OpenApiCustomizer jsonApiResponseSchemasConfigurer(
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry) {
-        return new JsonApiResponseSchemaCustomizer(domainRegistry, operationsRegistry);
+    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(JsonApi4j jsonApi4j) {
+        return new JsonApiRequestBodySchemaCustomizer(jsonApi4j)::customise;
     }
 
     @Bean
-    public OpenApiCustomizer jsonApiRequestBodySchemasConfigurer(
-            DomainRegistry domainRegistry,
-            OperationsRegistry operationsRegistry
-    ) {
-        return new JsonApiRequestBodySchemaCustomizer(domainRegistry, operationsRegistry);
+    public OpenApiCustomizer jsonApiPathsConfigurer(JsonApi4j jsonApi4j) {
+        return new JsonApiOperationsCustomizer(jsonApi4j)::customise;
     }
 
     @Bean
     public OpenApiCustomizer errorExamplesCustomizer() {
-        return new ErrorExamplesCustomizer();
+        return new ErrorExamplesCustomizer()::customise;
     }
-
 
 }

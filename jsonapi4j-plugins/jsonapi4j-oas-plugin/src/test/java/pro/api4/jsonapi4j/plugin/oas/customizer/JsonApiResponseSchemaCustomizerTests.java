@@ -22,10 +22,7 @@ class JsonApiResponseSchemaCustomizerTests {
 
     private static Map<String, Schema> responseSchemas(JsonApi4j jsonApi4j) {
         OpenAPI openApi = new OpenAPI();
-        JsonApiResponseSchemaCustomizer sut = new JsonApiResponseSchemaCustomizer(
-                jsonApi4j.getDomainRegistry(),
-                jsonApi4j.getOperationsRegistry()
-        );
+        JsonApiResponseSchemaCustomizer sut = new JsonApiResponseSchemaCustomizer(jsonApi4j);
         sut.customise(openApi);
 
         if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {

@@ -3,7 +3,8 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
-import lombok.Data;
+import lombok.Getter;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
@@ -28,12 +29,18 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.*
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.*;
 
 @SuppressWarnings("ALL")
-@Data
-public class JsonApiResponseSchemaCustomizer {
+@Getter
+public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
 
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
+    public JsonApiResponseSchemaCustomizer(JsonApi4j jsonApi4j) {
+        this.domainRegistry = jsonApi4j.getDomainRegistry();
+        this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+    }
+
+    @Override
     public void customise(OpenAPI openApi) {
         registerLinksObjectSchema(openApi);
         registerResourceIdentifierObjectSchema(openApi);

@@ -23,7 +23,6 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.Secured
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
-import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -63,14 +62,7 @@ class JsonApiOperationsCustomizerTests {
         JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
 
         OpenAPI openApi = new OpenAPI();
-        JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
-                ROOT_PATH,
-                jsonApi4j.getDomainRegistry(),
-                jsonApi4j.getOperationsRegistry(),
-                null,
-                null,
-                PluginRegistry.empty()
-        );
+        JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(jsonApi4j);
         sut.customise(openApi);
 
         return openApi.getPaths();
@@ -85,14 +77,7 @@ class JsonApiOperationsCustomizerTests {
             assertThat(withMeta.getDomainRegistry().isMetaEnabled()).isTrue();
 
             OpenAPI openApi = new OpenAPI();
-            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
-                    ROOT_PATH,
-                    withMeta.getDomainRegistry(),
-                    withMeta.getOperationsRegistry(),
-                    null,
-                    null,
-                    PluginRegistry.empty()
-            );
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(withMeta);
             sut.customise(openApi);
 
             Set<String> paths = openApi.getPaths() == null ? Set.of() : openApi.getPaths().keySet();
@@ -262,14 +247,7 @@ class JsonApiOperationsCustomizerTests {
             JsonApi4j jsonApi4j = jsonApi4j(new DefaultOasProperties(), operations);
 
             OpenAPI openApi = new OpenAPI();
-            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
-                    ROOT_PATH,
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry(),
-                    null,
-                    null,
-                    PluginRegistry.empty()
-            );
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(jsonApi4j);
             sut.customise(openApi);
 
             return securedOperation(openApi);
@@ -348,19 +326,8 @@ class JsonApiOperationsCustomizerTests {
             OpenAPI openApi = new OpenAPI();
 
             // when
-            new CommonOpenApiCustomizer(
-                    oasProperties,
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry()
-            ).customise(openApi);
-            new JsonApiOperationsCustomizer(
-                    ROOT_PATH,
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry(),
-                    oasProperties,
-                    null,
-                    PluginRegistry.empty()
-            ).customise(openApi);
+            new CommonOpenApiCustomizer(jsonApi4j).customise(openApi);
+            new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
 
             // then
             assertThat(securedOperation(openApi).getSecurity())
@@ -399,14 +366,7 @@ class JsonApiOperationsCustomizerTests {
             JsonApi4j jsonApi4j = jsonApi4j(oasProperties == null ? new DefaultOasProperties() : oasProperties);
 
             OpenAPI openApi = new OpenAPI();
-            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(
-                    ROOT_PATH,
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry(),
-                    oasProperties,
-                    null,
-                    PluginRegistry.empty()
-            );
+            JsonApiOperationsCustomizer sut = new JsonApiOperationsCustomizer(jsonApi4j);
             sut.customise(openApi);
 
             return securedOperation(openApi).getSecurity();

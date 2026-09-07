@@ -3,7 +3,8 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Schema;
-import lombok.Data;
+import lombok.Getter;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.RegisteredRelationship;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -71,8 +72,8 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
  * and none is registered that nothing points at.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Data
-public class JsonApiRequestBodySchemaCustomizer {
+@Getter
+public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
 
     private static final Set<OperationType> RELATIONSHIP_WRITES = Set.of(
             UPDATE_TO_ONE_RELATIONSHIP,
@@ -84,6 +85,12 @@ public class JsonApiRequestBodySchemaCustomizer {
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
+    public JsonApiRequestBodySchemaCustomizer(JsonApi4j jsonApi4j) {
+        this.domainRegistry = jsonApi4j.getDomainRegistry();
+        this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+    }
+
+    @Override
     public void customise(OpenAPI openApi) {
         OasResourceTypes.resourceTypesWithOperationsExcludingMeta(domainRegistry, operationsRegistry)
                 .sorted()

@@ -12,7 +12,8 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import lombok.Data;
+import lombok.Getter;
+import pro.api4.jsonapi4j.JsonApi4j;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -60,8 +61,8 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 
 
 @Slf4j
-@Data
-public class JsonApiOperationsCustomizer {
+@Getter
+public class JsonApiOperationsCustomizer implements OasCustomizer {
 
     /**
      * Name of the sparse fieldsets plugin. Matched as a string because plugins are peers — the OAS plugin describes
@@ -76,6 +77,16 @@ public class JsonApiOperationsCustomizer {
     private final ValidationProperties validationProperties;
     private final PluginRegistry pluginRegistry;
 
+    public JsonApiOperationsCustomizer(JsonApi4j jsonApi4j) {
+        this.rootPath = jsonApi4j.getProperties().rootPath();
+        this.domainRegistry = jsonApi4j.getDomainRegistry();
+        this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+        this.oasProperties = jsonApi4j.getPluginRegistry().configOf(OasProperties.class).orElse(null);
+        this.validationProperties = jsonApi4j.getProperties().validation();
+        this.pluginRegistry = jsonApi4j.getPluginRegistry();
+    }
+
+    @Override
     public void customise(OpenAPI openApi) {
         if (openApi.getPaths() == null) {
             openApi.setPaths(new Paths());

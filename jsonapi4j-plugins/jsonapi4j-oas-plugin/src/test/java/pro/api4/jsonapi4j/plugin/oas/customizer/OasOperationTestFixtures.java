@@ -55,6 +55,23 @@ final class OasOperationTestFixtures {
                 .build();
     }
 
+    /**
+     * The same domain and operations, but with no OAS plugin registered - the customizers then resolve no
+     * {@link OasProperties} at all, which is how an app that never configured the plugin looks.
+     */
+    static JsonApi4j jsonApi4jWithoutOasPlugin() {
+        PluginRegistry plugins = PluginRegistry.empty();
+        return JsonApi4j.builder()
+                .pluginRegistry(plugins)
+                .domainRegistry(DomainRegistry.builder(plugins)
+                        .resource(new SecuredResource())
+                        .build())
+                .operationsRegistry(OperationsRegistry.builder(plugins)
+                        .operations(new SecuredOperations())
+                        .build())
+                .build();
+    }
+
     static DefaultOasProperties oasProperties(String clientCredentialsName,
                                               String pkceName) {
         DefaultOAuth2 oauth2 = new DefaultOAuth2();

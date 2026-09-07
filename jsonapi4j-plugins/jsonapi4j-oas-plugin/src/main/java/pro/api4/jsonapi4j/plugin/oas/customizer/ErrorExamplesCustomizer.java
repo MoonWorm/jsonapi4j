@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-public class ErrorExamplesCustomizer {
+public class ErrorExamplesCustomizer implements OasCustomizer {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -33,6 +33,7 @@ public class ErrorExamplesCustomizer {
             HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERRORS_DOC
     );
 
+    @Override
     public void customise(OpenAPI openApi) {
         if (openApi.getComponents() == null) {
             openApi.setComponents(new Components());

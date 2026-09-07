@@ -12,21 +12,18 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4j;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4jWithoutOasPlugin;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.oasProperties;
 
 class CommonOpenApiCustomizerTests {
 
     private static OpenAPI customised(OasProperties oasProperties) {
-        JsonApi4j jsonApi4j = jsonApi4j(oasProperties == null ? new DefaultOasProperties() : oasProperties);
+        return customised(jsonApi4j(oasProperties));
+    }
 
+    private static OpenAPI customised(JsonApi4j jsonApi4j) {
         OpenAPI openApi = new OpenAPI();
-        CommonOpenApiCustomizer sut = new CommonOpenApiCustomizer(
-                oasProperties,
-                jsonApi4j.getDomainRegistry(),
-                jsonApi4j.getOperationsRegistry()
-        );
-        sut.customise(openApi);
-
+        new CommonOpenApiCustomizer(jsonApi4j).customise(openApi);
         return openApi;
     }
 
@@ -70,18 +67,11 @@ class CommonOpenApiCustomizerTests {
             // given a document whose components already carry schemas, as they do when this runs after the schema
             // customizers rather than first
             OpenAPI openApi = new OpenAPI();
-            new JsonApiResponseSchemaCustomizer(
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry()
-            ).customise(openApi);
+            new JsonApiResponseSchemaCustomizer(jsonApi4j).customise(openApi);
             assertThat(openApi.getComponents().getSchemas()).isNotEmpty();
 
             // when
-            new CommonOpenApiCustomizer(
-                    oasProperties("m2m", "user-facing"),
-                    jsonApi4j.getDomainRegistry(),
-                    jsonApi4j.getOperationsRegistry()
-            ).customise(openApi);
+            new CommonOpenApiCustomizer(jsonApi4j).customise(openApi);
 
             // then
             assertThat(openApi.getComponents().getSecuritySchemes()).containsOnlyKeys("m2m", "user-facing");
@@ -93,8 +83,14 @@ class CommonOpenApiCustomizerTests {
     class AbsentConfig {
 
         @Test
-        void customise_noOasProperties_stillPublishesTagsFromTheRegistries() {
-            assertThat(customised(null).getTags()).isNotEmpty();
+        void customise_noOasPluginRegistered_stillPublishesTagsFromTheRegistries() {
+            assertThat(customised(jsonApi4jWithoutOasPlugin()).getTags()).isNotEmpty();
+        }
+
+        @Test
+        void customise_oasPluginRegistered_resolvesItsConfigFromThePluginRegistry() {
+            assertThat(customised(oasProperties("m2m", "user-facing")).getComponents().getSecuritySchemes())
+                    .containsOnlyKeys("m2m", "user-facing");
         }
 
     }

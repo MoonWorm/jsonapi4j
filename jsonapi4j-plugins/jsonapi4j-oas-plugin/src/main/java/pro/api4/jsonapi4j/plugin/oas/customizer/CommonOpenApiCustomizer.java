@@ -18,7 +18,8 @@ import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
-import lombok.Data;
+import lombok.Getter;
+import pro.api4.jsonapi4j.JsonApi4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,13 +29,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Data
-public class CommonOpenApiCustomizer {
+@Getter
+public class CommonOpenApiCustomizer implements OasCustomizer {
 
     private final OasProperties oasProperties;
     private final DomainRegistry domainRegistry;
     private final OperationsRegistry operationsRegistry;
 
+    public CommonOpenApiCustomizer(JsonApi4j jsonApi4j) {
+        this.oasProperties = jsonApi4j.getPluginRegistry().configOf(OasProperties.class).orElse(null);
+        this.domainRegistry = jsonApi4j.getDomainRegistry();
+        this.operationsRegistry = jsonApi4j.getOperationsRegistry();
+    }
+
+    @Override
     public void customise(OpenAPI openApi) {
         // tags come from the registries, so they are the one thing that survives an absent config section
         enrichTags(openApi);
