@@ -66,7 +66,7 @@
 
 
         <!--json/yaml-->
-        <jackson.version>2.22</jackson.version>
+        <jackson.version>2.22.2</jackson.version>
 
         <!--oas-->
         <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
@@ -199,31 +199,15 @@
                 <version>${swagger.version}</version>
             </dependency>
 
-            <!--Jackson-->
+            <!--Jackson: imported as a BOM because the artifacts no longer share one version - since 2.20
+                jackson-annotations is released without a patch component (2.22) while the rest carry one
+                (2.22.2). A single shared property cannot express both.-->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!--Commons-->
