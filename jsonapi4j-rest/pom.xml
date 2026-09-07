@@ -46,7 +46,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <springdoc-openapi.version>2.2.0</springdoc-openapi.version>
-        <jackson-module-parameter-names.version>2.20.1</jackson-module-parameter-names.version>
+        <jackson-module-parameter-names.version>2.22.2</jackson-module-parameter-names.version>
     </properties>
 
     <dependencies>
