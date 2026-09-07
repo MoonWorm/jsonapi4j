@@ -9,6 +9,8 @@ import io.swagger.v3.oas.models.examples.Example;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Map;
 
 public class ErrorExamplesCustomizer implements OasCustomizer {
@@ -23,14 +25,21 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
     public static final String TOO_MANY_REQUESTS_ERRORS_DOC = "Too_Many_Requests_Errors_Doc";
     public static final String INTERNAL_SERVER_ERRORS_DOC = "Internal_Server_Errors_Doc";
 
-    public static final Map<HttpStatusCodes, String> CODES_TO_EXAMPLE_NAME = Map.of(
-            HttpStatusCodes.SC_400_BAD_REQUEST, BAD_REQUEST_ERRORS_DOC,
-            HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, RESOURCE_NOT_FOUND_ERRORS_DOC,
-            HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, METHOD_NOT_SUPPORTED_ERRORS_DOC,
-            HttpStatusCodes.SC_406_NOT_ACCEPTABLE, NOT_ACCEPTABLE_ERRORS_DOC,
-            HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC,
-            HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, TOO_MANY_REQUESTS_ERRORS_DOC,
-            HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERRORS_DOC
+    /**
+     * Backed by an {@link EnumMap} rather than {@link Map#of}, whose iteration order Java randomizes per JVM run:
+     * this map drives the order the error responses and their examples are written in, and a document that shuffles
+     * its keys between restarts produces spurious diffs for anyone tracking their published spec.
+     */
+    public static final Map<HttpStatusCodes, String> CODES_TO_EXAMPLE_NAME = Collections.unmodifiableMap(
+            new EnumMap<>(Map.of(
+                    HttpStatusCodes.SC_400_BAD_REQUEST, BAD_REQUEST_ERRORS_DOC,
+                    HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, RESOURCE_NOT_FOUND_ERRORS_DOC,
+                    HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, METHOD_NOT_SUPPORTED_ERRORS_DOC,
+                    HttpStatusCodes.SC_406_NOT_ACCEPTABLE, NOT_ACCEPTABLE_ERRORS_DOC,
+                    HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC,
+                    HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, TOO_MANY_REQUESTS_ERRORS_DOC,
+                    HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERRORS_DOC
+            ))
     );
 
     @Override

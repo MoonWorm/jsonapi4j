@@ -397,7 +397,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
     }
 
     private Map<String, ApiResponse> generateErrorResponses(Set<HttpStatusCodes> supportedHttpErrorCodes) {
-        Map<String, ApiResponse> errorResponses = new HashMap<>();
+        Map<String, ApiResponse> errorResponses = new LinkedHashMap<>();
         ErrorExamplesCustomizer.CODES_TO_EXAMPLE_NAME.forEach((code, name) -> {
             if (supportedHttpErrorCodes.contains(code)) {
                 errorResponses.put(
