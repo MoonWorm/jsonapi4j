@@ -41,6 +41,84 @@ Let's take a quick look at what a typical **JsonApi4j**-based service looks like
 
 The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
 
+#### Servlet Containers
+
+**JsonApi4j** does not tie you to a particular servlet container. The Spring Boot integration runs on
+whichever container your application already uses — **Tomcat**, **Jetty** and **Undertow** are each verified
+against the full test suite. Deploying as a WAR leaves the choice to whichever container you deploy into.
+
+Quarkus is the exception, and in a good way: there is nothing to choose. The `jsonapi4j-rest-quarkus`
+extension builds on Quarkus' own servlet support (`quarkus-undertow`), which it brings in itself, so the
+container question never arises — and neither does the Tomcat note below.
+
+When Tomcat is on the classpath, the framework also relaxes its query-string parsing so JSON:API's
+`filter[...]` and `fields[...]` parameters work unencoded. Tomcat rejects raw `[` and `]` by default; other
+containers accept them as they are, so no equivalent tuning is applied there.
+
+The Servlet API itself is a `provided` dependency — your container supplies it. The framework is built
+against **Jakarta Servlet 6.1** and is verified on Servlet 6.0 and 6.1 containers. Note the `jakarta.*`
+namespace: containers still on `javax.servlet` are not supported.
+
+#### Deploying as a WAR
+
+The `jsonapi4j-rest` module ships a `ServletContainerInitializer`, so a servlet container discovers and runs it
+on deployment. No `web.xml` entry is needed — the dispatcher servlet and the framework filters register
+themselves under the configured `rootPath`.
+
+Configuration is picked up from the classpath, so packaging `jsonapi4j.yaml` (or `jsonapi4j.json`) in
+`WEB-INF/classes` is enough. A `jsonapi4j.config` system property, a `JSONAPI4J_CONFIG` environment variable,
+or a `jsonapi4j.config` servlet context init parameter all take precedence if you would rather point elsewhere.
+
+What the container cannot discover is your domain. Contribute it from a `ServletContextListener`:
+
+```java
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PLUGIN_REGISTRY_ATT_NAME;
+
+@WebListener
+public class JsonApi4jBootstrapListener implements ServletContextListener {
+
+    @Override
+    public void contextInitialized(ServletContextEvent event) {
+        ServletContext servletContext = event.getServletContext();
+
+        PluginRegistry plugins = PluginRegistry.empty();
+
+        DomainRegistry domainRegistry = DomainRegistry.builder(plugins)
+                .resource(new UserResource())
+                .relationship(new UserCitizenshipsRelationship())
+                .build();
+
+        OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
+                .operation(new UserOperations(userDb))
+                .build();
+
+        servletContext.setAttribute(PLUGIN_REGISTRY_ATT_NAME, plugins);
+        servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
+        servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
+    }
+}
+```
+
+A listener is the right place because of ordering: the container runs every `ServletContainerInitializer`
+first, then notifies listeners, and only then initializes servlets. Your listener is therefore the earliest
+application code that runs, and it still lands before the dispatcher servlet reads the registries. Registering
+plugins here works the same way — build them into the `PluginRegistry` above.
+
+A listener can also replace the framework's defaults — register your own `PrincipalResolver`, `ObjectMapper`
+or `ErrorHandlerFactoriesRegistry` under the matching attribute and it takes effect, because the dispatcher
+servlet and the filters read those attributes when they initialize, which is after listeners have run.
+
+Configuration is the exception. `rootPath` is read during deployment to map the dispatcher servlet and the
+framework filters, so setting `JsonApi4jProperties` from a listener is too late to move the endpoints — and
+leaves the generated links pointing somewhere the servlet is not mapped. Configure the framework through the
+config file, system property, environment variable or init parameter described above; use the listener for
+your domain, not for `rootPath`.
+
+If the listener is missing, the endpoints still register but serve an empty API, and the startup log reports
+which registries were not found.
+
 ### 2. Declare the Domain
 
 Let's implement a simple application that exposes two resources - `users` and `countries` - and defines a relationship between them, representing which `citizenships` (or passports) each user holds.

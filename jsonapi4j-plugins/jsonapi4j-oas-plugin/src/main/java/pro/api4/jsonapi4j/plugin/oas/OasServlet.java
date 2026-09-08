@@ -10,13 +10,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 
 @Slf4j
@@ -57,7 +57,7 @@ public class OasServlet extends HttpServlet {
             return;
         }
 
-        jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
+        jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
 
         log.info("{} has been initialized", OasServlet.class.getSimpleName());
     }

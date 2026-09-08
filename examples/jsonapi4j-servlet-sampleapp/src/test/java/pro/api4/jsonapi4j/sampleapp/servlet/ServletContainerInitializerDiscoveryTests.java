@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.sampleapp.servlet;
 
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import org.eclipse.jetty.ee11.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
@@ -11,16 +13,25 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_FILTER_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.JSONAPI4J_OAS_SERVLET_NAME;
 
@@ -74,6 +85,49 @@ class ServletContainerInitializerDiscoveryTests {
         return webApp.getServletContext();
     }
 
+    /**
+     * The same scanned deployment, plus the one hook a war has: a listener contributing the registries. Listeners run
+     * after every {@code ServletContainerInitializer}, so this is the earliest application code can speak.
+     */
+    private void startScannedWebAppWithListener() throws Exception {
+        startScannedWebAppWithListener(servletContext -> { });
+    }
+
+    private void startScannedWebAppWithListener(Consumer<ServletContext> extraContributions) throws Exception {
+        server = new Server(PORT);
+
+        WebAppContext webApp = new WebAppContext();
+        webApp.setContextPath("/");
+        webApp.setBaseResourceAsPath(Files.createTempDirectory("jsonapi4j-war-test"));
+        webApp.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
+        webApp.addConfiguration(new AnnotationConfiguration());
+        webApp.setAttribute(
+                "org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern",
+                ".*jsonapi4j.*"
+        );
+        webApp.addEventListener(new ServletContextListener() {
+            @Override
+            public void contextInitialized(ServletContextEvent event) {
+                ServletContext servletContext = event.getServletContext();
+                PluginRegistry plugins = ServletJsonapi4jSampleApp.initPluginRegistry(servletContext);
+                ServletJsonapi4jSampleApp.initMetaContext(plugins, servletContext);
+                ServletJsonapi4jSampleApp.initDomainRegistry(plugins, servletContext);
+                ServletJsonapi4jSampleApp.initOperationRegistry(plugins, servletContext);
+                extraContributions.accept(servletContext);
+            }
+        });
+
+        server.setHandler(webApp);
+        server.start();
+    }
+
+    private HttpResponse<String> get(String path) throws Exception {
+        return HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create("http://localhost:" + PORT + path)).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+        );
+    }
+
     @Nested
     class ServiceFiles {
 
@@ -116,6 +170,47 @@ class ServletContainerInitializerDiscoveryTests {
 
             assertThat(servletContext.getServletRegistration(JSONAPI4J_OAS_SERVLET_NAME).getMappings())
                     .containsExactly("/jsonapi/oas/*");
+        }
+
+    }
+
+    /**
+     * A war deployed to an external container: the container runs the initializers, then a listener contributes the
+     * domain. The registries have to survive that ordering and reach the dispatcher servlet.
+     */
+    @Nested
+    class WarStyleDeployment {
+
+        @Test
+        void listenerSuppliedRegistries_reachTheDispatcherServlet() throws Exception {
+            startScannedWebAppWithListener();
+
+            HttpResponse<String> response = get("/jsonapi/users");
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.body()).contains("\"type\":\"users\"");
+        }
+
+        /**
+         * The initializer installs a default {@code PrincipalResolver} during deployment, before any listener runs.
+         * That default must still be replaceable: the filter reads the attribute when it initializes, which happens
+         * after listeners, so a listener that overwrites it wins.
+         */
+        @Test
+        void listenerSuppliedPrincipalResolver_replacesTheEagerDefault() throws Exception {
+            AtomicBoolean resolverInvoked = new AtomicBoolean(false);
+            startScannedWebAppWithListener(servletContext -> {
+                PrincipalResolver recordingResolver = servletRequest -> {
+                    resolverInvoked.set(true);
+                    return null;
+                };
+                servletContext.setAttribute(PRINCIPAL_RESOLVER_ATT_NAME, recordingResolver);
+            });
+
+            HttpResponse<String> response = get("/jsonapi/users");
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(resolverInvoked).isTrue();
         }
 
     }

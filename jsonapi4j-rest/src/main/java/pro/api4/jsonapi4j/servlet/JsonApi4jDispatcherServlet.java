@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.JsonApi4jReportGenerator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
+import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
@@ -51,7 +52,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         super.init(config);
 
-        this.jsonApi4j = (JsonApi4j) config.getServletContext().getAttribute(JSONAPI4J_ATT_NAME);
+        this.jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
         this.errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         this.objectMapper = (ObjectMapper) config.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
 

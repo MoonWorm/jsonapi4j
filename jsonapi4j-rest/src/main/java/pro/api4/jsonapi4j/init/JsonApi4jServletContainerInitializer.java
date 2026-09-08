@@ -178,7 +178,19 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         return plugins;
     }
 
-    private static JsonApi4j initJsonApi4j(ServletContext servletContext) {
+    /**
+     * Returns the assembled {@link JsonApi4j}, composing it from the servlet context on first use and caching it under
+     * {@link #JSONAPI4J_ATT_NAME}.
+     *
+     * <p>Composition is deliberately deferred to servlet initialization rather than performed here during
+     * {@code onStartup}. A container that discovers this initializer itself - a war deployed to an external servlet
+     * container - calls {@code onStartup} before any application code can contribute its registries, because
+     * {@code ServletContextListener.contextInitialized} fires only after every initializer has run. Composing eagerly
+     * would cache an empty instance that later contributions could never replace. Composing on first read leaves that
+     * window open, so a listener can supply {@link #DOMAIN_REGISTRY_ATT_NAME} and friends the way the Quarkus
+     * integration already does.
+     */
+    public static JsonApi4j initJsonApi4j(ServletContext servletContext) {
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j == null) {
             log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
@@ -212,7 +224,6 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         initObjectMapper(servletContext);
         initErrorHandlerFactory(servletContext);
         initPrincipalResolver(servletContext);
-        initJsonApi4j(servletContext);
 
         // ------------------
         // dispatcher servlet
