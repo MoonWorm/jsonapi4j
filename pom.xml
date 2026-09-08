@@ -69,7 +69,7 @@
         <jackson.version>2.22.2</jackson.version>
 
         <!--oas-->
-        <springdoc-openapi.version>2.7.0</springdoc-openapi.version>
+        <springdoc-openapi.version>2.8.8</springdoc-openapi.version>
         <swagger.version>2.2.55</swagger.version>
 
         <!--utils-->
