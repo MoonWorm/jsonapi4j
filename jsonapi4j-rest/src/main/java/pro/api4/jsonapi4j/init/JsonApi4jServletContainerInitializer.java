@@ -11,7 +11,9 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRegistration;
+import jakarta.servlet.UnavailableException;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
@@ -31,6 +33,7 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFa
 import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -190,7 +193,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
      * window open, so a listener can supply {@link #DOMAIN_REGISTRY_ATT_NAME} and friends the way the Quarkus
      * integration already does.
      */
-    public static JsonApi4j initJsonApi4j(ServletContext servletContext) {
+    public static JsonApi4j initJsonApi4j(ServletContext servletContext) throws ServletException {
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j == null) {
             log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
@@ -212,7 +215,51 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
                     .build();
             servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);
         }
+        verifyRootPathMatchesMapping(servletContext, jsonApi4j);
         return jsonApi4j;
+    }
+
+    /**
+     * Fails when the configured {@code rootPath} disagrees with the mapping the dispatcher servlet is registered
+     * under.
+     * <p>
+     * The mapping is computed from {@code rootPath} while this initializer runs and is immutable afterwards, but
+     * {@code rootPath} is read again for {@code self} and {@code related} links, the Meta API path templates and
+     * Compound Docs prefix stripping. Configuration arriving after deployment therefore cannot move the endpoints
+     * yet changes every link the API reports about itself, and requests keep succeeding because routing follows the
+     * mapping and parsing uses {@code getPathInfo()}.
+     * <p>
+     * Checked here rather than in the dispatcher servlet because the dispatcher initializes <em>last</em>: filters
+     * and the OpenAPI servlet are already running by then, and the OpenAPI servlet is what triggers composition in
+     * the first place. Guarding at composition makes every consumer fail together instead of leaving the OpenAPI
+     * document served on a path whose endpoints do not exist.
+     */
+    private static void verifyRootPathMatchesMapping(ServletContext servletContext, JsonApi4j jsonApi4j)
+            throws ServletException {
+        ServletRegistration registration = servletContext.getServletRegistration(JSONAPI4J_DISPATCHER_SERVLET_NAME);
+        if (registration == null) {
+            return;
+        }
+        String expectedMapping = ServletMappings.toMapping(jsonApi4j.getProperties().rootPath());
+        Collection<String> actualMappings = registration.getMappings();
+        if (actualMappings.isEmpty() || actualMappings.contains(expectedMapping)) {
+            return;
+        }
+        String message = String.format(
+                "%s is mapped on %s but the configured rootPath resolves to %s. The mapping is fixed while the"
+                        + " container initializer runs, so configuration supplied after deployment cannot move it -"
+                        + " every link the API generates would point at %s, where nothing is mapped. Configure"
+                        + " rootPath through the config file, the jsonapi4j.config system property, the"
+                        + " JSONAPI4J_CONFIG environment variable or a servlet context init parameter.",
+                JSONAPI4J_DISPATCHER_SERVLET_NAME,
+                String.join(", ", actualMappings),
+                expectedMapping,
+                expectedMapping
+        );
+        // Logged as well as thrown: a container is free to swallow the exception and simply mark the servlet
+        // unavailable, which leaves an operator with an unexplained 404 unless the reason was written down here.
+        log.error(message);
+        throw new UnavailableException(message);
     }
 
     @Override
