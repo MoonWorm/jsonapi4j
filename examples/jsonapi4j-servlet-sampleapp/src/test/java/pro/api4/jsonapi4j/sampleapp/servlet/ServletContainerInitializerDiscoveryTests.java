@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PROPERTIES_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PRINCIPAL_RESOLVER_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_FILTER_NAME;
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.JSONAPI4J_OAS_SERVLET_NAME;
@@ -189,6 +191,27 @@ class ServletContainerInitializerDiscoveryTests {
 
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("\"type\":\"users\"");
+        }
+
+        /**
+         * The servlet mapping is fixed from {@code rootPath} while the initializer runs, but {@code rootPath} is read
+         * again for every link the API generates. Configuration arriving after deployment would leave requests
+         * succeeding while every link pointed somewhere unmapped, so the mismatch has to be refused outright.
+         */
+        @Test
+        void rootPathSuppliedAfterDeployment_isRefusedRatherThanServedWithBrokenLinks() throws Exception {
+            startScannedWebAppWithListener(servletContext -> {
+                DefaultJsonApi4jProperties lateProperties = new DefaultJsonApi4jProperties();
+                lateProperties.setRootPath("/moved");
+                servletContext.setAttribute(JSONAPI4J_PROPERTIES_ATT_NAME, lateProperties);
+            });
+
+            HttpResponse<String> response = get("/jsonapi/users");
+
+            // Containers render a servlet that failed to initialize differently - Jetty answers 404 - so the
+            // assertion is that the endpoint refuses to serve, not that it picks a particular status.
+            assertThat(response.statusCode()).isIn(404, 503);
+            assertThat(response.body()).doesNotContain("\"type\":\"users\"");
         }
 
         /**
