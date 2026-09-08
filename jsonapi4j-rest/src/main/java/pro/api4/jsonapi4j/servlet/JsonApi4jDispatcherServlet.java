@@ -66,6 +66,17 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             ));
         }
 
+        if (jsonApi4j.getDomainRegistry().getResources().isEmpty()) {
+            log.warn(
+                    "No resources are registered - JsonApi4j will answer every request under this mapping with a 404."
+                            + " The domain never reached the framework: a Spring application registers resources as"
+                            + " beans, a Quarkus application has them discovered at build time, and a servlet or war"
+                            + " deployment sets the '{}' servlet context attribute from a ServletContextListener,"
+                            + " which runs after the container initializer and before this servlet.",
+                    DOMAIN_REGISTRY_ATT_NAME
+            );
+        }
+
         log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
 
         this.jsonApiRequestSupplier = composeJsonApiRequestSupplier(

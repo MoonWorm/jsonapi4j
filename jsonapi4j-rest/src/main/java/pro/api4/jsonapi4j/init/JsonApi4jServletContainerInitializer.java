@@ -255,6 +255,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             );
             return;
         }
+        dispatcherServlet.setLoadOnStartup(1);
         Set<String> conflictingMappings = dispatcherServlet.addMapping(servletMapping);
         if (!conflictingMappings.isEmpty()) {
             log.warn(
