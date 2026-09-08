@@ -2,7 +2,7 @@ package pro.api4.jsonapi4j.sampleapp.servlet;
 
 import jakarta.servlet.ServletContext;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.domain.DomainRegistry;

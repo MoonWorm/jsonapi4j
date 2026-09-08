@@ -1,14 +1,10 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.tomcat.util.buf.EncodedSolidusHandling;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
@@ -215,16 +211,6 @@ public class SpringJsonApi4jAutoConfigurer {
                 new RequestBodyCachingFilter(),
                 jsonApi4jDispatcherServlet
         );
-    }
-
-    @Bean
-    public WebServerFactoryCustomizer<TomcatServletWebServerFactory> jsonApi4jTomcatCustomizer() {
-        return factory -> factory.addConnectorCustomizers(connector -> {
-            //Configuring Tomcat to allow encoded slashes
-            connector.setEncodedSolidusHandling(EncodedSolidusHandling.DECODE.getValue());
-            //Configuring Tomcat to allow '[' and ']' chars in query params
-            connector.setProperty("relaxedQueryChars", "[]");
-        });
     }
 
 }

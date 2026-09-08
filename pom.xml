@@ -61,7 +61,6 @@
         <!--quarkus-->
         <quarkus.version>3.39.2</quarkus.version>
 
-        <tomcat-embed-core.version>10.1.11</tomcat-embed-core.version>
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
 
 
@@ -168,13 +167,6 @@
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${jakarta.servlet-api.version}</version>
-            </dependency>
-
-            <!--Tomcat embed-->
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>${tomcat-embed-core.version}</version>
             </dependency>
 
             <!--OAS-->

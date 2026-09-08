@@ -2,11 +2,10 @@ package pro.api4.jsonapi4j.sampleapp.servlet;
 
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletContext;
-import org.eclipse.jetty.annotations.AnnotationConfiguration;
+import org.eclipse.jetty.ee11.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee11.webapp.WebAppContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -56,7 +55,7 @@ class ServletContainerInitializerDiscoveryTests {
 
         WebAppContext webApp = new WebAppContext();
         webApp.setContextPath("/");
-        webApp.setBaseResource(Resource.newResource(Files.createTempDirectory("jsonapi4j-sci-test")));
+        webApp.setBaseResourceAsPath(Files.createTempDirectory("jsonapi4j-sci-test"));
         // the sample's own config: the only one with both plugins on, so both initializers have work to do
         webApp.setInitParameter("jsonapi4j.config", "/jsonapi4j.yaml");
         // added to the defaults, not replacing them: AnnotationConfiguration relies on the standard ones having
