@@ -1,0 +1,46 @@
+name: Quarkus Compatibility
+
+# The extension is compiled against one Quarkus version but consumers run their own, and Quarkus' build-time
+# extension API (BuildStep, BuildItem) moves across minor releases - so "works on the version we pin" says little
+# about the versions people actually use. This walks the supported range instead.
+#
+# Weekly rather than per-PR: each entry is a full reactor build, and the extension changes rarely.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays 05:30 UTC, after the Spring Boot compatibility run.
+    - cron: '30 5 * * 1'
+
+concurrency:
+  group: quarkus-compatibility
+  cancel-in-progress: false
+
+jobs:
+  quarkus:
+    name: Quarkus ${{ matrix.quarkus }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      # One failing version must not hide the others - the point is to learn where the range ends.
+      fail-fast: false
+      matrix:
+        quarkus:
+          - '3.20.6'   # LTS - the documented floor
+          - '3.27.5'
+          - '3.39.2'   # the version the build pins by default
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 23
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+
+      # One property covers the extension and the sample app: the app's quarkus.platform.version follows
+      # quarkus.version, so they can never be tested as a mismatched pair.
+      - name: Verify against Quarkus ${{ matrix.quarkus }}
+        run: mvn -B clean verify -Dquarkus.version=${{ matrix.quarkus }}

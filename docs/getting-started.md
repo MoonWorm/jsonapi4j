@@ -65,6 +65,26 @@ Jetty, Undertow and Quarkus accept those characters as they are and need no equi
 configure your container for you: it is your connector, and a library reaching into it is surprising when you
 later set the same property yourself.
 
+#### Supported Versions
+
+| | Supported | Verified against |
+|---|---|---|
+| **Java** | 23+ | 23 |
+| **Spring Boot** | 3.4.x – 4.x | 3.4.2, 4.1.0 |
+| **Spring Security** | 6.x, 7.x | 6.4.2, 7.1.0 |
+| **Quarkus** | 3.20+ (LTS and newer) | 3.20.6, 3.27.5, 3.39.2 |
+| **Jakarta Servlet** | 6.0, 6.1 | Tomcat 10.1/11, Jetty 12, Undertow |
+
+**Quarkus 3.15 and earlier do not work.** On those versions the framework's plugin classes end up loaded by two
+different classloaders during the Quarkus build step, so a plugin instance can no longer be cast to the plugin
+interface the framework expects. CDI then reports the plugin's beans as unsatisfied and the application fails to
+start, with a `ClassCastException` naming the same class on both sides. Quarkus changed that classloading
+behaviour between 3.15 and 3.20; from **3.20** onwards it works. This was observed with the plugins on the
+classpath — an application using none of them has not been tested.
+
+The Java floor of **23+** comes from the framework's own compiler target, not from Spring or Quarkus, and it is
+the strictest constraint: neither Spring Boot 4 nor Quarkus 3.20 requires a JDK that new.
+
 #### Spring Boot Versions
 
 One artifact covers **Spring Boot 3.4.x and 4.x** — no classifier, no separate dependency, nothing to

@@ -58,6 +58,10 @@ Two things about that profile, both easy to break:
 - `spring.boot.version` is declared in both the root pom and `examples/pom.xml` (the examples aggregator is
   deliberately parentless and inherits nothing). The two must move together.
 - Never pass `-Pspring-boot-4` to `deploy` — the published pom must advertise the 3.x floor.
+- **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
+  `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
+  `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —
+  overriding only one silently tests a mismatched pair. Floor is **Quarkus 3.20**; 3.15 fails to augment.
 - The RestAssured family (`rest-assured`, `json-path`, `xml-path`, `rest-assured-common`) is managed as a
   set in `examples/pom.xml`. The Spring Boot BOM manages some of those artifacts, so pinning only
   `rest-assured` leaves a split family that fails with `ClassNotFoundException` at runtime.

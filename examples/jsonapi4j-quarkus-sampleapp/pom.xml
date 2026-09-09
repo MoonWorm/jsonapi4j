@@ -11,7 +11,7 @@
 
     <name>JsonApi4j - Examples - Quarkus Sample App</name>
 
-    <packaging>quarkus</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <compiler-plugin.version>3.16.0</compiler-plugin.version>
@@ -20,7 +20,13 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.39.2</quarkus.platform.version>
+        <!--Follows examples/pom.xml so a single -Dquarkus.version flips the extension and this app together;
+            they are separate properties otherwise, and overriding one alone silently tests a mixed pair.-->
+        <quarkus.platform.version>${quarkus.version}</quarkus.platform.version>
+        <!--Surefire and failsafe below use @{argLine} so a JaCoCo agent can inject itself. Nothing configures
+            JaCoCo in the examples tree (it is a parentless aggregator), and only recent Quarkus releases happen
+            to define the property, so it is defaulted here rather than left to resolve by luck of version.-->
+        <argLine></argLine>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.6.0</surefire-plugin.version>
     </properties>
@@ -66,7 +72,7 @@
         <!--Test Dependencies-->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit</artifactId>
+            <artifactId>quarkus-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -91,6 +97,17 @@
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.platform.version}</version>
                 <extensions>true</extensions>
+                <!--Goals bound explicitly rather than relying on <packaging>quarkus</packaging>, which only
+                    exists in recent Quarkus releases and would pin the whole build to them.-->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>generate-code</goal>
+                            <goal>generate-code-tests</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

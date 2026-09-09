@@ -134,6 +134,10 @@
                                 <path>
                                     <groupId>io.quarkus</groupId>
                                     <artifactId>quarkus-extension-processor</artifactId>
+                                    <!--Pinned rather than left to dependency management: older Quarkus lines do
+                                        not manage this artifact, and the build then fails with "Cannot find
+                                        version for annotation processor path".-->
+                                    <version>${quarkus.version}</version>
                                 </path>
                             </annotationProcessorPaths>
                             <annotationProcessorPathsUseDepMgmt>true</annotationProcessorPathsUseDepMgmt>
