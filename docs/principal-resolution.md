@@ -50,7 +50,8 @@ gateway and forward headers.
 Rules of thumb:
 
 * **A gateway terminates auth and forwards headers** → `DefaultPrincipalResolver`.
-* **Spring Boot with `spring-boot-starter-oauth2-resource-server`** → `SpringSecurityPrincipalResolver`.
+* **Spring Boot with `spring-boot-starter-oauth2-resource-server`** → `SpringSecurityPrincipalResolver`
+  (works on Spring Security 6 and 7, so Spring Boot 3 and 4 alike).
 * **Quarkus with `quarkus-oidc` or `quarkus-smallrye-jwt`** → `QuarkusJwtPrincipalResolver`.
 * **Plain servlet, or a gateway that forwards the raw JWT** → `JwtPrincipalResolver`, after reading the
   warning below.

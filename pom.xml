@@ -54,8 +54,7 @@
         <!--project revision-->
         <revision>1.11.0-SNAPSHOT</revision>
 
-        <!--spting/web-->
-        <spring.version>5.3.14</spring.version>
+        <!--spring/web-->
         <spring.boot.version>3.4.2</spring.boot.version>
 
         <!--quarkus-->
@@ -146,6 +145,11 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-test</artifactId>
                 <version>${spring.boot.version}</version>
             </dependency>
 

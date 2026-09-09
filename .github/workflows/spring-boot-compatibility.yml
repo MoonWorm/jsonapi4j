@@ -1,0 +1,67 @@
+name: Spring Boot Compatibility
+
+# Runs the one combination the Build matrix cannot: the artifact exactly as it is published - compiled against
+# the Spring Boot 3 floor - executing on a Spring Boot 4 runtime. That is what a Boot 4 user actually gets from
+# Maven Central, and neither Build axis reproduces it, because each axis recompiles the framework against the
+# version it tests.
+#
+# Pull requests build the Spring Boot 3 baseline only, to keep runner minutes down, so this workflow carries the
+# whole Boot 4 promise between releases:
+#
+#   1. compile-and-test the sources against Boot 4 - catches anything removed or changed in Boot 4;
+#   2. run the artifact as published (compiled on the Boot 3 floor) against a Boot 4 runtime - catches the
+#      narrower case of a change that is source-compatible but binary incompatible.
+#
+# The release workflow runs both as hard gates, so a Boot 4 regression can never reach Maven Central; it only
+# surfaces later than it would have on the pull request itself.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Mondays 05:00 UTC, before the weekly Dependabot run so a Spring bump lands against a known-good baseline.
+    - cron: '0 5 * * 1'
+
+concurrency:
+  group: spring-boot-compatibility
+  cancel-in-progress: false
+
+jobs:
+  sources-on-boot4:
+    name: Sources compiled and tested against Spring Boot 4
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 23
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+      - name: Verify against Spring Boot 4
+        run: mvn -B clean verify -Pspring-boot-4
+
+  published-artifact-on-boot4:
+    name: Boot 3 artifact on Boot 4 runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 23
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+
+      # Builds and installs the framework the way a release does - no profile - so the local repository holds
+      # artifacts compiled against Spring Boot 3.
+      - name: Install the framework as published (Spring Boot 3 baseline)
+        run: mvn -B clean install -DskipTests
+
+      # No -am on purpose: the sample app must resolve jsonapi4j-rest-springboot from the local repository rather
+      # than rebuild it, so the jar under test is the one installed above.
+      - name: Run the Spring sample app on a Spring Boot 4 runtime
+        run: mvn -B -pl examples/jsonapi4j-springboot-sampleapp test -Pspring-boot-4

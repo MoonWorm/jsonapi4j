@@ -3,7 +3,9 @@ package pro.api4.jsonapi4j.springboot.principal;
 import jakarta.servlet.ServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -97,6 +99,17 @@ class SpringSecurityPrincipalResolverTests {
 
     @Test
     void resolvesNothingWhenThereIsNoAuthentication() {
+        assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).isNull();
+        assertThat(resolver.resolvePrincipal(request).authenticatedClientEntitlements()).isNull();
+        assertThat(resolver.resolvePrincipal(request).attributes()).isEmpty();
+    }
+
+    @Test
+    void resolvesNothingForAnonymousAuthentication() {
+        SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken(
+                "key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
+
         assertThat(resolver.resolvePrincipal(request).authenticatedUserId()).isNull();
         assertThat(resolver.resolvePrincipal(request).authenticatedClientScopes()).isNull();
         assertThat(resolver.resolvePrincipal(request).authenticatedClientEntitlements()).isNull();

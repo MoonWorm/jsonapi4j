@@ -23,6 +23,9 @@
 
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
 
+        <spring.boot.version>3.4.2</spring.boot.version>
+        <springdoc-openapi.version>2.8.8</springdoc-openapi.version>
+
         <swagger.model.version>2.2.55</swagger.model.version>
         <lombok.version>1.18.48</lombok.version>
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
@@ -30,7 +33,7 @@
 
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
         <assertj-core.version>3.27.7</assertj-core.version>
-        <rest-assured.version>5.5.0</rest-assured.version>
+        <rest-assured.version>6.0.1</rest-assured.version>
         <json-unit.version>2.40.0</json-unit.version>
     </properties>
 
@@ -118,6 +121,24 @@
                 <artifactId>rest-assured</artifactId>
                 <version>${rest-assured.version}</version>
             </dependency>
+            <!--json-path, xml-path and rest-assured-common are managed by the Spring Boot BOM the sample apps
+                import, so pinning rest-assured alone leaves a split family - the artifacts load each other's
+                classes and fail with a ClassNotFoundException. All four move together.-->
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${rest-assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>xml-path</artifactId>
+                <version>${rest-assured.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured-common</artifactId>
+                <version>${rest-assured.version}</version>
+            </dependency>
             <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit</artifactId>
@@ -139,5 +160,21 @@
         </plugins>
     </build>
 
+
+    <profiles>
+        <!--Builds the sample apps against Spring Boot 4; springdoc 3.x is the generation that targets it. Same
+            id as the profile in jsonapi4j-rest-springboot, so one -Pspring-boot-4 covers the framework module and
+            the samples together.
+
+            The profile varies Spring Boot and nothing else on purpose: the test stack is identical on both axes,
+            so a failure here is attributable to Spring rather than to a swapped test library.-->
+        <profile>
+            <id>spring-boot-4</id>
+            <properties>
+                <spring.boot.version>4.1.0</spring.boot.version>
+                <springdoc-openapi.version>3.1.0</springdoc-openapi.version>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

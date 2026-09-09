@@ -51,9 +51,34 @@ Quarkus is the exception, and in a good way: there is nothing to choose. The `js
 extension builds on Quarkus' own servlet support (`quarkus-undertow`), which it brings in itself, so the
 container question never arises — and neither does the Tomcat note below.
 
-When Tomcat is on the classpath, the framework also relaxes its query-string parsing so JSON:API's
-`filter[...]` and `fields[...]` parameters work unencoded. Tomcat rejects raw `[` and `]` by default; other
-containers accept them as they are, so no equivalent tuning is applied there.
+**On Tomcat, one setting is required.** JSON:API sends `filter[...]` and `fields[...]` unencoded, and Tomcat
+rejects raw `[` and `]` in a query string by default — requests come back as `400 Bad Request`. Tell Tomcat to
+accept them:
+
+```yaml
+server:
+  tomcat:
+    relaxed-query-chars: "[,]"
+```
+
+Jetty, Undertow and Quarkus accept those characters as they are and need no equivalent. The framework does not
+configure your container for you: it is your connector, and a library reaching into it is surprising when you
+later set the same property yourself.
+
+#### Spring Boot Versions
+
+One artifact covers **Spring Boot 3.4.x and 4.x** — no classifier, no separate dependency, nothing to
+configure. `jsonapi4j-rest-springboot` is compiled against the 3.x floor and declares Spring Boot as
+`provided`, so your application's own Boot version decides what is on the classpath. Spring Security 6 and 7
+are both supported for [principal resolution](/principal-resolution/), as are springdoc 2.x and 3.x on the
+application side.
+
+The Java floor is **23+**, and it comes from the framework's own compiler target rather than from Spring —
+Spring Boot 4 support does not lower it.
+
+Spring Boot 4 defaults to Jackson 3 (`tools.jackson`), which changes nothing here: the framework builds its
+own Jackson 2 `ObjectMapper` rather than injecting your application's, and the two versions use different
+packages, so they coexist on one classpath.
 
 The Servlet API itself is a `provided` dependency — your container supplies it. The framework is built
 against **Jakarta Servlet 6.1** and is verified on Servlet 6.0 and 6.1 containers. Note the `jakarta.*`
@@ -118,6 +143,13 @@ your domain, not for `rootPath`.
 
 If the listener is missing, the endpoints still register but serve an empty API, and the startup log reports
 which registries were not found.
+
+On an external Tomcat there is no `application.yaml` to carry the query-character setting described above —
+set it on the `<Connector>` in `server.xml` instead:
+
+```xml
+<Connector port="8080" protocol="HTTP/1.1" relaxedQueryChars="[]" />
+```
 
 ### 2. Declare the Domain
 

@@ -24,7 +24,55 @@ mvn clean install                 # full build + tests
 mvn -pl <module> -am test         # build one module (and its deps), run its tests
 mvn -pl <module> test -Dtest=SomeClassTests           # single test class
 mvn -pl <module> test -Dtest=SomeClassTests#methodName  # single test method
+
+mvn clean verify -Pspring-boot-4  # same sources against Spring Boot 4 (see below)
 ```
+
+`jsonapi4j-rest-springboot` is one artifact supporting **Spring Boot 3 and 4**. The default build is the
+published baseline (Boot 3.4.x — compiling against the floor keeps a Boot-4-only API a compile error rather
+than a runtime failure for Boot 3 users). The `spring-boot-4` profile re-runs the same sources against Boot
+4.1, Spring Security 7 and springdoc 3. The test stack is identical on both axes, so a failure there is
+attributable to Spring rather than to a swapped test library. **Both must be green.**
+
+Pull requests build the Spring Boot 3 baseline only, to keep runner minutes down. Spring Boot 4 is covered by
+the weekly `spring-boot-compatibility.yml` and hard-gated in `release.yml`, so a Boot 4 regression cannot reach
+Maven Central — it just surfaces later than on the pull request itself. **Run `-Pspring-boot-4` locally before
+pushing anything that touches `jsonapi4j-rest-springboot`**, because PR CI will not catch it for you.
+
+A third combination — the artifact exactly as published (compiled against the Boot 3 floor) running on a Boot 4
+runtime — is what a Boot 4 user actually gets from Maven Central, and neither matrix axis reproduces it, since
+each axis recompiles the framework. It runs weekly in `spring-boot-compatibility.yml` and gates the release,
+not every pull request: anything *removed* in Boot 4 already fails the Boot 4 axis at compile time, so this
+only guards the rarer case of a source-compatible but binary-incompatible change. Reproduce locally with:
+
+```bash
+mvn -B clean install -DskipTests                                          # framework on the Boot 3 baseline
+mvn -B -pl examples/jsonapi4j-springboot-sampleapp test -Pspring-boot-4   # no -am: resolves the installed jar
+```
+
+Two things about that profile, both easy to break:
+
+- It is declared in `jsonapi4j-rest-springboot/pom.xml` and `examples/pom.xml`, **never in the root pom**.
+  Maven drops a POM's `activeByDefault` profiles as soon as another profile in that same POM activates, and
+  the root's `build-project` profile carries the surefire, source-jar and JaCoCo configuration.
+- `spring.boot.version` is declared in both the root pom and `examples/pom.xml` (the examples aggregator is
+  deliberately parentless and inherits nothing). The two must move together.
+- Never pass `-Pspring-boot-4` to `deploy` — the published pom must advertise the 3.x floor.
+- The RestAssured family (`rest-assured`, `json-path`, `xml-path`, `rest-assured-common`) is managed as a
+  set in `examples/pom.xml`. The Spring Boot BOM manages some of those artifacts, so pinning only
+  `rest-assured` leaves a split family that fails with `ClassNotFoundException` at runtime.
+- **springdoc's major version is tied to the Spring Boot generation and must move with the profile.**
+  springdoc 2.x is built against Boot 3; springdoc 3.x depends on `spring-boot-webmvc`,
+  `spring-boot-web-server` and `spring-boot-health`, which exist only in Boot 4. Putting springdoc 3 on a
+  Boot 3 application drags Boot 4 modules onto the classpath and the context fails with duplicate
+  auto-configuration beans. The coupling is **one-way**: springdoc 2 on Boot 4 works (verified by hand —
+  `/v3/api-docs` returns 200 on Boot 4.1.0 with springdoc 2.8.8), so the constraint is only "do not run
+  springdoc 3 on Boot 3". The profile still moves springdoc up with Boot to keep the sample app on the
+  generation each targets.
+- springdoc is only used by the Spring **sample app**, never by the framework — no framework module imports
+  `org.springdoc`. Nothing in the test suite exercises springdoc's own endpoints (`/v3/api-docs`,
+  `swagger-ui`); `OasDocumentTests` targets jsonapi4j's own OAS servlet at `jsonapi4j.oas.oasRootPath`. So
+  springdoc is verified to be classpath-compatible, not verified to work.
 
 - Modules are named by directory, e.g. `-pl jsonapi4j-core` or `-pl examples/jsonapi4j-springboot-sampleapp`.
 - **Verification policy:** there are **three sample apps** — Spring Boot, Quarkus, and Servlet

@@ -9,7 +9,50 @@ on:
         type: string
 
 jobs:
+  # The published artifact must work on both Spring Boot generations, so both are verified before anything is
+  # signed or uploaded. This job never deploys.
+  verify:
+    name: verify (Spring Boot ${{ matrix.spring-boot }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        spring-boot: [ 3, 4 ]
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 23
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+      - name: Verify with Maven
+        run: mvn -B verify ${{ matrix.spring-boot == 4 && '-Pspring-boot-4' || '' }} -Drevision=${{ github.event.inputs.version }}
+
+  # The combination a Boot 4 user actually gets from Maven Central: the artifact compiled against the Boot 3
+  # floor, running on a Boot 4 runtime. The verify matrix above recompiles per axis and so never exercises it.
+  verify-published-artifact:
+    name: verify published artifact on Spring Boot 4
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up JDK 23
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 23
+          cache: maven
+      - name: Install the framework as published (Spring Boot 3 baseline)
+        run: mvn -B clean install -DskipTests -Drevision=${{ github.event.inputs.version }}
+      # No -am: the sample app resolves the installed jar rather than rebuilding it.
+      - name: Run the Spring sample app on a Spring Boot 4 runtime
+        run: mvn -B -pl examples/jsonapi4j-springboot-sampleapp test -Pspring-boot-4 -Drevision=${{ github.event.inputs.version }}
+
   publish:
+    needs: [ verify, verify-published-artifact ]
     runs-on: ubuntu-latest
 
     steps:
@@ -43,5 +86,9 @@ jobs:
               }
             ]
 
+      # Never add -Pspring-boot-4 here. It would compile the published jar against Spring Boot 4, so any
+      # Boot-4-only API would slip through as a clean compile and then fail at runtime for Boot 3 users.
+      # (The published poms would still read 3.4.2 either way - the property lives in the root pom and the
+      # profile in a child - so the pom gives no warning that this happened.)
       - name: Build, Sign, and Publish to Sonatype Central
         run: mvn clean deploy -pl '.,jsonapi4j-base,jsonapi4j-core,jsonapi4j-plugins,jsonapi4j-plugins/jsonapi4j-ac-plugin,jsonapi4j-plugins/jsonapi4j-sf-plugin,jsonapi4j-plugins/jsonapi4j-oas-plugin,jsonapi4j-plugins/jsonapi4j-cd-plugin,jsonapi4j-plugins/jsonapi4j-all-plugins,jsonapi4j-rest,jsonapi4j-rest-springboot,jsonapi4j-rest-quarkus-parent,jsonapi4j-rest-quarkus-parent/runtime,jsonapi4j-rest-quarkus-parent/deployment,jsonapi4j-compound-docs-resolver' -Pdeploy-to-central -Drevision=${{ github.event.inputs.version }} -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}

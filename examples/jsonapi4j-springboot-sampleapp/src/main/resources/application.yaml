@@ -4,6 +4,10 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    # JSON:API sends filter[...] and fields[...] unencoded; Tomcat rejects raw '[' and ']' by default.
+    # Jetty, Undertow and Quarkus accept them as they are and need no equivalent setting.
+    relaxed-query-chars: "[,]"
 
 jsonapi4j:
   # JsonApi4j core settings

@@ -104,6 +104,11 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -120,5 +125,22 @@
         </dependency>
 
     </dependencies>
+
+    <profiles>
+        <!--Re-verifies this module against Spring Boot 4 without changing what is published: the compile baseline
+            stays on the 3.x floor by default, so a Boot-4-only API remains a compile error rather than a runtime
+            failure for Boot 3 users. Never pass this profile to `deploy`.
+
+            Declared here rather than in the root pom on purpose. Maven drops a POM's activeByDefault profiles as
+            soon as any other profile in that same POM activates, and the root's build-project profile carries the
+            surefire, source-jar and JaCoCo configuration - a root-level spring-boot-4 profile would silently strip all
+            three from the Boot 4 build.-->
+        <profile>
+            <id>spring-boot-4</id>
+            <properties>
+                <spring.boot.version>4.1.0</spring.boot.version>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
