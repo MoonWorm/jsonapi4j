@@ -23,7 +23,7 @@
 
         <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
 
-        <quarkus.version>3.39.2</quarkus.version>
+        <quarkus.version>3.20.6</quarkus.version>
         <spring.boot.version>3.4.2</spring.boot.version>
         <springdoc-openapi.version>2.8.8</springdoc-openapi.version>
 

@@ -75,6 +75,11 @@ later set the same property yourself.
 | **Quarkus** | 3.20+ (LTS and newer) | 3.20.6, 3.27.5, 3.39.2 |
 | **Jakarta Servlet** | 6.0, 6.1 | Tomcat 10.1/11, Jetty 12, Undertow |
 
+The framework is compiled against the **oldest** version in each supported range — Spring Boot 3.4, Quarkus 3.20,
+Servlet 6.0 — so the ranges above are enforced by the build rather than asserted. Newer versions are verified on
+a schedule. Because these dependencies are `provided`, the version the framework compiles against does not
+constrain your application: you bring your own.
+
 **Quarkus 3.15 and earlier do not work.** On those versions the framework's plugin classes end up loaded by two
 different classloaders during the Quarkus build step, so a plugin instance can no longer be cast to the plugin
 interface the framework expects. CDI then reports the plugin's beans as unsatisfied and the application fails to

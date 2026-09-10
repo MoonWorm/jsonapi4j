@@ -58,9 +58,16 @@
         <spring.boot.version>3.4.2</spring.boot.version>
 
         <!--quarkus-->
-        <quarkus.version>3.39.2</quarkus.version>
+        <!--The floor of the supported range, not the newest release: compiling against the oldest supported
+            Quarkus is what makes "we support 3.20+" enforceable. Newer versions are verified by
+            quarkus-compatibility.yml. Keep this in step with the same property in
+            jsonapi4j-rest-quarkus-parent and examples.-->
+        <quarkus.version>3.20.6</quarkus.version>
 
-        <jakarta.servlet-api.version>6.1.0</jakarta.servlet-api.version>
+        <!--Servlet 6.0, the floor of the supported range - a 6.1-only API is then a compile error rather than a
+            runtime failure for a Servlet 6.0 container. The sample apps deliberately run 6.1 (see
+            examples/pom.xml), so both ends of the range are exercised.-->
+        <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
 
 
         <!--json/yaml-->

@@ -58,6 +58,10 @@ Two things about that profile, both easy to break:
 - `spring.boot.version` is declared in both the root pom and `examples/pom.xml` (the examples aggregator is
   deliberately parentless and inherits nothing). The two must move together.
 - Never pass `-Pspring-boot-4` to `deploy` — the published pom must advertise the 3.x floor.
+- **The rule for every integration: compile against the floor of the supported range, verify the ceiling on a
+  schedule.** Spring Boot is pinned to 3.4.2, Quarkus to 3.20.6, Jakarta Servlet to 6.0.0 — each the oldest
+  version still supported, so using anything newer is a compile error rather than a runtime failure in someone
+  else's application. Raise a floor only when that version is dropped from support.
 - **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
   `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
   `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —
