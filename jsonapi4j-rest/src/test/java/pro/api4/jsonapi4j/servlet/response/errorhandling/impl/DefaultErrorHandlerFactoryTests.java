@@ -146,7 +146,7 @@ class DefaultErrorHandlerFactoryTests {
 
         // then
         assertThat(doc.getErrors()).hasSize(1);
-        ErrorObject error = doc.getErrors().getFirst();
+        ErrorObject error = doc.getErrors().get(0);
         assertThat(error.getStatus()).isEqualTo("400");
         assertThat(error.getCode()).isEqualTo("VALUE_INVALID_FORMAT");
         assertThat(error.getDetail()).isEqualTo("invalid email");
@@ -187,7 +187,7 @@ class DefaultErrorHandlerFactoryTests {
 
     private void assertSingleError(ErrorsDoc doc, String expectedStatus, String expectedCode, String expectedDetail) {
         assertThat(doc.getErrors()).hasSize(1);
-        ErrorObject error = doc.getErrors().getFirst();
+        ErrorObject error = doc.getErrors().get(0);
         assertThat(error.getStatus()).isEqualTo(expectedStatus);
         assertThat(error.getCode()).isEqualTo(expectedCode);
         assertThat(error.getDetail()).isEqualTo(expectedDetail);

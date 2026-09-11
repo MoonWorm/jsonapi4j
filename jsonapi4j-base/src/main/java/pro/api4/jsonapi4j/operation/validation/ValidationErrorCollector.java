@@ -88,7 +88,7 @@ public class ValidationErrorCollector {
      */
     public void throwIfErrors() {
         if (errors.size() == 1) {
-            ValidationError error = errors.getFirst();
+            ValidationError error = errors.get(0);
             throw new JsonApiRequestValidationException(error.errorCode(), error.detail(), error.source());
         } else if (errors.size() > 1) {
             throw new CompositeJsonApiRequestValidationException(List.copyOf(errors));

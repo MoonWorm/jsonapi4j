@@ -32,7 +32,7 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
         if (CollectionUtils.isEmpty(result)) {
             throw new ResourceNotFoundException(id, new ResourceType(COUNTRIES));
         }
-        return result.getFirst();
+        return result.get(0);
     }
 
     @OasOperationInfo(

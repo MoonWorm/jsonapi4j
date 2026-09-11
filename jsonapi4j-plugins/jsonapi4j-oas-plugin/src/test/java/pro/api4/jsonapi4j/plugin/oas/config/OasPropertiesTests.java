@@ -128,15 +128,15 @@ public class OasPropertiesTests {
 
         @Test
         public void validate_enabledServerWithoutUrl_reportsError() {
-            sut.getServers().getFirst().setUrl(null);
+            sut.getServers().get(0).setUrl(null);
 
             assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.oas.servers[0].url");
         }
 
         @Test
         public void validate_disabledServerWithoutUrl_returnsNoErrors() {
-            sut.getServers().getFirst().setEnabled(false);
-            sut.getServers().getFirst().setUrl(null);
+            sut.getServers().get(0).setEnabled(false);
+            sut.getServers().get(0).setUrl(null);
 
             assertThat(sut.validate().hasErrors()).isFalse();
         }
@@ -171,7 +171,7 @@ public class OasPropertiesTests {
 
         @Test
         public void validate_blankScopeName_reportsError() {
-            sut.getOauth2().getAuthorizationCodeWithPkce().getScopes().getFirst().setName(" ");
+            sut.getOauth2().getAuthorizationCodeWithPkce().getScopes().get(0).setName(" ");
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[0].name");
@@ -196,7 +196,7 @@ public class OasPropertiesTests {
         @ParameterizedTest
         @ValueSource(strings = {"4XX", "429 Too Many Requests", "42"})
         public void validate_httpStatusCodeIsNotThreeDigits_reportsError(String httpStatusCode) {
-            sut.getCustomResponseHeaders().getFirst().setHttpStatusCode(httpStatusCode);
+            sut.getCustomResponseHeaders().get(0).setHttpStatusCode(httpStatusCode);
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].httpStatusCode");
@@ -204,7 +204,7 @@ public class OasPropertiesTests {
 
         @Test
         public void validate_unsupportedHeaderSchema_reportsError() {
-            sut.getCustomResponseHeaders().getFirst().getHeaders().getFirst().setSchema("number");
+            sut.getCustomResponseHeaders().get(0).getHeaders().get(0).setSchema("number");
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].headers[0].schema");
@@ -212,7 +212,7 @@ public class OasPropertiesTests {
 
         @Test
         public void validate_groupWithoutHeaders_reportsError() {
-            sut.getCustomResponseHeaders().getFirst().setHeaders(List.of());
+            sut.getCustomResponseHeaders().get(0).setHeaders(List.of());
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].headers");

@@ -25,10 +25,12 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.EXECUTOR_SERVICE_ATT_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_DISPATCHER_SERVLET_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_PRINCIPAL_RESOLVING_FILTER_NAME;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.JSONAPI4J_REQUEST_BODY_CACHING_FILTER_NAME;
@@ -236,6 +238,39 @@ class ServletContainerInitializerDiscoveryTests {
             assertThat(resolverInvoked).isTrue();
         }
 
+    }
+
+    /**
+     * The framework's default executor is a cached thread pool, whose threads are non-daemon and outlive their last
+     * task. In a war that is a leak with teeth: the threads survive undeploy, and the dead webapp's classloader stays
+     * reachable through them. Nothing about it is visible in an executable jar, where the JVM exits regardless, so it
+     * has to be pinned down in a real container.
+     */
+    @Nested
+    class Undeploy {
+
+        @Test
+        void undeploy_executorCreatedByTheFramework_isShutDown() throws Exception {
+            ServletContext servletContext = startScannedWebApp();
+            ExecutorService executorService = (ExecutorService) servletContext.getAttribute(EXECUTOR_SERVICE_ATT_NAME);
+            assertThat(executorService).isNotNull();
+
+            server.stop();
+
+            assertThat(executorService.isShutdown()).isTrue();
+        }
+
+        @Test
+        void undeploy_executorSuppliedByTheApplication_isLeftRunning() throws Exception {
+            ExecutorService applicationExecutor = java.util.concurrent.Executors.newCachedThreadPool();
+            startScannedWebAppWithListener(servletContext ->
+                    servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, applicationExecutor));
+
+            server.stop();
+
+            assertThat(applicationExecutor.isShutdown()).isFalse();
+            applicationExecutor.shutdown();
+        }
     }
 
     /**

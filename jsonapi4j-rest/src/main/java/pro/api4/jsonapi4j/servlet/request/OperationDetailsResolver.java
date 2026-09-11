@@ -44,7 +44,7 @@ public class OperationDetailsResolver {
             throw new OperationNotFoundException(appRelativePath, methodString, "Invalid JSON:API path");
         }
         Method methodEnum = fromString(methodString);
-        String resourceTypeStr = pathFragments.getFirst();
+        String resourceTypeStr = pathFragments.get(0);
         ResourceType resourceType = domainRegistry.getResourceType(resourceTypeStr);
         if (resourceType == null) {
             throw new OperationNotFoundException(appRelativePath, methodString, "Unknown resource type: " + resourceTypeStr);

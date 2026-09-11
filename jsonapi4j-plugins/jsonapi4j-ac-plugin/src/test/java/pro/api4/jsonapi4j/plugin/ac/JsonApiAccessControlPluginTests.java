@@ -87,7 +87,7 @@ public class JsonApiAccessControlPluginTests {
         assertThat(result.getAuthenticated().getAuthenticated()).isNotNull().isEqualTo(Authenticated.AUTHENTICATED);
 
         assertThat(result.getRequiredEntitlements()).isNotNull();
-        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements()).isEqualTo(Set.of(ADMIN));
+        assertThat(result.getRequiredEntitlements().getGroups().get(0).getEntitlements()).isEqualTo(Set.of(ADMIN));
 
         assertThat(result.getRequiredOwnership()).isNull();
         assertThat(result.getRequiredScopes()).isNull();

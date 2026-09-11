@@ -32,8 +32,8 @@ class AccessControlEntitlementsModelTests {
 
             assertThat(actualResult.getMode()).isEqualTo(AccessControlEntitlementsModel.Mode.ANY_OF);
             assertThat(actualResult.getGroups()).hasSize(2);
-            assertThat(actualResult.getGroups().getFirst().getEntitlements()).isEqualTo(Set.of("ADMIN", "SUPPORT"));
-            assertThat(actualResult.getGroups().getFirst().getMode())
+            assertThat(actualResult.getGroups().get(0).getEntitlements()).isEqualTo(Set.of("ADMIN", "SUPPORT"));
+            assertThat(actualResult.getGroups().get(0).getMode())
                     .isEqualTo(EntitlementsGroupModel.Mode.ALL_OF);
         }
 
@@ -45,7 +45,7 @@ class AccessControlEntitlementsModelTests {
 
         @Test
         void fromAnnotation_groupModeOmitted_modeIsAnyOf() {
-            assertThat(modelOf(DefaultContainerModeResource.class).getGroups().getFirst().getMode())
+            assertThat(modelOf(DefaultContainerModeResource.class).getGroups().get(0).getMode())
                     .isEqualTo(EntitlementsGroupModel.Mode.ANY_OF);
         }
 
@@ -66,7 +66,7 @@ class AccessControlEntitlementsModelTests {
 
         @Test
         void fromAnnotation_duplicatedEntitlements_deduplicated() {
-            assertThat(modelOf(DuplicatedEntitlementsResource.class).getGroups().getFirst().getEntitlements())
+            assertThat(modelOf(DuplicatedEntitlementsResource.class).getGroups().get(0).getEntitlements())
                     .isEqualTo(Set.of("ADMIN"));
         }
 
@@ -88,7 +88,7 @@ class AccessControlEntitlementsModelTests {
         void fromAnnotation_builtModel_clauseNamesRejectMutation() {
             AccessControlEntitlementsModel actualResult = modelOf(TwoClausesResource.class);
 
-            assertThatThrownBy(() -> actualResult.getGroups().getFirst().getEntitlements().clear())
+            assertThatThrownBy(() -> actualResult.getGroups().get(0).getEntitlements().clear())
                     .isInstanceOf(UnsupportedOperationException.class);
         }
 

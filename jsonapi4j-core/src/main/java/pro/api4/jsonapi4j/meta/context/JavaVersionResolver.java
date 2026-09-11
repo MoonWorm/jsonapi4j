@@ -7,7 +7,7 @@ public final class JavaVersionResolver {
     }
 
     /**
-     * @return the current Java runtime version (e.g. {@code 23.0.1}).
+     * @return the current Java runtime version (e.g. {@code 17.0.19}).
      */
     public static String resolveJavaVersion() {
         return Runtime.version().toString();

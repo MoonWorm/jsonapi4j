@@ -206,7 +206,7 @@ public class CachingCompoundDocsFetcher {
         if (chunks.size() == 1) {
             // Fast path: no fan-out needed
             return Collections.singletonList(httpClient.doBatchFetch(
-                    domainSettings.url(), resourceType, chunks.getFirst(),
+                    domainSettings.url(), resourceType, chunks.get(0),
                     includes, originalRequest, config, metaHeaders));
         }
 

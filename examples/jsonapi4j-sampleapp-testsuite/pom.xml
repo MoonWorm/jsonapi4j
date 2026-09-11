@@ -14,7 +14,7 @@
     <name>JsonApi4j - Examples - TestSuite for Shared Domain / Operations</name>
 
     <properties>
-        <maven.compiler.release>23</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jackson.version>2.22.2</jackson.version>
     </properties>

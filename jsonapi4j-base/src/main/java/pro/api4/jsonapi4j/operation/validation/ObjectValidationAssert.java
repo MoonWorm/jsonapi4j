@@ -423,8 +423,8 @@ public class ObjectValidationAssert<SELF extends ObjectValidationAssert<SELF, AC
     }
 
     private static ErrorSources.Source appendToSource(ErrorSources.Source current, String fieldName) {
-        if (current instanceof ErrorSources.JsonPointer(String pointer)) {
-            return new ErrorSources.JsonPointer(pointer + "/" + fieldName);
+        if (current instanceof ErrorSources.JsonPointer jsonPointer) {
+            return new ErrorSources.JsonPointer(jsonPointer.pointer() + "/" + fieldName);
         }
         return new ErrorSources.JsonPointer("/" + fieldName);
     }

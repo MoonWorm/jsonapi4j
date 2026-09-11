@@ -153,7 +153,7 @@ class ClaimsPrincipalMapperTests {
         List<String> entitlements = mapper.resolveEntitlements(Map.of("entitlements", "ADMIN"));
 
         assertThat(entitlements).isNotNull().isNotEmpty();
-        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
+        assertThat(entitlements.get(0)).isEqualTo("ADMIN");
     }
 
     @Test
@@ -178,7 +178,7 @@ class ClaimsPrincipalMapperTests {
         List<String> entitlements = entitlementsMapper.resolveEntitlements(Map.of(ENTITLEMENTS_CLAIM, "ADMIN"));
 
         assertThat(entitlements).isNotNull().isNotEmpty();
-        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
+        assertThat(entitlements.get(0)).isEqualTo("ADMIN");
     }
 
     @Test

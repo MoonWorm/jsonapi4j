@@ -19,6 +19,10 @@ docs:
         url: /write-operations/
       - title: "Request/Response Examples"
         url: /request-response-examples/
+      - title: "Deployment"
+        url: /deployment/
+      - title: "Compatibility"
+        url: /compatibility/
   - title: "AI-Assisted Development"
     children:
       - title: "AI-Assisted Development"

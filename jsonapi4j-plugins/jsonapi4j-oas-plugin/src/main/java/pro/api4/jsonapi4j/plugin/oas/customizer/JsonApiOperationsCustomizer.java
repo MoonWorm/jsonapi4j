@@ -642,7 +642,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         sortParam.setIn("query");
         sortParam.setRequired(false);
         sortParam.setDescription("Sort order. Prefix a field with '-' for descending, e.g. '-"
-                + sortableFields.getFirst() + "'. Optional");
+                + sortableFields.get(0) + "'. Optional");
 
         StringSchema itemSchema = new StringSchema();
         allowedValues.forEach(itemSchema::addEnumItem);

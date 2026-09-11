@@ -12,7 +12,11 @@ sources it points to, not here.
 
 - **groupId:** `pro.api4` · **Apache 2.0** · maintainer: Aliaksei Taliuk
 - **Version:** single source of truth is `<revision>` in the root `pom.xml`. Bump it there only.
-- **Java release:** see `<maven.compiler.release>` in the root `pom.xml` (currently 23).
+- **Java release:** see `<maven.compiler.release>` in the root `pom.xml` (currently 17). Framework code must
+  stay within Java 17 — no record deconstruction patterns, no pattern matching for `switch`, no sequenced
+  collections (`List.getFirst()`), no virtual-thread APIs. `--release 17` turns each of those into a compile
+  error, so the constraint is enforced rather than assumed. Build on JDK 17 locally (`17.0.9`+, for
+  `-proc:full`); newer JDKs run the suite fine but will not catch a Java 18+ API for you.
 - **Docs:** https://api4.pro · **Repo:** https://github.com/MoonWorm/jsonapi4j
 - **Canonical references** (don't duplicate them here): root `README.md`, the `docs/*.md` pages,
   and per-module `README.md` files.
@@ -29,7 +33,7 @@ mvn clean verify -Pspring-boot-4  # same sources against Spring Boot 4 (see belo
 ```
 
 `jsonapi4j-rest-springboot` is one artifact supporting **Spring Boot 3 and 4**. The default build is the
-published baseline (Boot 3.4.x — compiling against the floor keeps a Boot-4-only API a compile error rather
+published baseline (Boot 3.0.x — compiling against the floor keeps a Boot-4-only API a compile error rather
 than a runtime failure for Boot 3 users). The `spring-boot-4` profile re-runs the same sources against Boot
 4.1, Spring Security 7 and springdoc 3. The test stack is identical on both axes, so a failure there is
 attributable to Spring rather than to a swapped test library. **Both must be green.**
@@ -56,12 +60,23 @@ Two things about that profile, both easy to break:
   Maven drops a POM's `activeByDefault` profiles as soon as another profile in that same POM activates, and
   the root's `build-project` profile carries the surefire, source-jar and JaCoCo configuration.
 - `spring.boot.version` is declared in both the root pom and `examples/pom.xml` (the examples aggregator is
-  deliberately parentless and inherits nothing). The two must move together.
+  deliberately parentless and inherits nothing). They are separate on purpose: the framework compiles against
+  the floor, while the sample apps run a current Boot. Do not assume one tracks the other.
+- `spring.framework.version` moves with `spring.boot.version` and must name the Spring Framework generation
+  that Boot version ships. `spring-boot-test` only pulls `spring-test` transitively from Boot 3.3 onwards, so
+  the test classpath declares it explicitly, and Spring does not support mixing Framework module versions.
+  When overriding the Boot version on the command line, always pass both:
+  `-Dspring.boot.version=3.2.0 -Dspring.framework.version=6.1.1`.
 - Never pass `-Pspring-boot-4` to `deploy` — the published pom must advertise the 3.x floor.
 - **The rule for every integration: compile against the floor of the supported range, verify the ceiling on a
-  schedule.** Spring Boot is pinned to 3.4.2, Quarkus to 3.20.6, Jakarta Servlet to 6.0.0 — each the oldest
-  version still supported, so using anything newer is a compile error rather than a runtime failure in someone
-  else's application. Raise a floor only when that version is dropped from support.
+  schedule.** Java is pinned to 17, Spring Boot to 3.0.0, Quarkus to 3.20.6, Jakarta Servlet to 6.0.0 — each
+  the oldest version still supported, so using anything newer is a compile error rather than a runtime failure
+  in someone else's application. Raise a floor only when that version is dropped from support.
+- **Dependabot is configured to ignore the floor coordinates** (`.github/dependabot.yml`): Spring Boot,
+  `spring-test`, Quarkus and `jakarta.servlet-api`. A bump there raises the floor *silently* — compiling
+  against a newer version never fails — so the build would stay green while the published jar quietly stopped
+  matching `docs/compatibility.md`. Raise a floor by hand: edit the property, run the matching compatibility
+  workflow, then update the table in `docs/compatibility.md`.
 - **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
   `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
   `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —

@@ -349,6 +349,13 @@ public final class ReflectionUtils {
              current != null && current != Object.class && !isLeafType(current);
              current = current.getSuperclass()) {
             for (Field field : current.getDeclaredFields()) {
+                // Compiler-generated fields are not part of the domain: an inner class carries a synthetic
+                // this$0 reference to its enclosing instance, and traversing it walks back out of the type
+                // being described. javac since 18 omits that field when it is unused, so whether it appears
+                // depends on the Java release the application was compiled with - the framework must not.
+                if (field.isSynthetic()) {
+                    continue;
+                }
                 String path = prefix.isEmpty()
                         ? field.getName()
                         : prefix + "." + field.getName();

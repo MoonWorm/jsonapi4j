@@ -118,7 +118,7 @@ public class ResponseHeaders {
             if (StringUtils.isBlank(originalCacheControlHeaderValue)
                     && propagatedControlHeaderValue != null
                     && propagatedControlHeaderValue.size() == 1) {
-                response.addHeader(HttpHeaders.CACHE_CONTROL.getName(), propagatedControlHeaderValue.getFirst());
+                response.addHeader(HttpHeaders.CACHE_CONTROL.getName(), propagatedControlHeaderValue.get(0));
             }
         }
 
@@ -128,7 +128,7 @@ public class ResponseHeaders {
         HEADERS.get().forEach((header, value) -> {
             if (CollectionUtils.isNotEmpty(value)) {
                 if (value.size() == 1) {
-                    response.addHeader(header, value.getFirst());
+                    response.addHeader(header, value.get(0));
                 } else {
                     value.forEach(v -> {
                         if (v != null) {

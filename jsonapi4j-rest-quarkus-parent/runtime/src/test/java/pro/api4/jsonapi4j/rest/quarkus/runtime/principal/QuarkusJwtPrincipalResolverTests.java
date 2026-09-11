@@ -152,8 +152,8 @@ class QuarkusJwtPrincipalResolverTests {
         List<String> entitlements = resolver.resolvePrincipal(request).authenticatedClientEntitlements();
 
         assertThat(entitlements).isNotNull().hasSize(1);
-        assertThat(entitlements.getFirst()).isNotNull();
-        assertThat(entitlements.getFirst()).isEqualTo("ADMIN");
+        assertThat(entitlements.get(0)).isNotNull();
+        assertThat(entitlements.get(0)).isEqualTo("ADMIN");
     }
 
     // --- fails closed ---

@@ -22,7 +22,7 @@ class OutboundAccessControlForCustomClassTests {
             OutboundAccessControlForCustomClass actualResult
                     = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(new TargetClass());
 
-            assertThat(actualResult.getClassLevel().getRequiredScopes().getGroups().getFirst().getScopes())
+            assertThat(actualResult.getClassLevel().getRequiredScopes().getGroups().get(0).getScopes())
                     .isEqualTo(Set.of("TargetClass"));
         }
 
@@ -40,7 +40,7 @@ class OutboundAccessControlForCustomClassTests {
                     = OutboundAccessControlForCustomClass.fromClassAnnotationsOf(new TargetClass());
 
             assertThat(actualResult.getFieldLevel().get("t1").getRequiredScopes()
-                    .getGroups().getFirst().getScopes()).isEqualTo(Set.of("t1"));
+                    .getGroups().get(0).getScopes()).isEqualTo(Set.of("t1"));
         }
 
         @Test

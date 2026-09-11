@@ -67,7 +67,8 @@ public class ConcurrentExecutorTests {
 
         int THREADS_COUNT = 24;
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT)) {
+        ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+        try {
             new MultipleResourcesProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executorService)
@@ -214,6 +215,8 @@ public class ConcurrentExecutorTests {
                             }
                     );
             System.out.println("Took: " + (System.currentTimeMillis() - start));
+        } finally {
+            executorService.shutdown();
         }
     }
 
@@ -232,7 +235,8 @@ public class ConcurrentExecutorTests {
 
         int THREADS_COUNT = 6;
 
-        try (ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT)) {
+        ExecutorService executorService = Executors.newFixedThreadPool(THREADS_COUNT);
+        try {
             new SingleResourceProcessor()
                     .forRequest(request)
                     .concurrentRelationshipResolution(executorService)
@@ -354,6 +358,8 @@ public class ConcurrentExecutorTests {
                             }
                     );
             System.out.println("Took: " + (System.currentTimeMillis() - start));
+        } finally {
+            executorService.shutdown();
         }
     }
 

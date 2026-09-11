@@ -28,7 +28,7 @@ class AccessControlScopesModelTests {
 
             assertThat(actualResult.getMode()).isEqualTo(AccessControlScopesModel.Mode.ANY_OF);
             assertThat(actualResult.getGroups()).hasSize(2);
-            assertThat(actualResult.getGroups().getFirst().getScopes())
+            assertThat(actualResult.getGroups().get(0).getScopes())
                     .isEqualTo(Set.of("users.read", "profiles.read"));
         }
 
@@ -41,7 +41,7 @@ class AccessControlScopesModelTests {
         @Test
         void fromAnnotation_groupModeOmitted_modeIsAllOf() {
             // scopes normally ask for every scope they list, unlike entitlements which default to ANY_OF
-            assertThat(modelOf(SingleClauseResource.class).getGroups().getFirst().getMode())
+            assertThat(modelOf(SingleClauseResource.class).getGroups().get(0).getMode())
                     .isEqualTo(ScopesGroupModel.Mode.ALL_OF);
         }
 
@@ -73,7 +73,7 @@ class AccessControlScopesModelTests {
         void fromAnnotation_builtModel_clauseNamesRejectMutation() {
             AccessControlScopesModel actualResult = modelOf(SingleClauseResource.class);
 
-            assertThatThrownBy(() -> actualResult.getGroups().getFirst().getScopes().clear())
+            assertThatThrownBy(() -> actualResult.getGroups().get(0).getScopes().clear())
                     .isInstanceOf(UnsupportedOperationException.class);
         }
 

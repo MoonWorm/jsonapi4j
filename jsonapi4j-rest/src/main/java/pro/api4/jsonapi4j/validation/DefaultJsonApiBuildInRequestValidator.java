@@ -305,8 +305,8 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 .map(RelationshipName::getName)
                 .collect(Collectors.toSet());
 
-        relationships.forEach((relationshipNameObj, relationshipDocObj) -> {
-            if (relationshipNameObj instanceof String relationshipName) {
+        relationships.forEach((relationshipName, relationshipDocObj) -> {
+            if (relationshipName != null) {
                 if (availableToOneRelationshipNames.contains(relationshipName)) {
                     try {
                         ToOneRelationshipObject toOneRelationshipObject = objectMapper.convertValue(relationshipDocObj, ToOneRelationshipObject.class);
@@ -338,8 +338,8 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                 }
             } else {
                 throw new InvalidPayloadException(
-                        "Invalid relationship name " + relationshipNameObj,
-                        ErrorSources.pointer().data().relationship(String.valueOf(relationshipNameObj)).toPointer(),
+                        "Invalid relationship name " + relationshipName,
+                        ErrorSources.pointer().data().relationship(String.valueOf(relationshipName)).toPointer(),
                         doc
                 );
             }

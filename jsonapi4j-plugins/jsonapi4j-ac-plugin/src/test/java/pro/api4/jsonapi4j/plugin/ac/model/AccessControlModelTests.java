@@ -77,10 +77,10 @@ public class AccessControlModelTests {
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.AUTHENTICATED);
         assertThat(result.getRequiredEntitlements()).isNotNull();
-        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+        assertThat(result.getRequiredEntitlements().getGroups().get(0).getEntitlements())
                 .isEqualTo(Set.of(ADMIN));
         assertThat(result.getRequiredScopes()).isNotNull();
-        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla"));
+        assertThat(result.getRequiredScopes().getGroups().get(0).getScopes()).isEqualTo(Set.of("bla"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)
@@ -114,10 +114,10 @@ public class AccessControlModelTests {
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.AUTHENTICATED);
         assertThat(result.getRequiredEntitlements()).isNotNull();
-        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+        assertThat(result.getRequiredEntitlements().getGroups().get(0).getEntitlements())
                 .isEqualTo(Set.of(ADMIN));
         assertThat(result.getRequiredScopes()).isNotNull();
-        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla"));
+        assertThat(result.getRequiredScopes().getGroups().get(0).getScopes()).isEqualTo(Set.of("bla"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)
@@ -160,10 +160,10 @@ public class AccessControlModelTests {
                 .extracting(AccessControlAuthenticatedModel::getAuthenticated)
                 .isEqualTo(Authenticated.ANONYMOUS);
         assertThat(result.getRequiredEntitlements()).isNotNull();
-        assertThat(result.getRequiredEntitlements().getGroups().getFirst().getEntitlements())
+        assertThat(result.getRequiredEntitlements().getGroups().get(0).getEntitlements())
                 .isEqualTo(Set.of(ROOT_ADMIN));
         assertThat(result.getRequiredScopes()).isNotNull();
-        assertThat(result.getRequiredScopes().getGroups().getFirst().getScopes()).isEqualTo(Set.of("bla", "bla2"));
+        assertThat(result.getRequiredScopes().getGroups().get(0).getScopes()).isEqualTo(Set.of("bla", "bla2"));
         assertThat(result.getRequiredOwnership())
                 .isNotNull()
                 .extracting(AccessControlOwnershipModel::getOwnerIdFieldPath)

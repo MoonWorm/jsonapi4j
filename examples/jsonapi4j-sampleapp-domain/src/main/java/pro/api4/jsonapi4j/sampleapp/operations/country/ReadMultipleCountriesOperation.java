@@ -102,7 +102,7 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
         } else if (request.getFilters().containsKey(REGION_FILTER_NAME)) {
             return PaginationAwareResponse.inMemoryCursorAware(
                     readCountriesByRegion(
-                            request.getFilters().get(REGION_FILTER_NAME).getFirst(),
+                            request.getFilters().get(REGION_FILTER_NAME).get(0),
                             client
                     ),
                     request.getCursor()
@@ -128,7 +128,7 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
                         .withFilterValidator(REGION_FILTER_NAME, regions ->
                                 regions.ifPresent().asList().satisfies(raw -> {
                                     if (!raw.isEmpty()) {
-                                        Validate.assertThat(raw.getFirst()).isOneOf(
+                                        Validate.assertThat(raw.get(0)).isOneOf(
                                                 Arrays.stream(Region.values()).map(Enum::name).toArray(String[]::new));
                                     }
                                 })))

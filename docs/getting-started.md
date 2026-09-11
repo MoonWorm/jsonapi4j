@@ -41,19 +41,13 @@ Let's take a quick look at what a typical **JsonApi4j**-based service looks like
 
 The framework modules are published to Maven Central. You can find the latest available versions [here](https://mvnrepository.com/artifact/pro.api4).
 
-#### Servlet Containers
+JsonApi4j runs on whichever servlet container your application already uses — Tomcat, Jetty and Undertow are
+each verified against the full test suite, and Quarkus brings its own. See [Deployment](/deployment/) for the
+details, including how to deploy as a WAR, and [Compatibility](/compatibility/) for supported versions of
+Java, Spring Boot, Quarkus and the Servlet API.
 
-**JsonApi4j** does not tie you to a particular servlet container. The Spring Boot integration runs on
-whichever container your application already uses — **Tomcat**, **Jetty** and **Undertow** are each verified
-against the full test suite. Deploying as a WAR leaves the choice to whichever container you deploy into.
-
-Quarkus is the exception, and in a good way: there is nothing to choose. The `jsonapi4j-rest-quarkus`
-extension builds on Quarkus' own servlet support (`quarkus-undertow`), which it brings in itself, so the
-container question never arises — and neither does the Tomcat note below.
-
-**On Tomcat, one setting is required.** JSON:API sends `filter[...]` and `fields[...]` unencoded, and Tomcat
-rejects raw `[` and `]` in a query string by default — requests come back as `400 Bad Request`. Tell Tomcat to
-accept them:
+**One setting is required on Tomcat.** JSON:API sends `filter[...]` and `fields[...]` unencoded, and Tomcat
+rejects raw `[` and `]` in a query string by default, so requests come back as `400 Bad Request`:
 
 ```yaml
 server:
@@ -61,120 +55,8 @@ server:
     relaxed-query-chars: "[,]"
 ```
 
-Jetty, Undertow and Quarkus accept those characters as they are and need no equivalent. The framework does not
-configure your container for you: it is your connector, and a library reaching into it is surprising when you
-later set the same property yourself.
-
-#### Supported Versions
-
-| | Supported | Verified against |
-|---|---|---|
-| **Java** | 23+ | 23 |
-| **Spring Boot** | 3.4.x – 4.x | 3.4.2, 4.1.0 |
-| **Spring Security** | 6.x, 7.x | 6.4.2, 7.1.0 |
-| **Quarkus** | 3.20+ (LTS and newer) | 3.20.6, 3.27.5, 3.39.2 |
-| **Jakarta Servlet** | 6.0, 6.1 | Tomcat 10.1/11, Jetty 12, Undertow |
-
-The framework is compiled against the **oldest** version in each supported range — Spring Boot 3.4, Quarkus 3.20,
-Servlet 6.0 — so the ranges above are enforced by the build rather than asserted. Newer versions are verified on
-a schedule. Because these dependencies are `provided`, the version the framework compiles against does not
-constrain your application: you bring your own.
-
-**Quarkus 3.15 and earlier do not work.** On those versions the framework's plugin classes end up loaded by two
-different classloaders during the Quarkus build step, so a plugin instance can no longer be cast to the plugin
-interface the framework expects. CDI then reports the plugin's beans as unsatisfied and the application fails to
-start, with a `ClassCastException` naming the same class on both sides. Quarkus changed that classloading
-behaviour between 3.15 and 3.20; from **3.20** onwards it works. This was observed with the plugins on the
-classpath — an application using none of them has not been tested.
-
-The Java floor of **23+** comes from the framework's own compiler target, not from Spring or Quarkus, and it is
-the strictest constraint: neither Spring Boot 4 nor Quarkus 3.20 requires a JDK that new.
-
-#### Spring Boot Versions
-
-One artifact covers **Spring Boot 3.4.x and 4.x** — no classifier, no separate dependency, nothing to
-configure. `jsonapi4j-rest-springboot` is compiled against the 3.x floor and declares Spring Boot as
-`provided`, so your application's own Boot version decides what is on the classpath. Spring Security 6 and 7
-are both supported for [principal resolution](/principal-resolution/), as are springdoc 2.x and 3.x on the
-application side.
-
-The Java floor is **23+**, and it comes from the framework's own compiler target rather than from Spring —
-Spring Boot 4 support does not lower it.
-
-Spring Boot 4 defaults to Jackson 3 (`tools.jackson`), which changes nothing here: the framework builds its
-own Jackson 2 `ObjectMapper` rather than injecting your application's, and the two versions use different
-packages, so they coexist on one classpath.
-
-The Servlet API itself is a `provided` dependency — your container supplies it. The framework is built
-against **Jakarta Servlet 6.1** and is verified on Servlet 6.0 and 6.1 containers. Note the `jakarta.*`
-namespace: containers still on `javax.servlet` are not supported.
-
-#### Deploying as a WAR
-
-The `jsonapi4j-rest` module ships a `ServletContainerInitializer`, so a servlet container discovers and runs it
-on deployment. No `web.xml` entry is needed — the dispatcher servlet and the framework filters register
-themselves under the configured `rootPath`.
-
-Configuration is picked up from the classpath, so packaging `jsonapi4j.yaml` (or `jsonapi4j.json`) in
-`WEB-INF/classes` is enough. A `jsonapi4j.config` system property, a `JSONAPI4J_CONFIG` environment variable,
-or a `jsonapi4j.config` servlet context init parameter all take precedence if you would rather point elsewhere.
-
-What the container cannot discover is your domain. Contribute it from a `ServletContextListener`:
-
-```java
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.DOMAIN_REGISTRY_ATT_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.OPERATION_REGISTRY_ATT_NAME;
-import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.PLUGIN_REGISTRY_ATT_NAME;
-
-@WebListener
-public class JsonApi4jBootstrapListener implements ServletContextListener {
-
-    @Override
-    public void contextInitialized(ServletContextEvent event) {
-        ServletContext servletContext = event.getServletContext();
-
-        PluginRegistry plugins = PluginRegistry.empty();
-
-        DomainRegistry domainRegistry = DomainRegistry.builder(plugins)
-                .resource(new UserResource())
-                .relationship(new UserCitizenshipsRelationship())
-                .build();
-
-        OperationsRegistry operationsRegistry = OperationsRegistry.builder(plugins)
-                .operation(new UserOperations(userDb))
-                .build();
-
-        servletContext.setAttribute(PLUGIN_REGISTRY_ATT_NAME, plugins);
-        servletContext.setAttribute(DOMAIN_REGISTRY_ATT_NAME, domainRegistry);
-        servletContext.setAttribute(OPERATION_REGISTRY_ATT_NAME, operationsRegistry);
-    }
-}
-```
-
-A listener is the right place because of ordering: the container runs every `ServletContainerInitializer`
-first, then notifies listeners, and only then initializes servlets. Your listener is therefore the earliest
-application code that runs, and it still lands before the dispatcher servlet reads the registries. Registering
-plugins here works the same way — build them into the `PluginRegistry` above.
-
-A listener can also replace the framework's defaults — register your own `PrincipalResolver`, `ObjectMapper`
-or `ErrorHandlerFactoriesRegistry` under the matching attribute and it takes effect, because the dispatcher
-servlet and the filters read those attributes when they initialize, which is after listeners have run.
-
-Configuration is the exception. `rootPath` is read during deployment to map the dispatcher servlet and the
-framework filters, so setting `JsonApi4jProperties` from a listener is too late to move the endpoints — and
-leaves the generated links pointing somewhere the servlet is not mapped. Configure the framework through the
-config file, system property, environment variable or init parameter described above; use the listener for
-your domain, not for `rootPath`.
-
-If the listener is missing, the endpoints still register but serve an empty API, and the startup log reports
-which registries were not found.
-
-On an external Tomcat there is no `application.yaml` to carry the query-character setting described above —
-set it on the `<Connector>` in `server.xml` instead:
-
-```xml
-<Connector port="8080" protocol="HTTP/1.1" relaxedQueryChars="[]" />
-```
+Jetty, Undertow and Quarkus need no equivalent. On an external Tomcat the setting moves to `server.xml` —
+see [Deployment](/deployment/#servlet-containers).
 
 ### 2. Declare the Domain
 

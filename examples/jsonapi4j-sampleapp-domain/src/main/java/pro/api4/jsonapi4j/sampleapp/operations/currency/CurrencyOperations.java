@@ -45,7 +45,7 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
             result.add(
                     new DownstreamCurrencyWithCode(
                             id,
-                            downstreamCountries.getFirst().getCurrencies().get(id)
+                            downstreamCountries.get(0).getCurrencies().get(id)
                     )
             );
         }

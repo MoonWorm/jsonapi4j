@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.rest.quarkus.runtime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.DefaultBean;
 import io.quarkus.arc.properties.IfBuildProperty;
+import jakarta.enterprise.inject.Disposes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
@@ -70,6 +71,19 @@ public class QuarkusJsonApi4jDefaultBeans {
     ExecutorService jsonApi4jExecutorService() {
         LOG.info("Composing common {}...", ExecutorService.class.getSimpleName());
         return Executors.newCachedThreadPool();
+    }
+
+    /**
+     * Disposes of the pool produced above. The disposer belongs to that producer, so an application that supplies
+     * its own {@code ExecutorService} replaces the {@link DefaultBean} and this never runs - it can only ever shut
+     * down a pool the framework created.
+     * <p>
+     * Matters most in dev mode, where a live reload restarts the application without restarting the JVM and would
+     * otherwise strand a cached thread pool on every reload.
+     */
+    void disposeJsonApi4jExecutorService(@Disposes @Named("jsonApi4jExecutorService") ExecutorService executorService) {
+        LOG.info("Shutting down common {}...", ExecutorService.class.getSimpleName());
+        executorService.shutdown();
     }
 
     @Produces

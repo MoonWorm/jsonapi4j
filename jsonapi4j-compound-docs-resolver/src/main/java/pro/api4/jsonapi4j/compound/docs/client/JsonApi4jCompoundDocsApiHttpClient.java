@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 public class JsonApi4jCompoundDocsApiHttpClient {
@@ -33,6 +35,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
     );
     private final ObjectMapper objectMapper;
     private final ErrorStrategy errorStrategy;
+    private final ConcurrentMap<Long, HttpClient> clientsByConnectTimeoutMs = new ConcurrentHashMap<>();
 
     public JsonApi4jCompoundDocsApiHttpClient(ObjectMapper objectMapper,
                                               ErrorStrategy errorStrategy) {
@@ -47,7 +50,8 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                                         CompoundDocsRequest originalRequest,
                                         CompoundDocsResolverConfig config,
                                         Map<String, String> metaHeaders) {
-        try (HttpClient client = buildHttpClient(config)) {
+        try {
+            HttpClient client = httpClient(config);
 
             JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(domainBaseUrl)
                     .resourceType(resourceType)
@@ -103,10 +107,22 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         }
     }
 
-    private HttpClient buildHttpClient(CompoundDocsResolverConfig config) {
-        return HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
-                .build();
+    /**
+     * Returns the client to fetch with, reusing one instance per connect timeout.
+     * <p>
+     * A client is deliberately not built per fetch: {@code HttpClient} owns a connection pool and a selector
+     * thread, so a per-fetch instance gives up connection reuse across the chunks a single request fans out into,
+     * and only becomes reclaimable once the garbage collector notices it. It also cannot be closed here - the
+     * framework targets Java 17, where {@code HttpClient} is not {@link AutoCloseable} - which makes a shared
+     * instance the only shape that does not accumulate clients.
+     */
+    private HttpClient httpClient(CompoundDocsResolverConfig config) {
+        return clientsByConnectTimeoutMs.computeIfAbsent(
+                config.getHttpConnectTimeoutMs(),
+                connectTimeoutMs -> HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                        .build()
+        );
     }
 
     private List<ParsedResource> parseResponse(HttpResponse<String> response) {

@@ -54,6 +54,12 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
     public static final String VALIDATOR_FACTORY_ATT_NAME = "jsonApi4jValidatorFactory";
 
     /**
+     * Holds the {@link ExecutorService} the framework created for itself, so
+     * {@link JsonApi4jExecutorShutdownListener} can shut down that pool and no other.
+     */
+    static final String FRAMEWORK_OWNED_EXECUTOR_ATT_NAME = "jsonApi4jFrameworkOwnedExecutor";
+
+    /**
      * Inputs a servlet host sets <em>before</em> startup to hand the framework its own pieces:
      * {@link #DOMAIN_REGISTRY_ATT_NAME}, {@link #OPERATION_REGISTRY_ATT_NAME}, {@link #PLUGIN_REGISTRY_ATT_NAME},
      * {@link #META_CONTEXT_ATT_NAME} and {@link #VALIDATOR_FACTORY_ATT_NAME}. Each is read once while
@@ -107,6 +113,7 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
             log.warn("Executor not found in servlet context. Setting a default one (Executors.newCachedThreadPool).");
             es = Executors.newCachedThreadPool();
             servletContext.setAttribute(EXECUTOR_SERVICE_ATT_NAME, es);
+            servletContext.setAttribute(FRAMEWORK_OWNED_EXECUTOR_ATT_NAME, es);
         }
         return es;
     }
@@ -287,6 +294,34 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         registerPrincipalResolvingFilter(servletContext, dispatcherServletMapping);
 
         registerRequestBodyCachingFilter(servletContext, dispatcherServletMapping);
+
+        registerExecutorShutdownListener(servletContext);
+    }
+
+    /**
+     * Registers the listener that disposes of a framework-created {@link ExecutorService} on undeploy.
+     * <p>
+     * Done here because {@code addListener} is only legal while the container is still starting up. The pool
+     * itself is created later, lazily, so the listener decides at destruction time whether there is anything of
+     * the framework's to shut down.
+     * <p>
+     * An application that wires the framework by calling {@link #onStartup} itself - the embedded samples, and
+     * anything else driving an already-created {@code ServletContext} - is past that window, and the container
+     * rejects the registration. That is the right outcome rather than a failure: such an application owns the
+     * lifecycle it built, and the deployment this guards against, a war undeployed from a shared container, only
+     * ever reaches this method through the container's own scan.
+     */
+    private static void registerExecutorShutdownListener(ServletContext servletContext) {
+        try {
+            servletContext.addListener(new JsonApi4jExecutorShutdownListener());
+        } catch (IllegalStateException | UnsupportedOperationException e) {
+            log.debug(
+                    "Could not register {} - the servlet context is past its startup window, which means the"
+                            + " framework was wired programmatically. Shutting down the executor is the caller's"
+                            + " responsibility in that mode.",
+                    JsonApi4jExecutorShutdownListener.class.getSimpleName()
+            );
+        }
     }
 
     private void registerDispatcherServlet(ServletContext servletContext,

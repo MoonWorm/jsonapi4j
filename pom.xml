@@ -55,7 +55,15 @@
         <revision>1.11.0-SNAPSHOT</revision>
 
         <!--spring/web-->
-        <spring.boot.version>3.4.2</spring.boot.version>
+        <!--The floor of the supported range, not the newest release: compiling against the oldest supported
+            Spring Boot is what makes "we support 3.0+" enforceable, the same rule the Quarkus and Servlet
+            floors below follow. Newer versions, including Boot 4, are verified on a schedule.-->
+        <spring.boot.version>3.0.0</spring.boot.version>
+        <!--The Spring Framework generation the Boot version above ships with. spring-boot-test only pulls
+            spring-test transitively from Boot 3.3 onwards, so the test classpath declares it explicitly rather
+            than depending on a transitive that appears and disappears across the supported range. Spring does
+            not support mixing Framework module versions, so this moves with spring.boot.version.-->
+        <spring.framework.version>6.0.2</spring.framework.version>
 
         <!--quarkus-->
         <!--The floor of the supported range, not the newest release: compiling against the oldest supported
@@ -101,7 +109,7 @@
         <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <jandex-maven-plugin.version>3.6.0</jandex-maven-plugin.version>
-        <maven.compiler.release>23</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
@@ -158,6 +166,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-test</artifactId>
                 <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>${spring.framework.version}</version>
             </dependency>
 
             <!--Quarkus-->
@@ -384,7 +397,7 @@
                             </execution>
                         </executions>
                         <configuration>
-                            <source>21</source>
+                            <source>17</source>
                             <failOnError>false</failOnError>
                         </configuration>
                     </plugin>

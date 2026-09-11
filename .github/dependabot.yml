@@ -22,6 +22,24 @@ updates:
       - dependencies
     commit-message:
       prefix: deps
+    # Support floors, not "latest" versions. The framework compiles against the OLDEST version it supports,
+    # so that reaching for a newer API is a compile error here rather than a runtime failure in someone
+    # else's application. Bumping any of these raises the floor silently: the build stays green - compiling
+    # against a newer version always is - and only a user still on the old version ever finds out, long
+    # after the PR was merged. Minor bumps would also land inside the grouped weekly PR, which is exactly
+    # the one that gets skimmed.
+    #
+    # Raise a floor by hand instead: edit the property, run the matching compatibility workflow to prove the
+    # new floor works, and update the table in docs/compatibility.md. See adr/0004-java-17-floor.md.
+    #
+    # Wildcards cover every artifact these properties feed, in the child poms as well as the root. The Java
+    # floor needs no entry - maven.compiler.release is a plain property, not a dependency.
+    ignore:
+      - dependency-name: "org.springframework.boot:*"   # spring.boot.version - floor 3.0.0
+      - dependency-name: "org.springframework:spring-test"  # spring.framework.version - pairs with the above
+      - dependency-name: "io.quarkus:*"                 # quarkus.version - floor 3.20.6
+      - dependency-name: "io.quarkus.platform:*"        # the sample app's platform BOM follows quarkus.version
+      - dependency-name: "jakarta.servlet:jakarta.servlet-api"  # floor 6.0.0
     groups:
       maven-minor-and-patch:
         patterns:

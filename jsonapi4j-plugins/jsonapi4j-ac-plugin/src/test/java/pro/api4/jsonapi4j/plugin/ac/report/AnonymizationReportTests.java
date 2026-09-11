@@ -59,7 +59,7 @@ class AnonymizationReportTests {
         void of_fieldsAndReasons_addsTheRefusingCode() {
             Map<String, Object> actualResult = AnonymizationReport.of(hid("zip"), FIELDS_AND_REASONS);
 
-            assertThat(fieldsOf(actualResult).getFirst()).containsEntry("reason", "INSUFFICIENT_SCOPES");
+            assertThat(fieldsOf(actualResult).get(0)).containsEntry("reason", "INSUFFICIENT_SCOPES");
         }
 
         @Test

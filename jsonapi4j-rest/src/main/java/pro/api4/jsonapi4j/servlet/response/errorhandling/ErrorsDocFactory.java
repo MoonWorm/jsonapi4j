@@ -190,14 +190,14 @@ public final class ErrorsDocFactory {
     }
 
     private static ErrorSourceObject toErrorSourceObject(ErrorSources.Source source) {
-        if (source instanceof ErrorSources.Path(String path)) {
-            return ErrorSourceObject.builder().path(path).build();
-        } else if (source instanceof ErrorSources.Header(String header)) {
-            return ErrorSourceObject.builder().header(header).build();
-        } else if (source instanceof ErrorSources.Parameter(String parameter)) {
-            return ErrorSourceObject.builder().parameter(parameter).build();
-        } else if (source instanceof ErrorSources.JsonPointer(String jsonPointer)) {
-            return ErrorSourceObject.builder().pointer(jsonPointer).build();
+        if (source instanceof ErrorSources.Path path) {
+            return ErrorSourceObject.builder().path(path.path()).build();
+        } else if (source instanceof ErrorSources.Header header) {
+            return ErrorSourceObject.builder().header(header.header()).build();
+        } else if (source instanceof ErrorSources.Parameter parameter) {
+            return ErrorSourceObject.builder().parameter(parameter.parameter()).build();
+        } else if (source instanceof ErrorSources.JsonPointer jsonPointer) {
+            return ErrorSourceObject.builder().pointer(jsonPointer.pointer()).build();
         }
         return null;
     }

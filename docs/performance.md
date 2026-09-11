@@ -140,6 +140,11 @@ JsonApi4j uses an `Executor` for parallel relationship resolution. When a resour
 
 Provide a custom `Executor` bean to enable parallelism:
 
+The executor is yours, not the framework's, so its Java requirements are yours too. JsonApi4j itself
+targets [Java 17](/compatibility/) and uses no Java 21 API, but nothing stops you handing it a virtual-thread
+executor when your application runs on 21 or newer — which for I/O-bound relationship resolution is usually
+the right choice.
+
 <div class="tabs" markdown="0">
   <div class="tab-buttons">
     <button class="tab-btn active" data-tab="exec-springboot">Spring Boot</button>

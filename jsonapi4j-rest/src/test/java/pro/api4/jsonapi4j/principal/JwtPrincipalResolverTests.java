@@ -108,7 +108,7 @@ class JwtPrincipalResolverTests {
 
         List<String> entitlements = entitlementsResolver.resolvePrincipal(request).authenticatedClientEntitlements();
         assertThat(entitlements).isNotNull().hasSize(1);
-        assertThat(entitlements.getFirst()).isNotNull().isEqualTo("ADMIN");
+        assertThat(entitlements.get(0)).isNotNull().isEqualTo("ADMIN");
     }
 
     @Test

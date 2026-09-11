@@ -41,7 +41,7 @@ class ErrorsDocFactoryTests {
 
         // then
         assertSingleError(doc, "400", "VALUE_IS_ABSENT", "must not be null");
-        assertThat(doc.getErrors().getFirst().getSource().getParameter()).isEqualTo("name");
+        assertThat(doc.getErrors().get(0).getSource().getParameter()).isEqualTo("name");
     }
 
     // --- badRequestInvalidCursorErrorsDoc ---
@@ -53,7 +53,7 @@ class ErrorsDocFactoryTests {
 
         // then
         assertSingleError(doc, "400", "INVALID_CURSOR", "Invalid cursor value: abc123");
-        assertThat(doc.getErrors().getFirst().getSource().getParameter()).isEqualTo("page[cursor]");
+        assertThat(doc.getErrors().get(0).getSource().getParameter()).isEqualTo("page[cursor]");
     }
 
     // --- badRequestInvalidPayloadErrorsDoc ---
@@ -180,7 +180,7 @@ class ErrorsDocFactoryTests {
 
         // then
         assertSingleError(doc, "400", "INVALID_ENUM_VALUE", "invalid value");
-        assertThat(doc.getErrors().getFirst().getSource().getParameter()).isEqualTo("status");
+        assertThat(doc.getErrors().get(0).getSource().getParameter()).isEqualTo("status");
     }
 
     @Test
@@ -229,7 +229,7 @@ class ErrorsDocFactoryTests {
 
     private void assertSingleError(ErrorsDoc doc, String expectedStatus, String expectedCode, String expectedDetail) {
         assertThat(doc.getErrors()).hasSize(1);
-        ErrorObject error = doc.getErrors().getFirst();
+        ErrorObject error = doc.getErrors().get(0);
         assertThat(error.getStatus()).isEqualTo(expectedStatus);
         assertThat(error.getCode()).isEqualTo(expectedCode);
         assertThat(error.getDetail()).isEqualTo(expectedDetail);
