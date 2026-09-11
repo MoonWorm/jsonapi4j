@@ -14,6 +14,10 @@ public class OasResourceInfoModel {
     private String resourceNameSingle = "";
     @Builder.Default
     private Class<?> attributes = NoAttributes.class;
+    @Builder.Default
+    private String resourceIdDescription = "";
+    @Builder.Default
+    private String resourceIdExample = "";
 
     public static OasResourceInfoModel fromAnnotation(OasResourceInfo oasResourceInfo) {
         if (oasResourceInfo == null) {
@@ -22,6 +26,8 @@ public class OasResourceInfoModel {
         return OasResourceInfoModel.builder()
                 .resourceNameSingle(oasResourceInfo.resourceNameSingle())
                 .attributes(oasResourceInfo.attributes())
+                .resourceIdDescription(oasResourceInfo.resourceIdDescription())
+                .resourceIdExample(oasResourceInfo.resourceIdExample())
                 .build();
     }
 

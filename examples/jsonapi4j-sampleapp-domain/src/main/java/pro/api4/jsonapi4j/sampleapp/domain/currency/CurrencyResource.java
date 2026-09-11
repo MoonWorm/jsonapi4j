@@ -10,7 +10,9 @@ import static pro.api4.jsonapi4j.sampleapp.domain.currency.CurrencyResource.CURR
 @JsonApiResource(resourceType = CURRENCIES)
 @OasResourceInfo(
         resourceNameSingle = "currency",
-        attributes = CurrencyAttributes.class
+        attributes = CurrencyAttributes.class,
+        resourceIdDescription = "Currency code (ISO 4217)",
+        resourceIdExample = "NOK"
 )
 public class CurrencyResource implements Resource<DownstreamCurrencyWithCode> {
 

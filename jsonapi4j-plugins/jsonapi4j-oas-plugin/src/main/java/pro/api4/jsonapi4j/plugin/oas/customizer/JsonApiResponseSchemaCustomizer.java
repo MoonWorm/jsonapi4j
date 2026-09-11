@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.model.document.LinkObject;
@@ -67,7 +68,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         Schema<?> resourceIdentifierObjectSchema = generateSchemaFromType(ResourceIdentifierObject.class);
         ((Schema) resourceIdentifierObjectSchema.getProperties().get(ID_FIELD))
                 .example("12345")
-                .description("Linked resourc unique identifier");
+                .description("Linked resource unique identifier");
         ((Schema) resourceIdentifierObjectSchema.getProperties().get(TYPE_FIELD))
                 .example("articles")
                 .description("Linked resource type");
@@ -305,9 +306,10 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
                                                            Optional<Schema<?>> relationshipsSchema) {
         PrimaryAndNestedSchemas resourceSchema = withLinksObjectRef(generateAllSchemasFromType(ResourceObject.class));
 
+        Optional<OasResourceInfoModel> resourceInfo = OasResourceInfoUtil.resourceInfo(registeredResource);
         ((Schema) resourceSchema.getPrimarySchema().getProperties().get(ID_FIELD))
-                .example("12345")
-                .description("Resource unique identifier");
+                .example(OasResourceInfoUtil.resourceIdExample(resourceInfo))
+                .description(OasResourceInfoUtil.resourceIdDescription(resourceInfo));
         ((Schema) resourceSchema.getPrimarySchema().getProperties().get(TYPE_FIELD))
                 .example(registeredResource.getResourceType().getType())
                 .description("Resource type");

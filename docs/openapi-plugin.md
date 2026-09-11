@@ -39,19 +39,31 @@ To add metadata beyond what the framework generates automatically (e.g., `info`,
 
 | Annotation | Placement | Purpose |
 |-----------|-----------|---------|
-| `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
+| `@OasResourceInfo` | On `Resource` class | Declares the attributes class, the singular resource name, and how the resource's identifier is described and exemplified |
 | `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Declares the resource types the relationship links to, and the type of the `meta` its resource linkage carries |
 | `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary, description and request body type, and declares sortable fields, filters, pagination styles, application-specific parameters and OAuth2 security requirements |
 
 Example:
 
 ```java
-@OasResourceInfo(description = "Represents a registered user in the system")
 @JsonApiResource(resourceType = "users")
+@OasResourceInfo(
+        resourceNameSingle = "user",
+        attributes = UserAttributes.class,
+        resourceIdDescription = "User unique identifier",
+        resourceIdExample = "3"
+)
 public class UserResource implements Resource<UserDbEntity> {
     // ...
 }
 ```
+
+`resourceIdDescription` and `resourceIdExample` are declared once and reach every place that resource's identifier
+appears — the `{id}` path parameter of each operation acting on one instance, and the `id` member of the resource
+schema. They belong to the resource rather than to an operation because every operation asks for the same
+identifier; declaring them per operation is what lets one endpoint carry an example and the next one not. Request
+bodies keep their own `id` wording, which says whether the id must match the path or may be omitted, since that is
+about the operation.
 
 ```java
 @JsonApiResourceOperation(resource = UserResource.class)
@@ -187,6 +199,7 @@ running configuration, and replacing it would drop them silently:
 ```
 
 publishes `id` with that description and example, and keeps the `maxLength` taken from `validation.resourceIdMaxLength`.
+Prefer `@OasResourceInfo` for the id unless one operation genuinely needs different wording from the rest.
 
 One `fields[TYPE]` parameter is published per type the document can carry: the primary resource plus what it can
 include. That is one level — a client may nest includes (`include=citizenships.currencies`) and select fields on what

@@ -23,4 +23,19 @@ public @interface OasResourceInfo {
 
     Class<?> attributes() default NoAttributes.class;
 
+    /**
+     * Describes this resource's identifier wherever it appears - the {@code {id}} path parameter of every operation
+     * acting on one instance, and the {@code id} member of the resource schema. Left empty, a generic wording is
+     * used.
+     * <p>
+     * Request bodies keep their own wording, which says whether the id must match the path or may be omitted, since
+     * that is about the operation rather than the resource.
+     */
+    String resourceIdDescription() default "";
+
+    /**
+     * An example identifier for this resource, applied wherever its id appears. Left empty, a generic one is used.
+     */
+    String resourceIdExample() default "";
+
 }

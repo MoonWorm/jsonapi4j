@@ -40,6 +40,8 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_ID_DESCRIPTION;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_ID_EXAMPLE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_SUMMARY;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.RESOURCE_ID_DESCRIPTION;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.RESOURCE_ID_EXAMPLE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SCOPE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SECURED_RESOURCE_TYPE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4j;
@@ -215,6 +217,51 @@ class JsonApiOperationsCustomizerTests {
 
         private List<Parameter> collectionParams(ResourceOperations<SecuredAttributes> operations) {
             return documentedPaths(operations).get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getGet().getParameters();
+        }
+
+    }
+
+    /**
+     * Every operation acting on one instance of a resource asks for the same identifier, so its prose is declared on
+     * the resource. Declaring it per operation is what let one operation carry an example and the next one not.
+     */
+    @Nested
+    class ResourceIdParameter {
+
+        @Test
+        void customise_resourceDeclaringIdProse_appliesItToEveryOperationWithAnIdInThePath() {
+            assertThat(idParams(writeOperationPaths()))
+                    .isNotEmpty()
+                    .allSatisfy(id -> {
+                        assertThat(id.getDescription()).startsWith(RESOURCE_ID_DESCRIPTION);
+                        assertThat(id.getExample()).isEqualTo(RESOURCE_ID_EXAMPLE);
+                    });
+        }
+
+        @Test
+        void customise_resourceDeclaringIdProse_keepsTheConfiguredConstraint() {
+            assertThat(idParams(writeOperationPaths()))
+                    .allSatisfy(id -> assertThat(id.getSchema().getMaxLength()).isEqualTo(64));
+        }
+
+        @Test
+        void customise_operationDeclaringItsOwnIdProse_winsOverTheResource() {
+            Parameter id = idParams(documentedPaths(new OverriddenParamOperations())).get(0);
+
+            assertThat(id.getDescription()).isEqualTo(CUSTOM_ID_DESCRIPTION);
+            assertThat(id.getExample()).isEqualTo(CUSTOM_ID_EXAMPLE);
+        }
+
+        private List<Parameter> idParams(Paths paths) {
+            return paths.values().stream()
+                    .flatMap(pathItem -> pathItem.readOperations().stream())
+                    .flatMap(operation -> emptyIfNull(operation.getParameters()).stream())
+                    .filter(parameter -> "id".equals(parameter.getName()))
+                    .toList();
+        }
+
+        private <T> List<T> emptyIfNull(List<T> values) {
+            return values == null ? List.of() : values;
         }
 
     }

@@ -17,7 +17,9 @@ import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTR
 @JsonApiResource(resourceType = COUNTRIES)
 @OasResourceInfo(
         resourceNameSingle = "country",
-        attributes = CountryAttributes.class
+        attributes = CountryAttributes.class,
+        resourceIdDescription = "Country unique identifier (ISO 3166)",
+        resourceIdExample = "US"
 )
 public class CountryResource implements Resource<DownstreamCountry> {
 

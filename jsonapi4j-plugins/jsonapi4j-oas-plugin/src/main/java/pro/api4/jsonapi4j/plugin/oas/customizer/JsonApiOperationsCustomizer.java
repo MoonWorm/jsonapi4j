@@ -30,6 +30,7 @@ import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
@@ -520,7 +521,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         createSortParam(sortableFieldsOf(oasOperationInfo)).ifPresent(params::add);
         params.addAll(createFilterParams(filtersOf(oasOperationInfo)));
         if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
-            params.add(createDefaultIdPathParam());
+            params.add(createDefaultIdPathParam(extraOperationInfo.getResourceType()));
         }
         return params;
     }
@@ -699,17 +700,24 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return cursorParam;
     }
 
-    private Parameter createDefaultIdPathParam() {
-        Parameter cursorParam = new Parameter();
-        cursorParam.setName("id");
-        cursorParam.setIn("path");
-        cursorParam.setDescription("Resource id. Required");
+    /**
+     * The identifier's prose comes from the resource, not from the operation: every operation acting on one instance
+     * of a resource asks for the same id, so declaring it per operation only gave them room to disagree.
+     */
+    private Parameter createDefaultIdPathParam(ResourceType resourceType) {
+        Optional<OasResourceInfoModel> resourceInfo = OasResourceInfoUtil.resourceInfo(domainRegistry, resourceType);
+
+        Parameter idParam = new Parameter();
+        idParam.setName("id");
+        idParam.setIn("path");
+        idParam.setDescription(OasResourceInfoUtil.resourceIdDescription(resourceInfo) + ". Required");
+        idParam.setExample(OasResourceInfoUtil.resourceIdExample(resourceInfo));
         StringSchema idSchema = new StringSchema();
         if (validationProperties != null) {
             idSchema.setMaxLength(validationProperties.resourceIdMaxLength());
         }
-        cursorParam.setSchema(idSchema);
-        return cursorParam;
+        idParam.setSchema(idSchema);
+        return idParam;
     }
 
     private void addOperationExtensions(Operation operation,

@@ -190,8 +190,8 @@
             "$ref" : "#/components/schemas/CountriesAttributes"
           },
           "id" : {
-            "description" : "Resource unique identifier",
-            "example" : "12345",
+            "description" : "Country unique identifier (ISO 3166)",
+            "example" : "US",
             "type" : "string"
           },
           "lid" : {
@@ -312,8 +312,8 @@
             "$ref" : "#/components/schemas/CurrenciesAttributes"
           },
           "id" : {
-            "description" : "Resource unique identifier",
-            "example" : "12345",
+            "description" : "Currency code (ISO 4217)",
+            "example" : "NOK",
             "type" : "string"
           },
           "lid" : {
@@ -486,7 +486,7 @@
       "ResourceIdentifierObject" : {
         "properties" : {
           "id" : {
-            "description" : "Linked resourc unique identifier",
+            "description" : "Linked resource unique identifier",
             "example" : "12345",
             "type" : "string"
           },
@@ -610,7 +610,7 @@
           },
           "id" : {
             "description" : "Client-generated resource identifier. Optional — omit it to let the server assign one",
-            "example" : "12345",
+            "example" : "3",
             "type" : "string"
           },
           "lid" : {
@@ -753,8 +753,8 @@
             "$ref" : "#/components/schemas/UsersAttributes"
           },
           "id" : {
-            "description" : "Resource unique identifier",
-            "example" : "12345",
+            "description" : "User unique identifier",
+            "example" : "3",
             "type" : "string"
           },
           "lid" : {
@@ -878,7 +878,7 @@
           },
           "id" : {
             "description" : "Resource unique identifier. Must match the id in the URL path",
-            "example" : "12345",
+            "example" : "3",
             "type" : "string"
           },
           "lid" : {
@@ -1214,7 +1214,7 @@
             "type" : "array"
           }
         }, {
-          "description" : "Country unique identifier (ISO 3166)",
+          "description" : "Country unique identifier (ISO 3166). Required",
           "example" : "US",
           "in" : "path",
           "name" : "id",
@@ -1440,7 +1440,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "Country unique identifier (ISO 3166)",
+          "description" : "Country unique identifier (ISO 3166). Required",
           "example" : "US",
           "in" : "path",
           "name" : "id",
@@ -2288,7 +2288,8 @@
         "description" : "Deletes the existing instance of user's resource.",
         "operationId" : "delete-single-user",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -2493,7 +2494,7 @@
             "type" : "array"
           }
         }, {
-          "description" : "User unique identifier",
+          "description" : "User unique identifier. Required",
           "example" : "3",
           "in" : "path",
           "name" : "id",
@@ -2673,7 +2674,8 @@
         "description" : "Updates the existing instance of user's resource.",
         "operationId" : "update-single-user",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -2884,7 +2886,8 @@
         "description" : "Removes members from citizenships to-many relationship of the related user resource.",
         "operationId" : "delete-user-citizenships-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -3102,7 +3105,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "User unique identifier",
+          "description" : "User unique identifier. Required",
           "example" : "3",
           "in" : "path",
           "name" : "id",
@@ -3282,7 +3285,8 @@
         "description" : "Manages citizenships to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
         "operationId" : "update-user-citizenships-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -3456,7 +3460,8 @@
         "description" : "Adds members to citizenships to-many relationship of the related user resource. Members that already exist will not be added again.",
         "operationId" : "add-user-citizenships-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -3668,7 +3673,7 @@
             "type" : "array"
           }
         }, {
-          "description" : "User unique identifier",
+          "description" : "User unique identifier. Required",
           "example" : "3",
           "in" : "path",
           "name" : "id",
@@ -3848,7 +3853,8 @@
         "description" : "Manages placeOfBirth to-one relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
         "operationId" : "update-user-placeofbirth-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -4024,7 +4030,8 @@
         "description" : "Removes members from relatives to-many relationship of the related user resource.",
         "operationId" : "delete-user-relatives-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -4242,7 +4249,7 @@
             "type" : "string"
           }
         }, {
-          "description" : "User unique identifier",
+          "description" : "User unique identifier. Required",
           "example" : "3",
           "in" : "path",
           "name" : "id",
@@ -4422,7 +4429,8 @@
         "description" : "Manages relatives to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
         "operationId" : "update-user-relatives-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,
@@ -4596,7 +4604,8 @@
         "description" : "Adds members to relatives to-many relationship of the related user resource. Members that already exist will not be added again.",
         "operationId" : "add-user-relatives-relationship",
         "parameters" : [ {
-          "description" : "Resource id. Required",
+          "description" : "User unique identifier. Required",
+          "example" : "3",
           "in" : "path",
           "name" : "id",
           "required" : true,

@@ -20,7 +20,9 @@ import static pro.api4.jsonapi4j.sampleapp.domain.user.UserResource.USERS;
 @JsonApiResource(resourceType = USERS)
 @OasResourceInfo(
         resourceNameSingle = "user",
-        attributes = UserAttributes.class
+        attributes = UserAttributes.class,
+        resourceIdDescription = "User unique identifier",
+        resourceIdExample = "3"
 )
 public class UserResource implements Resource<UserDbEntity> {
 

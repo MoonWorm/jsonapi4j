@@ -16,6 +16,8 @@ import pro.api4.jsonapi4j.operation.RegisteredOperation;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
+import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
@@ -273,7 +275,7 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
         resourceSchema.getProperties().remove(LINKS_FIELD);
 
         ((Schema) resourceSchema.getProperties().get(ID_FIELD))
-                .example("12345")
+                .example(OasResourceInfoUtil.resourceIdExample(OasResourceInfoUtil.resourceInfo(domainRegistry, resourceType)))
                 .description(required.contains(ID_FIELD)
                         ? "Resource unique identifier. Must match the id in the URL path"
                         : "Client-generated resource identifier. Optional — omit it to let the server assign one");

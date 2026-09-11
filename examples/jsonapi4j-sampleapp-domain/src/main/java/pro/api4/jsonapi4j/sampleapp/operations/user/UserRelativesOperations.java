@@ -11,7 +11,6 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -42,15 +41,7 @@ public class UserRelativesOperations implements
             securityConfig = @OasOperationInfo.SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true
-            ),
-            parameters = {
-                    @OasOperationInfo.Parameter(
-                            name = "id",
-                            in = In.PATH,
-                            description = "User unique identifier",
-                            example = "3"
-                    )
-            }
+            )
     )
     @Override
     public PaginationAwareResponse<RelativeRef> readMany(JsonApiRequest request) {

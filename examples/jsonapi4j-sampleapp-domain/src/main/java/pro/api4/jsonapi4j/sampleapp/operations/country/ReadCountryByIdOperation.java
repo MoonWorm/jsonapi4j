@@ -7,9 +7,7 @@ import pro.api4.jsonapi4j.exception.ResourceNotFoundException;
 import pro.api4.jsonapi4j.operation.ReadResourceByIdOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.DownstreamCountry;
 import pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource;
@@ -39,15 +37,7 @@ public class ReadCountryByIdOperation implements ReadResourceByIdOperation<Downs
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true
-            ),
-            parameters = {
-                    @Parameter(
-                            name = "id",
-                            in = In.PATH,
-                            description = "Country unique identifier (ISO 3166)",
-                            example = "US"
-                    )
-            }
+            )
     )
     @Override
     public DownstreamCountry readById(JsonApiRequest request) {

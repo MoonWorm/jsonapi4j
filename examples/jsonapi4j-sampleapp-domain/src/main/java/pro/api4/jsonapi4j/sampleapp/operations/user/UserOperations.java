@@ -24,9 +24,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Filter;
-import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
-import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest.SortOrder;
@@ -90,15 +88,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             securityConfig = @SecurityConfig(
                     clientCredentialsSupported = true,
                     pkceSupported = true
-            ),
-            parameters = {
-                    @Parameter(
-                            name = "id",
-                            in = In.PATH,
-                            description = "User unique identifier",
-                            example = "3"
-                    )
-            }
+            )
     )
     @Override
     public UserDbEntity readById(JsonApiRequest request) {

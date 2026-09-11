@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2Scope;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -37,6 +38,8 @@ final class OasOperationTestFixtures {
     static final String CUSTOM_DESCRIPTION = "Returns the secured thing the caller asked for.";
     static final String CUSTOM_ID_DESCRIPTION = "The secured thing's identifier";
     static final String CUSTOM_ID_EXAMPLE = "sec-42";
+    static final String RESOURCE_ID_DESCRIPTION = "The secured resource id";
+    static final String RESOURCE_ID_EXAMPLE = "sec-1";
 
     private OasOperationTestFixtures() {
     }
@@ -132,6 +135,10 @@ final class OasOperationTestFixtures {
     }
 
     @JsonApiResource(resourceType = SECURED_RESOURCE_TYPE)
+    @OasResourceInfo(
+            resourceIdDescription = RESOURCE_ID_DESCRIPTION,
+            resourceIdExample = RESOURCE_ID_EXAMPLE
+    )
     public static class SecuredResource implements Resource<SecuredAttributes> {
 
         @Override
