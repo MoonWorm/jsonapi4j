@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.operation.OperationType;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.EnumSet;
 import java.util.Set;
 
 import static pro.api4.jsonapi4j.http.HttpStatusCodes.*;
@@ -52,7 +53,7 @@ public final class OasOperationInfoUtil {
         boolean isIncludesSupported = isIncludesSupported(operationType);
         boolean isPaginationSupported = isPaginationSupported(operationType);
         ResponseType responseType = resolveOperationResponseType(operationType);
-        Set<HttpStatusCodes> supportedHttpErrorCodes = resolveSupportedHttpErrorCodes(operationType);
+        EnumSet<HttpStatusCodes> supportedHttpErrorCodes = resolveSupportedHttpErrorCodes(operationType);
         return new Info(
                 operationType,
                 resourceType,
@@ -280,39 +281,43 @@ public final class OasOperationInfoUtil {
         return operationType.getMethod() == GET;
     }
 
-    private static Set<HttpStatusCodes> resolveSupportedHttpErrorCodes(OperationType operationType) {
-        switch (operationType) {
-            case READ_RESOURCE_BY_ID,
-                 READ_MULTIPLE_RESOURCES,
-                 DELETE_RESOURCE,
-                 READ_TO_ONE_RELATIONSHIP,
-                 READ_TO_MANY_RELATIONSHIP:
-                return Set.of(
-                        SC_400_BAD_REQUEST,
-                        SC_404_RESOURCE_NOT_FOUND,
-                        SC_405_METHOD_NOT_SUPPORTED,
-                        SC_406_NOT_ACCEPTABLE,
-                        SC_429_TOO_MANY_REQUESTS,
-                        SC_500_INTERNAL_SERVER_ERROR
-                );
-            case CREATE_RESOURCE,
-                 UPDATE_RESOURCE,
-                 UPDATE_TO_ONE_RELATIONSHIP,
-                 UPDATE_TO_MANY_RELATIONSHIPS,
-                 ADD_TO_MANY_RELATIONSHIP,
-                 DELETE_TO_MANY_RELATIONSHIP:
-                return Set.of(
-                        SC_400_BAD_REQUEST,
-                        SC_404_RESOURCE_NOT_FOUND,
-                        SC_405_METHOD_NOT_SUPPORTED,
-                        SC_406_NOT_ACCEPTABLE,
-                        SC_415_UNSUPPORTED_MEDIA_TYPE,
-                        SC_429_TOO_MANY_REQUESTS,
-                        SC_500_INTERNAL_SERVER_ERROR
-                );
-            default:
-                throw new IllegalArgumentException("Unsupported operation type: " + operationType);
+    /**
+     * The error responses that follow from the operation type alone - what the framework core answers with before
+     * plugins or a security layer enter the picture. {@code 404} needs an {@code {id}} in the path, {@code 415} a
+     * request body, {@code 409} a body that repeats a type or id the path already fixed, and {@code 403} the
+     * client-generated id JSON:API reserves to the server. Access control's {@code 403} and the security layer's
+     * {@code 401} depend on the application rather than the operation, so the caller adds those.
+     */
+    static EnumSet<HttpStatusCodes> resolveSupportedHttpErrorCodes(OperationType operationType) {
+        EnumSet<HttpStatusCodes> codes = EnumSet.of(
+                SC_400_BAD_REQUEST,
+                SC_405_METHOD_NOT_SUPPORTED,
+                SC_406_NOT_ACCEPTABLE,
+                SC_429_TOO_MANY_REQUESTS,
+                SC_500_INTERNAL_SERVER_ERROR
+        );
+        if (OperationType.getExistingResourceAwareOperations().contains(operationType)) {
+            codes.add(SC_404_RESOURCE_NOT_FOUND);
         }
+        if (hasRequestBody(operationType)) {
+            codes.add(SC_415_UNSUPPORTED_MEDIA_TYPE);
+        }
+        if (operationType == OperationType.CREATE_RESOURCE || operationType == OperationType.UPDATE_RESOURCE) {
+            codes.add(SC_409_CONFLICT);
+        }
+        if (operationType == OperationType.CREATE_RESOURCE) {
+            codes.add(SC_403_FORBIDDEN);
+        }
+        return codes;
+    }
+
+    static boolean hasRequestBody(OperationType operationType) {
+        return switch (operationType) {
+            case CREATE_RESOURCE, UPDATE_RESOURCE, UPDATE_TO_ONE_RELATIONSHIP, UPDATE_TO_MANY_RELATIONSHIPS,
+                 ADD_TO_MANY_RELATIONSHIP, DELETE_TO_MANY_RELATIONSHIP -> true;
+            case READ_RESOURCE_BY_ID, READ_MULTIPLE_RESOURCES, DELETE_RESOURCE, READ_TO_ONE_RELATIONSHIP,
+                 READ_TO_MANY_RELATIONSHIP -> false;
+        };
     }
 
     public enum ResponseType {

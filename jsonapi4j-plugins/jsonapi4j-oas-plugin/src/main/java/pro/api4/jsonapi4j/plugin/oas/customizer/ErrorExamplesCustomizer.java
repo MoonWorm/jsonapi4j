@@ -18,43 +18,56 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static final String BAD_REQUEST_ERRORS_DOC = "Bad_Request_Errors_Doc";
+    public static final String UNAUTHORIZED_ERRORS_DOC = "Unauthorized_Errors_Doc";
+    public static final String FORBIDDEN_ERRORS_DOC = "Forbidden_Errors_Doc";
     public static final String RESOURCE_NOT_FOUND_ERRORS_DOC = "Resource_Not_Found_Errors_Doc";
     public static final String METHOD_NOT_SUPPORTED_ERRORS_DOC = "Method_Not_Supported_Errors_Doc";
     public static final String NOT_ACCEPTABLE_ERRORS_DOC = "Not_Acceptable_Errors_Doc";
+    public static final String CONFLICT_ERRORS_DOC = "Conflict_Errors_Doc";
     public static final String UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC = "Unsupported_Media_Type_Errors_Doc";
     public static final String TOO_MANY_REQUESTS_ERRORS_DOC = "Too_Many_Requests_Errors_Doc";
     public static final String INTERNAL_SERVER_ERRORS_DOC = "Internal_Server_Errors_Doc";
 
     /**
-     * Backed by an {@link EnumMap} rather than {@link Map#of}, whose iteration order Java randomizes per JVM run:
-     * this map drives the order the error responses and their examples are written in, and a document that shuffles
-     * its keys between restarts produces spurious diffs for anyone tracking their published spec.
+     * The canned example each documented status code publishes, paired with the resource it is read from - one map
+     * rather than a map plus a parallel list of registrations, so a status code cannot be half-added. Backed by an
+     * {@link EnumMap}, whose iteration order is the ascending status code order {@link HttpStatusCodes} declares,
+     * so the published document does not reshuffle between restarts.
      */
-    public static final Map<HttpStatusCodes, String> CODES_TO_EXAMPLE_NAME = Collections.unmodifiableMap(
-            new EnumMap<>(Map.of(
-                    HttpStatusCodes.SC_400_BAD_REQUEST, BAD_REQUEST_ERRORS_DOC,
-                    HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, RESOURCE_NOT_FOUND_ERRORS_DOC,
-                    HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, METHOD_NOT_SUPPORTED_ERRORS_DOC,
-                    HttpStatusCodes.SC_406_NOT_ACCEPTABLE, NOT_ACCEPTABLE_ERRORS_DOC,
-                    HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC,
-                    HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, TOO_MANY_REQUESTS_ERRORS_DOC,
-                    HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERRORS_DOC
-            ))
-    );
+    private static final Map<HttpStatusCodes, ErrorExample> CODES_TO_EXAMPLE;
+
+    /**
+     * The example name published for each status code the plugin can document. A code absent from this map is still
+     * documented, it simply carries no example.
+     */
+    public static final Map<HttpStatusCodes, String> CODES_TO_EXAMPLE_NAME;
+
+    static {
+        Map<HttpStatusCodes, ErrorExample> codesToExample = new EnumMap<>(HttpStatusCodes.class);
+        codesToExample.put(HttpStatusCodes.SC_400_BAD_REQUEST, new ErrorExample(BAD_REQUEST_ERRORS_DOC, "badRequestErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_401_UNAUTHORIZED, new ErrorExample(UNAUTHORIZED_ERRORS_DOC, "unauthorizedErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_403_FORBIDDEN, new ErrorExample(FORBIDDEN_ERRORS_DOC, "forbiddenErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, new ErrorExample(RESOURCE_NOT_FOUND_ERRORS_DOC, "resourceNotFoundErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, new ErrorExample(METHOD_NOT_SUPPORTED_ERRORS_DOC, "methodNotSupportedErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_406_NOT_ACCEPTABLE, new ErrorExample(NOT_ACCEPTABLE_ERRORS_DOC, "notAcceptableErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_409_CONFLICT, new ErrorExample(CONFLICT_ERRORS_DOC, "conflictErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, new ErrorExample(UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC, "unsupportedMediaTypeErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, new ErrorExample(TOO_MANY_REQUESTS_ERRORS_DOC, "tooManyRequestsErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, new ErrorExample(INTERNAL_SERVER_ERRORS_DOC, "internalServerErrorsDoc.json"));
+        CODES_TO_EXAMPLE = Collections.unmodifiableMap(codesToExample);
+
+        Map<HttpStatusCodes, String> codesToExampleName = new EnumMap<>(HttpStatusCodes.class);
+        codesToExample.forEach((code, example) -> codesToExampleName.put(code, example.name()));
+        CODES_TO_EXAMPLE_NAME = Collections.unmodifiableMap(codesToExampleName);
+    }
 
     @Override
     public void customise(OpenAPI openApi) {
         if (openApi.getComponents() == null) {
             openApi.setComponents(new Components());
         }
-        openApi.getComponents()
-                .addExamples(UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC, new Example().value(readExampleFromResource("unsupportedMediaTypeErrorsDoc.json")))
-                .addExamples(BAD_REQUEST_ERRORS_DOC, new Example().value(readExampleFromResource("badRequestErrorsDoc.json")))
-                .addExamples(INTERNAL_SERVER_ERRORS_DOC, new Example().value(readExampleFromResource("internalServerErrorsDoc.json")))
-                .addExamples(NOT_ACCEPTABLE_ERRORS_DOC, new Example().value(readExampleFromResource("notAcceptableErrorsDoc.json")))
-                .addExamples(METHOD_NOT_SUPPORTED_ERRORS_DOC, new Example().value(readExampleFromResource("methodNotSupportedErrorsDoc.json")))
-                .addExamples(TOO_MANY_REQUESTS_ERRORS_DOC, new Example().value(readExampleFromResource("tooManyRequestsErrorsDoc.json")))
-                .addExamples(RESOURCE_NOT_FOUND_ERRORS_DOC, new Example().value(readExampleFromResource("resourceNotFoundErrorsDoc.json")));
+        CODES_TO_EXAMPLE.forEach((code, example) -> openApi.getComponents()
+                .addExamples(example.name(), new Example().value(readExampleFromResource(example.fileName()))));
     }
 
     /**
@@ -74,6 +87,9 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    private record ErrorExample(String name, String fileName) {
     }
 
 }

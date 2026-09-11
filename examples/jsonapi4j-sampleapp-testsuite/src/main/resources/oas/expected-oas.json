@@ -22,6 +22,45 @@
           } ]
         }
       },
+      "Conflict_Errors_Doc" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "CONFLICT",
+            "detail" : "resource type does not belong to this collection",
+            "id" : "6c3e2d54-8f01-4b46-a072-3e9c5f1d7b04",
+            "source" : {
+              "pointer" : "/data/type"
+            },
+            "status" : "409"
+          }, {
+            "code" : "CONFLICT",
+            "detail" : "resource id does not match the one in the request path",
+            "id" : "7d4f3e65-9012-4c57-b183-4f0d6a2e8c15",
+            "source" : {
+              "pointer" : "/data/id"
+            },
+            "status" : "409"
+          } ]
+        }
+      },
+      "Forbidden_Errors_Doc" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "CLIENT_GENERATED_ID_NOT_SUPPORTED",
+            "detail" : "resource id is assigned by the server, omit it from the request",
+            "id" : "3a7c9b21-5d18-4e6f-8b02-6c9e1f3a7d42",
+            "source" : {
+              "pointer" : "/data/id"
+            },
+            "status" : "403"
+          }, {
+            "code" : "INSUFFICIENT_ENTITLEMENTS",
+            "detail" : "Access to the operation is forbidden",
+            "id" : "5b2d1c43-7e90-4a35-9f61-2d8b4e0c6a93",
+            "status" : "403"
+          } ]
+        }
+      },
       "Internal_Server_Errors_Doc" : {
         "value" : {
           "errors" : [ {
@@ -69,6 +108,16 @@
             "detail" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
             "id" : "880e8407-e29b-41d4-a716-446655440321",
             "status" : "429"
+          } ]
+        }
+      },
+      "Unauthorized_Errors_Doc" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "ACCESS_TOKEN_EXPIRED",
+            "detail" : "The access token has expired. Obtain a new one and retry the request.",
+            "id" : "2f1e8a10-3c44-4b9e-9a77-1d4a2b6c8e01",
+            "status" : "401"
           } ]
         }
       },
@@ -996,12 +1045,12 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
-          "404" : {
+          "401" : {
             "content" : {
               "application/vnd.api+json" : {
                 "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
                   }
                 },
                 "schema" : {
@@ -1009,7 +1058,7 @@
                 }
               }
             },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "description" : "Unauthorized. The request requires user authentication."
           },
           "405" : {
             "content" : {
@@ -1058,7 +1107,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1067,7 +1116,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1076,7 +1125,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1085,7 +1134,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1198,6 +1247,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -1260,7 +1324,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1269,7 +1333,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1278,7 +1342,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1287,7 +1351,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1408,6 +1472,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -1470,7 +1549,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1479,7 +1558,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1488,7 +1567,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1497,7 +1576,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1596,12 +1675,12 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
-          "404" : {
+          "401" : {
             "content" : {
               "application/vnd.api+json" : {
                 "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
                   }
                 },
                 "schema" : {
@@ -1609,7 +1688,7 @@
                 }
               }
             },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "description" : "Unauthorized. The request requires user authentication."
           },
           "405" : {
             "content" : {
@@ -1658,7 +1737,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1667,7 +1746,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1676,7 +1755,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1685,7 +1764,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1843,12 +1922,12 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
-          "404" : {
+          "401" : {
             "content" : {
               "application/vnd.api+json" : {
                 "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
                   }
                 },
                 "schema" : {
@@ -1856,7 +1935,7 @@
                 }
               }
             },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "description" : "Unauthorized. The request requires user authentication."
           },
           "405" : {
             "content" : {
@@ -1905,7 +1984,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1914,7 +1993,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1923,7 +2002,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -1932,7 +2011,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2030,12 +2109,12 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
-          "404" : {
+          "401" : {
             "content" : {
               "application/vnd.api+json" : {
                 "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
                   }
                 },
                 "schema" : {
@@ -2043,7 +2122,22 @@
                 }
               }
             },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "description" : "Unauthorized. The request requires user authentication."
+          },
+          "403" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Forbidden_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Forbidden_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Forbidden. The server understood the request but refuses to authorize it."
           },
           "405" : {
             "content" : {
@@ -2074,6 +2168,21 @@
               }
             },
             "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+          },
+          "409" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Conflict_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Conflict_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
           },
           "415" : {
             "content" : {
@@ -2107,7 +2216,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2116,7 +2225,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2125,7 +2234,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2134,7 +2243,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2201,6 +2310,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2263,7 +2387,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2272,7 +2396,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2281,7 +2405,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2290,7 +2414,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2398,6 +2522,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2460,7 +2599,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2469,7 +2608,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2478,7 +2617,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2487,7 +2626,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2565,6 +2704,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2610,6 +2764,21 @@
             },
             "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
           },
+          "409" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Conflict_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Conflict_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
+          },
           "415" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -2642,7 +2811,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2651,7 +2820,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2660,7 +2829,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2669,7 +2838,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2823,7 +2992,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2832,7 +3001,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2841,7 +3010,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2850,7 +3019,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -2961,6 +3130,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -3023,7 +3207,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3032,7 +3216,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3041,7 +3225,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3050,7 +3234,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3205,7 +3389,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3214,7 +3398,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3223,7 +3407,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3232,7 +3416,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3379,7 +3563,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3388,7 +3572,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3397,7 +3581,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3406,7 +3590,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3511,6 +3695,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -3573,7 +3772,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3582,7 +3781,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3591,7 +3790,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3600,7 +3799,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3755,7 +3954,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3764,7 +3963,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3773,7 +3972,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3782,7 +3981,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3931,7 +4130,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3940,7 +4139,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3949,7 +4148,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -3958,7 +4157,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4069,6 +4268,21 @@
             },
             "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
           },
+          "401" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "examples" : {
+                  "Unauthorized_Errors_Doc" : {
+                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+                  }
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorsDoc"
+                }
+              }
+            },
+            "description" : "Unauthorized. The request requires user authentication."
+          },
           "404" : {
             "content" : {
               "application/vnd.api+json" : {
@@ -4131,7 +4345,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4140,7 +4354,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4149,7 +4363,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4158,7 +4372,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4313,7 +4527,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4322,7 +4536,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4331,7 +4545,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4340,7 +4554,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4487,7 +4701,7 @@
             "headers" : {
               "X-RateLimit-Burst-Capacity" : {
                 "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : "20",
+                "example" : 20,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4496,7 +4710,7 @@
               },
               "X-RateLimit-Remaining" : {
                 "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4505,7 +4719,7 @@
               },
               "X-RateLimit-Replenish-Rate" : {
                 "description" : "Number of tokens replenished per second.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",
@@ -4514,7 +4728,7 @@
               },
               "X-RateLimit-Requested-Tokens" : {
                 "description" : "Request cost in tokens.",
-                "example" : "5",
+                "example" : 5,
                 "required" : true,
                 "schema" : {
                   "format" : "int32",

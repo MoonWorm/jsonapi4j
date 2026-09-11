@@ -8,10 +8,8 @@ import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult.PropertiesValidationResultBuilder;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public interface OasProperties extends PluginProperties {
 
@@ -28,13 +26,11 @@ public interface OasProperties extends PluginProperties {
     String EXTERNAL_DOCUMENTATION_PROPERTY = "externalDocumentation";
     String OAUTH2_PROPERTY = "oauth2";
     String SERVERS_PROPERTY = "servers";
-    String CUSTOM_RESPONSE_HEADERS_PROPERTY = "customResponseHeaders";
 
     String DEFAULT_ENABLED = "true";
     String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.DEFAULT_ROOT_PATH + "/oas";
 
     String EMAIL_PATTERN = "[^\\s@]+@[^\\s@]+\\.[^\\s@]+";
-    String HTTP_STATUS_CODE_PATTERN = "\\d{3}";
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);
@@ -52,8 +48,6 @@ public interface OasProperties extends PluginProperties {
 
     List<? extends Server> servers();
 
-    List<? extends CustomResponseHeaderGroup> customResponseHeaders();
-
     @Override
     default PropertiesValidationResult validate() {
         if (!enabled()) {
@@ -65,7 +59,6 @@ public interface OasProperties extends PluginProperties {
         validateExternalDocumentation(builder);
         validateServers(builder);
         validateOAuth2(builder);
-        validateCustomResponseHeaders(builder);
         return builder.build();
     }
 
@@ -247,74 +240,6 @@ public interface OasProperties extends PluginProperties {
         }
     }
 
-    private void validateCustomResponseHeaders(PropertiesValidationResultBuilder builder) {
-        List<? extends CustomResponseHeaderGroup> groups = customResponseHeaders();
-        if (CollectionUtils.isEmpty(groups)) {
-            return;
-        }
-        Set<String> declaredStatusCodes = new HashSet<>();
-        for (int i = 0; i < groups.size(); i++) {
-            CustomResponseHeaderGroup group = groups.get(i);
-            if (group == null) {
-                continue;
-            }
-            validateHttpStatusCode(builder, group, i, declaredStatusCodes);
-            validateResponseHeaders(builder, group, i);
-        }
-    }
-
-    /**
-     * Groups are looked up by the exact status code an operation answers with, and only the first match is applied -
-     * a wildcard or a duplicate would quietly contribute nothing.
-     */
-    private void validateHttpStatusCode(PropertiesValidationResultBuilder builder,
-                                        CustomResponseHeaderGroup group,
-                                        int index,
-                                        Set<String> declaredStatusCodes) {
-        String path = propertyPath(indexed(CUSTOM_RESPONSE_HEADERS_PROPERTY, index), CustomResponseHeaderGroup.HTTP_STATUS_CODE_PROPERTY);
-        String httpStatusCode = StringUtils.trimToNull(group.httpStatusCode());
-        if (httpStatusCode == null) {
-            builder.requireNotBlank(path, group.httpStatusCode());
-            return;
-        }
-        if (!httpStatusCode.matches(HTTP_STATUS_CODE_PATTERN)) {
-            builder.addPropertyError(path, String.format(
-                    "must be a 3-digit HTTP status code (e.g. '429'), but was '%s'", group.httpStatusCode()
-            ));
-            return;
-        }
-        if (!declaredStatusCodes.add(httpStatusCode)) {
-            builder.addCrossPropertiesError(String.format(
-                    "'%s' is declared more than once for the HTTP status code '%s' - only the first group is applied",
-                    propertyPath(CUSTOM_RESPONSE_HEADERS_PROPERTY), httpStatusCode
-            ));
-        }
-    }
-
-    private void validateResponseHeaders(PropertiesValidationResultBuilder builder,
-                                         CustomResponseHeaderGroup group,
-                                         int index) {
-        String groupPath = indexed(CUSTOM_RESPONSE_HEADERS_PROPERTY, index);
-        List<? extends ResponseHeader> headers = group.headers();
-        if (CollectionUtils.isEmpty(headers)) {
-            builder.addPropertyError(propertyPath(groupPath, CustomResponseHeaderGroup.HEADERS_PROPERTY), "must declare at least one header");
-            return;
-        }
-        for (int i = 0; i < headers.size(); i++) {
-            ResponseHeader header = headers.get(i);
-            String headerPath = indexed(CustomResponseHeaderGroup.HEADERS_PROPERTY, i);
-            builder.requireNotBlank(
-                            propertyPath(groupPath, headerPath, ResponseHeader.NAME_PROPERTY),
-                            header == null ? null : header.name()
-                    )
-                    .requireOneOfIgnoringCase(
-                            propertyPath(groupPath, headerPath, ResponseHeader.SCHEMA_PROPERTY),
-                            header == null ? null : header.schema(),
-                            ResponseHeader.SUPPORTED_SCHEMAS
-                    );
-        }
-    }
-
     private static String indexed(String property, int index) {
         return String.format("%s[%d]", property, index);
     }
@@ -447,43 +372,6 @@ public interface OasProperties extends PluginProperties {
         default boolean enabled() {
             return Boolean.parseBoolean(DEFAULT_SERVER_ENABLED);
         }
-
-    }
-
-    interface CustomResponseHeaderGroup {
-
-        String HTTP_STATUS_CODE_PROPERTY = "httpStatusCode";
-        String HEADERS_PROPERTY = "headers";
-
-        String httpStatusCode();
-
-        List<? extends ResponseHeader> headers();
-
-    }
-
-    interface ResponseHeader {
-
-        String NAME_PROPERTY = "name";
-        String SCHEMA_PROPERTY = "schema";
-
-        String DEFAULT_RESPONSE_HEADER_REQUIRED = "false";
-        String DEFAULT_RESPONSE_HEADER_SCHEMA = "string";
-
-        List<String> SUPPORTED_SCHEMAS = List.of("string", "integer");
-
-        String name();
-
-        String description();
-
-        default boolean required() {
-            return Boolean.parseBoolean(DEFAULT_RESPONSE_HEADER_REQUIRED);
-        }
-
-        default String schema() {
-            return DEFAULT_RESPONSE_HEADER_SCHEMA;
-        }
-
-        String example();
 
     }
 

@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.examples.Example;
-import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
@@ -26,8 +25,6 @@ import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.CustomResponseHeaderGroup;
-import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
@@ -69,6 +66,12 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
      * what another plugin contributes to the API without depending on it.
      */
     private static final String SPARSE_FIELDSETS_PLUGIN_NAME = "JsonApiSparseFieldsetsPlugin";
+
+    /**
+     * Name of the access control plugin, matched as a string for the same reason. Its presence is what makes a
+     * {@code 403} reachable on a write.
+     */
+    private static final String ACCESS_CONTROL_PLUGIN_NAME = "JsonApiAccessControlPlugin";
 
     private final String rootPath;
     private final DomainRegistry domainRegistry;
@@ -257,6 +260,14 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
                             ))
             );
         }
+        // security requirements — resolved before the responses, which document 401 only where there is a scheme to fail
+        List<SecurityRequirement> securityRequirements = oasOperationInfo != null
+                ? generateSecurityRequirements(oasOperationInfo.getSecurityConfig())
+                : null;
+        boolean secured = CollectionUtils.isNotEmpty(securityRequirements);
+        if (secured) {
+            oasOperation.setSecurity(securityRequirements);
+        }
         // responses
         String happyPathResponseDocSchemaName = OasSchemaNamesUtil.happyPathResponseDocSchemaName(
                 resourceType,
@@ -266,16 +277,9 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
                 generateResponses(
                         String.valueOf(operationType.getHttpStatus()),
                         happyPathResponseDocSchemaName,
-                        extraOasOperationInfo.getSupportedHttpErrorCodes()
+                        resolveSupportedHttpErrorCodes(extraOasOperationInfo, secured)
                 )
         );
-        // security requirements
-        if (oasOperationInfo != null) {
-            List<SecurityRequirement> securityRequirements = generateSecurityRequirements(oasOperationInfo.getSecurityConfig());
-            if (CollectionUtils.isNotEmpty(securityRequirements)) {
-                oasOperation.setSecurity(securityRequirements);
-            }
-        }
         // oas extensions
         addOperationExtensions(oasOperation, supportedIncludes);
 
@@ -347,47 +351,34 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return List.copyOf(parameters.values());
     }
 
+    private Set<HttpStatusCodes> resolveSupportedHttpErrorCodes(OasOperationInfoUtil.Info extraOperationInfo,
+                                                                boolean secured) {
+        EnumSet<HttpStatusCodes> codes = EnumSet.copyOf(extraOperationInfo.getSupportedHttpErrorCodes());
+        if (secured) {
+            codes.add(HttpStatusCodes.SC_401_UNAUTHORIZED);
+        }
+        if (isAccessControlEnabled() && extraOperationInfo.getOperationType().getMethod() != OperationType.Method.GET) {
+            codes.add(HttpStatusCodes.SC_403_FORBIDDEN);
+        }
+        return codes;
+    }
+
+    private boolean isAccessControlEnabled() {
+        return pluginRegistry != null && pluginRegistry.isActivePlugin(ACCESS_CONTROL_PLUGIN_NAME);
+    }
+
     private ApiResponses generateResponses(String status,
                                            String happyPathResponseDocSchemaName,
                                            Set<HttpStatusCodes> supportedHttpErrorCodes) {
         ApiResponses responses = new ApiResponses();
-        responses.addApiResponse(
-                status,
-                generateHappyPathResponse(
-                        status,
-                        happyPathResponseDocSchemaName,
-                        getCustomResponseHeadersFor(status)
-                )
-        );
+        responses.addApiResponse(status, generateHappyPathResponse(status, happyPathResponseDocSchemaName));
         responses.putAll(generateErrorResponses(supportedHttpErrorCodes));
         return responses;
     }
 
-    private List<? extends ResponseHeader> getCustomResponseHeadersFor(String httpCode) {
-        List<? extends CustomResponseHeaderGroup> customResponseHeaders = oasProperties != null
-                ? oasProperties.customResponseHeaders()
-                : null;
-        return emptyIfNull(customResponseHeaders).stream()
-                .filter(hg -> httpCode.equalsIgnoreCase(hg.httpStatusCode()))
-                .findFirst()
-                .map(CustomResponseHeaderGroup::headers)
-                .orElse(null);
-    }
-
-    /**
-     * Builds the operation's success response. Operations that return no body — every write except create — still get
-     * one: the status code is what the operation answers with, and an operation whose only documented outcomes are
-     * failures is useless to a client generator and incomplete as a contract. Only the body is conditional.
-     */
     private ApiResponse generateHappyPathResponse(String status,
-                                                  String responseDocSchemaName,
-                                                  List<? extends ResponseHeader> responseHeaders) {
-        return generateResponse(
-                describeHttpStatus(status),
-                responseDocSchemaName,
-                null,
-                responseHeaders
-        );
+                                                  String responseDocSchemaName) {
+        return generateResponse(describeHttpStatus(status), responseDocSchemaName, null);
     }
 
     private String describeHttpStatus(String status) {
@@ -398,36 +389,20 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
 
     private Map<String, ApiResponse> generateErrorResponses(Set<HttpStatusCodes> supportedHttpErrorCodes) {
         Map<String, ApiResponse> errorResponses = new LinkedHashMap<>();
-        ErrorExamplesCustomizer.CODES_TO_EXAMPLE_NAME.forEach((code, name) -> {
-            if (supportedHttpErrorCodes.contains(code)) {
-                errorResponses.put(
-                        String.valueOf(code.getCode()),
-                        generateErrorResponse(
-                                code.getDescription(),
-                                name,
-                                getCustomResponseHeadersFor(String.valueOf(code.getCode()))
-                        )
-                );
-            }
-        });
+        supportedHttpErrorCodes.forEach(code -> errorResponses.put(
+                String.valueOf(code.getCode()),
+                generateResponse(
+                        code.getDescription(),
+                        OasSchemaNamesUtil.errorsDocSchemaName(),
+                        ErrorExamplesCustomizer.CODES_TO_EXAMPLE_NAME.get(code)
+                )
+        ));
         return errorResponses;
-    }
-
-    private ApiResponse generateErrorResponse(String description,
-                                              String exampleName,
-                                              List<? extends ResponseHeader> customResponseHeaders) {
-        return generateResponse(
-                description,
-                OasSchemaNamesUtil.errorsDocSchemaName(),
-                exampleName,
-                customResponseHeaders
-        );
     }
 
     private ApiResponse generateResponse(String description,
                                          String responseDocSchemaName,
-                                         String exampleName,
-                                         List<? extends ResponseHeader> customResponseHeaders) {
+                                         String exampleName) {
         ApiResponse response = new ApiResponse();
         if (StringUtils.isNotBlank(description)) {
             response.setDescription(description);
@@ -442,31 +417,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
                     )
             );
         }
-
-        if (CollectionUtils.isNotEmpty(customResponseHeaders)) {
-            Map<String, Header> headers = response.getHeaders();
-            if (response.getHeaders() == null) {
-                headers = new LinkedHashMap<>();
-                response.setHeaders(headers);
-            }
-            for (ResponseHeader responseHeader : customResponseHeaders) {
-                headers.put(responseHeader.name(), new Header()
-                        .required(responseHeader.required())
-                        .description(responseHeader.description())
-                        .schema(resolveResponseHeaderSchema(responseHeader.schema()))
-                        .example(responseHeader.example()));
-            }
-        }
-
         return response;
-    }
-
-    private Schema resolveResponseHeaderSchema(String schema) {
-        if ("integer".equalsIgnoreCase(schema)) {
-            return new IntegerSchema();
-        } else {
-            return new StringSchema();
-        }
     }
 
     private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfoModel.SecurityConfig securityConfig) {

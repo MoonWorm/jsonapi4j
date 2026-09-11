@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.springboot.autoconfiguration.oas;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizer;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 import pro.api4.jsonapi4j.servlet.ServletMappings;
@@ -26,8 +28,9 @@ import pro.api4.jsonapi4j.servlet.ServletMappings;
 public class SpringJsonApi4jOasPluginConfig {
 
     @Bean
-    public JsonApiOasPlugin jsonApiOasPlugin(SpringOasProperties oasProperties) {
-        return new JsonApiOasPlugin(oasProperties);
+    public JsonApiOasPlugin jsonApiOasPlugin(SpringOasProperties oasProperties,
+                                             ObjectProvider<OasCustomizer> customizers) {
+        return new JsonApiOasPlugin(oasProperties, customizers.orderedStream().toList());
     }
 
     @Bean

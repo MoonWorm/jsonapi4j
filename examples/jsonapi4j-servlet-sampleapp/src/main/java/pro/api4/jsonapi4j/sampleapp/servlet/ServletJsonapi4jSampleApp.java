@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.sampleapp.oas.RateLimitHeadersCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.sf.JsonApiSparseFieldsetsPlugin;
@@ -43,6 +44,7 @@ import pro.api4.jsonapi4j.sampleapp.operations.user.UserOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserPlaceOfBirthOperations;
 import pro.api4.jsonapi4j.sampleapp.operations.user.UserRelativesOperations;
 
+import java.util.List;
 import java.util.Map;
 
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
@@ -96,7 +98,10 @@ public class ServletJsonapi4jSampleApp {
                 )
         );
         pluginRegistryBuilder.register(new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)));
-        pluginRegistryBuilder.register(new JsonApiOasPlugin(DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw)));
+        pluginRegistryBuilder.register(new JsonApiOasPlugin(
+                DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw),
+                List.of(new RateLimitHeadersCustomizer())
+        ));
         pluginRegistryBuilder.register(new JsonApiCompoundDocsPlugin(DefaultCompoundDocsProperties.toCdProperties(jsonApi4jPropertiesRaw)));
         PluginRegistry pluginRegistry = pluginRegistryBuilder.build();
 

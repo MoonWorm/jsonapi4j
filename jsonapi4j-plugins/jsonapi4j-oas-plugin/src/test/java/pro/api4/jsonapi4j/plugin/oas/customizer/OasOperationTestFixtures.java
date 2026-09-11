@@ -18,6 +18,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Secur
 import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.List;
@@ -53,6 +54,31 @@ final class OasOperationTestFixtures {
                         .operations(operations)
                         .build())
                 .build();
+    }
+
+    /**
+     * The same domain and operations, plus a stand-in for another plugin the OAS plugin reacts to. Registered by
+     * name and nothing else, which is exactly how the OAS plugin matches its peers - depending on the real module
+     * here would invert that.
+     */
+    static JsonApi4j jsonApi4jWithPeerPlugin(String peerPluginName,
+                                             ResourceOperations<SecuredAttributes> operations) {
+        PluginRegistry plugins = PluginRegistry.builder()
+                .register(new JsonApiOasPlugin(new DefaultOasProperties()))
+                .register(new PeerPlugin(peerPluginName))
+                .build();
+        return JsonApi4j.builder()
+                .pluginRegistry(plugins)
+                .domainRegistry(DomainRegistry.builder(plugins)
+                        .resource(new SecuredResource())
+                        .build())
+                .operationsRegistry(OperationsRegistry.builder(plugins)
+                        .operations(operations)
+                        .build())
+                .build();
+    }
+
+    record PeerPlugin(String pluginName) implements JsonApi4jPlugin {
     }
 
     /**

@@ -31,7 +31,7 @@ Out of the box, **JsonApi4j** generates all schemas and operations automatically
 
 ### Enriching the Specification
 
-To add metadata beyond what the framework generates automatically (e.g., `info`, `securitySchemes`, custom headers), you have two options:
+To add metadata beyond what the framework generates automatically (e.g., `info`, `securitySchemes`), you have two options:
 
 **Via configuration properties** — set OpenAPI metadata in `application.yaml` / `application.properties`. See the [Spring Boot sample config](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-springboot-sampleapp/src/main/resources/application.yaml#L21) or [Quarkus sample config](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-quarkus-sampleapp/src/main/resources/application.properties#L12) for reference.
 
@@ -177,8 +177,56 @@ Every operation documents the status it answers with, including the writes that 
 | `POST /{type}` | `201` with `<Type>SingleResourceDoc` |
 | `PATCH` / `DELETE`, and every relationship write | `204`, no body |
 
+The error responses an operation documents are derived from what the framework can actually answer with, so a
+generated client handles every failure it may see and none that it cannot:
+
+| Status | Documented on |
+|--------|---------------|
+| `400`, `405`, `406`, `429`, `500` | every operation |
+| `401` | operations declaring an OAuth2 security requirement — the host's security layer rejects the request before the framework sees it |
+| `403` | `POST /{type}` (JSON:API reserves id generation to the server), and every write when the Access Control plugin is enabled |
+| `404` | operations whose path carries an `{id}` — a collection read and a create have nothing that can be missing |
+| `409` | `POST /{type}` and `PATCH /{type}/{id}`, whose body repeats a type or id the collection or path already fixed |
+| `415` | operations carrying a request body |
+
 Error responses carry a ready example per status code, embedded as JSON so that spec linters and mock servers read
 them as documents rather than as strings.
+
+### Customizing the Generated Document
+
+Anything the generator produces can be tuned by registering an `OasCustomizer`. Customizers run after the built-in
+ones, in the order registered, so each one sees the finished document:
+
+```java
+public class RateLimitHeadersCustomizer implements OasCustomizer {
+
+    @Override
+    public void customise(OpenAPI openApi) {
+        openApi.getPaths().values().stream()
+                .flatMap(pathItem -> pathItem.readOperations().stream())
+                .map(operation -> operation.getResponses().get("429"))
+                .filter(Objects::nonNull)
+                .forEach(response -> response.addHeaderObject("X-RateLimit-Remaining", new Header()
+                        .required(true)
+                        .description("Number of tokens currently remaining.")
+                        .schema(new IntegerSchema())
+                        .example(5)));
+    }
+
+}
+```
+
+Register it as a bean and the plugin picks it up — `@Bean` in Spring Boot, `@Produces` in Quarkus. With the plain
+Servlet API, pass them to the plugin directly:
+
+```java
+new JsonApiOasPlugin(oasProperties, List.of(new RateLimitHeadersCustomizer()));
+```
+
+This is the extension point for anything the framework cannot derive: response headers your gateway adds, status
+codes only your domain produces, descriptions you want worded differently. See the
+[sample apps](https://github.com/MoonWorm/jsonapi4j/blob/main/examples/jsonapi4j-sampleapp-domain/src/main/java/pro/api4/jsonapi4j/sampleapp/oas/RateLimitHeadersCustomizer.java)
+for a working example.
 
 ### Available Properties
 
@@ -212,9 +260,3 @@ them as documents rather than as strings.
 | `jsonapi4j.oas.servers[*].name` | not set | OpenAPI server display name. |
 | `jsonapi4j.oas.servers[*].url` | not set | OpenAPI server URL. |
 | `jsonapi4j.oas.servers[*].enabled` | false | Include server in generated spec or not. |
-| `jsonapi4j.oas.customResponseHeaders[*].httpStatusCode` | not set | HTTP status code this custom-header group applies to. |
-| `jsonapi4j.oas.customResponseHeaders[*].headers[*].name` | not set | Header name. |
-| `jsonapi4j.oas.customResponseHeaders[*].headers[*].description` | not set | Header description. |
-| `jsonapi4j.oas.customResponseHeaders[*].headers[*].required` | false | Whether header is required. |
-| `jsonapi4j.oas.customResponseHeaders[*].headers[*].schema` | string | Header schema type. |
-| `jsonapi4j.oas.customResponseHeaders[*].headers[*].example` | not set | Header example value. |

@@ -191,46 +191,6 @@ public class OasPropertiesTests {
     }
 
     @Nested
-    class CustomResponseHeaders {
-
-        @ParameterizedTest
-        @ValueSource(strings = {"4XX", "429 Too Many Requests", "42"})
-        public void validate_httpStatusCodeIsNotThreeDigits_reportsError(String httpStatusCode) {
-            sut.getCustomResponseHeaders().get(0).setHttpStatusCode(httpStatusCode);
-
-            assertThat(sut.validate().getPropertyErrors())
-                    .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].httpStatusCode");
-        }
-
-        @Test
-        public void validate_unsupportedHeaderSchema_reportsError() {
-            sut.getCustomResponseHeaders().get(0).getHeaders().get(0).setSchema("number");
-
-            assertThat(sut.validate().getPropertyErrors())
-                    .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].headers[0].schema");
-        }
-
-        @Test
-        public void validate_groupWithoutHeaders_reportsError() {
-            sut.getCustomResponseHeaders().get(0).setHeaders(List.of());
-
-            assertThat(sut.validate().getPropertyErrors())
-                    .containsOnlyKeys("jsonapi4j.oas.customResponseHeaders[0].headers");
-        }
-
-        @Test
-        public void validate_sameHttpStatusCodeDeclaredTwice_reportsCrossPropertiesError() {
-            sut.setCustomResponseHeaders(List.of(rateLimitHeaders(), rateLimitHeaders()));
-
-            PropertiesValidationResult result = sut.validate();
-
-            assertThat(result.getPropertyErrors()).isEmpty();
-            assertThat(result.getCrossPropertiesErrors()).hasSize(1);
-        }
-
-    }
-
-    @Nested
     class CrossCheckAgainstRootPath {
 
         @Test
@@ -326,22 +286,7 @@ public class OasPropertiesTests {
         server.setEnabled(true);
         server.setUrl("http://localhost:8080");
         properties.setServers(List.of(server));
-
-        properties.setCustomResponseHeaders(List.of(rateLimitHeaders()));
         return properties;
-    }
-
-    private static DefaultCustomResponseHeaderGroup rateLimitHeaders() {
-        DefaultResponseHeader header = new DefaultResponseHeader();
-        header.setName("X-RateLimit-Remaining");
-        header.setRequired(true);
-        header.setSchema("integer");
-        header.setExample("5");
-
-        DefaultCustomResponseHeaderGroup group = new DefaultCustomResponseHeaderGroup();
-        group.setHttpStatusCode("429");
-        group.setHeaders(List.of(header));
-        return group;
     }
 
 }

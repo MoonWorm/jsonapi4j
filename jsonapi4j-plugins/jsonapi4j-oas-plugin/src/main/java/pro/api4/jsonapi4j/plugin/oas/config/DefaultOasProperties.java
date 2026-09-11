@@ -22,7 +22,6 @@ public class DefaultOasProperties implements OasProperties {
     private DefaultExternalDocumentation externalDocumentation;
     private DefaultOAuth2 oauth2;
     private List<DefaultServer> servers = new ArrayList<>();
-    private List<DefaultCustomResponseHeaderGroup> customResponseHeaders = new ArrayList<>();
 
     @Override
     public boolean enabled() {
@@ -52,11 +51,6 @@ public class DefaultOasProperties implements OasProperties {
     @Override
     public List<? extends Server> servers() {
         return servers;
-    }
-
-    @Override
-    public List<? extends CustomResponseHeaderGroup> customResponseHeaders() {
-        return customResponseHeaders;
     }
 
     @Getter
@@ -267,64 +261,6 @@ public class DefaultOasProperties implements OasProperties {
         @Override
         public boolean enabled() {
             return enabled;
-        }
-
-    }
-
-    @ToString
-    @Getter
-    @Setter
-    public static class DefaultCustomResponseHeaderGroup implements CustomResponseHeaderGroup {
-
-        private String httpStatusCode;
-
-        private List<DefaultResponseHeader> headers = new ArrayList<>();
-
-        @Override
-        public String httpStatusCode() {
-            return httpStatusCode;
-        }
-
-        @Override
-        public List<? extends ResponseHeader> headers() {
-            return headers;
-        }
-
-    }
-
-    @ToString
-    @Getter
-    @Setter
-    public static class DefaultResponseHeader implements ResponseHeader {
-        private String name;
-        private String description;
-        private boolean required = Boolean.parseBoolean(DEFAULT_RESPONSE_HEADER_REQUIRED);
-        private String schema = DEFAULT_RESPONSE_HEADER_SCHEMA;
-        private String example;
-
-        @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public String description() {
-            return description;
-        }
-
-        @Override
-        public boolean required() {
-            return required;
-        }
-
-        @Override
-        public String schema() {
-            return schema;
-        }
-
-        @Override
-        public String example() {
-            return example;
         }
 
     }

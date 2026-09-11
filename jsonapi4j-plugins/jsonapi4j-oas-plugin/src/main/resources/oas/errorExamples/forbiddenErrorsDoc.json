@@ -1,0 +1,19 @@
+{
+  "errors": [
+    {
+      "id": "3a7c9b21-5d18-4e6f-8b02-6c9e1f3a7d42",
+      "status": "403",
+      "code": "CLIENT_GENERATED_ID_NOT_SUPPORTED",
+      "detail": "resource id is assigned by the server, omit it from the request",
+      "source": {
+        "pointer": "/data/id"
+      }
+    },
+    {
+      "id": "5b2d1c43-7e90-4a35-9f61-2d8b4e0c6a93",
+      "status": "403",
+      "code": "INSUFFICIENT_ENTITLEMENTS",
+      "detail": "Access to the operation is forbidden"
+    }
+  ]
+}

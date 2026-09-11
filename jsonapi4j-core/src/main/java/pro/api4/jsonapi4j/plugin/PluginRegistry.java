@@ -86,6 +86,20 @@ public class PluginRegistry {
     }
 
     /**
+     * Looks up a registered plugin by its type, e.g. {@code pluginOf(JsonApiOasPlugin.class)}. Reads
+     * {@link #getAllPlugins()}, so a disabled plugin is still found.
+     *
+     * @return the plugin, or empty when none of that type is registered
+     */
+    public <PLUGIN extends JsonApi4jPlugin> Optional<PLUGIN> pluginOf(Class<PLUGIN> pluginType) {
+        Validate.notNull(pluginType, "Plugin type must not be null");
+        return plugins.stream()
+                .filter(pluginType::isInstance)
+                .map(pluginType::cast)
+                .findFirst();
+    }
+
+    /**
      * Validates every enabled plugin's configuration - on its own ({@link PluginProperties#validate()}) and against
      * the root configuration ({@link PluginProperties#validateAgainst(JsonApi4jProperties)}) - and fails with every
      * plugin's errors at once. A boot that dies on the first bad key costs one restart per typo.

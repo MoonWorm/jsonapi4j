@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "id": "2f1e8a10-3c44-4b9e-9a77-1d4a2b6c8e01",
+      "status": "401",
+      "code": "ACCESS_TOKEN_EXPIRED",
+      "detail": "The access token has expired. Obtain a new one and retry the request."
+    }
+  ]
+}

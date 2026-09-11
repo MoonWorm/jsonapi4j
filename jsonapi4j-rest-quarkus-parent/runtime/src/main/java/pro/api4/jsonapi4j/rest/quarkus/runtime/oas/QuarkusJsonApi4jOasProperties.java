@@ -15,8 +15,6 @@ import java.util.Optional;
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.DEFAULT_INFO_TITLE;
 import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Info.DEFAULT_INFO_VERSION;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_RESPONSE_HEADER_REQUIRED;
-import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.ResponseHeader.DEFAULT_RESPONSE_HEADER_SCHEMA;
 import static pro.api4.jsonapi4j.plugin.oas.config.OasProperties.Server.DEFAULT_SERVER_ENABLED;
 
 @Singleton
@@ -59,11 +57,6 @@ public interface QuarkusJsonApi4jOasProperties {
      * An array of Server Objects, which provide connectivity information to a target server. Optional.
      */
     List<QuarkusJsonApi4jOasServersProperties> servers();
-
-    /**
-     * An array of custom response headers details per HTTP Status Code. Optional.
-     */
-    List<QuarkusJsonApi4jOasCustomResponseHeaderGroupProperties> customResponseHeaders();
 
     interface QuarkusJsonApi4jOasInfoProperties {
 
@@ -249,50 +242,6 @@ public interface QuarkusJsonApi4jOasProperties {
 
     }
 
-    interface QuarkusJsonApi4jOasCustomResponseHeaderGroupProperties {
-
-        /**
-         * HTTP Status which custom response headers are associated with. Required.
-         */
-        String httpStatusCode();
-
-        /**
-         * An array of custom response header details. Required.
-         */
-        List<QuarkusJsonApi4jOasCustomResponseHeaderProperties> headers();
-
-    }
-
-    interface QuarkusJsonApi4jOasCustomResponseHeaderProperties {
-        /**
-         * Custom Response Header name. Required.
-         */
-        String name();
-
-        /**
-         * Custom Response Header description. Optional.
-         */
-        Optional<String> description();
-
-        /**
-         * If header required or not. Optional. False by default.
-         */
-        @WithDefault(DEFAULT_RESPONSE_HEADER_REQUIRED)
-        boolean required();
-
-        /**
-         * The schema defining the type used for the header. Required. 'string' by default.
-         */
-        @WithDefault(DEFAULT_RESPONSE_HEADER_SCHEMA)
-        String schema();
-
-        /**
-         * Header example. Optional.
-         */
-        Optional<String> example();
-
-    }
-
     default OasProperties toOasProperties() {
         DefaultOasProperties oasProperties = new DefaultOasProperties();
         oasProperties.setEnabled(enabled());
@@ -359,21 +308,6 @@ public interface QuarkusJsonApi4jOasProperties {
             s.setName(qs.name());
             s.setUrl(qs.url());
             return s;
-        }).toList());
-
-        oasProperties.setCustomResponseHeaders(customResponseHeaders().stream().map(qcrhg -> {
-            DefaultCustomResponseHeaderGroup crhg = new DefaultCustomResponseHeaderGroup();
-            crhg.setHttpStatusCode(qcrhg.httpStatusCode());
-            crhg.setHeaders(qcrhg.headers().stream().map(h -> {
-                DefaultResponseHeader rh = new DefaultResponseHeader();
-                rh.setName(h.name());
-                rh.setDescription(h.description().orElse(null));
-                rh.setSchema(h.schema());
-                rh.setExample(h.example().orElse(null));
-                rh.setRequired(h.required());
-                return rh;
-            }).toList());
-            return crhg;
         }).toList());
 
         return oasProperties;

@@ -1,0 +1,22 @@
+{
+  "errors": [
+    {
+      "id": "6c3e2d54-8f01-4b46-a072-3e9c5f1d7b04",
+      "status": "409",
+      "code": "CONFLICT",
+      "detail": "resource type does not belong to this collection",
+      "source": {
+        "pointer": "/data/type"
+      }
+    },
+    {
+      "id": "7d4f3e65-9012-4c57-b183-4f0d6a2e8c15",
+      "status": "409",
+      "code": "CONFLICT",
+      "detail": "resource id does not match the one in the request path",
+      "source": {
+        "pointer": "/data/id"
+      }
+    }
+  ]
+}

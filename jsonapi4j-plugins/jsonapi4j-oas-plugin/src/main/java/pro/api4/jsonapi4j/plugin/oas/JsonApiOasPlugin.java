@@ -3,7 +3,9 @@ package pro.api4.jsonapi4j.plugin.oas;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.operation.*;
+import lombok.Getter;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasRelationshipInfo;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
@@ -13,6 +15,8 @@ import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
+
+import java.util.List;
 
 import static pro.api4.jsonapi4j.operation.CreateResourceOperation.CREATE_METHOD_NAME;
 import static pro.api4.jsonapi4j.operation.DeleteResourceOperation.DELETE_METHOD_NAME;
@@ -29,10 +33,23 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
 
     public static final String NAME = JsonApiOasPlugin.class.getSimpleName();
 
-    private OasProperties oasProperties;
+    private final OasProperties oasProperties;
+
+    @Getter
+    private final List<OasCustomizer> customizers;
 
     public JsonApiOasPlugin(OasProperties oasProperties) {
+        this(oasProperties, List.of());
+    }
+
+    /**
+     * @param customizers applied after the built-in ones, in the order given, so they see the finished document and
+     *                    can tune anything the framework generated
+     */
+    public JsonApiOasPlugin(OasProperties oasProperties,
+                            List<OasCustomizer> customizers) {
         this.oasProperties = oasProperties;
+        this.customizers = customizers == null ? List.of() : List.copyOf(customizers);
     }
 
     @Override

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -27,6 +28,7 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,7 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SCOPE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SECURED_RESOURCE_TYPE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4j;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.jsonApi4jWithPeerPlugin;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.oasProperties;
 
 /**
@@ -294,6 +297,99 @@ class JsonApiOperationsCustomizerTests {
                     .get(JsonApiMediaType.MEDIA_TYPE)
                     .getSchema()
                     .get$ref();
+        }
+
+    }
+
+    /**
+     * Two codes cannot be derived from the operation type, because they depend on what the application switched on:
+     * the Access Control plugin refuses a write with {@code 403} (a denied read is answered with an empty document
+     * and a {@code 200}, so the compound-documents resolver can keep going), and {@code 401} comes from the host's
+     * security layer rather than the framework, so it is documented only where a scheme can reject the request.
+     */
+    @Nested
+    class ContextDependentErrorResponses {
+
+        @Test
+        void customise_securedOperation_documents401() {
+            assertThat(errorCodesOf(securedOperation(documentOf(jsonApi4j(oasProperties("m2m", "user-facing"))))))
+                    .contains("401");
+        }
+
+        @Test
+        void customise_operationWithNoSecurityScheme_documentsNo401() {
+            assertThat(errorCodesOf(securedOperation(documentOf(jsonApi4j(new DefaultOasProperties())))))
+                    .doesNotContain("401");
+        }
+
+        @Test
+        void customise_accessControlActive_documents403OnEveryWrite() {
+            Paths paths = documentOf(accessControlled(new WriteOperations())).getPaths();
+
+            assertThat(errorCodesOf(paths.get(collectionPath()).getPost())).contains("403");
+            assertThat(errorCodesOf(paths.get(singlePath()).getPatch())).contains("403");
+            assertThat(errorCodesOf(paths.get(singlePath()).getDelete())).contains("403");
+        }
+
+        @Test
+        void customise_accessControlActive_documentsNo403OnReads() {
+            assertThat(errorCodesOf(securedOperation(documentOf(accessControlled(new SecuredOperations())))))
+                    .doesNotContain("403");
+        }
+
+        @Test
+        void customise_accessControlInactive_documentsNo403OnWritesThatOnlyItCanRefuse() {
+            Paths paths = writeOperationPaths();
+
+            assertThat(errorCodesOf(paths.get(singlePath()).getPatch())).doesNotContain("403");
+            assertThat(errorCodesOf(paths.get(singlePath()).getDelete())).doesNotContain("403");
+        }
+
+        @Test
+        void customise_accessControlInactive_stillDocuments403OnCreate() {
+            assertThat(errorCodesOf(writeOperationPaths().get(collectionPath()).getPost())).contains("403");
+        }
+
+        @Test
+        void customise_everyErrorResponse_referencesAnExampleTheDocumentDeclares() {
+            OpenAPI openApi = documentOf(accessControlled(new WriteOperations()));
+
+            assertThat(openApi.getPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .allSatisfy(operation -> operation.getResponses().forEach((status, response) -> {
+                        if (response.getContent() == null) {
+                            return;
+                        }
+                        Map<String, Example> examples = response.getContent().get(JsonApiMediaType.MEDIA_TYPE).getExamples();
+                        if (examples != null) {
+                            assertThat(openApi.getComponents().getExamples()).containsKeys(examples.keySet().toArray(new String[0]));
+                        }
+                    }));
+        }
+
+        private JsonApi4j accessControlled(ResourceOperations<SecuredAttributes> operations) {
+            return jsonApi4jWithPeerPlugin("JsonApiAccessControlPlugin", operations);
+        }
+
+        private OpenAPI documentOf(JsonApi4j jsonApi4j) {
+            OpenAPI openApi = new OpenAPI();
+            new ErrorExamplesCustomizer().customise(openApi);
+            new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
+            return openApi;
+        }
+
+        private Set<String> errorCodesOf(Operation operation) {
+            return operation.getResponses().keySet().stream()
+                    .filter(status -> !status.startsWith("2"))
+                    .collect(Collectors.toSet());
+        }
+
+        private String collectionPath() {
+            return ROOT_PATH + "/" + SECURED_RESOURCE_TYPE;
+        }
+
+        private String singlePath() {
+            return collectionPath() + "/{id}";
         }
 
     }
