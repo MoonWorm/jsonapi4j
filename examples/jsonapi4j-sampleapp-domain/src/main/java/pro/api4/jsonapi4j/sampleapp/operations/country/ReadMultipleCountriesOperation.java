@@ -5,7 +5,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation;
 import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Filter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
@@ -73,20 +73,16 @@ public class ReadMultipleCountriesOperation implements ReadMultipleResourcesOper
                     clientCredentialsSupported = true,
                     pkceSupported = true
             ),
-            parameters = {
-                    @Parameter(
-                            name = "filter[id]",
+            filters = {
+                    @Filter(
+                            name = "id",
                             description = "Allows to filter countries based on id attribute value",
-                            example = "US",
-                            array = true,
-                            required = false
+                            example = "US"
                     ),
-                    @Parameter(
-                            name = "filter[region]",
+                    @Filter(
+                            name = "region",
                             description = "Allows to filter countries based on region attribute value",
-                            example = "Asia",
-                            array = true,
-                            required = false
+                            example = "Asia"
                     )
             }
     )

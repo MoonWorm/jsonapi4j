@@ -27,6 +27,8 @@ public class OasOperationInfoModel {
     @Builder.Default
     private SecurityConfig securityConfig = SecurityConfig.builder().build();
     @Builder.Default
+    private List<Filter> filters = Collections.emptyList();
+    @Builder.Default
     private List<Parameter> parameters = Collections.emptyList();
     @Builder.Default
     private Class<?> payloadType = NotApplicable.class;
@@ -43,6 +45,21 @@ public class OasOperationInfoModel {
         private boolean pkceSupported = false;
         @Builder.Default
         private List<String> requiredScopes = Collections.emptyList();
+    }
+
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @Getter
+    @ToString
+    @EqualsAndHashCode
+    public static class Filter {
+        private final String name;
+        @Builder.Default
+        private String description = "";
+        @Builder.Default
+        private String example = "";
+        @Builder.Default
+        private Type type = Type.STRING;
     }
 
     @Builder
@@ -96,6 +113,16 @@ public class OasOperationInfoModel {
                                         .required(p.required())
                                         .array(p.array())
                                         .type(p.type())
+                                        .build())
+                                .toList()
+                )
+                .filters(
+                        Arrays.stream(oasOperationInfo.filters())
+                                .map(f -> Filter.builder()
+                                        .name(f.name())
+                                        .description(f.description())
+                                        .example(f.example())
+                                        .type(f.type())
                                         .build())
                                 .toList()
                 )

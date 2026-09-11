@@ -23,6 +23,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.AccessControlOwnership;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Filter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
@@ -115,13 +116,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             ),
             sortableFields = {FULL_NAME_FIELD_NAME, EMAIL_FIELD_NAME},
             pagination = {PaginationStyle.CURSOR, PaginationStyle.LIMIT_OFFSET},
-            parameters = {
-                    @Parameter(
-                            name = "filter[id]",
+            filters = {
+                    @Filter(
+                            name = "id",
                             description = "Allows to filter users based on id attribute value",
-                            example = "3",
-                            array = true,
-                            required = false
+                            example = "3"
                     )
             }
     )

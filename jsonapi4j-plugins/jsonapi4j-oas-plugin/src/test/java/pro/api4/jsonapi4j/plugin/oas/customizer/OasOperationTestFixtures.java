@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2Sc
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
+import pro.api4.jsonapi4j.plugin.oas.operation.model.In;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -34,6 +35,8 @@ final class OasOperationTestFixtures {
     static final String SCOPE = "secured.read";
     static final String CUSTOM_SUMMARY = "Fetch one secured thing";
     static final String CUSTOM_DESCRIPTION = "Returns the secured thing the caller asked for.";
+    static final String CUSTOM_ID_DESCRIPTION = "The secured thing's identifier";
+    static final String CUSTOM_ID_EXAMPLE = "sec-42";
 
     private OasOperationTestFixtures() {
     }
@@ -202,6 +205,48 @@ final class OasOperationTestFixtures {
         @Override
         public PaginationAwareResponse<SecuredAttributes> readPage(JsonApiRequest request) {
             return PaginationAwareResponse.fromItemsNotPageable(List.of());
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class FilterableListingOperations implements ResourceOperations<SecuredAttributes> {
+
+        @OasOperationInfo(
+                filters = {
+                        @OasOperationInfo.Filter(name = "id", description = "Filter by id", example = "42"),
+                        @OasOperationInfo.Filter(name = "region")
+                }
+        )
+        @Override
+        public PaginationAwareResponse<SecuredAttributes> readPage(JsonApiRequest request) {
+            return PaginationAwareResponse.fromItemsNotPageable(List.of());
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class OverriddenParamOperations implements ResourceOperations<SecuredAttributes> {
+
+        @OasOperationInfo(
+                parameters = {
+                        @OasOperationInfo.Parameter(
+                                name = "id",
+                                in = In.PATH,
+                                description = CUSTOM_ID_DESCRIPTION,
+                                example = CUSTOM_ID_EXAMPLE
+                        ),
+                        @OasOperationInfo.Parameter(
+                                name = "tenant",
+                                description = "Tenant the request is scoped to",
+                                example = "acme",
+                                required = false
+                        )
+                }
+        )
+        @Override
+        public SecuredAttributes readById(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
         }
 
     }

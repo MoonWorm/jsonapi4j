@@ -7,7 +7,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiResourceOperation;
 
 import static pro.api4.jsonapi4j.operation.validation.JsonApiRequestValidator.forRequest;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
-import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Parameter;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.Filter;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
@@ -57,13 +57,11 @@ public class CurrencyOperations implements ResourceOperations<DownstreamCurrency
                     clientCredentialsSupported = true,
                     pkceSupported = true
             ),
-            parameters = {
-                    @Parameter(
-                            name = "filter[id]",
+            filters = {
+                    @Filter(
+                            name = "id",
                             description = "Allows to filter currencies based on id attribute value",
-                            example = "NOK",
-                            array = true,
-                            required = false
+                            example = "NOK"
                     )
             }
     )

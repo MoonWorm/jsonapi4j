@@ -43,8 +43,27 @@ public @interface OasOperationInfo {
      */
     PaginationStyle[] pagination() default {PaginationStyle.CURSOR};
 
+    /**
+     * Filters this operation honours, published as {@code filter[<name>]} query parameters. Like
+     * {@link #sortableFields()}, declaring them is what publishes them: the framework parses {@code filter[...]} for
+     * every request, but only the operation can act on one.
+     * <p>
+     * The framework owns the parameter's spelling, its array shape and the {@code maxItems} it inherits from
+     * {@code validation.maxElementsInFilterParam}, so a filter only declares what it is called and what it means.
+     */
+    Filter[] filters() default {};
+
     SecurityConfig securityConfig() default @SecurityConfig;
 
+    /**
+     * Query, path and header parameters the framework cannot derive - the application's own parameters, which reach
+     * an operation through {@code JsonApiRequest#getCustomQueryParams()}.
+     * <p>
+     * Declaring a name the framework already generates ({@code id}, {@code include}, {@code sort}, {@code page[...]},
+     * {@code fields[...]}, {@code filter[...]}) contributes description and example to it and nothing else - the
+     * generated schema carries constraints taken from the running configuration, and a replacement would silently
+     * drop them. Use {@link #filters()} to declare a filter.
+     */
     Parameter[] parameters() default {};
 
     Class<?> payloadType() default NotApplicable.class;
@@ -55,6 +74,19 @@ public @interface OasOperationInfo {
         boolean clientCredentialsSupported() default false;
         boolean pkceSupported() default false;
         String[] requiredScopes() default {};
+    }
+
+    /**
+     * A filter dimension. Always optional and always multi-valued, as JSON:API defines them, so neither is declared
+     * here - {@link #type()} is the type of one value.
+     */
+    @Target({})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Filter {
+        String name();
+        String description() default "";
+        String example() default "";
+        Type type() default Type.STRING;
     }
 
     @Target({})

@@ -1004,6 +1004,7 @@
               "example" : "US",
               "type" : "string"
             },
+            "maxItems" : 20,
             "type" : "array"
           }
         }, {
@@ -1016,6 +1017,7 @@
               "example" : "Asia",
               "type" : "string"
             },
+            "maxItems" : 20,
             "type" : "array"
           }
         } ],
@@ -1218,6 +1220,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -1443,6 +1446,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -1646,6 +1650,7 @@
               "example" : "NOK",
               "type" : "string"
             },
+            "maxItems" : 20,
             "type" : "array"
           }
         } ],
@@ -1893,6 +1898,7 @@
               "example" : "3",
               "type" : "string"
             },
+            "maxItems" : 20,
             "type" : "array"
           }
         } ],
@@ -2493,6 +2499,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3101,6 +3108,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -3666,6 +3674,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],
@@ -4239,6 +4248,7 @@
           "name" : "id",
           "required" : true,
           "schema" : {
+            "maxLength" : 64,
             "type" : "string"
           }
         } ],

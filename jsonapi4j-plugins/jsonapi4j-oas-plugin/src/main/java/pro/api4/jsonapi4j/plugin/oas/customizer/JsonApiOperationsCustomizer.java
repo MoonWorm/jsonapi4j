@@ -38,6 +38,7 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.OasOperationInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.CursorAwareRequest;
+import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
@@ -340,15 +341,42 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
     private List<Parameter> generateParameters(OasOperationInfoModel oasOperationInfo,
                                                List<String> supportedIncludes,
                                                OasOperationInfoUtil.Info extraOperationInfo) {
-        List<OasOperationInfoModel.Parameter> customParameters = oasOperationInfo != null
-                ? oasOperationInfo.getParameters()
-                : Collections.emptyList();
         Map<String, Parameter> parameters = new LinkedHashMap<>();
-        // generate Json:Api default parameters first
-        generateJsonApiParameters(supportedIncludes, extraOperationInfo, oasOperationInfo).forEach(p -> parameters.put(p.getName(), p));
-        // custom parameters can override Json:Api default parameters
-        generateCustomParameters(customParameters).forEach(p -> parameters.put(p.getName(), p));
+        generateJsonApiParameters(supportedIncludes, extraOperationInfo, oasOperationInfo)
+                .forEach(parameter -> parameters.put(parameter.getName(), parameter));
+        customParametersOf(oasOperationInfo).forEach(custom -> {
+            Parameter generated = parameters.get(custom.getName());
+            if (generated == null) {
+                parameters.put(custom.getName(), createCustomParam(custom));
+            } else {
+                describe(generated, custom.getDescription(), custom.getExample());
+            }
+        });
         return List.copyOf(parameters.values());
+    }
+
+    private List<OasOperationInfoModel.Parameter> customParametersOf(OasOperationInfoModel oasOperationInfo) {
+        return oasOperationInfo == null ? List.of() : emptyIfNull(oasOperationInfo.getParameters()).stream().toList();
+    }
+
+    /**
+     * A declaration naming a parameter the framework already generated contributes its prose and nothing else. The
+     * generated schema carries constraints read from the running configuration - {@code maxLength} on a resource id,
+     * {@code maxItems} on {@code include} - and replacing it wholesale drops them without saying so.
+     */
+    private void describe(Parameter parameter,
+                          String description,
+                          String example) {
+        if (StringUtils.isNotBlank(description)) {
+            parameter.setDescription(description);
+        }
+        if (StringUtils.isNotBlank(example)) {
+            if (parameter.getSchema() instanceof ArraySchema arraySchema && arraySchema.getItems() != null) {
+                arraySchema.getItems().setExample(example);
+            } else {
+                parameter.setExample(example);
+            }
+        }
     }
 
     private Set<HttpStatusCodes> resolveSupportedHttpErrorCodes(OasOperationInfoUtil.Info extraOperationInfo,
@@ -461,23 +489,19 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return grantFlow.name();
     }
 
-    private List<Parameter> generateCustomParameters(List<OasOperationInfoModel.Parameter> customParameters) {
-        return customParameters.stream().map(
-                p -> {
-                    Parameter parameter = new Parameter();
-                    parameter.setName(p.getName());
-                    parameter.setDescription(p.getDescription());
-                    parameter.setRequired(p.isRequired());
-                    parameter.setIn(p.getIn().getName());
-                    if (p.isArray()) {
-                        parameter.setSchema(new ArraySchema().items(new Schema().type(p.getType().getType()).example(p.getExample())));
-                    } else {
-                        parameter.setExample(p.getExample());
-                        parameter.setSchema(new Schema().type(p.getType().getType()));
-                    }
-                    return parameter;
-                }
-        ).toList();
+    private Parameter createCustomParam(OasOperationInfoModel.Parameter custom) {
+        Parameter parameter = new Parameter();
+        parameter.setName(custom.getName());
+        parameter.setDescription(custom.getDescription());
+        parameter.setRequired(custom.isRequired());
+        parameter.setIn(custom.getIn().getName());
+        if (custom.isArray()) {
+            parameter.setSchema(new ArraySchema().items(new Schema<>().type(custom.getType().getType()).example(custom.getExample())));
+        } else {
+            parameter.setExample(custom.getExample());
+            parameter.setSchema(new Schema<>().type(custom.getType().getType()));
+        }
+        return parameter;
     }
 
     private List<Parameter> generateJsonApiParameters(List<String> availableIncludes,
@@ -494,10 +518,45 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
             }
         }
         createSortParam(sortableFieldsOf(oasOperationInfo)).ifPresent(params::add);
+        params.addAll(createFilterParams(filtersOf(oasOperationInfo)));
         if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
             params.add(createDefaultIdPathParam());
         }
         return params;
+    }
+
+    /**
+     * Publishes {@code filter[...]} only for the dimensions the operation declared, for the same reason {@code sort}
+     * is published from {@link OasOperationInfo#sortableFields()}: the framework parses every {@code filter[...]} it
+     * is given, but acting on one is the operation's business.
+     */
+    private List<Parameter> createFilterParams(List<OasOperationInfoModel.Filter> filters) {
+        return filters.stream().map(this::createFilterParam).toList();
+    }
+
+    private Parameter createFilterParam(OasOperationInfoModel.Filter filter) {
+        Parameter filterParam = new Parameter();
+        filterParam.setName(FiltersAwareRequest.getFilterParam(filter.getName()));
+        filterParam.setIn("query");
+        filterParam.setRequired(false);
+        filterParam.setDescription(StringUtils.isNotBlank(filter.getDescription())
+                ? filter.getDescription()
+                : String.format("Filters by '%s'. Optional", filter.getName()));
+
+        Schema<?> itemSchema = new Schema<>().type(filter.getType().getType());
+        if (StringUtils.isNotBlank(filter.getExample())) {
+            itemSchema.setExample(filter.getExample());
+        }
+        ArraySchema schema = new ArraySchema().items(itemSchema);
+        if (validationProperties != null) {
+            schema.setMaxItems(validationProperties.maxElementsInFilterParam());
+        }
+        filterParam.setSchema(schema);
+        return filterParam;
+    }
+
+    private List<OasOperationInfoModel.Filter> filtersOf(OasOperationInfoModel oasOperationInfo) {
+        return oasOperationInfo == null ? List.of() : emptyIfNull(oasOperationInfo.getFilters()).stream().toList();
     }
 
     private List<String> sortableFieldsOf(OasOperationInfoModel oasOperationInfo) {

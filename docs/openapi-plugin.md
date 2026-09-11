@@ -41,7 +41,7 @@ To add metadata beyond what the framework generates automatically (e.g., `info`,
 |-----------|-----------|---------|
 | `@OasResourceInfo` | On `Resource` class | Customizes the resource's OpenAPI schema (description, example values) |
 | `@OasRelationshipInfo` | On `ToOneRelationship` or `ToManyRelationship` class | Declares the resource types the relationship links to, and the type of the `meta` its resource linkage carries |
-| `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary, description and request body type, and declares extra query/path parameters and OAuth2 security requirements |
+| `@OasOperationInfo` | On operation class or individual operation methods | Overrides the generated operation summary, description and request body type, and declares sortable fields, filters, pagination styles, application-specific parameters and OAuth2 security requirements |
 
 Example:
 
@@ -145,18 +145,48 @@ so the document publishes what the operation declares, never what the request la
 | `page[cursor]` | the operation is paginated — the default |
 | `page[limit]`, `page[offset]` | `@OasOperationInfo(pagination = {CURSOR, LIMIT_OFFSET})` |
 | `sort` | `@OasOperationInfo(sortableFields = {"fullName", "email"})` |
-| `filter[…]` | declared through `@OasOperationInfo(parameters = …)` — only the operation knows its filters |
+| `filter[…]` | `@OasOperationInfo(filters = {@Filter(name = "region")})` |
 
 ```java
 @OasOperationInfo(
         sortableFields = {"fullName", "email"},
-        pagination = {PaginationStyle.CURSOR, PaginationStyle.LIMIT_OFFSET}
+        pagination = {PaginationStyle.CURSOR, PaginationStyle.LIMIT_OFFSET},
+        filters = {
+                @Filter(name = "id", example = "3"),
+                @Filter(name = "region", description = "Filter by region", example = "Asia")
+        }
 )
 public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) { … }
 ```
 
 `sortableFields` becomes the parameter's allowed values in both directions — `fullName`, `-fullName`, `email`,
 `-email`. Pagination defaults to cursor alone, so an operation that does not read `page[limit]` never advertises it.
+
+A filter is declared by its dimension, not by its parameter name: the framework spells it `filter[id]`, makes it
+optional and multi-valued as JSON:API defines filters, and bounds it with `validation.maxElementsInFilterParam`.
+
+### Application-specific Parameters
+
+`@OasOperationInfo(parameters = …)` documents parameters the framework cannot derive — the application's own query
+parameters, which reach an operation through `JsonApiRequest#getCustomQueryParams()`.
+
+```java
+@OasOperationInfo(
+        parameters = @Parameter(name = "tenant", description = "Tenant the request is scoped to", required = false)
+)
+```
+
+Naming a parameter the framework already generates — `id`, `include`, `sort`, `page[…]`, `fields[…]`, `filter[…]` —
+contributes a description and example to it and nothing else. The generated schema carries constraints read from the
+running configuration, and replacing it would drop them silently:
+
+```java
+@OasOperationInfo(
+        parameters = @Parameter(name = "id", in = In.PATH, description = "Country code (ISO 3166)", example = "US")
+)
+```
+
+publishes `id` with that description and example, and keeps the `maxLength` taken from `validation.resourceIdMaxLength`.
 
 One `fields[TYPE]` parameter is published per type the document can carry: the primary resource plus what it can
 include. That is one level — a client may nest includes (`include=citizenships.currencies`) and select fields on what

@@ -20,6 +20,8 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CursorO
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CustomPayloadOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.ListingOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.DescribedOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.FilterableListingOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.OverriddenParamOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
@@ -35,6 +37,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizerTestFixtures.build;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_DESCRIPTION;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_ID_DESCRIPTION;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_ID_EXAMPLE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CUSTOM_SUMMARY;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SCOPE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SECURED_RESOURCE_TYPE;
@@ -146,6 +150,119 @@ class JsonApiOperationsCustomizerTests {
 
         private List<Parameter> collectionParams(ResourceOperations<SecuredAttributes> operations) {
             return documentedPaths(operations).get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getGet().getParameters();
+        }
+
+    }
+
+    /**
+     * A filter is declared by its dimension, never by its parameter name: the framework owns the {@code filter[...]}
+     * spelling, the array shape and the bound it takes from {@code maxElementsInFilterParam}, so a document cannot
+     * advertise a filter the request layer would not recognise.
+     */
+    @Nested
+    class DeclaredFilters {
+
+        @Test
+        void customise_filtersDeclared_publishesThemUnderTheJsonApiFilterName() {
+            assertThat(filterParamNames(new FilterableListingOperations()))
+                    .containsExactlyInAnyOrder("filter[id]", "filter[region]");
+        }
+
+        @Test
+        void customise_noFiltersDeclared_publishesNone() {
+            assertThat(filterParamNames(new CursorOnlyListingOperations())).isEmpty();
+        }
+
+        @Test
+        void customise_filter_isOptionalAndMultiValued() {
+            Parameter filter = filterParam("filter[id]");
+
+            assertThat(filter.getRequired()).isFalse();
+            assertThat(filter.getSchema()).isInstanceOf(ArraySchema.class);
+        }
+
+        @Test
+        void customise_filter_boundsItsValuesByTheConfiguredMaximum() {
+            assertThat(filterParam("filter[id]").getSchema().getMaxItems()).isEqualTo(20);
+        }
+
+        @Test
+        void customise_filterDeclaringProse_publishesIt() {
+            Parameter filter = filterParam("filter[id]");
+
+            assertThat(filter.getDescription()).isEqualTo("Filter by id");
+            assertThat(((ArraySchema) filter.getSchema()).getItems().getExample()).isEqualTo("42");
+        }
+
+        @Test
+        void customise_filterDeclaringNoProse_stillDescribesItself() {
+            assertThat(filterParam("filter[region]").getDescription()).contains("region");
+        }
+
+        private Parameter filterParam(String name) {
+            return collectionParams(new FilterableListingOperations()).stream()
+                    .filter(parameter -> name.equals(parameter.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no '" + name + "' parameter was published"));
+        }
+
+        private Set<String> filterParamNames(ResourceOperations<SecuredAttributes> operations) {
+            return collectionParams(operations).stream()
+                    .map(Parameter::getName)
+                    .filter(name -> name.startsWith("filter["))
+                    .collect(Collectors.toSet());
+        }
+
+        private List<Parameter> collectionParams(ResourceOperations<SecuredAttributes> operations) {
+            return documentedPaths(operations).get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getGet().getParameters();
+        }
+
+    }
+
+    /**
+     * The generated schema carries constraints read from the running configuration. A declaration naming a parameter
+     * the framework already produced contributes prose to it, never a replacement schema - replacing it dropped those
+     * constraints without saying so.
+     */
+    @Nested
+    class OverriddenParameters {
+
+        @Test
+        void customise_declarationNamingAGeneratedParam_keepsTheGeneratedSchema() {
+            assertThat(param("id").getSchema().getMaxLength()).isEqualTo(64);
+        }
+
+        @Test
+        void customise_declarationNamingAGeneratedParam_appliesItsProse() {
+            Parameter id = param("id");
+
+            assertThat(id.getDescription()).isEqualTo(CUSTOM_ID_DESCRIPTION);
+            assertThat(id.getExample()).isEqualTo(CUSTOM_ID_EXAMPLE);
+        }
+
+        @Test
+        void customise_declarationNamingAGeneratedParam_leavesItRequired() {
+            assertThat(param("id").getRequired()).isTrue();
+        }
+
+        @Test
+        void customise_declarationNamingAnUnknownParam_publishesItAsDeclared() {
+            Parameter tenant = param("tenant");
+
+            assertThat(tenant.getIn()).isEqualTo("query");
+            assertThat(tenant.getRequired()).isFalse();
+            assertThat(tenant.getExample()).isEqualTo("acme");
+        }
+
+        private Parameter param(String name) {
+            return documentedPaths(new OverriddenParamOperations())
+                    .get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE + "/{id}")
+                    .getGet()
+                    .getParameters()
+                    .stream()
+                    .filter(parameter -> name.equals(parameter.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no '" + name + "' parameter was published"));
         }
 
     }
