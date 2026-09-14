@@ -40,6 +40,7 @@ final class OasOperationTestFixtures {
     static final String CUSTOM_ID_EXAMPLE = "sec-42";
     static final String RESOURCE_ID_DESCRIPTION = "The secured resource id";
     static final String RESOURCE_ID_EXAMPLE = "sec-1";
+    static final String RETIRED_RESOURCE_TYPE = "retired";
 
     private OasOperationTestFixtures() {
     }
@@ -85,6 +86,24 @@ final class OasOperationTestFixtures {
     }
 
     record PeerPlugin(String pluginName) implements JsonApi4jPlugin {
+    }
+
+    /**
+     * A resource declared as going away, with operations that say nothing about deprecation themselves.
+     */
+    static JsonApi4j jsonApi4jWithRetiredResource() {
+        PluginRegistry plugins = PluginRegistry.builder()
+                .register(new JsonApiOasPlugin(new DefaultOasProperties()))
+                .build();
+        return JsonApi4j.builder()
+                .pluginRegistry(plugins)
+                .domainRegistry(DomainRegistry.builder(plugins)
+                        .resource(new RetiredResource())
+                        .build())
+                .operationsRegistry(OperationsRegistry.builder(plugins)
+                        .operations(new RetiredOperations())
+                        .build())
+                .build();
     }
 
     /**
@@ -253,6 +272,53 @@ final class OasOperationTestFixtures {
         )
         @Override
         public SecuredAttributes readById(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = SecuredResource.class)
+    public static class PartlyDeprecatedOperations implements ResourceOperations<SecuredAttributes> {
+
+        @OasOperationInfo(deprecated = true)
+        @Override
+        public SecuredAttributes readById(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+        @Override
+        public SecuredAttributes create(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+    }
+
+    @JsonApiResource(resourceType = RETIRED_RESOURCE_TYPE)
+    @OasResourceInfo(deprecated = true)
+    public static class RetiredResource implements Resource<SecuredAttributes> {
+
+        @Override
+        public String resolveResourceId(SecuredAttributes attributes) {
+            return attributes.id();
+        }
+
+        @Override
+        public SecuredAttributes resolveAttributes(SecuredAttributes attributes) {
+            return attributes;
+        }
+
+    }
+
+    @JsonApiResourceOperation(resource = RetiredResource.class)
+    public static class RetiredOperations implements ResourceOperations<SecuredAttributes> {
+
+        @Override
+        public SecuredAttributes readById(JsonApiRequest request) {
+            return new SecuredAttributes(request.getResourceId());
+        }
+
+        @Override
+        public SecuredAttributes create(JsonApiRequest request) {
             return new SecuredAttributes(request.getResourceId());
         }
 

@@ -38,4 +38,11 @@ public @interface OasResourceInfo {
      */
     String resourceIdExample() default "";
 
+    /**
+     * Marks every operation on this resource deprecated. Deprecation only ever widens - an operation may deprecate
+     * itself through {@link pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo#deprecated()}, but
+     * none can opt out of a resource that is going away.
+     */
+    boolean deprecated() default false;
+
 }

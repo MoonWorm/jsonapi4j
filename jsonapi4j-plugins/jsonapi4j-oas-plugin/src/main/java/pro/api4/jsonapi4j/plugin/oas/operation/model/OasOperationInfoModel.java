@@ -32,6 +32,8 @@ public class OasOperationInfoModel {
     private List<Parameter> parameters = Collections.emptyList();
     @Builder.Default
     private Class<?> payloadType = NotApplicable.class;
+    @Builder.Default
+    private boolean deprecated = false;
 
     @Builder
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -129,6 +131,7 @@ public class OasOperationInfoModel {
                 .sortableFields(Arrays.asList(oasOperationInfo.sortableFields()))
                 .paginationStyles(toOrderedStyles(oasOperationInfo.pagination()))
                 .payloadType(oasOperationInfo.payloadType())
+                .deprecated(oasOperationInfo.deprecated())
                 .build();
     }
 

@@ -135,6 +135,7 @@
     "parameters" : {
       "FieldsCountries" : {
         "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
         "in" : "query",
         "name" : "fields[countries]",
         "required" : false,
@@ -143,10 +144,12 @@
             "type" : "string"
           },
           "type" : "array"
-        }
+        },
+        "style" : "form"
       },
       "FieldsCurrencies" : {
         "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
         "in" : "query",
         "name" : "fields[currencies]",
         "required" : false,
@@ -155,10 +158,12 @@
             "type" : "string"
           },
           "type" : "array"
-        }
+        },
+        "style" : "form"
       },
       "FieldsUsers" : {
         "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
         "in" : "query",
         "name" : "fields[users]",
         "required" : false,
@@ -167,7 +172,8 @@
             "type" : "string"
           },
           "type" : "array"
-        }
+        },
+        "style" : "form"
       },
       "PageCursor" : {
         "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
@@ -1230,6 +1236,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1240,7 +1247,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
@@ -1249,6 +1257,7 @@
           "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Allows to filter countries based on id attribute value",
+          "explode" : false,
           "in" : "query",
           "name" : "filter[id]",
           "required" : false,
@@ -1259,9 +1268,11 @@
             },
             "maxItems" : 20,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "description" : "Allows to filter countries based on region attribute value",
+          "explode" : false,
           "in" : "query",
           "name" : "filter[region]",
           "required" : false,
@@ -1272,7 +1283,8 @@
             },
             "maxItems" : 20,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         } ],
         "responses" : {
           "200" : {
@@ -1323,6 +1335,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1333,7 +1346,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
@@ -1401,6 +1415,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1411,7 +1426,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
@@ -1484,6 +1500,7 @@
           "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Allows to filter currencies based on id attribute value",
+          "explode" : false,
           "in" : "query",
           "name" : "filter[id]",
           "required" : false,
@@ -1494,7 +1511,8 @@
             },
             "maxItems" : 20,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         } ],
         "responses" : {
           "200" : {
@@ -1542,6 +1560,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1552,7 +1571,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
@@ -1585,6 +1605,7 @@
         }, {
           "description" : "Sort order. Prefix a field with '-' for descending, e.g. '-fullName'. Optional",
           "example" : "fullName",
+          "explode" : false,
           "in" : "query",
           "name" : "sort",
           "required" : false,
@@ -1595,9 +1616,11 @@
             },
             "maxItems" : 5,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "description" : "Allows to filter users based on id attribute value",
+          "explode" : false,
           "in" : "query",
           "name" : "filter[id]",
           "required" : false,
@@ -1608,7 +1631,8 @@
             },
             "maxItems" : 20,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         } ],
         "responses" : {
           "200" : {
@@ -1784,6 +1808,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1794,7 +1819,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
@@ -1979,6 +2005,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -1989,7 +2016,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
@@ -2165,6 +2193,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth. Dotted paths reach further levels (e.g. 'placeOfBirth.<relationship>'); this document describes the first level only",
           "example" : "placeOfBirth",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -2175,7 +2204,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
@@ -2349,6 +2379,7 @@
         "parameters" : [ {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives. Dotted paths reach further levels (e.g. 'relatives.<relationship>'); this document describes the first level only",
           "example" : "relatives",
+          "explode" : false,
           "in" : "query",
           "name" : "include",
           "required" : false,
@@ -2359,7 +2390,8 @@
             },
             "maxItems" : 10,
             "type" : "array"
-          }
+          },
+          "style" : "form"
         }, {
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {

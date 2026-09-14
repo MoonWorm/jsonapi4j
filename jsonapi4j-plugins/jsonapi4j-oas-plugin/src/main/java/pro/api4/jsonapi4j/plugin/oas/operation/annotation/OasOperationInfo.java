@@ -53,6 +53,12 @@ public @interface OasOperationInfo {
      */
     Filter[] filters() default {};
 
+    /**
+     * Marks this operation deprecated. A resource may deprecate all of its operations at once through
+     * {@link pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo#deprecated()}; this deprecates one.
+     */
+    boolean deprecated() default false;
+
     SecurityConfig securityConfig() default @SecurityConfig;
 
     /**

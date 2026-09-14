@@ -18,6 +18,8 @@ public class OasResourceInfoModel {
     private String resourceIdDescription = "";
     @Builder.Default
     private String resourceIdExample = "";
+    @Builder.Default
+    private boolean deprecated = false;
 
     public static OasResourceInfoModel fromAnnotation(OasResourceInfo oasResourceInfo) {
         if (oasResourceInfo == null) {
@@ -28,6 +30,7 @@ public class OasResourceInfoModel {
                 .attributes(oasResourceInfo.attributes())
                 .resourceIdDescription(oasResourceInfo.resourceIdDescription())
                 .resourceIdExample(oasResourceInfo.resourceIdExample())
+                .deprecated(oasResourceInfo.deprecated())
                 .build();
     }
 

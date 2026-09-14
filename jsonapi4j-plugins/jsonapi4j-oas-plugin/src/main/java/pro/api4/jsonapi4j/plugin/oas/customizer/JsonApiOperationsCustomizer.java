@@ -242,6 +242,10 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         );
         // tags
         oasOperation.setTags(Collections.singletonList(extraOasOperationInfo.getOperationTag()));
+        // deprecation
+        if (isDeprecated(oasOperationInfo, resourceType)) {
+            oasOperation.setDeprecated(true);
+        }
         // parameters
         oasOperation.setParameters(
                 generateParameters(
@@ -286,6 +290,19 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         addOperationExtensions(oasOperation, supportedIncludes);
 
         return oasOperation;
+    }
+
+    /**
+     * Deprecation only widens: a resource on its way out takes every one of its operations with it, and an operation
+     * may retire on its own. Nothing opts back in, which is both the honest reading - an operation cannot outlive the
+     * resource it acts on - and what keeps a {@code boolean} enough, since it never has to mean "not stated".
+     */
+    private boolean isDeprecated(OasOperationInfoModel oasOperationInfo,
+                                 ResourceType resourceType) {
+        boolean deprecatedResource = OasResourceInfoUtil.resourceInfo(domainRegistry, resourceType)
+                .map(OasResourceInfoModel::isDeprecated)
+                .orElse(false);
+        return deprecatedResource || (oasOperationInfo != null && oasOperationInfo.isDeprecated());
     }
 
     private String overrideIfNotBlank(String override,
@@ -490,6 +507,17 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return grantFlow.name();
     }
 
+    /**
+     * JSON:API passes a multi-valued parameter as one comma-separated value, so the document has to say so: left
+     * unsaid, OpenAPI's default for a query parameter is a repeated key ({@code ?include=a&include=b}), and that is
+     * what a generated client would send. The request layer accepts either form, so this corrects what the document
+     * promises rather than what the server takes.
+     */
+    private void commaSeparated(Parameter parameter) {
+        parameter.setStyle(Parameter.StyleEnum.FORM);
+        parameter.setExplode(false);
+    }
+
     private Parameter createCustomParam(OasOperationInfoModel.Parameter custom) {
         Parameter parameter = new Parameter();
         parameter.setName(custom.getName());
@@ -498,6 +526,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         parameter.setIn(custom.getIn().getName());
         if (custom.isArray()) {
             parameter.setSchema(new ArraySchema().items(new Schema<>().type(custom.getType().getType()).example(custom.getExample())));
+            commaSeparated(parameter);
         } else {
             parameter.setExample(custom.getExample());
             parameter.setSchema(new Schema<>().type(custom.getType().getType()));
@@ -553,6 +582,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
             schema.setMaxItems(validationProperties.maxElementsInFilterParam());
         }
         filterParam.setSchema(schema);
+        commaSeparated(filterParam);
         return filterParam;
     }
 
@@ -596,6 +626,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
                 OasSchemaNamesUtil.attributesSchemaName(resourceType)
         ));
         fieldsParam.setSchema(new ArraySchema().items(new StringSchema()));
+        commaSeparated(fieldsParam);
         return fieldsParam;
     }
 
@@ -663,6 +694,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         }
         sortParam.setSchema(schema);
         sortParam.setExample(allowedValues.get(0));
+        commaSeparated(sortParam);
         return Optional.of(sortParam);
     }
 
@@ -686,6 +718,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         }
         includeQueryParam.setSchema(includeSchema);
         includeQueryParam.setExample(example);
+        commaSeparated(includeQueryParam);
 
         return includeQueryParam;
     }

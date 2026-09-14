@@ -22,6 +22,7 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.Listing
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.DescribedOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.FilterableListingOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.OverriddenParamOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.PartlyDeprecatedOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
@@ -217,6 +218,81 @@ class JsonApiOperationsCustomizerTests {
 
         private List<Parameter> collectionParams(ResourceOperations<SecuredAttributes> operations) {
             return documentedPaths(operations).get(ROOT_PATH + "/" + SECURED_RESOURCE_TYPE).getGet().getParameters();
+        }
+
+    }
+
+    /**
+     * JSON:API passes a multi-valued parameter as one comma-separated value. Saying nothing is not neutral: OpenAPI's
+     * default for a query parameter is a repeated key, so a generated client would send {@code ?include=a&include=b}
+     * while the spec this framework implements asks for {@code ?include=a,b}.
+     */
+    @Nested
+    class ArrayParameterSerialization {
+
+        @Test
+        void customise_everyArrayParameter_isDocumentedAsCommaSeparated() {
+            assertThat(allParameters())
+                    .filteredOn(parameter -> parameter.getSchema() instanceof ArraySchema)
+                    .isNotEmpty()
+                    .allSatisfy(parameter -> {
+                        assertThat(parameter.getStyle()).isEqualTo(Parameter.StyleEnum.FORM);
+                        assertThat(parameter.getExplode()).isFalse();
+                    });
+        }
+
+        @Test
+        void customise_scalarParameter_saysNothingAboutSerialization() {
+            assertThat(allParameters())
+                    .filteredOn(parameter -> !(parameter.getSchema() instanceof ArraySchema))
+                    .isNotEmpty()
+                    .allSatisfy(parameter -> assertThat(parameter.getExplode()).isNull());
+        }
+
+        private List<Parameter> allParameters() {
+            return documentedPaths(new FilterableListingOperations()).values().stream()
+                    .flatMap(pathItem -> pathItem.readOperations().stream())
+                    .flatMap(operation -> operation.getParameters().stream())
+                    .toList();
+        }
+
+    }
+
+    /**
+     * Deprecation only ever widens. A resource on its way out takes its operations with it, an operation may retire
+     * on its own, and nothing opts back in - which is what keeps a boolean sufficient.
+     */
+    @Nested
+    class Deprecation {
+
+        @Test
+        void customise_operationDeclaringItself_isTheOnlyOneMarked() {
+            Paths paths = documentedPaths(new PartlyDeprecatedOperations());
+
+            assertThat(paths.get(securedPath() + "/{id}").getGet().getDeprecated()).isTrue();
+            assertThat(paths.get(securedPath()).getPost().getDeprecated()).isNull();
+        }
+
+        @Test
+        void customise_deprecatedResource_marksEveryOperationOnIt() {
+            OpenAPI openApi = new OpenAPI();
+            new JsonApiOperationsCustomizer(OasOperationTestFixtures.jsonApi4jWithRetiredResource()).customise(openApi);
+
+            assertThat(openApi.getPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .isNotEmpty()
+                    .allSatisfy(operation -> assertThat(operation.getDeprecated()).isTrue());
+        }
+
+        @Test
+        void customise_nothingDeclared_leavesDeprecationUnstated() {
+            assertThat(writeOperationPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .allSatisfy(operation -> assertThat(operation.getDeprecated()).isNull());
+        }
+
+        private String securedPath() {
+            return ROOT_PATH + "/" + SECURED_RESOURCE_TYPE;
         }
 
     }

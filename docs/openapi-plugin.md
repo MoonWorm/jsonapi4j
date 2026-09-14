@@ -184,6 +184,11 @@ public PaginationAwareResponse<UserDbEntity> readPage(JsonApiRequest request) { 
 A filter is declared by its dimension, not by its parameter name: the framework spells it `filter[id]`, makes it
 optional and multi-valued as JSON:API defines filters, and bounds it with `validation.maxElementsInFilterParam`.
 
+Every multi-valued parameter is published as `style: form, explode: false`, so a generated client sends
+`?include=citizenships,placeOfBirth` — the form JSON:API asks for. Saying nothing would not be neutral: OpenAPI's
+default for a query parameter is a repeated key (`?include=a&include=b`). The request layer accepts either form, so
+this is about what the document promises rather than what the server takes.
+
 ### Application-specific Parameters
 
 `@OasOperationInfo(parameters = …)` documents parameters the framework cannot derive — the application's own query
@@ -216,6 +221,30 @@ disagree.
 
 Limits configured under `jsonapi4j.validation` are projected into the schemas: `page[limit]` carries its `maximum`,
 `sort` and `include` their `maxItems`, and the `id` path parameter its `maxLength`.
+
+### Deprecating an Operation
+
+`deprecated` marks an operation on its way out, and tooling picks it up — Swagger UI strikes it through, generators
+emit a deprecation on the method they create:
+
+```java
+@OasOperationInfo(deprecated = true)
+public UserDbEntity readById(JsonApiRequest request) { … }
+```
+
+A whole resource can go at once, which marks every operation acting on it:
+
+```java
+@OasResourceInfo(deprecated = true)
+public class LegacyUserResource implements Resource<UserDbEntity> { … }
+```
+
+Deprecation only ever widens: a resource takes its operations with it, an operation may retire on its own, and
+nothing opts back in — an operation cannot outlive the resource it acts on.
+
+The plugin does not read Java's `@Deprecated` for this. An operation method is invoked by the framework rather than
+by application code, so the annotation there would warn nobody; it would be a marker for this plugin alone, and a
+marker that says what it means is better than one borrowed from elsewhere.
 
 ### Responses
 
