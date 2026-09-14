@@ -19,7 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Customizers registered by the application are appended, never interleaved: they run once the built-in ones have
- * finished, so they see the document the framework produced and can tune anything in it.
+ * finished, so they see the document the framework produced and can tune anything in it. Only
+ * {@link SharedComponentsCustomizer} follows them, folding whatever they left behind - it changes nothing the
+ * document states, so it cannot undo their work.
  */
 class OasDocumentTests {
 
@@ -40,7 +42,6 @@ class OasDocumentTests {
         @Test
         void customizers_noneRegistered_returnsTheBuiltInsOnly() {
             assertThat(OasDocument.customizers(jsonApi4j(List.of())))
-                    .hasSize(5)
                     .noneMatch(customizer -> customizer instanceof RecordingCustomizer);
         }
 
@@ -49,9 +50,22 @@ class OasDocumentTests {
             OasCustomizer first = new RecordingCustomizer(new ArrayList<>());
             OasCustomizer second = new RecordingCustomizer(new ArrayList<>());
 
-            assertThat(OasDocument.customizers(jsonApi4j(List.of(first, second))))
-                    .hasSize(7)
-                    .endsWith(first, second);
+            List<OasCustomizer> customizers = OasDocument.customizers(jsonApi4j(List.of(first, second)));
+
+            assertThat(customizers).containsSubsequence(first, second);
+            assertThat(customizers.indexOf(first))
+                    .isGreaterThan(customizers.indexOf(customizers.stream()
+                            .filter(JsonApiOperationsCustomizer.class::isInstance)
+                            .findFirst()
+                            .orElseThrow()));
+        }
+
+        @Test
+        void customizers_always_endWithTheSharedComponentsPass() {
+            List<OasCustomizer> customizers = OasDocument.customizers(
+                    jsonApi4j(List.of(new RecordingCustomizer(new ArrayList<>()))));
+
+            assertThat(customizers.get(customizers.size() - 1)).isInstanceOf(SharedComponentsCustomizer.class);
         }
 
         @Test

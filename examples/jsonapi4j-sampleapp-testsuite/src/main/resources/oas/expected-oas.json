@@ -132,6 +132,231 @@
         }
       }
     },
+    "parameters" : {
+      "FieldsCountries" : {
+        "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "in" : "query",
+        "name" : "fields[countries]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "FieldsCurrencies" : {
+        "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "in" : "query",
+        "name" : "fields[currencies]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "FieldsUsers" : {
+        "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "in" : "query",
+        "name" : "fields[users]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        }
+      },
+      "PageCursor" : {
+        "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+        "in" : "query",
+        "name" : "page[cursor]",
+        "required" : false,
+        "schema" : {
+          "type" : "string"
+        }
+      }
+    },
+    "responses" : {
+      "BadRequest" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Bad_Request_Errors_Doc" : {
+                "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+      },
+      "Conflict" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Conflict_Errors_Doc" : {
+                "$ref" : "#/components/examples/Conflict_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
+      },
+      "InternalServerError" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Internal_Server_Errors_Doc" : {
+                "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Internal Server Error. Something went wrong on the server party."
+      },
+      "MethodNotSupported" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Method_Not_Supported_Errors_Doc" : {
+                "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+      },
+      "NoContent" : {
+        "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+      },
+      "NotAcceptable" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Not_Acceptable_Errors_Doc" : {
+                "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+      },
+      "ResourceNotFound" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Resource_Not_Found_Errors_Doc" : {
+                "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Resource not found. The requested operation or resource is not found."
+      },
+      "TooManyRequests" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Too_Many_Requests_Errors_Doc" : {
+                "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+        "headers" : {
+          "X-RateLimit-Burst-Capacity" : {
+            "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+            "example" : 20,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Remaining" : {
+            "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Replenish-Rate" : {
+            "description" : "Number of tokens replenished per second.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Requested-Tokens" : {
+            "description" : "Request cost in tokens.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        }
+      },
+      "Unauthorized" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Unauthorized_Errors_Doc" : {
+                "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Unauthorized. The request requires user authentication."
+      },
+      "UnsupportedMediaType" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "Unsupported_Media_Type_Errors_Doc" : {
+                "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+      }
+    },
     "schemas" : {
       "CountriesAttributes" : {
         "properties" : {
@@ -1017,35 +1242,11 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[currencies]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCurrencies"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Allows to filter countries based on id attribute value",
           "in" : "query",
@@ -1085,132 +1286,22 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -1244,27 +1335,9 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[currencies]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCurrencies"
         }, {
           "description" : "Country unique identifier (ISO 3166). Required",
           "example" : "US",
@@ -1288,147 +1361,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -1462,35 +1413,11 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[currencies]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCurrencies"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Country unique identifier (ISO 3166). Required",
           "example" : "US",
@@ -1514,147 +1441,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -1674,24 +1479,9 @@
         "description" : "Retrieves all currency details with available filters (if applicable).",
         "operationId" : "get-all-currencies",
         "parameters" : [ {
-          "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[currencies]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCurrencies"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Allows to filter currencies based on id attribute value",
           "in" : "query",
@@ -1718,132 +1508,22 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -1874,35 +1554,11 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "Maximum number of items to return in a single page. Optional",
           "in" : "query",
@@ -1966,132 +1622,22 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -2109,27 +1655,9 @@
         "description" : "Creates a new instance of user's resource with relationships (if applicable).",
         "operationId" : "create-single-user",
         "parameters" : [ {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         } ],
         "requestBody" : {
           "content" : {
@@ -2153,34 +1681,10 @@
             "description" : "Created. The request has been fulfilled and a new resource has been created."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "403" : {
             "content" : {
@@ -2198,132 +1702,22 @@
             "description" : "Forbidden. The server understood the request but refuses to authorize it."
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "409" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Conflict_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Conflict_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
+            "$ref" : "#/components/responses/Conflict"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -2352,150 +1746,28 @@
         } ],
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -2524,27 +1796,9 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
           "description" : "User unique identifier. Required",
           "example" : "3",
@@ -2568,147 +1822,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -2748,180 +1880,34 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "409" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Conflict_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Conflict_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
+            "$ref" : "#/components/responses/Conflict"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -2960,150 +1946,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: citizenships (delete)",
@@ -3127,35 +1991,11 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "User unique identifier. Required",
           "example" : "3",
@@ -3179,147 +2019,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -3359,150 +2077,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: citizenships (create/update/delete)",
@@ -3534,150 +2130,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: citizenships (add)",
@@ -3703,27 +2177,9 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
           "description" : "User unique identifier. Required",
           "example" : "3",
@@ -3747,147 +2203,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -3927,150 +2261,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: placeOfBirth (create/update/delete)",
@@ -4104,150 +2316,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: relatives (delete)",
@@ -4271,35 +2361,11 @@
             "type" : "array"
           }
         }, {
-          "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[users]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsUsers"
         }, {
-          "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
-          "in" : "query",
-          "name" : "fields[countries]",
-          "required" : false,
-          "schema" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          }
+          "$ref" : "#/components/parameters/FieldsCountries"
         }, {
-          "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
-          "in" : "query",
-          "name" : "page[cursor]",
-          "required" : false,
-          "schema" : {
-            "type" : "string"
-          }
+          "$ref" : "#/components/parameters/PageCursor"
         }, {
           "description" : "User unique identifier. Required",
           "example" : "3",
@@ -4323,147 +2389,25 @@
             "description" : "OK. The request has succeeded."
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "401" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unauthorized_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unauthorized. The request requires user authentication."
+            "$ref" : "#/components/responses/Unauthorized"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "security" : [ {
@@ -4503,150 +2447,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: relatives (create/update/delete)",
@@ -4678,150 +2500,28 @@
         },
         "responses" : {
           "204" : {
-            "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+            "$ref" : "#/components/responses/NoContent"
           },
           "400" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Bad_Request_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+            "$ref" : "#/components/responses/BadRequest"
           },
           "404" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Resource_Not_Found_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Resource not found. The requested operation or resource is not found."
+            "$ref" : "#/components/responses/ResourceNotFound"
           },
           "405" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Method_Not_Supported_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+            "$ref" : "#/components/responses/MethodNotSupported"
           },
           "406" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Not_Acceptable_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+            "$ref" : "#/components/responses/NotAcceptable"
           },
           "415" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Unsupported_Media_Type_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+            "$ref" : "#/components/responses/UnsupportedMediaType"
           },
           "429" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Too_Many_Requests_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
-            "headers" : {
-              "X-RateLimit-Burst-Capacity" : {
-                "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
-                "example" : 20,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Remaining" : {
-                "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Replenish-Rate" : {
-                "description" : "Number of tokens replenished per second.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              },
-              "X-RateLimit-Requested-Tokens" : {
-                "description" : "Request cost in tokens.",
-                "example" : 5,
-                "required" : true,
-                "schema" : {
-                  "format" : "int32",
-                  "type" : "integer"
-                }
-              }
-            }
+            "$ref" : "#/components/responses/TooManyRequests"
           },
           "500" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "Internal_Server_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Internal Server Error. Something went wrong on the server party."
+            "$ref" : "#/components/responses/InternalServerError"
           }
         },
         "summary" : "Relationship: relatives (add)",

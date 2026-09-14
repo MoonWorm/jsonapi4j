@@ -242,6 +242,37 @@ generated client handles every failure it may see and none that it cannot:
 Error responses carry a ready example per status code, embedded as JSON so that spec linters and mock servers read
 them as documents rather than as strings.
 
+### Shared Components
+
+Responses and parameters that every operation repeats verbatim are published once under `components` and referenced
+from there:
+
+```json
+"components": {
+  "responses": {
+    "TooManyRequests": { "description": "Too many requests. …", "content": { … }, "headers": { … } }
+  }
+},
+"paths": {
+  "/jsonapi/users": {
+    "get": { "responses": { "429": { "$ref": "#/components/responses/TooManyRequests" } } }
+  }
+}
+```
+
+Nothing about what the document says changes — a `$ref` and the object it points at are the same thing to any
+reader. What changes is that the difference between two operations stops being buried under hundreds of lines of
+identical error responses. On the sample app it halves the document.
+
+A response or parameter is shared only when it appears more than once *and* looks the same everywhere. One that
+varies between operations is left inline at every occurrence — `include` differs per resource because it names that
+resource's relationships, so it stays where it is. Shared names come from what the status code means
+(`TooManyRequests`, `NoContent`) and from the parameter name with the brackets OpenAPI forbids in a component key
+removed (`fields[users]` → `FieldsUsers`).
+
+This is the last thing to run, after any customizer the application registered, so a response tuned by hand is
+shared in its final shape.
+
 ### Customizing the Generated Document
 
 Anything the generator produces can be tuned by registering an `OasCustomizer`. Customizers run after the built-in
