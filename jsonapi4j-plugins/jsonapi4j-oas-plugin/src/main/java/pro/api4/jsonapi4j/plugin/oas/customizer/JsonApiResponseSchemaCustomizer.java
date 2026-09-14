@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
 import lombok.Getter;
 import pro.api4.jsonapi4j.JsonApi4j;
@@ -310,9 +311,10 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         ((Schema) resourceSchema.getPrimarySchema().getProperties().get(ID_FIELD))
                 .example(OasResourceInfoUtil.resourceIdExample(resourceInfo))
                 .description(OasResourceInfoUtil.resourceIdDescription(resourceInfo));
-        ((Schema) resourceSchema.getPrimarySchema().getProperties().get(TYPE_FIELD))
-                .example(registeredResource.getResourceType().getType())
-                .description("Resource type");
+        pinResourceType(
+                (Schema) resourceSchema.getPrimarySchema().getProperties().get(TYPE_FIELD),
+                registeredResource.getResourceType()
+        );
 
         resourceSchema.getPrimarySchema().setRequired(List.of(ID_FIELD, TYPE_FIELD));
 
@@ -413,7 +415,37 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
                 .map(OasSchemaNamesUtil::resourceSchemaName)
                 .map(rn -> new Schema().$ref(rn))
                 .toList();
-        return Optional.of(new ArraySchema().items(new Schema().oneOf(schemaRefs)));
+        Schema<?> itemSchema = new Schema<>()
+                .oneOf(schemaRefs)
+                .discriminator(resourceTypeDiscriminator(resultingResourceTypes));
+        return Optional.of(new ArraySchema().items(itemSchema));
+    }
+
+    /**
+     * JSON:API's {@code type} member is what tells one member of {@code included} from another, so it is published as
+     * the discriminator too. Without it a generated client hands the caller an untyped union to switch on by hand and
+     * a validator has to try every branch. The mapping is explicit because a resource type ({@code users}) is not the
+     * name of the schema describing it ({@code UsersResource}).
+     */
+    /**
+     * A resource's {@code type} is not a free string - it is the one value JSON:API allows for that resource, and it
+     * is what the framework answers a mismatched request body with a {@code 409} over. Publishing it as a single-value
+     * enum says so, and lets the {@code included} discriminator resolve a member by reading it.
+     */
+    private void pinResourceType(Schema typeSchema,
+                                 ResourceType resourceType) {
+        typeSchema.addEnumItemObject(resourceType.getType());
+        typeSchema.setExample(resourceType.getType());
+        typeSchema.setDescription("Resource type");
+    }
+
+    private Discriminator resourceTypeDiscriminator(Set<ResourceType> resourceTypes) {
+        Discriminator discriminator = new Discriminator().propertyName(TYPE_FIELD);
+        resourceTypes.forEach(resourceType -> discriminator.mapping(
+                resourceType.getType(),
+                SCHEMAS_REF_PREFIX + OasSchemaNamesUtil.resourceSchemaName(resourceType)
+        ));
+        return discriminator;
     }
 
 }

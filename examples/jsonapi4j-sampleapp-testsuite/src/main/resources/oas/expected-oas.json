@@ -159,6 +159,12 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CurrenciesResource"
               } ]
@@ -208,6 +214,7 @@
           },
           "type" : {
             "description" : "Resource type",
+            "enum" : [ "countries" ],
             "example" : "countries",
             "type" : "string"
           }
@@ -222,6 +229,12 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CurrenciesResource"
               } ]
@@ -250,6 +263,13 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CurrenciesResource"
               }, {
@@ -327,6 +347,7 @@
           },
           "type" : {
             "description" : "Resource type",
+            "enum" : [ "currencies" ],
             "example" : "currencies",
             "type" : "string"
           }
@@ -624,6 +645,7 @@
           },
           "type" : {
             "description" : "Resource type",
+            "enum" : [ "users" ],
             "example" : "users",
             "type" : "string"
           }
@@ -641,6 +663,13 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CountriesResource"
               }, {
@@ -771,6 +800,7 @@
           },
           "type" : {
             "description" : "Resource type",
+            "enum" : [ "users" ],
             "example" : "users",
             "type" : "string"
           }
@@ -785,6 +815,13 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CountriesResource"
               }, {
@@ -815,6 +852,13 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CountriesResource"
               }, {
@@ -842,6 +886,13 @@
           },
           "included" : {
             "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
               "oneOf" : [ {
                 "$ref" : "#/components/schemas/CountriesResource"
               }, {
@@ -892,6 +943,7 @@
           },
           "type" : {
             "description" : "Resource type",
+            "enum" : [ "users" ],
             "example" : "users",
             "type" : "string"
           }

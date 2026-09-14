@@ -119,6 +119,13 @@ to that relationship, so it gets `<Type><Relationship>ToOneRelationshipRequestDo
 `<Type><Relationship>ToManyRelationshipsRequestDoc` instead. The same typed identifier is reused in responses, so a
 client sees one shape for the linkage whichever direction it travels.
 
+Every resource schema pins its `type` to the single value JSON:API allows for it — `UsersResource.type` is
+`enum: ["users"]`, not an open string. That is the same rule the framework enforces at runtime by answering a
+mismatched request body with a `409`, so the document and the server now say the same thing. It also makes `included`
+resolvable: the union of resource schemas a document may carry declares a `discriminator` on `type`, mapping each
+resource type to the schema describing it, so a generated client deserializes each member into its concrete class
+instead of handing the caller a union to switch on.
+
 These are separate from the response documents on purpose: a request carries no `links` or `included`, and `id` is
 optional on create but mandatory on update. To document a body the framework cannot derive, set
 `@OasOperationInfo(payloadType = YourPayload.class)` — the declared type replaces the derived one and its schema is

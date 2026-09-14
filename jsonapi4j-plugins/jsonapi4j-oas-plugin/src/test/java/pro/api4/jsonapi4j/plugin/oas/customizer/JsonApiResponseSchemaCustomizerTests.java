@@ -53,6 +53,80 @@ class JsonApiResponseSchemaCustomizerTests {
     }
 
     /**
+     * JSON:API keys everything on {@code type}: a resource has exactly one, a mismatched one in a request body is a
+     * {@code 409}, and it is what tells apart the members of {@code included}. A document that types it as an open
+     * string states none of that.
+     */
+    @Nested
+    class ResourceTypeMember {
+
+        @Test
+        void customise_resourceSchema_pinsItsTypeToTheOneAllowedValue() {
+            Map<String, Schema> schemas = responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j());
+
+            assertThat(((Schema) schemas.get("ArticlesResource").getProperties().get("type")).getEnum())
+                    .containsExactly(OasIncludedTypesTestFixtures.ARTICLES);
+            assertThat(((Schema) schemas.get("AuthorsResource").getProperties().get("type")).getEnum())
+                    .containsExactly(OasIncludedTypesTestFixtures.AUTHORS);
+        }
+
+        @Test
+        void customise_resourceSchema_requiresTheTypeItPins() {
+            Map<String, Schema> schemas = responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j());
+
+            assertThat(schemas.get("ArticlesResource").getRequired()).contains("type");
+        }
+
+    }
+
+    /**
+     * The discriminator is only usable if every schema it maps to really exists and really requires the property it
+     * keys on - OpenAPI says so, and a generator that trusts a dangling mapping produces a client that cannot
+     * deserialize the union at all.
+     */
+    @Nested
+    class IncludedDiscriminator {
+
+        @Test
+        void customise_includedUnion_discriminatesOnTheTypeMember() {
+            assertThat(includedItems().getDiscriminator().getPropertyName()).isEqualTo("type");
+        }
+
+        @Test
+        void customise_includedUnion_mapsEveryTypeItCanCarry() {
+            assertThat(includedItems().getDiscriminator().getMapping())
+                    .containsEntry(OasIncludedTypesTestFixtures.AUTHORS, "#/components/schemas/AuthorsResource");
+        }
+
+        @Test
+        void customise_includedUnion_mapsOnlyToSchemasTheDocumentDeclares() {
+            Map<String, Schema> schemas = responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j());
+
+            assertThat(includedItems().getDiscriminator().getMapping().values())
+                    .allSatisfy(ref -> assertThat(schemas)
+                            .containsKey(ref.substring("#/components/schemas/".length())));
+        }
+
+        @Test
+        void customise_everyMappedSchema_requiresTheDiscriminatorProperty() {
+            Map<String, Schema> schemas = responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j());
+
+            assertThat(includedItems().getDiscriminator().getMapping().values())
+                    .allSatisfy(ref -> assertThat(schemas.get(ref.substring("#/components/schemas/".length())).getRequired())
+                            .contains("type"));
+        }
+
+        private Schema includedItems() {
+            Schema included = (Schema) responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j())
+                    .get("ArticlesSingleResourceDoc")
+                    .getProperties()
+                    .get("included");
+            return included.getItems();
+        }
+
+    }
+
+    /**
      * The single-resource and multiple-resources documents describe what an operation returns, so they are published
      * for the operations that return them rather than for any resource that happens to have operations at all.
      */

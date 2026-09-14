@@ -279,9 +279,10 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
                 .description(required.contains(ID_FIELD)
                         ? "Resource unique identifier. Must match the id in the URL path"
                         : "Client-generated resource identifier. Optional — omit it to let the server assign one");
-        ((Schema) resourceSchema.getProperties().get(TYPE_FIELD))
-                .example(resourceType.getType())
-                .description("Resource type");
+        Schema typeSchema = (Schema) resourceSchema.getProperties().get(TYPE_FIELD);
+        typeSchema.addEnumItemObject(resourceType.getType());
+        typeSchema.setExample(resourceType.getType());
+        typeSchema.setDescription("Resource type");
 
         resourceSchema.setRequired(required);
         resourceSchema.getProperties().put(ATTRIBUTES_FIELD, new Schema<>().$ref(attributesSchemaName(resourceType)));

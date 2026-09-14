@@ -11,6 +11,10 @@ import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public final class OasSchemaNamesUtil {
 
+    /** Where a {@code $ref} to a component schema points. Swagger expands a bare name to this, discriminator
+     * mappings are not expanded, so the two have to agree. */
+    public static final String SCHEMAS_REF_PREFIX = "#/components/schemas/";
+
     private OasSchemaNamesUtil() {
 
     }
