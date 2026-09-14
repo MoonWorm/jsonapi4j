@@ -27,7 +27,6 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
-import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
@@ -42,7 +41,6 @@ import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.request.FiltersAwareRequest;
 import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
-import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
@@ -62,18 +60,6 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 @Slf4j
 @Getter
 public class JsonApiOperationsCustomizer implements OasCustomizer {
-
-    /**
-     * Name of the sparse fieldsets plugin. Matched as a string because plugins are peers — the OAS plugin describes
-     * what another plugin contributes to the API without depending on it.
-     */
-    private static final String SPARSE_FIELDSETS_PLUGIN_NAME = "JsonApiSparseFieldsetsPlugin";
-
-    /**
-     * Name of the access control plugin, matched as a string for the same reason. Its presence is what makes a
-     * {@code 403} reachable on a write.
-     */
-    private static final String ACCESS_CONTROL_PLUGIN_NAME = "JsonApiAccessControlPlugin";
 
     private final String rootPath;
     private final DomainRegistry domainRegistry;
@@ -270,10 +256,11 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         List<SecurityRequirement> securityRequirements = oasOperationInfo != null
                 ? generateSecurityRequirements(oasOperationInfo.getSecurityConfig())
                 : null;
-        boolean secured = CollectionUtils.isNotEmpty(securityRequirements);
-        if (secured) {
+        if (CollectionUtils.isNotEmpty(securityRequirements)) {
             oasOperation.setSecurity(securityRequirements);
         }
+        // an operation with no security of its own still inherits the document's, so 401 belongs on it either way
+        boolean secured = CollectionUtils.isNotEmpty(securityRequirements) || isDocumentSecured();
         // responses
         String happyPathResponseDocSchemaName = OasSchemaNamesUtil.happyPathResponseDocSchemaName(
                 resourceType,
@@ -403,14 +390,12 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         if (secured) {
             codes.add(HttpStatusCodes.SC_401_UNAUTHORIZED);
         }
-        if (isAccessControlEnabled() && extraOperationInfo.getOperationType().getMethod() != OperationType.Method.GET) {
-            codes.add(HttpStatusCodes.SC_403_FORBIDDEN);
-        }
         return codes;
     }
 
-    private boolean isAccessControlEnabled() {
-        return pluginRegistry != null && pluginRegistry.isActivePlugin(ACCESS_CONTROL_PLUGIN_NAME);
+    private boolean isDocumentSecured() {
+        return resolveSecuritySchemeName(OasProperties.OAuth2::clientCredentials) != null
+                || resolveSecuritySchemeName(OasProperties.OAuth2::authorizationCodeWithPkce) != null;
     }
 
     private ApiResponses generateResponses(String status,
@@ -541,7 +526,6 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         if (CollectionUtils.isNotEmpty(availableIncludes)) {
             params.add(createIncludeParam(availableIncludes));
         }
-        params.addAll(createSparseFieldsetsParams(extraOperationInfo));
         if (extraOperationInfo.isPaginationSupported()) {
             for (PaginationStyle style : paginationStylesOf(oasOperationInfo)) {
                 params.addAll(createPaginationParams(style));
@@ -598,36 +582,6 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return oasOperationInfo == null || CollectionUtils.isEmpty(oasOperationInfo.getPaginationStyles())
                 ? EnumSet.of(PaginationStyle.CURSOR)
                 : oasOperationInfo.getPaginationStyles();
-    }
-
-    private List<Parameter> createSparseFieldsetsParams(OasOperationInfoUtil.Info extraOperationInfo) {
-        if (!isSparseFieldsetsEnabled() || extraOperationInfo.getResponseType() == OasOperationInfoUtil.ResponseType.VOID) {
-            return List.of();
-        }
-        return OasIncludableTypesUtil.sparseFieldsetsResourceTypes(domainRegistry, extraOperationInfo.getResourceType())
-                .stream()
-                .map(this::createSparseFieldsetParam)
-                .toList();
-    }
-
-    private boolean isSparseFieldsetsEnabled() {
-        return pluginRegistry != null && pluginRegistry.isActivePlugin(SPARSE_FIELDSETS_PLUGIN_NAME);
-    }
-
-    private Parameter createSparseFieldsetParam(ResourceType resourceType) {
-        Parameter fieldsParam = new Parameter();
-        fieldsParam.setName(SparseFieldsetsAwareRequest.getFieldsParam(resourceType.getType()));
-        fieldsParam.setIn("query");
-        fieldsParam.setRequired(false);
-        fieldsParam.setDescription(String.format(
-                "Limits the attributes returned for '%s' resources to the listed ones. Nested paths are allowed "
-                        + "(address.city). See the %s schema for what can be asked for. An empty value returns no attributes.",
-                resourceType.getType(),
-                OasSchemaNamesUtil.attributesSchemaName(resourceType)
-        ));
-        fieldsParam.setSchema(new ArraySchema().items(new StringSchema()));
-        commaSeparated(fieldsParam);
-        return fieldsParam;
     }
 
     private List<Parameter> createPaginationParams(PaginationStyle style) {

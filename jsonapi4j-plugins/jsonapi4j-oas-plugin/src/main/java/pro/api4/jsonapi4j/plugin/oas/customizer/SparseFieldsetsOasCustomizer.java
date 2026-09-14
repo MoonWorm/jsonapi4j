@@ -1,0 +1,138 @@
+package pro.api4.jsonapi4j.plugin.oas.customizer;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
+import pro.api4.jsonapi4j.request.IncludeAwareRequest;
+import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
+/**
+ * Documents the {@code fields[TYPE]} parameters this plugin makes available.
+ *
+ * <p>The OpenAPI plugin describes what the framework core serves and knows nothing about sparse fieldsets - a plugin
+ * that adds a parameter describes that parameter itself. Register this alongside the sparse fieldsets plugin and the
+ * generated document gains one {@code fields[...]} per resource type an operation's response may carry.
+ *
+ * <p>Operations answering with no body get none: there are no fields to select from a {@code 204}.
+ */
+public class SparseFieldsetsOasCustomizer implements OasCustomizer {
+
+    /**
+     * Matched by name: this module describes what the sparse fieldsets plugin contributes without depending on it,
+     * and a plugin that is absent or disabled contributes nothing to describe.
+     */
+    private static final String SPARSE_FIELDSETS_PLUGIN_NAME = "JsonApiSparseFieldsetsPlugin";
+
+    private final Supplier<PluginRegistry> pluginRegistry;
+    private final Supplier<DomainRegistry> domainRegistry;
+
+    /**
+     * The registries are supplied rather than injected: they are assembled from the plugin registry this plugin
+     * belongs to, so taking them directly would close a cycle. They are resolved when the document is generated, by
+     * which time they exist.
+     */
+    public SparseFieldsetsOasCustomizer(Supplier<PluginRegistry> pluginRegistry,
+                                        Supplier<DomainRegistry> domainRegistry) {
+        this.pluginRegistry = pluginRegistry;
+        this.domainRegistry = domainRegistry;
+    }
+
+    @Override
+    public void customise(OpenAPI openApi) {
+        if (openApi.getPaths() == null || !pluginRegistry.get().isActivePlugin(SPARSE_FIELDSETS_PLUGIN_NAME)) {
+            return;
+        }
+        openApi.getPaths().forEach((path, pathItem) -> {
+            ResourceType resourceType = resourceTypeOf(path);
+            if (resourceType == null) {
+                return;
+            }
+            pathItem.readOperations().stream()
+                    .filter(this::answersWithABody)
+                    .forEach(operation -> addFieldsParams(operation, resourceType));
+        });
+    }
+
+    /**
+     * An operation's primary resource type is the first path segment naming a registered resource - matching against
+     * the registry rather than counting segments keeps this independent of where the API is mounted.
+     */
+    private ResourceType resourceTypeOf(String path) {
+        Set<ResourceType> registered = domainRegistry.get().getResourceTypes();
+        for (String segment : path.split("/")) {
+            ResourceType candidate = new ResourceType(segment);
+            if (registered.contains(candidate)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private boolean answersWithABody(Operation operation) {
+        return operation.getResponses() != null && operation.getResponses().entrySet().stream()
+                .filter(response -> response.getKey().startsWith("2"))
+                .map(Map.Entry::getValue)
+                .anyMatch(response -> response.getContent() != null);
+    }
+
+    /**
+     * Inserted straight after {@code include}, which is the parameter they qualify - a reader meets "what may come
+     * back" before "which of its fields to ask for".
+     */
+    private void addFieldsParams(Operation operation,
+                                 ResourceType resourceType) {
+        Set<ResourceType> selectable = OasIncludableTypesUtil.sparseFieldsetsResourceTypes(domainRegistry.get(), resourceType);
+        if (selectable.isEmpty()) {
+            return;
+        }
+        List<Parameter> parameters = operation.getParameters() == null
+                ? new ArrayList<>()
+                : new ArrayList<>(operation.getParameters());
+        int at = indexAfterInclude(parameters);
+        for (ResourceType selectableType : selectable) {
+            parameters.add(at++, fieldsParam(selectableType));
+        }
+        operation.setParameters(parameters);
+    }
+
+    private int indexAfterInclude(List<Parameter> parameters) {
+        for (int i = 0; i < parameters.size(); i++) {
+            if (IncludeAwareRequest.INCLUDE_PARAM.equals(parameters.get(i).getName())) {
+                return i + 1;
+            }
+        }
+        return 0;
+    }
+
+    private Parameter fieldsParam(ResourceType resourceType) {
+        Parameter fieldsParam = new Parameter();
+        fieldsParam.setName(SparseFieldsetsAwareRequest.getFieldsParam(resourceType.getType()));
+        fieldsParam.setIn("query");
+        fieldsParam.setRequired(false);
+        fieldsParam.setDescription(String.format(
+                "Limits the attributes returned for '%s' resources to the listed ones. Nested paths are allowed "
+                        + "(address.city). See the %s schema for what can be asked for. An empty value returns no attributes.",
+                resourceType.getType(),
+                OasSchemaNamesUtil.attributesSchemaName(resourceType)
+        ));
+        fieldsParam.setSchema(new ArraySchema().items(new StringSchema()));
+        fieldsParam.setStyle(Parameter.StyleEnum.FORM);
+        fieldsParam.setExplode(false);
+        return fieldsParam;
+    }
+
+}

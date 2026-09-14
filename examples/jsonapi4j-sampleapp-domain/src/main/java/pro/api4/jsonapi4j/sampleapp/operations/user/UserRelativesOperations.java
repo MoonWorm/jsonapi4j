@@ -74,6 +74,12 @@ public class UserRelativesOperations implements
                     ownerIdExtractor = ResourceIdFromUrlPathExtractor.class
             )
     )
+    @OasOperationInfo(
+            securityConfig = @OasOperationInfo.SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            )
+    )
     @Override
     public void update(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
@@ -81,6 +87,12 @@ public class UserRelativesOperations implements
         userDb.updateUserRelatives(request.getResourceId(), newRelations);
     }
 
+    @OasOperationInfo(
+            securityConfig = @OasOperationInfo.SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            )
+    )
     @Override
     public void add(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();
@@ -88,6 +100,12 @@ public class UserRelativesOperations implements
         userDb.addUserRelatives(request.getResourceId(), newRelations);
     }
 
+    @OasOperationInfo(
+            securityConfig = @OasOperationInfo.SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            )
+    )
     @Override
     public void delete(JsonApiRequest request) {
         ToManyRelationshipsDoc payload = request.getToManyRelationshipDocPayload();

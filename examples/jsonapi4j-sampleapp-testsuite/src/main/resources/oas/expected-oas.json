@@ -1,7 +1,7 @@
 {
   "components" : {
     "examples" : {
-      "Bad_Request_Errors_Doc" : {
+      "BadRequestErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "INVALID_ENUM_VALUE",
@@ -22,7 +22,7 @@
           } ]
         }
       },
-      "Conflict_Errors_Doc" : {
+      "ConflictErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "CONFLICT",
@@ -43,7 +43,7 @@
           } ]
         }
       },
-      "Forbidden_Errors_Doc" : {
+      "ForbiddenErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "CLIENT_GENERATED_ID_NOT_SUPPORTED",
@@ -61,7 +61,7 @@
           } ]
         }
       },
-      "Internal_Server_Errors_Doc" : {
+      "InternalServerErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "INTERNAL_SERVER_ERROR",
@@ -71,7 +71,7 @@
           } ]
         }
       },
-      "Method_Not_Supported_Errors_Doc" : {
+      "MethodNotSupportedErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "METHOD_NOT_SUPPORTED",
@@ -81,7 +81,7 @@
           } ]
         }
       },
-      "Not_Acceptable_Errors_Doc" : {
+      "NotAcceptableErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "NOT_ACCEPTABLE",
@@ -91,7 +91,7 @@
           } ]
         }
       },
-      "Resource_Not_Found_Errors_Doc" : {
+      "ResourceNotFoundErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "NOT_FOUND",
@@ -101,7 +101,7 @@
           } ]
         }
       },
-      "Too_Many_Requests_Errors_Doc" : {
+      "TooManyRequestsErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "TOO_MANY_REQUESTS",
@@ -111,7 +111,7 @@
           } ]
         }
       },
-      "Unauthorized_Errors_Doc" : {
+      "UnauthorizedErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "ACCESS_TOKEN_EXPIRED",
@@ -121,7 +121,7 @@
           } ]
         }
       },
-      "Unsupported_Media_Type_Errors_Doc" : {
+      "UnsupportedMediaTypeErrors" : {
         "value" : {
           "errors" : [ {
             "code" : "UNSUPPORTED_MEDIA_TYPE",
@@ -190,8 +190,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Bad_Request_Errors_Doc" : {
-                "$ref" : "#/components/examples/Bad_Request_Errors_Doc"
+              "BadRequestErrors" : {
+                "$ref" : "#/components/examples/BadRequestErrors"
               }
             },
             "schema" : {
@@ -205,8 +205,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Conflict_Errors_Doc" : {
-                "$ref" : "#/components/examples/Conflict_Errors_Doc"
+              "ConflictErrors" : {
+                "$ref" : "#/components/examples/ConflictErrors"
               }
             },
             "schema" : {
@@ -220,8 +220,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Internal_Server_Errors_Doc" : {
-                "$ref" : "#/components/examples/Internal_Server_Errors_Doc"
+              "InternalServerErrors" : {
+                "$ref" : "#/components/examples/InternalServerErrors"
               }
             },
             "schema" : {
@@ -235,8 +235,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Method_Not_Supported_Errors_Doc" : {
-                "$ref" : "#/components/examples/Method_Not_Supported_Errors_Doc"
+              "MethodNotSupportedErrors" : {
+                "$ref" : "#/components/examples/MethodNotSupportedErrors"
               }
             },
             "schema" : {
@@ -253,8 +253,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Not_Acceptable_Errors_Doc" : {
-                "$ref" : "#/components/examples/Not_Acceptable_Errors_Doc"
+              "NotAcceptableErrors" : {
+                "$ref" : "#/components/examples/NotAcceptableErrors"
               }
             },
             "schema" : {
@@ -268,8 +268,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Resource_Not_Found_Errors_Doc" : {
-                "$ref" : "#/components/examples/Resource_Not_Found_Errors_Doc"
+              "ResourceNotFoundErrors" : {
+                "$ref" : "#/components/examples/ResourceNotFoundErrors"
               }
             },
             "schema" : {
@@ -283,8 +283,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Too_Many_Requests_Errors_Doc" : {
-                "$ref" : "#/components/examples/Too_Many_Requests_Errors_Doc"
+              "TooManyRequestsErrors" : {
+                "$ref" : "#/components/examples/TooManyRequestsErrors"
               }
             },
             "schema" : {
@@ -336,8 +336,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Unauthorized_Errors_Doc" : {
-                "$ref" : "#/components/examples/Unauthorized_Errors_Doc"
+              "UnauthorizedErrors" : {
+                "$ref" : "#/components/examples/UnauthorizedErrors"
               }
             },
             "schema" : {
@@ -351,8 +351,8 @@
         "content" : {
           "application/vnd.api+json" : {
             "examples" : {
-              "Unsupported_Media_Type_Errors_Doc" : {
-                "$ref" : "#/components/examples/Unsupported_Media_Type_Errors_Doc"
+              "UnsupportedMediaTypeErrors" : {
+                "$ref" : "#/components/examples/UnsupportedMediaTypeErrors"
               }
             },
             "schema" : {
@@ -1714,8 +1714,8 @@
             "content" : {
               "application/vnd.api+json" : {
                 "examples" : {
-                  "Forbidden_Errors_Doc" : {
-                    "$ref" : "#/components/examples/Forbidden_Errors_Doc"
+                  "ForbiddenErrors" : {
+                    "$ref" : "#/components/examples/ForbiddenErrors"
                   }
                 },
                 "schema" : {
@@ -1977,6 +1977,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -1996,6 +1999,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: citizenships (delete)",
         "tags" : [ "Users" ]
       },
@@ -2110,6 +2118,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2129,6 +2140,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: citizenships (create/update/delete)",
         "tags" : [ "Users" ]
       },
@@ -2163,6 +2179,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2182,6 +2201,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: citizenships (add)",
         "tags" : [ "Users" ]
       }
@@ -2296,6 +2320,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2315,6 +2342,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: placeOfBirth (create/update/delete)",
         "tags" : [ "Users" ]
       }
@@ -2351,6 +2383,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2370,6 +2405,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: relatives (delete)",
         "tags" : [ "Users" ]
       },
@@ -2484,6 +2524,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2503,6 +2546,11 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: relatives (create/update/delete)",
         "tags" : [ "Users" ]
       },
@@ -2537,6 +2585,9 @@
           "400" : {
             "$ref" : "#/components/responses/BadRequest"
           },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2556,11 +2607,21 @@
             "$ref" : "#/components/responses/InternalServerError"
           }
         },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
         "summary" : "Relationship: relatives (add)",
         "tags" : [ "Users" ]
       }
     }
   },
+  "security" : [ {
+    "Client_Credentials" : [ ]
+  }, {
+    "Authorization_Code_With_PKCE" : [ ]
+  } ],
   "servers" : [ {
     "description" : "Localhost",
     "url" : "http://localhost:8080"

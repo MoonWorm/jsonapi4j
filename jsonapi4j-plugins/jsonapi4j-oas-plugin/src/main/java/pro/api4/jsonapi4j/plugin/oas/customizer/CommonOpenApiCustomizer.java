@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.OAuth2;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties.OAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.OAuthFlow;
 import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.Scopes;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
@@ -25,6 +27,9 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +58,7 @@ public class CommonOpenApiCustomizer implements OasCustomizer {
         enrichExternalDocs(openApi);
         enrichServers(openApi);
         enrichSecuritySchemas(openApi);
+        enrichDocumentSecurity(openApi);
     }
 
     private void enrichOpenApiInfo(OpenAPI openApi) {
@@ -150,6 +156,35 @@ public class CommonOpenApiCustomizer implements OasCustomizer {
             }
             openApi.getTags().addAll(jsonApiTags);
         }
+    }
+
+    /**
+     * Requires every declared scheme document-wide. An operation that names its own {@code security} overrides this,
+     * so declaring scopes per operation still works; what changes is the default for an operation that declares
+     * nothing. Left unset, OpenAPI reads a bare operation as needing no authentication at all - which is the one
+     * thing an authenticated API must not say by omission.
+     * <p>
+     * An endpoint that really is public is the exception, and an {@link OasCustomizer} can clear its {@code security}.
+     */
+    private void enrichDocumentSecurity(OpenAPI openApi) {
+        List<SecurityRequirement> requirements = Stream.of(
+                        resolveSchemeName(OAuth2::clientCredentials),
+                        resolveSchemeName(OAuth2::authorizationCodeWithPkce)
+                )
+                .filter(Objects::nonNull)
+                .map(schemeName -> new SecurityRequirement().addList(schemeName))
+                .toList();
+        if (!requirements.isEmpty() && CollectionUtils.isEmpty(openApi.getSecurity())) {
+            openApi.setSecurity(requirements);
+        }
+    }
+
+    private String resolveSchemeName(Function<OAuth2, OAuth2GrantFlow> grantFlowAccessor) {
+        if (oasProperties.oauth2() == null) {
+            return null;
+        }
+        OAuth2GrantFlow grantFlow = grantFlowAccessor.apply(oasProperties.oauth2());
+        return grantFlow == null || StringUtils.isBlank(grantFlow.name()) ? null : grantFlow.name();
     }
 
     private void enrichSecuritySchemas(OpenAPI openApi) {

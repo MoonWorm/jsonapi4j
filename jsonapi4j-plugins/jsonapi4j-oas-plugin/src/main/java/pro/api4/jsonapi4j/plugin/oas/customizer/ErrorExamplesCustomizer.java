@@ -17,16 +17,16 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    public static final String BAD_REQUEST_ERRORS_DOC = "Bad_Request_Errors_Doc";
-    public static final String UNAUTHORIZED_ERRORS_DOC = "Unauthorized_Errors_Doc";
-    public static final String FORBIDDEN_ERRORS_DOC = "Forbidden_Errors_Doc";
-    public static final String RESOURCE_NOT_FOUND_ERRORS_DOC = "Resource_Not_Found_Errors_Doc";
-    public static final String METHOD_NOT_SUPPORTED_ERRORS_DOC = "Method_Not_Supported_Errors_Doc";
-    public static final String NOT_ACCEPTABLE_ERRORS_DOC = "Not_Acceptable_Errors_Doc";
-    public static final String CONFLICT_ERRORS_DOC = "Conflict_Errors_Doc";
-    public static final String UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC = "Unsupported_Media_Type_Errors_Doc";
-    public static final String TOO_MANY_REQUESTS_ERRORS_DOC = "Too_Many_Requests_Errors_Doc";
-    public static final String INTERNAL_SERVER_ERRORS_DOC = "Internal_Server_Errors_Doc";
+    public static final String BAD_REQUEST_ERRORS = "BadRequestErrors";
+    public static final String UNAUTHORIZED_ERRORS = "UnauthorizedErrors";
+    public static final String FORBIDDEN_ERRORS = "ForbiddenErrors";
+    public static final String RESOURCE_NOT_FOUND_ERRORS = "ResourceNotFoundErrors";
+    public static final String METHOD_NOT_SUPPORTED_ERRORS = "MethodNotSupportedErrors";
+    public static final String NOT_ACCEPTABLE_ERRORS = "NotAcceptableErrors";
+    public static final String CONFLICT_ERRORS = "ConflictErrors";
+    public static final String UNSUPPORTED_MEDIA_TYPE_ERRORS = "UnsupportedMediaTypeErrors";
+    public static final String TOO_MANY_REQUESTS_ERRORS = "TooManyRequestsErrors";
+    public static final String INTERNAL_SERVER_ERRORS = "InternalServerErrors";
 
     /**
      * The canned example each documented status code publishes, paired with the resource it is read from - one map
@@ -44,16 +44,16 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
 
     static {
         Map<HttpStatusCodes, ErrorExample> codesToExample = new EnumMap<>(HttpStatusCodes.class);
-        codesToExample.put(HttpStatusCodes.SC_400_BAD_REQUEST, new ErrorExample(BAD_REQUEST_ERRORS_DOC, "badRequestErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_401_UNAUTHORIZED, new ErrorExample(UNAUTHORIZED_ERRORS_DOC, "unauthorizedErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_403_FORBIDDEN, new ErrorExample(FORBIDDEN_ERRORS_DOC, "forbiddenErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, new ErrorExample(RESOURCE_NOT_FOUND_ERRORS_DOC, "resourceNotFoundErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, new ErrorExample(METHOD_NOT_SUPPORTED_ERRORS_DOC, "methodNotSupportedErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_406_NOT_ACCEPTABLE, new ErrorExample(NOT_ACCEPTABLE_ERRORS_DOC, "notAcceptableErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_409_CONFLICT, new ErrorExample(CONFLICT_ERRORS_DOC, "conflictErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, new ErrorExample(UNSUPPORTED_MEDIA_TYPE_ERRORS_DOC, "unsupportedMediaTypeErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, new ErrorExample(TOO_MANY_REQUESTS_ERRORS_DOC, "tooManyRequestsErrorsDoc.json"));
-        codesToExample.put(HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, new ErrorExample(INTERNAL_SERVER_ERRORS_DOC, "internalServerErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_400_BAD_REQUEST, new ErrorExample(BAD_REQUEST_ERRORS, "badRequestErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_401_UNAUTHORIZED, new ErrorExample(UNAUTHORIZED_ERRORS, "unauthorizedErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_403_FORBIDDEN, new ErrorExample(FORBIDDEN_ERRORS, "forbiddenErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_404_RESOURCE_NOT_FOUND, new ErrorExample(RESOURCE_NOT_FOUND_ERRORS, "resourceNotFoundErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_405_METHOD_NOT_SUPPORTED, new ErrorExample(METHOD_NOT_SUPPORTED_ERRORS, "methodNotSupportedErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_406_NOT_ACCEPTABLE, new ErrorExample(NOT_ACCEPTABLE_ERRORS, "notAcceptableErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_409_CONFLICT, new ErrorExample(CONFLICT_ERRORS, "conflictErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_415_UNSUPPORTED_MEDIA_TYPE, new ErrorExample(UNSUPPORTED_MEDIA_TYPE_ERRORS, "unsupportedMediaTypeErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_429_TOO_MANY_REQUESTS, new ErrorExample(TOO_MANY_REQUESTS_ERRORS, "tooManyRequestsErrorsDoc.json"));
+        codesToExample.put(HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR, new ErrorExample(INTERNAL_SERVER_ERRORS, "internalServerErrorsDoc.json"));
         CODES_TO_EXAMPLE = Collections.unmodifiableMap(codesToExample);
 
         Map<HttpStatusCodes, String> codesToExampleName = new EnumMap<>(HttpStatusCodes.class);

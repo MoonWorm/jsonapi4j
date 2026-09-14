@@ -202,7 +202,8 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
             Class<?> linkageMetaType = OasLinkageMetaUtil.resolveLinkageMetaType(relationship);
             String docSchemaName;
             if (linkageMetaType == null) {
-                registerSchemaIfNotExists(generateSchemaFromType(ResourceIdentifierObject.class), openApi);
+                // JsonApiResponseSchemaCustomizer publishes ResourceIdentifierObject, described; re-reflecting it here
+                // produced a second, bare copy of the same name
                 Schema<?> docSchema = toOne ? toOneRelationshipRequestDocSchema() : toManyRelationshipsRequestDocSchema();
                 registerSchemaIfNotExists(docSchema, openApi);
                 docSchemaName = docSchema.getName();

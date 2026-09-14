@@ -302,6 +302,20 @@ removed (`fields[users]` → `FieldsUsers`).
 This is the last thing to run, after any customizer the application registered, so a response tuned by hand is
 shared in its final shape.
 
+### What Other Plugins Contribute
+
+Two customizers ship with this plugin and describe what a *neighbouring* plugin makes reachable:
+
+| Customizer | Contributes | Active when |
+|---|---|---|
+| `AccessControlOasCustomizer` | `403` on every write | the Access Control plugin is registered and enabled |
+| `SparseFieldsetsOasCustomizer` | one `fields[TYPE]` per selectable type | the Sparse Fieldsets plugin is registered and enabled |
+
+They live here rather than in those plugins because OpenAPI is this module's concern — access control and sparse
+fieldsets should not have to know the document exists. Each matches its plugin by name and does nothing when that
+plugin is absent or disabled, so a disabled plugin contributes no documentation, just as it contributes no
+behaviour. Spring Boot and Quarkus register both automatically.
+
 ### Customizing the Generated Document
 
 Anything the generator produces can be tuned by registering an `OasCustomizer`. Customizers run after the built-in

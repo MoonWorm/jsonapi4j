@@ -30,7 +30,7 @@ import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TY
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.*;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.*;
 
-@SuppressWarnings("ALL")
+@SuppressWarnings({"rawtypes", "unchecked"})
 @Getter
 public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
 
@@ -145,18 +145,16 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
             schemas.add(multipleResourcesDocSchemas.getPrimarySchema());
             schemas.addAll(multipleResourcesDocSchemas.getNestedSchemas());
         }
-        Schema<?> resourceIdentifierSchema = generateSchemaFromType(ResourceIdentifierObject.class);
+        // registerResourceIdentifierObjectSchema already publishes this one, described; only its name is needed here
+        String resourceIdentifierSchemaName = ResourceIdentifierObject.class.getSimpleName();
         boolean isAnyToManyRelationshipsConfigured
                 = operationsRegistry.isAnyToManyRelationshipOperationConfigured(resourceType);
         boolean isAnyToOneRelationshipsConfigured
                 = operationsRegistry.isAnyToOneRelationshipOperationConfigured(resourceType);
-        if (isAnyToManyRelationshipsConfigured || isAnyToOneRelationshipsConfigured) {
-            schemas.add(resourceIdentifierSchema);
-        }
         if (isAnyToManyRelationshipsConfigured) {
             PrimaryAndNestedSchemas toManyRelationshipsDocSchemas = generateToManyRelationshipDocSchema(
                     registeredResource,
-                    resourceIdentifierSchema.getName()
+                    resourceIdentifierSchemaName
             );
             schemas.add(toManyRelationshipsDocSchemas.getPrimarySchema());
             schemas.addAll(toManyRelationshipsDocSchemas.getNestedSchemas());
@@ -164,7 +162,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         if (isAnyToOneRelationshipsConfigured) {
             PrimaryAndNestedSchemas toOneRelationshipDocSchemas = generateToOneRelationshipDocSchema(
                     registeredResource,
-                    resourceIdentifierSchema.getName()
+                    resourceIdentifierSchemaName
             );
             schemas.add(toOneRelationshipDocSchemas.getPrimarySchema());
             schemas.addAll(toOneRelationshipDocSchemas.getNestedSchemas());

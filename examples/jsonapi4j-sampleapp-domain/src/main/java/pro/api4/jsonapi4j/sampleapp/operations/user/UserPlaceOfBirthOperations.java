@@ -70,6 +70,12 @@ public class UserPlaceOfBirthOperations implements
                     ownerIdExtractor = ResourceIdFromUrlPathExtractor.class
             )
     )
+    @OasOperationInfo(
+            securityConfig = @OasOperationInfo.SecurityConfig(
+                    clientCredentialsSupported = true,
+                    pkceSupported = true
+            )
+    )
     @Override
     public void update(JsonApiRequest request) {
         var payload = request.getToOneRelationshipDocPayload();

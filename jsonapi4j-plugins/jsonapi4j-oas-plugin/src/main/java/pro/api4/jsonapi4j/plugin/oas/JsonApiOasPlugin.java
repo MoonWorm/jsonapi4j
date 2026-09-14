@@ -18,7 +18,9 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 import java.util.List;
 
+import static pro.api4.jsonapi4j.operation.AddToManyRelationshipOperation.ADD_MANY_METHOD_NAME;
 import static pro.api4.jsonapi4j.operation.CreateResourceOperation.CREATE_METHOD_NAME;
+import static pro.api4.jsonapi4j.operation.DeleteToManyRelationshipOperation.DELETE_MANY_METHOD_NAME;
 import static pro.api4.jsonapi4j.operation.DeleteResourceOperation.DELETE_METHOD_NAME;
 import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.READ_PAGE_METHOD_NAME;
 import static pro.api4.jsonapi4j.operation.ReadResourceByIdOperation.READ_BY_ID_METHOD_NAME;
@@ -142,6 +144,18 @@ public class JsonApiOasPlugin implements JsonApi4jPlugin {
         if (UpdateToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
             return getOrDefault(
                     findOnTheMethod(operation.getClass(), UPDATE_MANY_METHOD_NAME),
+                    classLevelModel
+            );
+        }
+        if (AddToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return getOrDefault(
+                    findOnTheMethod(operation.getClass(), ADD_MANY_METHOD_NAME),
+                    classLevelModel
+            );
+        }
+        if (DeleteToManyRelationshipOperation.class.isAssignableFrom(operationClass)) {
+            return getOrDefault(
+                    findOnTheMethod(operation.getClass(), DELETE_MANY_METHOD_NAME),
                     classLevelModel
             );
         }

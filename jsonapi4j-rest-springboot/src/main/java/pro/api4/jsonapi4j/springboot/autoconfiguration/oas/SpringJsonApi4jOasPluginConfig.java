@@ -11,7 +11,11 @@ import org.springframework.context.annotation.Configuration;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.OasServlet;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.AccessControlOasCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizer;
+import pro.api4.jsonapi4j.plugin.oas.customizer.SparseFieldsetsOasCustomizer;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 import pro.api4.jsonapi4j.servlet.ServletMappings;
@@ -27,10 +31,23 @@ import pro.api4.jsonapi4j.servlet.ServletMappings;
 @Configuration
 public class SpringJsonApi4jOasPluginConfig {
 
+
+
     @Bean
     public JsonApiOasPlugin jsonApiOasPlugin(SpringOasProperties oasProperties,
                                              ObjectProvider<OasCustomizer> customizers) {
         return new JsonApiOasPlugin(oasProperties, customizers.orderedStream().toList());
+    }
+
+    @Bean
+    public OasCustomizer jsonapi4jAccessControlOasCustomizer(ObjectProvider<PluginRegistry> pluginRegistry) {
+        return new AccessControlOasCustomizer(pluginRegistry::getObject);
+    }
+
+    @Bean
+    public OasCustomizer jsonapi4jSparseFieldsetsOasCustomizer(ObjectProvider<PluginRegistry> pluginRegistry,
+                                                               ObjectProvider<DomainRegistry> domainRegistry) {
+        return new SparseFieldsetsOasCustomizer(pluginRegistry::getObject, domainRegistry::getObject);
     }
 
     @Bean

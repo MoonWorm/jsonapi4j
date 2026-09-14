@@ -542,10 +542,9 @@ class JsonApiOperationsCustomizerTests {
     }
 
     /**
-     * Two codes cannot be derived from the operation type, because they depend on what the application switched on:
-     * the Access Control plugin refuses a write with {@code 403} (a denied read is answered with an empty document
-     * and a {@code 200}, so the compound-documents resolver can keep going), and {@code 401} comes from the host's
-     * security layer rather than the framework, so it is documented only where a scheme can reject the request.
+     * {@code 401} cannot be derived from the operation type: it comes from the host's security layer rather than
+     * from the framework, so it is documented wherever a scheme that can reject the request applies - whether the
+     * operation named one itself or inherited the document's.
      */
     @Nested
     class ContextDependentErrorResponses {
@@ -563,36 +562,8 @@ class JsonApiOperationsCustomizerTests {
         }
 
         @Test
-        void customise_accessControlActive_documents403OnEveryWrite() {
-            Paths paths = documentOf(accessControlled(new WriteOperations())).getPaths();
-
-            assertThat(errorCodesOf(paths.get(collectionPath()).getPost())).contains("403");
-            assertThat(errorCodesOf(paths.get(singlePath()).getPatch())).contains("403");
-            assertThat(errorCodesOf(paths.get(singlePath()).getDelete())).contains("403");
-        }
-
-        @Test
-        void customise_accessControlActive_documentsNo403OnReads() {
-            assertThat(errorCodesOf(securedOperation(documentOf(accessControlled(new SecuredOperations())))))
-                    .doesNotContain("403");
-        }
-
-        @Test
-        void customise_accessControlInactive_documentsNo403OnWritesThatOnlyItCanRefuse() {
-            Paths paths = writeOperationPaths();
-
-            assertThat(errorCodesOf(paths.get(singlePath()).getPatch())).doesNotContain("403");
-            assertThat(errorCodesOf(paths.get(singlePath()).getDelete())).doesNotContain("403");
-        }
-
-        @Test
-        void customise_accessControlInactive_stillDocuments403OnCreate() {
-            assertThat(errorCodesOf(writeOperationPaths().get(collectionPath()).getPost())).contains("403");
-        }
-
-        @Test
         void customise_everyErrorResponse_referencesAnExampleTheDocumentDeclares() {
-            OpenAPI openApi = documentOf(accessControlled(new WriteOperations()));
+            OpenAPI openApi = documentOf(jsonApi4j(new DefaultOasProperties(), new WriteOperations()));
 
             assertThat(openApi.getPaths().values())
                     .flatMap(PathItem::readOperations)
@@ -605,10 +576,6 @@ class JsonApiOperationsCustomizerTests {
                             assertThat(openApi.getComponents().getExamples()).containsKeys(examples.keySet().toArray(new String[0]));
                         }
                     }));
-        }
-
-        private JsonApi4j accessControlled(ResourceOperations<SecuredAttributes> operations) {
-            return jsonApi4jWithPeerPlugin("JsonApiAccessControlPlugin", operations);
         }
 
         private OpenAPI documentOf(JsonApi4j jsonApi4j) {
