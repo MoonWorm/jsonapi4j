@@ -60,21 +60,18 @@ public class AccessControlScopesModel {
         return switch (mode) {
             case ALL_OF -> groups.stream().allMatch(g -> g.isSatisfiedBy(grantedScopes));
             case ANY_OF -> groups.stream().anyMatch(g -> g.isSatisfiedBy(grantedScopes));
-            case NONE_OF -> groups.stream().noneMatch(g -> g.isSatisfiedBy(grantedScopes));
         };
     }
 
     public enum Mode {
 
         ALL_OF,
-        ANY_OF,
-        NONE_OF;
+        ANY_OF;
 
         static Mode from(AccessControlScopes.Mode mode) {
             return switch (mode) {
                 case ALL_OF -> ALL_OF;
                 case ANY_OF -> ANY_OF;
-                case NONE_OF -> NONE_OF;
             };
         }
     }

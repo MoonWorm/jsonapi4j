@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
-import io.swagger.v3.oas.models.responses.ApiResponse;
+import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Documents the {@code fields[TYPE]} parameters this plugin makes available.
@@ -33,27 +32,24 @@ public class SparseFieldsetsOasCustomizer implements OasCustomizer {
 
     /**
      * Matched by name: this module describes what the sparse fieldsets plugin contributes without depending on it,
-     * and a plugin that is absent or disabled contributes nothing to describe.
+     * and a plugin that is absent or disabled contributes nothing to describe - so this customizer is only applied
+     * when {@link #isEnabledFor(PluginRegistry)} says so.
      */
     private static final String SPARSE_FIELDSETS_PLUGIN_NAME = "JsonApiSparseFieldsetsPlugin";
 
-    private final Supplier<PluginRegistry> pluginRegistry;
-    private final Supplier<DomainRegistry> domainRegistry;
+    private final DomainRegistry domainRegistry;
 
-    /**
-     * The registries are supplied rather than injected: they are assembled from the plugin registry this plugin
-     * belongs to, so taking them directly would close a cycle. They are resolved when the document is generated, by
-     * which time they exist.
-     */
-    public SparseFieldsetsOasCustomizer(Supplier<PluginRegistry> pluginRegistry,
-                                        Supplier<DomainRegistry> domainRegistry) {
-        this.pluginRegistry = pluginRegistry;
-        this.domainRegistry = domainRegistry;
+    public SparseFieldsetsOasCustomizer(JsonApi4j jsonApi4j) {
+        this.domainRegistry = jsonApi4j.getDomainRegistry();
+    }
+
+    public static boolean isEnabledFor(PluginRegistry pluginRegistry) {
+        return pluginRegistry != null && pluginRegistry.isActivePlugin(SPARSE_FIELDSETS_PLUGIN_NAME);
     }
 
     @Override
     public void customise(OpenAPI openApi) {
-        if (openApi.getPaths() == null || !pluginRegistry.get().isActivePlugin(SPARSE_FIELDSETS_PLUGIN_NAME)) {
+        if (openApi.getPaths() == null) {
             return;
         }
         openApi.getPaths().forEach((path, pathItem) -> {
@@ -72,7 +68,7 @@ public class SparseFieldsetsOasCustomizer implements OasCustomizer {
      * the registry rather than counting segments keeps this independent of where the API is mounted.
      */
     private ResourceType resourceTypeOf(String path) {
-        Set<ResourceType> registered = domainRegistry.get().getResourceTypes();
+        Set<ResourceType> registered = domainRegistry.getResourceTypes();
         for (String segment : path.split("/")) {
             ResourceType candidate = new ResourceType(segment);
             if (registered.contains(candidate)) {
@@ -95,7 +91,7 @@ public class SparseFieldsetsOasCustomizer implements OasCustomizer {
      */
     private void addFieldsParams(Operation operation,
                                  ResourceType resourceType) {
-        Set<ResourceType> selectable = OasIncludableTypesUtil.sparseFieldsetsResourceTypes(domainRegistry.get(), resourceType);
+        Set<ResourceType> selectable = OasIncludableTypesUtil.sparseFieldsetsResourceTypes(domainRegistry, resourceType);
         if (selectable.isEmpty()) {
             return;
         }

@@ -37,8 +37,13 @@ public @interface ScopesGroup {
     /**
      * How a set of scope names is matched against the scopes a caller was granted.
      * <p>
-     * These are quantifiers over a set rather than binary operators, which keeps the meaning unambiguous
-     * when a set holds one element and makes negation a member of the same family instead of a separate flag.
+     * These are quantifiers over a set rather than binary operators, which keeps the meaning unambiguous when a set
+     * holds one element.
+     * <p>
+     * There is no negative quantifier here, unlike {@link pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup}:
+     * a caller chooses which of its granted scopes a token carries, so "deny anything holding X" is satisfied by
+     * simply not asking for X. Entitlements come from the principal rather than from the request, which is why
+     * negation is sound there and not here.
      */
     enum Mode {
 
@@ -50,12 +55,7 @@ public @interface ScopesGroup {
         /**
          * The caller must have been granted at least one of the listed scopes.
          */
-        ANY_OF,
-
-        /**
-         * The caller must have been granted none of the listed scopes.
-         */
-        NONE_OF
+        ANY_OF
     }
 
 }

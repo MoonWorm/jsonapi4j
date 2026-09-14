@@ -91,6 +91,10 @@ oas:
       scopes:
         - name: users.read
           description: Read-only access to a user data
+        - name: users.citizenships.read
+          description: Read a user's citizenships relationship
+        - name: users.sensitive.read
+          description: Read a user's sensitive attributes
   servers:
     - name: Localhost
       enabled: true

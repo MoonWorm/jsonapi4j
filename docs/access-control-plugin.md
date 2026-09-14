@@ -199,7 +199,6 @@ which reads as *(`users.read` and `profiles.read`) or `admin.full`*. The simple 
 |-------------|---------------------------------------|
 | `ALL_OF` (default) | **all** of the listed scopes |
 | `ANY_OF` | **at least one** of the listed scopes |
-| `NONE_OF` | **none** of the listed scopes — e.g. deny anything holding a `readonly` scope |
 
 The clause default is `ALL_OF` rather than entitlements' `ANY_OF`, because a scope requirement normally asks
 for every scope it lists.

@@ -74,12 +74,7 @@ public @interface AccessControlScopes {
         /**
          * At least one clause must be satisfied.
          */
-        ANY_OF,
-
-        /**
-         * No clause may be satisfied.
-         */
-        NONE_OF
+        ANY_OF
     }
 
 }

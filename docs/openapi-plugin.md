@@ -308,13 +308,33 @@ Two customizers ship with this plugin and describe what a *neighbouring* plugin 
 
 | Customizer | Contributes | Active when |
 |---|---|---|
-| `AccessControlOasCustomizer` | `403` on every write | the Access Control plugin is registered and enabled |
+| `AccessControlOasCustomizer` | required scopes, public endpoints, `403`, and the reasons behind them | the Access Control plugin is registered and enabled |
 | `SparseFieldsetsOasCustomizer` | one `fields[TYPE]` per selectable type | the Sparse Fieldsets plugin is registered and enabled |
 
 They live here rather than in those plugins because OpenAPI is this module's concern — access control and sparse
-fieldsets should not have to know the document exists. Each matches its plugin by name and does nothing when that
-plugin is absent or disabled, so a disabled plugin contributes no documentation, just as it contributes no
-behaviour. Spring Boot and Quarkus register both automatically.
+fieldsets should not have to know the document exists. Each is applied only when its plugin is registered and
+enabled, so a disabled plugin contributes no documentation just as it contributes no behaviour, and an application
+without the plugin never loads these classes.
+
+What access control contributes, and why:
+
+- **Scopes.** `@AccessControl(scopes = …)` becomes the operation's `security`. OpenAPI's security array is
+  disjunctive normal form — entries are alternatives, scopes within an entry are all required — and a two-level
+  `ALL_OF`/`ANY_OF` requirement always has such a form, so `(A or B) and (C or D)` is published as four
+  alternatives. Access control supplies the scopes; the OAS configuration supplies the flows they hang off. A
+  requirement declared here wins over `@OasOperationInfo(securityConfig = …)`: the document should state what is
+  enforced, and this is what enforces it.
+- **Public endpoints.** `@AccessControl(authenticated = ANONYMOUS)` publishes `security: []`, which is how OpenAPI
+  says an operation overrides the document default and needs no authentication.
+- **`403`.** Added to writes that actually carry a requirement, rather than to every write. A denied read is
+  answered with an empty document and a `200` so that compound-document resolution can continue, so reads never
+  carry one.
+- **Reasons.** Every requirement's `description` is appended to the operation's, including for entitlements and
+  policies, which OpenAPI has no field for. A reader learns why they might be refused.
+
+A scope named by access control but missing from `jsonapi4j.oas.oauth2.*.scopes` fails document generation rather
+than publishing a reference that resolves to nothing — the two lists have to agree, and a dangling scope is what
+breaks the Swagger UI authorize button.
 
 ### Customizing the Generated Document
 

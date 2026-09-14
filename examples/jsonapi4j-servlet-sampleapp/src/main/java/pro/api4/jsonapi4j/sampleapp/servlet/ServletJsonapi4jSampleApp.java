@@ -19,8 +19,6 @@ import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
-import pro.api4.jsonapi4j.plugin.oas.customizer.AccessControlOasCustomizer;
-import pro.api4.jsonapi4j.plugin.oas.customizer.SparseFieldsetsOasCustomizer;
 import pro.api4.jsonapi4j.sampleapp.oas.RateLimitHeadersCustomizer;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer;
@@ -102,16 +100,7 @@ public class ServletJsonapi4jSampleApp {
         pluginRegistryBuilder.register(new JsonApiSparseFieldsetsPlugin(DefaultSfProperties.toSfProperties(jsonApi4jPropertiesRaw)));
         pluginRegistryBuilder.register(new JsonApiOasPlugin(
                 DefaultOasProperties.toOasProperties(jsonApi4jPropertiesRaw),
-                List.of(
-                        new RateLimitHeadersCustomizer(),
-                        new AccessControlOasCustomizer(
-                                () -> (PluginRegistry) servletContext.getAttribute(PLUGIN_REGISTRY_ATT_NAME)
-                        ),
-                        new SparseFieldsetsOasCustomizer(
-                                () -> (PluginRegistry) servletContext.getAttribute(PLUGIN_REGISTRY_ATT_NAME),
-                                () -> (DomainRegistry) servletContext.getAttribute(DOMAIN_REGISTRY_ATT_NAME)
-                        )
-                )
+                List.of(new RateLimitHeadersCustomizer())
         ));
         pluginRegistryBuilder.register(new JsonApiCompoundDocsPlugin(DefaultCompoundDocsProperties.toCdProperties(jsonApi4jPropertiesRaw)));
         PluginRegistry pluginRegistry = pluginRegistryBuilder.build();

@@ -61,7 +61,6 @@ public class ScopesGroupModel {
         return switch (mode) {
             case ALL_OF -> grantedScopes.containsAll(scopes);
             case ANY_OF -> scopes.stream().anyMatch(grantedScopes::contains);
-            case NONE_OF -> scopes.stream().noneMatch(grantedScopes::contains);
         };
     }
 
@@ -83,14 +82,12 @@ public class ScopesGroupModel {
     public enum Mode {
 
         ALL_OF,
-        ANY_OF,
-        NONE_OF;
+        ANY_OF;
 
         static Mode from(ScopesGroup.Mode mode) {
             return switch (mode) {
                 case ALL_OF -> ALL_OF;
                 case ANY_OF -> ANY_OF;
-                case NONE_OF -> NONE_OF;
             };
         }
     }

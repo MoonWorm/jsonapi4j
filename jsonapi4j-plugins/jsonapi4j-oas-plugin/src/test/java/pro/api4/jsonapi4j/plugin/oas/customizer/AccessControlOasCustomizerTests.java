@@ -3,81 +3,153 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import pro.api4.jsonapi4j.plugin.PluginRegistry;
-import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.PeerPlugin;
+import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.CrossProductOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GuardedAttributes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GuardedOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.UndeclaredScopeOperations;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.ADMIN;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.ENTITLEMENTS_REASON;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GUARDED;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.READ;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCHEME;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCOPES_REASON;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.WRITE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.allScopes;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.jsonApi4j;
 
 /**
- * Access control refuses a write with {@code 403} but answers a denied read with an empty document and a {@code 200},
- * deliberately, so that the compound-documents resolver can keep going. The document has to say the same.
+ * What access control enforces is what the document should state: which scopes an operation needs, which operations
+ * anyone may call, and where a {@code 403} is reachable. A denied read is answered with an empty document and a
+ * {@code 200}, deliberately, so reads never carry one.
  */
 class AccessControlOasCustomizerTests {
 
-    private static final String AC = "JsonApiAccessControlPlugin";
+    private static final String ROOT = "/jsonapi/" + GUARDED;
 
-    private static OpenAPI document() {
-        Operation read = new Operation().responses(new ApiResponses()
-                .addApiResponse("200", new ApiResponse().description("OK")));
-        Operation write = new Operation().responses(new ApiResponses()
-                .addApiResponse("204", new ApiResponse().description("No Content")));
-        return new OpenAPI().paths(new Paths()
-                .addPathItem("/things", new PathItem().get(read).post(write)));
+    private static OpenAPI document(ResourceOperations<GuardedAttributes> operations,
+                                    String... declaredScopes) {
+        JsonApi4j jsonApi4j = jsonApi4j(operations, declaredScopes);
+        OpenAPI openApi = new OpenAPI();
+        new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
+        new AccessControlOasCustomizer(jsonApi4j).customise(openApi);
+        return openApi;
     }
 
-    private static AccessControlOasCustomizer sut(String... activePlugins) {
-        PluginRegistry.PluginRegistryBuilder builder = PluginRegistry.builder();
-        for (String name : activePlugins) {
-            builder.register(new PeerPlugin(name));
-        }
-        PluginRegistry registry = builder.build();
-        return new AccessControlOasCustomizer(() -> registry);
+    private static OpenAPI guardedDocument() {
+        return document(new GuardedOperations(), allScopes().toArray(new String[0]));
+    }
+
+    private static Operation readById(OpenAPI openApi) {
+        return openApi.getPaths().get(ROOT + "/{id}").getGet();
     }
 
     @Nested
-    class ForbiddenOnWrites {
+    class ScopeRequirements {
 
         @Test
-        void customise_accessControlActive_documents403OnWrites() {
-            OpenAPI openApi = document();
+        void customise_anyOfClauses_becomeAlternativeSecurityRequirements() {
+            List<SecurityRequirement> security = readById(guardedDocument()).getSecurity();
 
-            sut(AC).customise(openApi);
-
-            assertThat(openApi.getPaths().get("/things").getPost().getResponses()).containsKey("403");
+            assertThat(security).hasSize(2);
+            assertThat(security.get(0).get(SCHEME)).containsExactly(READ, WRITE);
+            assertThat(security.get(1).get(SCHEME)).containsExactly(ADMIN);
         }
 
         @Test
-        void customise_accessControlActive_leavesReadsAlone() {
-            OpenAPI openApi = document();
+        void customise_allOfOverAnyOfClauses_expandsIntoEveryCombination() {
+            List<SecurityRequirement> security = readById(
+                    document(new CrossProductOperations(), allScopes().toArray(new String[0]))).getSecurity();
 
-            sut(AC).customise(openApi);
+            assertThat(security).hasSize(4);
+            assertThat(security).extracting(requirement -> requirement.get(SCHEME))
+                    .containsExactlyInAnyOrder(
+                            List.of(READ, ADMIN),
+                            List.of(READ),
+                            List.of(WRITE, ADMIN),
+                            List.of(WRITE, READ)
+                    );
+        }
 
-            assertThat(openApi.getPaths().get("/things").getGet().getResponses()).doesNotContainKey("403");
+        /**
+         * {@code (READ or WRITE) and (ADMIN or READ)} has a branch where both clauses are satisfied by the same
+         * scope. An alternative is a set, so that branch asks for one scope rather than naming it twice.
+         */
+        @Test
+        void customise_combinationSatisfiedByOneScope_asksForItOnce() {
+            List<SecurityRequirement> security = readById(
+                    document(new CrossProductOperations(), allScopes().toArray(new String[0]))).getSecurity();
+
+            assertThat(security).anySatisfy(requirement -> assertThat(requirement.get(SCHEME)).containsExactly(READ));
         }
 
         @Test
-        void customise_accessControlAbsent_documentsNothing() {
-            OpenAPI openApi = document();
+        void customise_scopeTheConfigurationDoesNotDeclare_failsRatherThanDangle() {
+            assertThatThrownBy(() -> document(new UndeclaredScopeOperations(), allScopes().toArray(new String[0])))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("never.declared");
+        }
 
-            sut().customise(openApi);
+    }
 
-            assertThat(openApi.getPaths().get("/things").getPost().getResponses()).doesNotContainKey("403");
+    @Nested
+    class AnonymousOperations {
+
+        @Test
+        void customise_anonymousOperation_isDocumentedAsNeedingNoAuthentication() {
+            assertThat(guardedDocument().getPaths().get(ROOT + "/{id}").getDelete().getSecurity()).isEmpty();
         }
 
         @Test
-        void customise_operationAlreadyDocumenting403_leavesItAsItIs() {
-            OpenAPI openApi = document();
-            ApiResponse declared = new ApiResponse().description("Client-generated id is not supported");
-            openApi.getPaths().get("/things").getPost().getResponses().addApiResponse("403", declared);
+        void customise_anonymousOperation_documentsNo403() {
+            assertThat(guardedDocument().getPaths().get(ROOT + "/{id}").getDelete().getResponses())
+                    .doesNotContainKey("403");
+        }
 
-            sut(AC).customise(openApi);
+    }
 
-            assertThat(openApi.getPaths().get("/things").getPost().getResponses().get("403")).isSameAs(declared);
+    @Nested
+    class Forbidden {
+
+        @Test
+        void customise_guardedWrite_documents403() {
+            assertThat(guardedDocument().getPaths().get(ROOT).getPost().getResponses()).containsKey("403");
+        }
+
+        @Test
+        void customise_guardedRead_documentsNo403() {
+            assertThat(readById(guardedDocument()).getResponses()).doesNotContainKey("403");
+        }
+
+        @Test
+        void customise_operationWithoutRequirements_documentsNo403() {
+            assertThat(guardedDocument().getPaths().get(ROOT + "/{id}").getPatch().getResponses())
+                    .doesNotContainKey("403");
+        }
+
+    }
+
+    @Nested
+    class Reasons {
+
+        @Test
+        void customise_requirementWithDescription_explainsItInTheOperation() {
+            assertThat(readById(guardedDocument()).getDescription()).contains(SCOPES_REASON);
+        }
+
+        @Test
+        void customise_entitlementsRequirement_isExplainedEvenThoughOpenApiCannotStateIt() {
+            assertThat(guardedDocument().getPaths().get(ROOT).getPost().getDescription())
+                    .contains(ENTITLEMENTS_REASON);
         }
 
     }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -29,19 +30,17 @@ public final class OasDocument {
         return openApi;
     }
 
-    /**
-     * The customizers in the order they must be applied: the document-wide info first, then the schemas the
-     * operations refer to, then the operations, then the error examples they point at. Any customizer registered
-     * with {@link JsonApiOasPlugin} follows, so it sees a finished document and can tune what the framework
-     * generated - add a response, attach headers, rewrite a description.
-     * <p>
-     * {@link SharedComponentsCustomizer} closes the list. It changes nothing the document says, only how often it
-     * says it, and it runs after the application's customizers so that what they produced is folded in its final
-     * shape.
-     *
-     * @param jsonApi4j the assembled framework instance
-     * @return the ordered customizers, for a host that applies them itself
-     */
+    private static Stream<OasCustomizer> peerPluginCustomizers(JsonApi4j jsonApi4j) {
+        List<OasCustomizer> customizers = new ArrayList<>();
+        if (AccessControlOasCustomizer.isEnabledFor(jsonApi4j.getPluginRegistry())) {
+            customizers.add(new AccessControlOasCustomizer(jsonApi4j));
+        }
+        if (SparseFieldsetsOasCustomizer.isEnabledFor(jsonApi4j.getPluginRegistry())) {
+            customizers.add(new SparseFieldsetsOasCustomizer(jsonApi4j));
+        }
+        return customizers.stream();
+    }
+
     public static List<OasCustomizer> customizers(JsonApi4j jsonApi4j) {
         return Stream.<Stream<OasCustomizer>>of(
                         Stream.of(
@@ -51,6 +50,7 @@ public final class OasDocument {
                                 new JsonApiOperationsCustomizer(jsonApi4j),
                                 new ErrorExamplesCustomizer()
                         ),
+                        peerPluginCustomizers(jsonApi4j),
                         jsonApi4j.getPluginRegistry()
                                 .pluginOf(JsonApiOasPlugin.class)
                                 .map(JsonApiOasPlugin::getCustomizers)

@@ -10,6 +10,6 @@ jsonapi4j:
   cd:
     enabled: false
   ac:
-    enabled: false
+    enabled: true
   sf:
     enabled: true

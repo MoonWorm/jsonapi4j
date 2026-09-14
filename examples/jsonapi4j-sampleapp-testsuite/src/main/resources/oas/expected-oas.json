@@ -216,6 +216,21 @@
         },
         "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
       },
+      "Forbidden" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "ForbiddenErrors" : {
+                "$ref" : "#/components/examples/ForbiddenErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Forbidden. The server understood the request but refuses to authorize it."
+      },
       "InternalServerError" : {
         "content" : {
           "application/vnd.api+json" : {
@@ -1190,7 +1205,9 @@
           "authorizationCode" : {
             "authorizationUrl" : "http://foo.bar/authorizationUrl",
             "scopes" : {
-              "users.read" : "Read-only access to a user data"
+              "users.citizenships.read" : "Read a user's citizenships relationship",
+              "users.read" : "Read-only access to a user data",
+              "users.sensitive.read" : "Read a user's sensitive attributes"
             },
             "tokenUrl" : "http://foo.bar/tokenUrl"
           }
@@ -1711,19 +1728,7 @@
             "$ref" : "#/components/responses/Unauthorized"
           },
           "403" : {
-            "content" : {
-              "application/vnd.api+json" : {
-                "examples" : {
-                  "ForbiddenErrors" : {
-                    "$ref" : "#/components/examples/ForbiddenErrors"
-                  }
-                },
-                "schema" : {
-                  "$ref" : "#/components/schemas/ErrorsDoc"
-                }
-              }
-            },
-            "description" : "Forbidden. The server understood the request but refuses to authorize it."
+            "$ref" : "#/components/responses/Forbidden"
           },
           "405" : {
             "$ref" : "#/components/responses/MethodNotSupported"
@@ -1777,6 +1782,9 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
@@ -1914,6 +1922,9 @@
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
           },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -1980,6 +1991,9 @@
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
           },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2000,9 +2014,9 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ ]
+          "Client_Credentials" : [ "users.citizenships.read" ]
         }, {
-          "Authorization_Code_With_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (delete)",
         "tags" : [ "Users" ]
@@ -2077,9 +2091,9 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ ]
+          "Client_Credentials" : [ "users.citizenships.read" ]
         }, {
-          "Authorization_Code_With_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships",
         "tags" : [ "Users" ],
@@ -2121,6 +2135,9 @@
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
           },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2141,9 +2158,9 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ ]
+          "Client_Credentials" : [ "users.citizenships.read" ]
         }, {
-          "Authorization_Code_With_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (create/update/delete)",
         "tags" : [ "Users" ]
@@ -2182,6 +2199,9 @@
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
           },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
           },
@@ -2202,9 +2222,9 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ ]
+          "Client_Credentials" : [ "users.citizenships.read" ]
         }, {
-          "Authorization_Code_With_PKCE" : [ ]
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (add)",
         "tags" : [ "Users" ]
@@ -2322,6 +2342,9 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"
@@ -2526,6 +2549,9 @@
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
           },
           "404" : {
             "$ref" : "#/components/responses/ResourceNotFound"

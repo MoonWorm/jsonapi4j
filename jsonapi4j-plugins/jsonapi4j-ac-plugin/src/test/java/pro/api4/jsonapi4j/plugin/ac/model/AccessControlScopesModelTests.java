@@ -107,17 +107,9 @@ class AccessControlScopesModelTests {
         }
 
         @Test
-        void isSatisfiedBy_noneOfClause_deniesWhenTheScopeIsGranted() {
-            AccessControlScopesModel sut = modelOf(NoneOfResource.class);
-
-            assertThat(sut.isSatisfiedBy(Set.of("users.read"))).isTrue();
-            assertThat(sut.isSatisfiedBy(Set.of("users.read", "readonly"))).isFalse();
-        }
-
-        @Test
-        void isSatisfiedBy_noScopesGranted_deniesUnlessTheRuleIsNegative() {
+        void isSatisfiedBy_noScopesGranted_denies() {
             assertThat(modelOf(SingleClauseResource.class).isSatisfiedBy(Set.of())).isFalse();
-            assertThat(modelOf(NoneOfResource.class).isSatisfiedBy(Set.of())).isTrue();
+            assertThat(modelOf(TwoClausesResource.class).isSatisfiedBy(Set.of())).isFalse();
         }
 
     }
@@ -133,11 +125,6 @@ class AccessControlScopesModelTests {
                     @ScopesGroup("admin.full")
             }))
     private static class TwoClausesResource {
-    }
-
-    @AccessControl(scopes = @AccessControlScopes(
-            @ScopesGroup(value = "readonly", mode = ScopesGroup.Mode.NONE_OF)))
-    private static class NoneOfResource {
     }
 
     @AccessControl(scopes = @AccessControlScopes(
