@@ -39,6 +39,13 @@ public interface QuarkusJsonApi4jOasProperties {
     String oasRootPath();
 
     /**
+     * Whether a document the plugin can generate but cannot vouch for is refused rather than published. Optional,
+     * false by default.
+     */
+    @WithDefault(OasProperties.DEFAULT_FAIL_ON_MISCONFIGURATION)
+    boolean failOnMisconfiguration();
+
+    /**
      * OAS Info Section configurations. Optional.
      */
     Optional<QuarkusJsonApi4jOasInfoProperties> info();
@@ -246,6 +253,7 @@ public interface QuarkusJsonApi4jOasProperties {
         DefaultOasProperties oasProperties = new DefaultOasProperties();
         oasProperties.setEnabled(enabled());
         oasProperties.setOasRootPath(oasRootPath());
+        oasProperties.setFailOnMisconfiguration(failOnMisconfiguration());
         oasProperties.setInfo(info().map(qi -> {
             DefaultInfo di = new DefaultInfo();
             di.setTitle(qi.title());

@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,13 @@ public final class OasDocument {
         return customizers.stream();
     }
 
+    private static boolean failOnMisconfiguration(JsonApi4j jsonApi4j) {
+        return jsonApi4j.getPluginRegistry()
+                .configOf(OasProperties.class)
+                .map(OasProperties::failOnMisconfiguration)
+                .orElse(false);
+    }
+
     public static List<OasCustomizer> customizers(JsonApi4j jsonApi4j) {
         return Stream.<Stream<OasCustomizer>>of(
                         Stream.of(
@@ -56,7 +64,7 @@ public final class OasDocument {
                                 .map(JsonApiOasPlugin::getCustomizers)
                                 .orElseGet(List::<OasCustomizer>of)
                                 .stream(),
-                        Stream.of(new SharedComponentsCustomizer())
+                        Stream.of(new SharedComponentsCustomizer(), new DocumentSelfCheckCustomizer(failOnMisconfiguration(jsonApi4j)))
                 )
                 .flatMap(Function.identity())
                 .toList();

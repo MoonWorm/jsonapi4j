@@ -26,6 +26,7 @@ import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.plugin.ac.model.ScopesGroupModel;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
@@ -181,12 +182,25 @@ public class AccessControlOasCustomizer implements OasCustomizer {
         }
         List<Set<String>> alternatives = alternatives(requiredScopes);
         if (alternatives.isEmpty() || alternatives.size() > MAX_SECURITY_ALTERNATIVES) {
+            OasDiagnostics.report(
+                    failOnMisconfiguration(),
+                    "A scope requirement on '%s' expands into more alternatives than a document should state, so it "
+                            + "is not published as a security requirement. Restructure it into fewer clauses, or "
+                            + "express it as an access policy.",
+                    operation.getOperationId()
+            );
             return Optional.empty();
         }
         alternatives.forEach(this::requireDeclaredScopes);
 
         List<String> schemeNames = schemeNamesFor(operation);
         if (schemeNames.isEmpty()) {
+            OasDiagnostics.report(
+                    failOnMisconfiguration(),
+                    "Access control requires scopes on '%s', but no OAuth2 grant flow is configured under "
+                            + "'%s.oauth2' to hang them off, so the requirement is not published.",
+                    operation.getOperationId(), OasProperties.OAS_PROPERTY
+            );
             return Optional.empty();
         }
         List<SecurityRequirement> requirements = new ArrayList<>();
@@ -246,13 +260,17 @@ public class AccessControlOasCustomizer implements OasCustomizer {
                 .filter(scope -> !declared.contains(scope))
                 .findFirst()
                 .ifPresent(scope -> {
-                    throw new IllegalStateException(String.format(
+                    throw OasDiagnostics.reject(
                             "Access control requires the OAuth2 scope '%s', which '%s.oauth2' does not declare. A "
                                     + "security requirement naming an undeclared scope is a dangling reference. Declare "
                                     + "it under the grant flow's scopes, or stop requiring it.",
                             scope, OasProperties.OAS_PROPERTY
-                    ));
+                    );
                 });
+    }
+
+    private boolean failOnMisconfiguration() {
+        return oasProperties != null && oasProperties.failOnMisconfiguration();
     }
 
     private Set<String> declaredScopes() {

@@ -377,6 +377,7 @@ for a working example.
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.oas.enabled` | `true` | Enables/disables OAS plugin and OAS endpoint exposure. |
+| `jsonapi4j.oas.failOnMisconfiguration` | `false` | Fail document generation instead of logging a warning when the generated document has a loose end — a `$ref` resolving to nothing, or a requirement it could not state. Worth turning on where the document is published as a contract. |
 | `jsonapi4j.oas.oasRootPath` | `/jsonapi/oas` | Root path for generated OpenAPI spec endpoint. Honoured identically by all three integrations; it must not be the same path as `jsonapi4j.rootPath`, which is checked at startup. |
 | `jsonapi4j.oas.info.title` | `JsonApi4j API Sample Title` | OpenAPI info.title. |
 | `jsonapi4j.oas.info.description` | not set | OpenAPI info.description. |

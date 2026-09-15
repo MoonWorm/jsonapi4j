@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Customizers registered by the application are appended, never interleaved: they run once the built-in ones have
- * finished, so they see the document the framework produced and can tune anything in it. Only
- * {@link SharedComponentsCustomizer} follows them, folding whatever they left behind - it changes nothing the
- * document states, so it cannot undo their work.
+ * finished, so they see the document the framework produced and can tune anything in it. Only the document-wide
+ * passes follow them - one folding what they left behind, one reading it - and neither changes what the document
+ * states, so neither can undo their work.
  */
 class OasDocumentTests {
 
@@ -61,11 +61,12 @@ class OasDocumentTests {
         }
 
         @Test
-        void customizers_always_endWithTheSharedComponentsPass() {
+        void customizers_always_endWithTheDocumentWidePasses() {
             List<OasCustomizer> customizers = OasDocument.customizers(
                     jsonApi4j(List.of(new RecordingCustomizer(new ArrayList<>()))));
 
-            assertThat(customizers.get(customizers.size() - 1)).isInstanceOf(SharedComponentsCustomizer.class);
+            assertThat(customizers).element(customizers.size() - 2).isInstanceOf(SharedComponentsCustomizer.class);
+            assertThat(customizers).last().isInstanceOf(DocumentSelfCheckCustomizer.class);
         }
 
         @Test

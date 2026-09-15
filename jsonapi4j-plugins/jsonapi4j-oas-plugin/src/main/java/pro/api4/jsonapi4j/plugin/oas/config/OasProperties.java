@@ -22,12 +22,14 @@ public interface OasProperties extends PluginProperties {
 
     String ENABLED_PROPERTY = "enabled";
     String OAS_ROOT_PATH_PROPERTY = "oasRootPath";
+    String FAIL_ON_MISCONFIGURATION_PROPERTY = "failOnMisconfiguration";
     String INFO_PROPERTY = "info";
     String EXTERNAL_DOCUMENTATION_PROPERTY = "externalDocumentation";
     String OAUTH2_PROPERTY = "oauth2";
     String SERVERS_PROPERTY = "servers";
 
     String DEFAULT_ENABLED = "true";
+    String DEFAULT_FAIL_ON_MISCONFIGURATION = "false";
     String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.DEFAULT_ROOT_PATH + "/oas";
 
     String EMAIL_PATTERN = "[^\\s@]+@[^\\s@]+\\.[^\\s@]+";
@@ -38,6 +40,15 @@ public interface OasProperties extends PluginProperties {
 
     default String oasRootPath() {
         return DEFAULT_OAS_ROOT_PATH;
+    }
+
+    /**
+     * Whether a document the plugin can generate but cannot vouch for is refused rather than published. Off by
+     * default: a document with one loose end is still more useful than no document at all, and the warning names
+     * what is wrong. Turn it on where the document is published as a contract.
+     */
+    default boolean failOnMisconfiguration() {
+        return Boolean.parseBoolean(DEFAULT_FAIL_ON_MISCONFIGURATION);
     }
 
     Info info();

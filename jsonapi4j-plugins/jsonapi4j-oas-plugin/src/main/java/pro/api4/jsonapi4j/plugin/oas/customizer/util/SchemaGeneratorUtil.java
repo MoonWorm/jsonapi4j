@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import lombok.EqualsAndHashCode;
@@ -22,13 +23,27 @@ import static pro.api4.jsonapi4j.model.document.data.ResourceObject.LINKS_FIELD;
 @SuppressWarnings("rawtypes")
 public final class SchemaGeneratorUtil {
 
-    private static final ModelConverters MODEL_CONVERTERS = ModelConverters.getInstance();
+    /**
+     * This plugin's own converter, not {@link ModelConverters#getInstance()}.
+     * <p>
+     * That singleton is shared JVM-wide, and springdoc uses it too - the Spring integration deliberately puts both
+     * on one classpath. Converters either registers would then reach the other's schemas, making this plugin's
+     * output depend on what else happens to be deployed. An instance of our own keeps generation deterministic.
+     */
+    private static final ModelConverters MODEL_CONVERTERS = new ModelConverters();
 
     private SchemaGeneratorUtil() {
     }
 
     public static Schema<?> generateSchemaFromType(Class<?> clazz) {
-        return MODEL_CONVERTERS.read(clazz).values().stream().findFirst().get();
+        return MODEL_CONVERTERS.read(clazz).values().stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(String.format(
+                        "No schema could be generated for '%s'. A JSON:API document member has to be a type the "
+                                + "schema generator can describe - an interface with no implementation in sight, or a "
+                                + "type erased to nothing, leaves it with no schema to publish.",
+                        clazz.getName()
+                )));
     }
 
     /**
@@ -120,12 +135,12 @@ public final class SchemaGeneratorUtil {
             return;
         }
         if (!registered.equals(schemaToAdd)) {
-            throw new IllegalStateException(String.format(
+            throw OasDiagnostics.reject(
                     "Two different schemas claim the name '%s'. Schema names are derived from Java simple names, so "
                             + "two resources carrying same-named nested types collide - one would silently win and the "
                             + "other would be published with the wrong shape. Rename one of the Java types.",
                     schemaToAdd.getName()
-            ));
+            );
         }
     }
 

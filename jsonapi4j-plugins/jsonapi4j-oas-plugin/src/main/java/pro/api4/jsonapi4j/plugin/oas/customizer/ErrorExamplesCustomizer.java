@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
+import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.examples.Example;
@@ -81,11 +82,15 @@ public class ErrorExamplesCustomizer implements OasCustomizer {
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
             if (is == null) {
-                throw new IllegalArgumentException("wrong path");
+                throw OasDiagnostics.reject(
+                        "Error example '%s' is missing from the plugin's own resources. Every documented status code "
+                                + "publishes one, so a missing file would leave an example of null in its place.",
+                        path
+                );
             }
             return OBJECT_MAPPER.readTree(is);
         } catch (IOException e) {
-            return null;
+            throw OasDiagnostics.reject("Error example '%s' could not be read: %s", path, e.getMessage());
         }
     }
 
