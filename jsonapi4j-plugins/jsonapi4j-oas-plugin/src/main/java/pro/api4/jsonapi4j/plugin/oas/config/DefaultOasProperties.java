@@ -18,7 +18,7 @@ public class DefaultOasProperties implements OasProperties {
 
     private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
     private String oasRootPath = DEFAULT_OAS_ROOT_PATH;
-    private boolean failOnMisconfiguration = Boolean.parseBoolean(DEFAULT_FAIL_ON_MISCONFIGURATION);
+    private DiagnosticsMode diagnostics = DiagnosticsMode.valueOf(DEFAULT_DIAGNOSTICS);
     private DefaultInfo info;
     private DefaultExternalDocumentation externalDocumentation;
     private DefaultOAuth2 oauth2;
@@ -30,8 +30,8 @@ public class DefaultOasProperties implements OasProperties {
     }
 
     @Override
-    public boolean failOnMisconfiguration() {
-        return failOnMisconfiguration;
+    public DiagnosticsMode diagnostics() {
+        return diagnostics;
     }
 
     @Override

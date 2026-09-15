@@ -155,6 +155,29 @@ Most style is discoverable from the code; these are the load-bearing, non-obviou
   compound-docs resolution; the authenticated principal is request-scoped via a `ThreadLocal`
   (`AuthenticatedPrincipalContextHolder`).
 
+### Writing documentation
+
+`docs/` pages and module `README`s are read by someone deciding what to **do**, not by someone
+reading the code. Document the decision, not the mechanism:
+
+- **Write what the reader must choose, know, or watch out for** — defaults, limits, what breaks, which
+  knob to turn. Not how a customizer walks the registry. If a sentence would still be true after a
+  rewrite of the implementation, it belongs; if it narrates the implementation, it does not.
+- **A rule that fits in a sentence gets a sentence.** Reach for an example only when the shape is hard
+  to say in prose. Three code blocks illustrating one rule is padding.
+- **Rationale goes in the Javadoc, behavior goes on the page.** The *why* is for whoever changes the
+  code next; the page states what the framework does. `OasSecuritySchemes` carries why OAuth2 scopes
+  are matched per grant flow — `docs/openapi-plugin.md` only says that they are.
+- **Extend the table you already have.** New behavior usually belongs in an existing properties or
+  annotation table, one cell wider — not in a new `###` section.
+- **Never restate a value that lives in code.** Name the property or constant; a copied default goes
+  stale silently and nothing fails when it does.
+
+Worked example — publishing OAuth2 scopes per grant flow was **two edits, not a section**: one sentence
+in the Access Control section ("Each scope is published only on the flows whose own `scopes` declare it.
+A scope no flow declares at all fails generation."), plus one cell in the properties table. The rejected
+first draft ran 43 lines with a yaml/java/json triptych, restating that one rule four times.
+
 ## Where to find things
 
 - **How to use the framework** (resources, relationships, operations, includes, validation,

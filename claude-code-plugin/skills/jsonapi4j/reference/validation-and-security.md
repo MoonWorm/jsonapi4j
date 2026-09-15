@@ -92,11 +92,16 @@ public class UserAttributes {
     private final String email;
 
     @AccessControl(
-        scopes = @AccessControlScopes(requiredScopes = "users.sensitive.read"),
+        scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")),
         ownership = @AccessControlOwnership(ownerIdFieldPath = "id"))
     private final String creditCardNumber;
 }
 ```
+
+Scopes nest: `@AccessControlScopes` holds `@ScopesGroup`s, and each has its own `mode` (`ALL_OF` /
+`ANY_OF`), so `(a OR b) AND c` is expressible. Entitlements have the same shape plus `NONE_OF`; scopes
+do not. Every requirement takes a `description()` — write it for whoever hits the denial, because the
+OAS plugin appends it to the operation's description in the published OpenAPI document.
 
 ---
 

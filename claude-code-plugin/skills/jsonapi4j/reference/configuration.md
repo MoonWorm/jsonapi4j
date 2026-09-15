@@ -17,18 +17,30 @@ jsonapi4j:
     defaultMaxBatchSize: 20
     batchSizeMapping:           # per-type override of the filter[id] batch size
       countries: 20
-    mapping:                    # REQUIRED per includable type: where to self-fetch it over HTTP
-      users:     http://localhost:${server.port}${jsonapi4j.rootPath}
-      countries: http://localhost:${server.port}${jsonapi4j.rootPath}
+    mapping:                    # ONLY for types another service serves; same-app types need no entry
+      orders: https://orders.internal/jsonapi
     httpConnectTimeoutMs: 1000
     httpTotalTimeoutMs: 5000
     cache:
       enabled: true
       maxSize: 1000             # in-memory LRU; respects Cache-Control TTL
 
-  ac:  { enabled: true }        # Access Control plugin (@AccessControl)
-  sf:  { enabled: true, requestedFieldsDontExistMode: ... }   # Sparse Fieldsets (?fields[type]=a,b)
-  oas: { enabled: true }        # OpenAPI/Swagger generation (served at <rootPath>/oas)
+  ac:                           # Access Control plugin (@AccessControl)
+    enabled: true
+    failOnMisconfiguration: false   # reject AC that cannot take effect instead of only logging it
+    anonymizationReport: NONE       # NONE | INDICATOR | FIELDS | FIELDS_AND_REASONS — what a response
+                                    # says about data withheld; off by default, since saying something
+                                    # was hidden confirms it exists
+
+  sf:                           # Sparse Fieldsets (?fields[type]=a,b)
+    enabled: true
+    requestedFieldsDontExistMode: SPARSE_ALL_FIELDS   # or RETURN_ALL_FIELDS
+
+  oas:                          # OpenAPI generation
+    enabled: true
+    oasRootPath: /jsonapi/oas       # must differ from rootPath; ?format=json|yaml
+    diagnostics: WARN               # DISABLED | WARN | FAIL_ON_REQUEST | FAIL_ON_STARTUP —
+                                    # what a loose end in the generated document costs you
 
   validation:
     maxNumberFilterParams: ...
@@ -40,8 +52,8 @@ jsonapi4j:
 ```
 
 Notes:
-- `cd.mapping` points the resolver back at your own service (self-HTTP). Keep the port resolvable —
-  `${server.port}` works at runtime; pin it for `?include=` tests (see `testing.md`).
+- `cd.mapping` is for cross-service types only. Same-app includes (and the built-in meta types) resolve
+  against the endpoint the request arrived on, so there is no base URL or port to keep in sync.
 - The exact set of keys can grow between versions — confirm against your version's property classes /
   the docs below.
 

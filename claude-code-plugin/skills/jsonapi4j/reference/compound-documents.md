@@ -1,12 +1,14 @@
 # Compound documents (`?include=`)
 
 The Compound-Docs (CD) plugin resolves includes by calling the API **back over HTTP**, per resource
-type, using `jsonapi4j.cd.mapping.<type> = http://host:port/<rootPath>`. Consequences:
+type. Consequences:
 
-- **Every includable resource type needs a `cd.mapping` entry** (and usually a `batchSizeMapping`
-  entry). A missing entry → `included` silently empty (with `cd.errorStrategy: IGNORE`).
-- **Multi-hop works**: `?include=season.show` (bounded by `cd.maxHops`). Each hop re-fetches via the
-  mapping, so each intermediate resource must expose the next relationship's linkage. A multi-hop path
+- **Same-app types need no `cd.mapping` at all.** With no entry, the base URL is taken from the request
+  currently being served — its scheme, host, port and context path — so it is always right for the port
+  actually in use. `jsonapi4j.cd.mapping.<type>` is for types served by *another* service
+  (`orders: https://orders.internal/jsonapi`). A `batchSizeMapping` entry is still worth setting per type.
+- **Multi-hop works**: `?include=season.show` (bounded by `cd.maxHops`). Each hop is a fresh HTTP
+  fetch, so each intermediate resource must expose the next relationship's linkage. A multi-hop path
   **implies the intermediate** — `?include=a.b` pulls in both `a` and `b`; no need to write `a,a.b`.
 - **A synthetic / non-persisted primary can't have its relationships included.** If an operation
   fabricates a resource that isn't backed by a real row (e.g. a composed item with a hashed id and no FK
@@ -14,8 +16,8 @@ type, using `jsonapi4j.cd.mapping.<type> = http://host:port/<rootPath>`. Consequ
   the linkage breaks. Such a relationship works via include only on the *persisted* read paths. Confirm
   **every** path that produces the resource can resolve the relationship before moving a field behind
   `include` (see `separation-of-concerns.md`).
-- Because it's self-HTTP, **the port must be fixed and reachable** — matters for tests (see
-  `testing.md`).
+- Because it's self-HTTP, **the app must be able to reach itself** on the address the client used — a
+  container or proxy that rewrites host/port can break includes that work locally.
 - `cd.propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]` controls what's forwarded downstream (e.g.
   the `Authorization` header, so an authenticated parent can pull included resources).
 
@@ -35,7 +37,8 @@ related-resource URL `/{type}/{id}/{rel}` is **not** served (see `known-behavior
 ---
 
 **Canonical examples in the framework**
-- The sample apps wire `cd.mapping` for `users`, `countries`, `currencies`; integration tests:
+- The sample apps keep `cd.mapping` entries for `users`, `countries`, `currencies` purely as an
+  illustration — they are equivalent to the automatic default and can be removed; integration tests:
   `examples/jsonapi4j-springboot-sampleapp/.../operations/SpringCompoundDocsOperationsTests.java`
   (and the Quarkus / Servlet equivalents, all built on the shared
   `examples/jsonapi4j-sampleapp-testsuite/.../CompoundDocsOperationsTests.java`).

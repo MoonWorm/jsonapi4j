@@ -7,6 +7,7 @@ import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.*;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import java.util.List;
@@ -39,11 +40,11 @@ public interface QuarkusJsonApi4jOasProperties {
     String oasRootPath();
 
     /**
-     * Whether a document the plugin can generate but cannot vouch for is refused rather than published. Optional,
-     * false by default.
+     * How a document the plugin can generate but cannot vouch for is treated: DISABLED, WARN, FAIL_ON_REQUEST or
+     * FAIL_ON_STARTUP. Optional, WARN by default.
      */
-    @WithDefault(OasProperties.DEFAULT_FAIL_ON_MISCONFIGURATION)
-    boolean failOnMisconfiguration();
+    @WithDefault(OasProperties.DEFAULT_DIAGNOSTICS)
+    DiagnosticsMode diagnostics();
 
     /**
      * OAS Info Section configurations. Optional.
@@ -253,7 +254,7 @@ public interface QuarkusJsonApi4jOasProperties {
         DefaultOasProperties oasProperties = new DefaultOasProperties();
         oasProperties.setEnabled(enabled());
         oasProperties.setOasRootPath(oasRootPath());
-        oasProperties.setFailOnMisconfiguration(failOnMisconfiguration());
+        oasProperties.setDiagnostics(diagnostics());
         oasProperties.setInfo(info().map(qi -> {
             DefaultInfo di = new DefaultInfo();
             di.setTitle(qi.title());

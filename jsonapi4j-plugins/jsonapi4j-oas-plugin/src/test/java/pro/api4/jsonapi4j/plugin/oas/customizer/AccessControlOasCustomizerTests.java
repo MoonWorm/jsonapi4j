@@ -2,30 +2,35 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.BothScopesOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.CrossProductOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.DeclaredScopeOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GuardedAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GuardedOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.UndeclaredScopeOperations;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.ADMIN;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.ENTITLEMENTS_REASON;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.GUARDED;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.PKCE_SCHEME;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.READ;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCHEME;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCOPES_REASON;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.WRITE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.allScopes;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.jsonApi4j;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.twoFlowJsonApi4j;
 
 /**
  * What access control enforces is what the document should state: which scopes an operation needs, which operations
@@ -38,7 +43,10 @@ class AccessControlOasCustomizerTests {
 
     private static OpenAPI document(ResourceOperations<GuardedAttributes> operations,
                                     String... declaredScopes) {
-        JsonApi4j jsonApi4j = jsonApi4j(operations, declaredScopes);
+        return document(jsonApi4j(operations, declaredScopes));
+    }
+
+    private static OpenAPI document(JsonApi4j jsonApi4j) {
         OpenAPI openApi = new OpenAPI();
         new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
         new AccessControlOasCustomizer(jsonApi4j).customise(openApi);
@@ -97,6 +105,89 @@ class AccessControlOasCustomizerTests {
             assertThatThrownBy(() -> document(new UndeclaredScopeOperations(), allScopes().toArray(new String[0])))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("never.declared");
+        }
+
+    }
+
+    /**
+     * OpenAPI reads an operation's scopes against the scheme it names, so a requirement belongs only on the flows
+     * that declare its scopes. Hanging every scope off every configured flow is what publishes a scope Swagger UI's
+     * authorize dialog cannot offer and a linter rejects.
+     */
+    @Nested
+    class ScopesMatchTheirOwnScheme {
+
+        private OpenAPI splitDocument(ResourceOperations<GuardedAttributes> operations,
+                                      List<String> clientCredentialsScopes,
+                                      List<String> pkceScopes) {
+            return document(twoFlowJsonApi4j(operations, clientCredentialsScopes, pkceScopes));
+        }
+
+        @Test
+        void customise_scopesSplitBetweenFlows_hangsEachOnlyOnTheFlowDeclaringIt() {
+            List<SecurityRequirement> security = readById(splitDocument(
+                    new GuardedOperations(), List.of(ADMIN), List.of(READ, WRITE))).getSecurity();
+
+            assertThat(security).hasSize(2);
+            assertThat(security.get(0)).containsOnlyKeys(SCHEME);
+            assertThat(security.get(0).get(SCHEME)).containsExactly(ADMIN);
+            assertThat(security.get(1)).containsOnlyKeys(PKCE_SCHEME);
+            assertThat(security.get(1).get(PKCE_SCHEME)).containsExactly(READ, WRITE);
+        }
+
+        @Test
+        void customise_flowDeclaringNoScopes_carriesNoScopedRequirement() {
+            List<SecurityRequirement> security = readById(splitDocument(
+                    new GuardedOperations(), List.of(), allScopes())).getSecurity();
+
+            assertThat(security).allSatisfy(requirement -> assertThat(requirement).doesNotContainKey(SCHEME));
+        }
+
+        @Test
+        void customise_everyPublishedScope_isDeclaredByTheSchemeNamingIt() {
+            OpenAPI openApi = splitDocument(new GuardedOperations(), List.of(ADMIN), List.of(READ, WRITE));
+            Map<String, List<String>> declared = Map.of(SCHEME, List.of(ADMIN), PKCE_SCHEME, List.of(READ, WRITE));
+
+            assertThat(readById(openApi).getSecurity()).allSatisfy(requirement -> requirement
+                    .forEach((scheme, scopes) -> assertThat(declared.get(scheme)).containsAll(scopes)));
+        }
+
+        /**
+         * Neither flow declares both scopes, so the requirement goes unstated rather than being hung off a flow that
+         * would reject it. The operation then falls back to the document's own security, which is the weaker but
+         * truthful answer - and the diagnostic says so.
+         */
+        @Test
+        void customise_requirementNoFlowCanCarry_isLeftOutRatherThanDangled() {
+            List<SecurityRequirement> security = readById(splitDocument(
+                    new BothScopesOperations(), List.of(READ), List.of(WRITE))).getSecurity();
+
+            assertThat(security).isNullOrEmpty();
+        }
+
+        @Test
+        void customise_requirementNoFlowCanCarry_failsWhenConfiguredToFail() {
+            JsonApi4j jsonApi4j = twoFlowJsonApi4j(new BothScopesOperations(), List.of(READ), List.of(WRITE),
+                    DiagnosticsMode.FAIL_ON_REQUEST);
+
+            assertThatThrownBy(() -> document(jsonApi4j))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining(READ)
+                    .hasMessageContaining(WRITE);
+        }
+
+        /**
+         * The same rule on the other path a scope reaches the document by - declared on the operation rather than
+         * derived from what access control enforces.
+         */
+        @Test
+        void customise_scopesDeclaredOnTheOperation_hangOnlyOnTheFlowDeclaringThem() {
+            List<SecurityRequirement> security = readById(splitDocument(
+                    new DeclaredScopeOperations(), List.of(ADMIN), List.of(READ))).getSecurity();
+
+            assertThat(security).hasSize(1);
+            assertThat(security.get(0)).containsOnlyKeys(PKCE_SCHEME);
+            assertThat(security.get(0).get(PKCE_SCHEME)).containsExactly(READ);
         }
 
     }

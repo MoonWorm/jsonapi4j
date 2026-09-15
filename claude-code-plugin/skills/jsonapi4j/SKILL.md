@@ -14,7 +14,13 @@ This skill is the consumer's guide — how to *build with* the framework. Keep `
 matching `reference/<file>.md` when you go deep on a topic (paths below). When you confirm a new pattern
 or quirk, add it to the relevant reference file.
 
-**Versioned behavior:** edge behaviors are version-specific (current line is 1.8.x). Treat the
+**When you write anything down** — a note in `reference/`, the app's README, or an operation
+`description` that ships in the published OpenAPI document — document what the *caller* must choose,
+know, or watch out for, never what the code does. "Returns a paginated list of users; `page[cursor]`
+comes from the previous response's `links.next`" earns its place; "iterates the result set and maps
+each row" does not. A rule that fits in a sentence gets a sentence, not a code block.
+
+**Versioned behavior:** edge behaviors are version-specific (current line is 1.11.x). Treat the
 "known behaviors" notes as "verify against the version on your classpath and the framework's own
 tests," not gospel. The canonical, runnable reference is the framework's `examples/` sample apps
 (Spring Boot / Quarkus / Servlet over a shared domain).
@@ -64,9 +70,13 @@ public class UserResource implements Resource<UserDbEntity> {
    ops to avoid N+1 on includes).
 4. **Security**: add your web framework's URL-prefix rule if the resource is public; layer the AC plugin
    for field-level/ownership gating.
-5. **Compound docs**: if the type is includable, add a `jsonapi4j.cd.mapping.<type>` entry
-   (+ `batchSizeMapping`) and support `filter[id]` on its `readPage`.
-6. **Tests**: RestAssured by-id/filter/404/400 (random port) + `?include=` cases (fixed port / CD profile).
+5. **Compound docs**: if the type is includable, support `filter[id]` on its `readPage` (+ a
+   `jsonapi4j.cd.batchSizeMapping.<type>` entry). A `cd.mapping` entry is only for types another
+   service serves — same-app types resolve against the incoming request.
+6. **OpenAPI** (if the OAS plugin is on): `@OasResourceInfo(attributes = XAttributes.class)` on the
+   `Resource` — without it the published schema is empty. Declare `sortableFields` / `filters` on the
+   operation, or they go undocumented even though they work.
+7. **Tests**: RestAssured by-id/filter/404/400 + `?include=` cases (random port is fine; CD profile).
 
 ## Reference index — open on demand
 
@@ -75,15 +85,18 @@ public class UserResource implements Resource<UserDbEntity> {
   data-layer rule.
 - **`reference/relationships.md`** — to-one/to-many, lightweight refs vs full DTOs,
   `readOneForResource`/`readManyForResource` and batch ops (N+1 avoidance), edge data in identifier meta.
-- **`reference/compound-documents.md`** — `?include=`, `cd.mapping` self-HTTP resolution, multi-hop,
-  synthetic-primary caveat, header/param propagation.
+- **`reference/compound-documents.md`** — `?include=`, self-HTTP resolution (auto for same-app types,
+  `cd.mapping` for cross-service), multi-hop, synthetic-primary caveat, header/param propagation.
 - **`reference/performance.md`** — `filter[id]` batching, in-house resolution, parallel `ExecutorService`,
   hop/size caps, the compound-docs cache + `Cache-Control`.
 - **`reference/validation-and-security.md`** — `validateXxx` hooks, the fluent `JsonApiRequestValidator`,
   exceptions (400/404/custom), the two independent security layers + the AC plugin.
 - **`reference/configuration.md`** — the `jsonapi4j.*` property reference.
-- **`reference/testing.md`** — RestAssured black-box patterns; random vs **fixed** port for `?include=`
-  tests; test profiles; Testcontainers/Flyway/auth stubs.
+- **`reference/openapi.md`** — the generated OpenAPI document: `@OasResourceInfo` / `@OasOperationInfo`,
+  which query params are published only when declared, OAuth2 scopes per grant flow, `OasCustomizer`
+  and the springdoc hand-off.
+- **`reference/testing.md`** — RestAssured black-box patterns; `?include=` tests; test profiles;
+  Testcontainers/Flyway/auth stubs.
 - **`reference/separation-of-concerns.md`** — attribute ownership; migrating a denormalized field out to
   an `?include`d relationship safely.
 - **`reference/known-behaviors.md`** — version-specific quirks (related-URL 404s, to-one linkage

@@ -25,9 +25,11 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
 import pro.api4.jsonapi4j.plugin.ac.model.ScopesGroupModel;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSecuritySchemes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
@@ -37,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveRelationshipOperationPath;
@@ -183,7 +184,7 @@ public class AccessControlOasCustomizer implements OasCustomizer {
         List<Set<String>> alternatives = alternatives(requiredScopes);
         if (alternatives.isEmpty() || alternatives.size() > MAX_SECURITY_ALTERNATIVES) {
             OasDiagnostics.report(
-                    failOnMisconfiguration(),
+                    diagnostics(),
                     "A scope requirement on '%s' expands into more alternatives than a document should state, so it "
                             + "is not published as a security requirement. Restructure it into fewer clauses, or "
                             + "express it as an access policy.",
@@ -196,20 +197,46 @@ public class AccessControlOasCustomizer implements OasCustomizer {
         List<String> schemeNames = schemeNamesFor(operation);
         if (schemeNames.isEmpty()) {
             OasDiagnostics.report(
-                    failOnMisconfiguration(),
+                    diagnostics(),
                     "Access control requires scopes on '%s', but no OAuth2 grant flow is configured under "
                             + "'%s.oauth2' to hang them off, so the requirement is not published.",
                     operation.getOperationId(), OasProperties.OAS_PROPERTY
             );
             return Optional.empty();
         }
+        Map<String, Set<String>> declaredScopesByScheme = OasSecuritySchemes.declaredScopesByScheme(oasProperties);
         List<SecurityRequirement> requirements = new ArrayList<>();
         for (String schemeName : schemeNames) {
-            for (Set<String> alternative : alternatives) {
-                requirements.add(new SecurityRequirement().addList(schemeName, List.copyOf(alternative)));
-            }
+            alternatives.stream()
+                    .filter(alternative -> OasSecuritySchemes.carries(declaredScopesByScheme, schemeName, alternative))
+                    .forEach(alternative -> requirements.add(
+                            new SecurityRequirement().addList(schemeName, List.copyOf(alternative))));
         }
-        return Optional.of(requirements);
+        reportUncarriedAlternatives(alternatives, schemeNames, declaredScopesByScheme, operation);
+        return requirements.isEmpty() ? Optional.empty() : Optional.of(requirements);
+    }
+
+    /**
+     * An alternative no configured flow can carry is left out rather than hung off a flow that would reject it. It is
+     * reported because the requirement is real - access control enforces it - and the document has just gone quiet
+     * about it, which is the one outcome worse than stating it awkwardly.
+     */
+    private void reportUncarriedAlternatives(List<Set<String>> alternatives,
+                                             List<String> schemeNames,
+                                             Map<String, Set<String>> declaredScopesByScheme,
+                                             Operation operation) {
+        alternatives.stream()
+                .filter(alternative -> schemeNames.stream()
+                        .noneMatch(schemeName -> OasSecuritySchemes.carries(declaredScopesByScheme, schemeName, alternative)))
+                .forEach(alternative -> OasDiagnostics.report(
+                        diagnostics(),
+                        "Access control requires the scopes %s on '%s', but no grant flow the operation can use "
+                                + "declares all of them (%s), so that alternative is not published. Declare them "
+                                + "under the flow that grants them, or stop requiring them.",
+                        String.join(", ", alternative),
+                        operation.getOperationId(),
+                        OasSecuritySchemes.describeMissingScopes(declaredScopesByScheme, schemeNames, alternative)
+                ));
     }
 
     private List<Set<String>> alternatives(AccessControlScopesModel requiredScopes) {
@@ -247,12 +274,15 @@ public class AccessControlOasCustomizer implements OasCustomizer {
     }
 
     /**
-     * A scope named by access control but absent from {@code jsonapi4j.oas.oauth2.*.scopes} would be published as a
-     * dangling reference, which is what breaks the Swagger UI authorize button. Two lists that must agree are worth
-     * checking rather than hoping about.
+     * A scope no configured flow declares anywhere is a typo rather than a scope hung off the wrong flow, so it is
+     * refused outright: nothing in the configuration could have been meant by it. A scope that is declared, but not
+     * by the flow an operation would use, is the softer case {@link #reportUncarriedAlternatives} handles.
+     * <p>
+     * A configuration that enumerates no scopes at all has opted out of naming them, so there is nothing to check
+     * against and no typo to find.
      */
     private void requireDeclaredScopes(Set<String> scopes) {
-        Set<String> declared = declaredScopes();
+        Set<String> declared = OasSecuritySchemes.declaredScopes(oasProperties);
         if (declared.isEmpty()) {
             return;
         }
@@ -269,21 +299,8 @@ public class AccessControlOasCustomizer implements OasCustomizer {
                 });
     }
 
-    private boolean failOnMisconfiguration() {
-        return oasProperties != null && oasProperties.failOnMisconfiguration();
-    }
-
-    private Set<String> declaredScopes() {
-        Set<String> declared = new LinkedHashSet<>();
-        declaredScopesOf(OasProperties.OAuth2::clientCredentials, declared);
-        declaredScopesOf(OasProperties.OAuth2::authorizationCodeWithPkce, declared);
-        return declared;
-    }
-
-    private void declaredScopesOf(Function<OasProperties.OAuth2, OasProperties.OAuth2GrantFlow> grantFlowAccessor,
-                                  Set<String> into) {
-        grantFlow(grantFlowAccessor).ifPresent(grantFlow -> CollectionUtils.emptyIfNull(grantFlow.scopes())
-                .forEach(scope -> into.add(scope.name())));
+    private DiagnosticsMode diagnostics() {
+        return oasProperties == null ? DiagnosticsMode.WARN : oasProperties.diagnostics();
     }
 
     /**
@@ -294,22 +311,7 @@ public class AccessControlOasCustomizer implements OasCustomizer {
         if (CollectionUtils.isNotEmpty(operation.getSecurity())) {
             return operation.getSecurity().stream().flatMap(requirement -> requirement.keySet().stream()).distinct().toList();
         }
-        return List.of(
-                        grantFlow(OasProperties.OAuth2::clientCredentials),
-                        grantFlow(OasProperties.OAuth2::authorizationCodeWithPkce)
-                ).stream()
-                .flatMap(Optional::stream)
-                .map(OasProperties.OAuth2GrantFlow::name)
-                .toList();
-    }
-
-    private Optional<OasProperties.OAuth2GrantFlow> grantFlow(
-            Function<OasProperties.OAuth2, OasProperties.OAuth2GrantFlow> grantFlowAccessor) {
-        if (oasProperties == null || oasProperties.oauth2() == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(grantFlowAccessor.apply(oasProperties.oauth2()))
-                .filter(grantFlow -> StringUtils.isNotBlank(grantFlow.name()));
+        return OasSecuritySchemes.schemeNames(oasProperties);
     }
 
     private void addForbidden(Operation operation) {

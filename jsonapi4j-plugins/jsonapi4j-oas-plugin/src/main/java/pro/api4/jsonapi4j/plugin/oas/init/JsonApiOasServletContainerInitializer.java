@@ -22,6 +22,13 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
 
     public static final String JSONAPI4J_OAS_SERVLET_NAME = "jsonApi4jOasServlet";
 
+    /**
+     * Initialize during deployment, after the JSON:API dispatcher, matching what the Spring Boot and Quarkus
+     * integrations register. {@code jsonapi4j.oas.diagnostics: FAIL_ON_STARTUP} builds the document in
+     * {@code init}, which only runs at startup if the servlet is loaded there.
+     */
+    private static final int OAS_SERVLET_LOAD_ON_STARTUP = 2;
+
     private static OasProperties initOasProperties(ServletContext servletContext) {
         OasProperties oasProperties = (OasProperties) servletContext.getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
         if (oasProperties == null) {
@@ -59,6 +66,7 @@ public class JsonApiOasServletContainerInitializer implements ServletContainerIn
                 OasServlet.class.getSimpleName(),
                 servletMapping
         );
+        oasServlet.setLoadOnStartup(OAS_SERVLET_LOAD_ON_STARTUP);
         Set<String> conflictingMappings = oasServlet.addMapping(servletMapping);
         if (!conflictingMappings.isEmpty()) {
             log.warn(

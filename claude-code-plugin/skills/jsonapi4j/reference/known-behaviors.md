@@ -1,6 +1,6 @@
 # Known framework behaviors / quirks
 
-Behaviors are version-specific (versions noted where known; observed on the 1.8.x line). **Verify
+Behaviors are version-specific (versions noted where known; current line is 1.11.x). **Verify
 against the version on your classpath and the framework's own tests** — this is the maintainer's own
 evolving library, so treat edge behaviors as "confirm, don't assume."
 

@@ -22,14 +22,14 @@ public interface OasProperties extends PluginProperties {
 
     String ENABLED_PROPERTY = "enabled";
     String OAS_ROOT_PATH_PROPERTY = "oasRootPath";
-    String FAIL_ON_MISCONFIGURATION_PROPERTY = "failOnMisconfiguration";
+    String DIAGNOSTICS_PROPERTY = "diagnostics";
     String INFO_PROPERTY = "info";
     String EXTERNAL_DOCUMENTATION_PROPERTY = "externalDocumentation";
     String OAUTH2_PROPERTY = "oauth2";
     String SERVERS_PROPERTY = "servers";
 
     String DEFAULT_ENABLED = "true";
-    String DEFAULT_FAIL_ON_MISCONFIGURATION = "false";
+    String DEFAULT_DIAGNOSTICS = "WARN";
     String DEFAULT_OAS_ROOT_PATH = JsonApi4jProperties.DEFAULT_ROOT_PATH + "/oas";
 
     String EMAIL_PATTERN = "[^\\s@]+@[^\\s@]+\\.[^\\s@]+";
@@ -43,12 +43,14 @@ public interface OasProperties extends PluginProperties {
     }
 
     /**
-     * Whether a document the plugin can generate but cannot vouch for is refused rather than published. Off by
-     * default: a document with one loose end is still more useful than no document at all, and the warning names
-     * what is wrong. Turn it on where the document is published as a contract.
+     * How a document the plugin can generate but cannot vouch for is treated. Warns by default: a document with one
+     * loose end is still more useful than no document at all, and the warning names what is wrong. Raise it where
+     * the document is published as a contract.
+     *
+     * @see DiagnosticsMode
      */
-    default boolean failOnMisconfiguration() {
-        return Boolean.parseBoolean(DEFAULT_FAIL_ON_MISCONFIGURATION);
+    default DiagnosticsMode diagnostics() {
+        return DiagnosticsMode.valueOf(DEFAULT_DIAGNOSTICS);
     }
 
     Info info();

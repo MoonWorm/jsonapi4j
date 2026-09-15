@@ -305,8 +305,32 @@ no behaviour. Spring Boot and Quarkus need no wiring for either.
 | a requirement's `description` | appended to the operation's, including entitlements and policies, which OpenAPI cannot state |
 
 Access control supplies the scopes; the OAS configuration supplies the flows they hang off. A requirement declared
-there wins over `@OasOperationInfo(securityConfig = …)`, and a scope missing from `jsonapi4j.oas.oauth2.*.scopes`
-fails generation rather than publishing a reference to nothing.
+there wins over `@OasOperationInfo(securityConfig = …)`. Each scope is published only on the flows whose own
+`scopes` declare it — OpenAPI reads an operation's scopes against the scheme naming them, so a flow that cannot
+grant one is left out rather than made to reference it. A scope no flow declares at all fails generation.
+
+### Diagnostics
+
+`jsonapi4j.oas.diagnostics` decides what a document the plugin cannot vouch for costs you, in increasing
+order of strictness:
+
+| Mode | Document is built | A loose end |
+|---|---|---|
+| `DISABLED` | on first request | ignored — the checks that exist only to report are skipped, not just silenced |
+| `WARN` *(default)* | on first request | logged; the document is published anyway |
+| `FAIL_ON_REQUEST` | on first request | the endpoint answers `500` with a JSON:API error document |
+| `FAIL_ON_STARTUP` | during startup | the application does not start |
+
+`FAIL_ON_STARTUP` is the only mode that builds the document eagerly, and that is the point of it: every
+other mode discovers a broken document on whichever request happens to ask for it first, which in a
+deployed application means discovering it in production. It costs the generation work at every boot —
+a few hundred milliseconds on a small API — so an application that cannot afford that but still must
+not publish a document it cannot vouch for wants `FAIL_ON_REQUEST` instead.
+
+This setting governs **reports** only. A document that would say something *untrue* is rejected
+whatever the mode — two schemas claiming one name would publish one of them under the other's shape,
+and no setting should let that reach a client. `FAIL_ON_STARTUP` is therefore also the only mode under
+which such a rejection cannot first surface on a live endpoint.
 
 ### Customizing the Generated Document
 
@@ -349,7 +373,7 @@ for a working example.
 | Property name                               | Default value | Description                                                                                                             |
 |---------------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.oas.enabled` | `true` | Enables/disables OAS plugin and OAS endpoint exposure. |
-| `jsonapi4j.oas.failOnMisconfiguration` | `false` | Fail document generation instead of logging a warning when the generated document has a loose end — a `$ref` resolving to nothing, or a requirement it could not state. Worth turning on where the document is published as a contract. |
+| `jsonapi4j.oas.diagnostics` | `WARN` | What happens when the generated document has a loose end — a `$ref` resolving to nothing, or a requirement it could not state. `DISABLED` reports nothing and skips the checks that exist only to report; `WARN` logs and publishes anyway; `FAIL_ON_REQUEST` refuses to serve it; `FAIL_ON_STARTUP` builds the document during startup and refuses to start. See [Diagnostics](#diagnostics). |
 | `jsonapi4j.oas.oasRootPath` | `/jsonapi/oas` | Root path for generated OpenAPI spec endpoint. Honoured identically by all three integrations; it must not be the same path as `jsonapi4j.rootPath`, which is checked at startup. |
 | `jsonapi4j.oas.info.title` | `JsonApi4j API Sample Title` | OpenAPI info.title. |
 | `jsonapi4j.oas.info.description` | not set | OpenAPI info.description. |
@@ -366,13 +390,13 @@ for a working example.
 | `jsonapi4j.oas.oauth2.clientCredentials.name` | not set | OAuth2 client credentials scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.clientCredentials.description` | not set | OAuth2 client credentials description. |
 | `jsonapi4j.oas.oauth2.clientCredentials.tokenUrl` | not set | OAuth2 client credentials token URL. |
-| `jsonapi4j.oas.oauth2.clientCredentials.scopes[*].name` | not set | OAuth2 scope name. |
+| `jsonapi4j.oas.oauth2.clientCredentials.scopes[*].name` | not set | OAuth2 scope name. Only scopes listed here can appear in this flow's security requirements. |
 | `jsonapi4j.oas.oauth2.clientCredentials.scopes[*].description` | not set | OAuth2 scope description. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.name` | not set | OAuth2 authorization code + PKCE scheme name. Also the name operations reference in their `security` requirements — leave it unset and no operation requires this flow. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.description` | not set | OAuth2 authorization code + PKCE description. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.tokenUrl` | not set | OAuth2 authorization code + PKCE token URL. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.authorizationUrl` | not set | OAuth2 authorization URL (PKCE flow). |
-| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[*].name` | not set | OAuth2 scope name. |
+| `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[*].name` | not set | OAuth2 scope name. Only scopes listed here can appear in this flow's security requirements. |
 | `jsonapi4j.oas.oauth2.authorizationCodeWithPkce.scopes[*].description` | not set | OAuth2 scope description. |
 | `jsonapi4j.oas.servers[*].name` | not set | OpenAPI server display name. |
 | `jsonapi4j.oas.servers[*].url` | not set | OpenAPI server URL. |

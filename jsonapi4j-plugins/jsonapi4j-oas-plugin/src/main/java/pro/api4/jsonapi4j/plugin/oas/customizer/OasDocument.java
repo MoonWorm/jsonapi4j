@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 
 import java.util.ArrayList;
@@ -42,11 +43,22 @@ public final class OasDocument {
         return customizers.stream();
     }
 
-    private static boolean failOnMisconfiguration(JsonApi4j jsonApi4j) {
+    private static DiagnosticsMode diagnostics(JsonApi4j jsonApi4j) {
         return jsonApi4j.getPluginRegistry()
                 .configOf(OasProperties.class)
-                .map(OasProperties::failOnMisconfiguration)
-                .orElse(false);
+                .map(OasProperties::diagnostics)
+                .orElse(DiagnosticsMode.WARN);
+    }
+
+    /**
+     * The self-check earns its walk over the whole document only when something is listening, so
+     * {@link DiagnosticsMode#DISABLED} leaves it out entirely rather than running it and dropping the findings.
+     */
+    private static Stream<OasCustomizer> selfCheck(JsonApi4j jsonApi4j) {
+        DiagnosticsMode diagnostics = diagnostics(jsonApi4j);
+        return diagnostics.isEnabled()
+                ? Stream.of(new DocumentSelfCheckCustomizer(diagnostics))
+                : Stream.empty();
     }
 
     public static List<OasCustomizer> customizers(JsonApi4j jsonApi4j) {
@@ -64,7 +76,8 @@ public final class OasDocument {
                                 .map(JsonApiOasPlugin::getCustomizers)
                                 .orElseGet(List::<OasCustomizer>of)
                                 .stream(),
-                        Stream.of(new SharedComponentsCustomizer(), new DocumentSelfCheckCustomizer(failOnMisconfiguration(jsonApi4j)))
+                        Stream.of(new SharedComponentsCustomizer()),
+                        selfCheck(jsonApi4j)
                 )
                 .flatMap(Function.identity())
                 .toList();

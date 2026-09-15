@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 
 import java.lang.reflect.Field;
@@ -21,15 +22,18 @@ import java.util.Set;
  * <p>
  * Runs last, after every customizer including the application's own, because a reference added at any point is
  * still a reference the document has to honour.
+ * <p>
+ * This check exists only to report, so {@code jsonapi4j.oas.diagnostics: DISABLED} skips it rather than running the
+ * walk and discarding what it finds - see {@link pro.api4.jsonapi4j.plugin.oas.customizer.OasDocument}.
  */
 public class DocumentSelfCheckCustomizer implements OasCustomizer {
 
     private static final String COMPONENTS_PREFIX = "#/components/";
 
-    private final boolean failOnMisconfiguration;
+    private final DiagnosticsMode diagnostics;
 
-    public DocumentSelfCheckCustomizer(boolean failOnMisconfiguration) {
-        this.failOnMisconfiguration = failOnMisconfiguration;
+    public DocumentSelfCheckCustomizer(DiagnosticsMode diagnostics) {
+        this.diagnostics = diagnostics;
     }
 
     @Override
@@ -39,7 +43,7 @@ public class DocumentSelfCheckCustomizer implements OasCustomizer {
 
         if (!findings.dangling.isEmpty()) {
             OasDiagnostics.report(
-                    failOnMisconfiguration,
+                    diagnostics,
                     "The generated document references %s that it does not declare: %s. A reference resolving to "
                             + "nothing breaks client generation and response validation.",
                     findings.dangling.size() == 1 ? "a component" : "components",
@@ -48,7 +52,7 @@ public class DocumentSelfCheckCustomizer implements OasCustomizer {
         }
         if (!findings.unreadable.isEmpty()) {
             OasDiagnostics.report(
-                    failOnMisconfiguration,
+                    diagnostics,
                     "%d field(s) of the generated document could not be read, so this check did not cover them: %s. "
                             + "A check that silently covers less than it claims is worse than none.",
                     findings.unreadable.size(),

@@ -3,12 +3,15 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredResource;
 
@@ -26,8 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OasDocumentTests {
 
     private static JsonApi4j jsonApi4j(List<OasCustomizer> customizers) {
+        return jsonApi4j(customizers, new DefaultOasProperties());
+    }
+
+    private static JsonApi4j jsonApi4j(List<OasCustomizer> customizers,
+                                       DefaultOasProperties oasProperties) {
         PluginRegistry plugins = PluginRegistry.builder()
-                .register(new JsonApiOasPlugin(new DefaultOasProperties(), customizers))
+                .register(new JsonApiOasPlugin(oasProperties, customizers))
                 .build();
         return JsonApi4j.builder()
                 .pluginRegistry(plugins)
@@ -90,6 +98,40 @@ class OasDocumentTests {
             assertThat(openApi.getPaths().values())
                     .flatMap(pathItem -> pathItem.readOperations())
                     .allSatisfy(operation -> assertThat(operation.getSummary()).isEqualTo("Replaced"));
+        }
+
+    }
+
+    /**
+     * The self-check exists only to report, so the mode that reports nothing should not pay for the walk over the
+     * whole document either.
+     */
+    @Nested
+    class SelfCheck {
+
+        private JsonApi4j withDiagnostics(DiagnosticsMode diagnostics) {
+            DefaultOasProperties oasProperties = new DefaultOasProperties();
+            oasProperties.setDiagnostics(diagnostics);
+            return jsonApi4j(List.of(), oasProperties);
+        }
+
+        @Test
+        void customizers_diagnosticsDisabled_omitsTheSelfCheckEntirely() {
+            assertThat(OasDocument.customizers(withDiagnostics(DiagnosticsMode.DISABLED)))
+                    .noneMatch(DocumentSelfCheckCustomizer.class::isInstance);
+        }
+
+        @ParameterizedTest
+        @EnumSource(value = DiagnosticsMode.class, names = "DISABLED", mode = EnumSource.Mode.EXCLUDE)
+        void customizers_diagnosticsEnabled_runsTheSelfCheckLast(DiagnosticsMode diagnostics) {
+            assertThat(OasDocument.customizers(withDiagnostics(diagnostics)))
+                    .last().isInstanceOf(DocumentSelfCheckCustomizer.class);
+        }
+
+        @Test
+        void customizers_diagnosticsDisabled_stillFoldsSharedComponents() {
+            assertThat(OasDocument.customizers(withDiagnostics(DiagnosticsMode.DISABLED)))
+                    .last().isInstanceOf(SharedComponentsCustomizer.class);
         }
 
     }

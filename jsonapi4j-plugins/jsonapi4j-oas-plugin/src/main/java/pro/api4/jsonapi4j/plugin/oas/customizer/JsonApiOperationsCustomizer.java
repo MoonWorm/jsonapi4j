@@ -24,13 +24,16 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.*;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSecuritySchemes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
@@ -47,6 +50,7 @@ import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
@@ -254,7 +258,7 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         }
         // security requirements — resolved before the responses, which document 401 only where there is a scheme to fail
         List<SecurityRequirement> securityRequirements = oasOperationInfo != null
-                ? generateSecurityRequirements(oasOperationInfo.getSecurityConfig())
+                ? generateSecurityRequirements(oasOperationInfo.getSecurityConfig(), oasOperation.getOperationId())
                 : null;
         if (CollectionUtils.isNotEmpty(securityRequirements)) {
             oasOperation.setSecurity(securityRequirements);
@@ -451,45 +455,56 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         return response;
     }
 
-    private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfoModel.SecurityConfig securityConfig) {
+    private List<SecurityRequirement> generateSecurityRequirements(OasOperationInfoModel.SecurityConfig securityConfig,
+                                                                   String operationId) {
         if (securityConfig == null) {
             return null;
         }
-        List<SecurityRequirement> securityRequirements = new ArrayList<>();
+        List<String> schemeNames = new ArrayList<>();
         if (securityConfig.isClientCredentialsSupported()) {
-            addSecurityRequirement(
-                    securityRequirements,
-                    resolveSecuritySchemeName(OasProperties.OAuth2::clientCredentials),
-                    securityConfig.getRequiredScopes()
-            );
+            schemeNames.add(resolveSecuritySchemeName(OasProperties.OAuth2::clientCredentials));
         }
         if (securityConfig.isPkceSupported()) {
-            addSecurityRequirement(
-                    securityRequirements,
-                    resolveSecuritySchemeName(OasProperties.OAuth2::authorizationCodeWithPkce),
-                    securityConfig.getRequiredScopes()
-            );
+            schemeNames.add(resolveSecuritySchemeName(OasProperties.OAuth2::authorizationCodeWithPkce));
         }
-        return securityRequirements;
+        schemeNames.removeIf(Objects::isNull);
+        return securityRequirementsFor(schemeNames, emptyIfNull(securityConfig.getRequiredScopes()).stream().toList(), operationId);
     }
 
-    private void addSecurityRequirement(List<SecurityRequirement> securityRequirements,
-                                        String schemeName,
-                                        List<String> requiredScopes) {
-        if (schemeName != null) {
-            securityRequirements.add(new SecurityRequirement().addList(schemeName, requiredScopes));
+    /**
+     * Hangs the required scopes off each supported flow that declares them. A flow is left out rather than made to
+     * name a scope its own scheme does not declare - OpenAPI reads an operation's scopes against the scheme it names,
+     * so such an entry is a reference to nothing, and Swagger UI's authorize dialog cannot offer it.
+     */
+    private List<SecurityRequirement> securityRequirementsFor(List<String> schemeNames,
+                                                              List<String> requiredScopes,
+                                                              String operationId) {
+        Map<String, Set<String>> declaredScopesByScheme = OasSecuritySchemes.declaredScopesByScheme(oasProperties);
+        List<String> carriers = schemeNames.stream()
+                .filter(schemeName -> OasSecuritySchemes.carries(declaredScopesByScheme, schemeName, requiredScopes))
+                .toList();
+        if (carriers.isEmpty() && !schemeNames.isEmpty()) {
+            OasDiagnostics.report(
+                    diagnostics(),
+                    "'%s' declares the required scopes %s, but none of the grant flows it supports declares them "
+                            + "(%s), so the requirement is not published. Declare them under the flow that grants "
+                            + "them, or drop them from the operation.",
+                    operationId,
+                    String.join(", ", requiredScopes),
+                    OasSecuritySchemes.describeMissingScopes(declaredScopesByScheme, schemeNames, requiredScopes)
+            );
         }
+        return carriers.stream()
+                .map(schemeName -> new SecurityRequirement().addList(schemeName, requiredScopes))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private DiagnosticsMode diagnostics() {
+        return oasProperties == null ? DiagnosticsMode.WARN : oasProperties.diagnostics();
     }
 
     private String resolveSecuritySchemeName(Function<OasProperties.OAuth2, OasProperties.OAuth2GrantFlow> grantFlowAccessor) {
-        if (oasProperties == null || oasProperties.oauth2() == null) {
-            return null;
-        }
-        OasProperties.OAuth2GrantFlow grantFlow = grantFlowAccessor.apply(oasProperties.oauth2());
-        if (grantFlow == null || StringUtils.isBlank(grantFlow.name())) {
-            return null;
-        }
-        return grantFlow.name();
+        return OasSecuritySchemes.schemeName(oasProperties, grantFlowAccessor);
     }
 
     /**

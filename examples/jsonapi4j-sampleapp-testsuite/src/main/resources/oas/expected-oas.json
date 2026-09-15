@@ -2014,8 +2014,6 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ "users.citizenships.read" ]
-        }, {
           "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (delete)",
@@ -2091,8 +2089,6 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ "users.citizenships.read" ]
-        }, {
           "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships",
@@ -2158,8 +2154,6 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ "users.citizenships.read" ]
-        }, {
           "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (create/update/delete)",
@@ -2222,8 +2216,6 @@
           }
         },
         "security" : [ {
-          "Client_Credentials" : [ "users.citizenships.read" ]
-        }, {
           "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
         } ],
         "summary" : "Relationship: citizenships (add)",

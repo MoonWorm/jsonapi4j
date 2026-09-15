@@ -3,7 +3,7 @@
 A [Claude Code](https://claude.com/claude-code) plugin that teaches AI agents how to **build apps with
 the [jsonapi4j](https://api4.pro/) framework** (`pro.api4`). It bundles the `jsonapi4j` skill:
 resources, to-one/to-many relationships, operations, compound documents/includes, pagination,
-validation, access control, configuration, and RestAssured testing.
+validation, access control, configuration, the generated OpenAPI document, and RestAssured testing.
 
 It auto-activates whenever you work in a codebase that depends on jsonapi4j (imports under
 `pro.api4.jsonapi4j`, the `@JsonApiResource` / `@JsonApiRelationship` / `@JsonApiResourceOperation`
@@ -31,7 +31,8 @@ skills/jsonapi4j/
   reference/          # deep dives, loaded on demand
     resources-and-operations.md   relationships.md        compound-documents.md
     performance.md                validation-and-security.md   configuration.md
-    testing.md                    separation-of-concerns.md    known-behaviors.md
+    openapi.md                    testing.md              separation-of-concerns.md
+    known-behaviors.md
 ```
 
 The skill points at real, runnable reference code in the framework's `examples/` sample apps and at the

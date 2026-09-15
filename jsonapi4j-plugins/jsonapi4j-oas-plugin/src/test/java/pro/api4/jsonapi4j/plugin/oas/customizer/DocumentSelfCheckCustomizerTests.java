@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.Components;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -23,8 +24,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class DocumentSelfCheckCustomizerTests {
 
-    private final DocumentSelfCheckCustomizer sut = new DocumentSelfCheckCustomizer(false);
-    private final DocumentSelfCheckCustomizer strictSut = new DocumentSelfCheckCustomizer(true);
+    private final DocumentSelfCheckCustomizer sut = new DocumentSelfCheckCustomizer(DiagnosticsMode.WARN);
+    private final DocumentSelfCheckCustomizer strictSut =
+            new DocumentSelfCheckCustomizer(DiagnosticsMode.FAIL_ON_REQUEST);
 
     private static OpenAPI documentReferencing(String ref,
                                                String... declaredSchemas) {

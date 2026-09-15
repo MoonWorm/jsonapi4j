@@ -19,6 +19,8 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
+import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2Scope;
@@ -35,6 +37,7 @@ final class OasAccessControlTestFixtures {
 
     static final String GUARDED = "guarded";
     static final String SCHEME = "m2m";
+    static final String PKCE_SCHEME = "pkce";
 
     static final String READ = "guarded.read";
     static final String WRITE = "guarded.write";
@@ -51,8 +54,39 @@ final class OasAccessControlTestFixtures {
 
     static JsonApi4j jsonApi4j(ResourceOperations<GuardedAttributes> operations,
                                String... declaredScopes) {
+        return jsonApi4j(operations, oasProperties(declaredScopes));
+    }
+
+    /**
+     * Two grant flows declaring different scopes - the shape that tells a scope matched against its own scheme apart
+     * from one matched against the union of every flow's.
+     */
+    static JsonApi4j twoFlowJsonApi4j(ResourceOperations<GuardedAttributes> operations,
+                                      List<String> clientCredentialsScopes,
+                                      List<String> pkceScopes) {
+        return twoFlowJsonApi4j(operations, clientCredentialsScopes, pkceScopes, DiagnosticsMode.WARN);
+    }
+
+    static JsonApi4j twoFlowJsonApi4j(ResourceOperations<GuardedAttributes> operations,
+                                      List<String> clientCredentialsScopes,
+                                      List<String> pkceScopes,
+                                      DiagnosticsMode diagnostics) {
+        DefaultOAuth2 oauth2 = new DefaultOAuth2();
+        oauth2.setClientCredentials(grantFlow(SCHEME, clientCredentialsScopes));
+        DefaultOAuth2GrantFlow pkce = grantFlow(PKCE_SCHEME, pkceScopes);
+        pkce.setAuthorizationUrl("http://foo.bar/authorizationUrl");
+        oauth2.setAuthorizationCodeWithPkce(pkce);
+
+        DefaultOasProperties oasProperties = new DefaultOasProperties();
+        oasProperties.setOauth2(oauth2);
+        oasProperties.setDiagnostics(diagnostics);
+        return jsonApi4j(operations, oasProperties);
+    }
+
+    private static JsonApi4j jsonApi4j(ResourceOperations<GuardedAttributes> operations,
+                                       DefaultOasProperties oasProperties) {
         PluginRegistry plugins = PluginRegistry.builder()
-                .register(new JsonApiOasPlugin(oasProperties(declaredScopes)))
+                .register(new JsonApiOasPlugin(oasProperties))
                 .register(new JsonApiAccessControlPlugin(new DefaultAccessControlEvaluator(), new DefaultAcProperties()))
                 .build();
         return JsonApi4j.builder()
@@ -63,22 +97,26 @@ final class OasAccessControlTestFixtures {
     }
 
     private static DefaultOasProperties oasProperties(String... declaredScopes) {
-        DefaultOAuth2GrantFlow grantFlow = new DefaultOAuth2GrantFlow();
-        grantFlow.setName(SCHEME);
-        grantFlow.setTokenUrl("http://foo.bar/tokenUrl");
-        grantFlow.setScopes(Arrays.stream(declaredScopes).map(name -> {
-            DefaultOAuth2Scope scope = new DefaultOAuth2Scope();
-            scope.setName(name);
-            scope.setDescription(name);
-            return scope;
-        }).toList());
-
         DefaultOAuth2 oauth2 = new DefaultOAuth2();
-        oauth2.setClientCredentials(grantFlow);
+        oauth2.setClientCredentials(grantFlow(SCHEME, Arrays.asList(declaredScopes)));
 
         DefaultOasProperties oasProperties = new DefaultOasProperties();
         oasProperties.setOauth2(oauth2);
         return oasProperties;
+    }
+
+    private static DefaultOAuth2GrantFlow grantFlow(String name,
+                                                    List<String> declaredScopes) {
+        DefaultOAuth2GrantFlow grantFlow = new DefaultOAuth2GrantFlow();
+        grantFlow.setName(name);
+        grantFlow.setTokenUrl("http://foo.bar/tokenUrl");
+        grantFlow.setScopes(declaredScopes.stream().map(scopeName -> {
+            DefaultOAuth2Scope scope = new DefaultOAuth2Scope();
+            scope.setName(scopeName);
+            scope.setDescription(scopeName);
+            return scope;
+        }).toList());
+        return grantFlow;
     }
 
     @JsonApiResource(resourceType = GUARDED)
@@ -142,6 +180,39 @@ final class OasAccessControlTestFixtures {
     public static class UndeclaredScopeOperations implements ResourceOperations<GuardedAttributes> {
 
         @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("never.declared")))
+        @Override
+        public GuardedAttributes readById(JsonApiRequest request) {
+            return new GuardedAttributes(request.getResourceId());
+        }
+
+    }
+
+    /**
+     * Requires two scopes at once, so that a configuration splitting them across two grant flows leaves neither flow
+     * able to carry the requirement.
+     */
+    @JsonApiResourceOperation(resource = GuardedResource.class)
+    public static class BothScopesOperations implements ResourceOperations<GuardedAttributes> {
+
+        @AccessControl(scopes = @AccessControlScopes(@ScopesGroup({READ, WRITE})))
+        @Override
+        public GuardedAttributes readById(JsonApiRequest request) {
+            return new GuardedAttributes(request.getResourceId());
+        }
+
+    }
+
+    /**
+     * Declares its scopes through {@code @OasOperationInfo} rather than access control, and opts into both grant
+     * flows - the other path a required scope reaches the document by.
+     */
+    @JsonApiResourceOperation(resource = GuardedResource.class)
+    public static class DeclaredScopeOperations implements ResourceOperations<GuardedAttributes> {
+
+        @OasOperationInfo(securityConfig = @OasOperationInfo.SecurityConfig(
+                clientCredentialsSupported = true,
+                pkceSupported = true,
+                requiredScopes = READ))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
             return new GuardedAttributes(request.getResourceId());
