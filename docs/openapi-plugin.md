@@ -201,17 +201,8 @@ parameters, which reach an operation through `JsonApiRequest#getCustomQueryParam
 ```
 
 Naming a parameter the framework already generates — `id`, `include`, `sort`, `page[…]`, `fields[…]`, `filter[…]` —
-contributes a description and example to it and nothing else. The generated schema carries constraints read from the
-running configuration, and replacing it would drop them silently:
-
-```java
-@OasOperationInfo(
-        parameters = @Parameter(name = "id", in = In.PATH, description = "Country code (ISO 3166)", example = "US")
-)
-```
-
-publishes `id` with that description and example, and keeps the `maxLength` taken from `validation.resourceIdMaxLength`.
-Prefer `@OasResourceInfo` for the id unless one operation genuinely needs different wording from the rest.
+contributes a description and example to it and nothing else, so the generated schema keeps the constraints it took
+from the running configuration. For the id, prefer `@OasResourceInfo`: it reaches every operation at once.
 
 One `fields[TYPE]` parameter is published per type the document can carry: the primary resource plus what it can
 include. That is one level — a client may nest includes (`include=citizenships.currencies`) and select fields on what
@@ -240,11 +231,7 @@ public class LegacyUserResource implements Resource<UserDbEntity> { … }
 ```
 
 Deprecation only ever widens: a resource takes its operations with it, an operation may retire on its own, and
-nothing opts back in — an operation cannot outlive the resource it acts on.
-
-The plugin does not read Java's `@Deprecated` for this. An operation method is invoked by the framework rather than
-by application code, so the annotation there would warn nobody; it would be a marker for this plugin alone, and a
-marker that says what it means is better than one borrowed from elsewhere.
+nothing opts back in. Java's `@Deprecated` is not read for this — use the attribute.
 
 ### Responses
 
@@ -289,52 +276,37 @@ from there:
 }
 ```
 
-Nothing about what the document says changes — a `$ref` and the object it points at are the same thing to any
-reader. What changes is that the difference between two operations stops being buried under hundreds of lines of
-identical error responses. On the sample app it halves the document.
+Nothing the document says changes — a `$ref` and the object it points at are the same thing to any reader. On the
+sample app it halves the file.
 
-A response or parameter is shared only when it appears more than once *and* looks the same everywhere. One that
-varies between operations is left inline at every occurrence — `include` differs per resource because it names that
-resource's relationships, so it stays where it is. Shared names come from what the status code means
-(`TooManyRequests`, `NoContent`) and from the parameter name with the brackets OpenAPI forbids in a component key
-removed (`fields[users]` → `FieldsUsers`).
+A response or parameter is shared only when it appears more than once *and* looks the same everywhere; one that
+varies is left inline at every occurrence, which is why `include` stays put — it names each resource's own
+relationships. Names come from what the status code means (`TooManyRequests`, `NoContent`) or from the parameter
+with the brackets OpenAPI forbids in a component key removed (`fields[users]` → `FieldsUsers`).
 
-This is the last thing to run, after any customizer the application registered, so a response tuned by hand is
-shared in its final shape.
+Sharing runs after any customizer the application registered, so a response tuned by hand is shared in its final
+shape.
 
 ### What Other Plugins Contribute
 
-Two customizers ship with this plugin and describe what a *neighbouring* plugin makes reachable:
+Two customizers ship with this plugin and document what a *neighbouring* plugin makes reachable. Each applies only
+when its plugin is registered and enabled, so a disabled plugin contributes no documentation just as it contributes
+no behaviour. Spring Boot and Quarkus need no wiring for either.
 
-| Customizer | Contributes | Active when |
-|---|---|---|
-| `AccessControlOasCustomizer` | required scopes, public endpoints, `403`, and the reasons behind them | the Access Control plugin is registered and enabled |
-| `SparseFieldsetsOasCustomizer` | one `fields[TYPE]` per selectable type | the Sparse Fieldsets plugin is registered and enabled |
+**Sparse Fieldsets** adds one `fields[TYPE]` parameter per type an operation's response may carry.
 
-They live here rather than in those plugins because OpenAPI is this module's concern — access control and sparse
-fieldsets should not have to know the document exists. Each is applied only when its plugin is registered and
-enabled, so a disabled plugin contributes no documentation just as it contributes no behaviour, and an application
-without the plugin never loads these classes.
+**Access Control** turns what it enforces into what the document says:
 
-What access control contributes, and why:
+| Declared | Published as |
+|---|---|
+| `@AccessControl(scopes = …)` | the operation's `security`, one entry per alternative — `(A or B) and (C or D)` becomes four |
+| `@AccessControl(authenticated = ANONYMOUS)` | `security: []`, OpenAPI's way of saying an operation needs no authentication |
+| any requirement, on a write | `403` — reads never carry one, since a denied read answers with an empty document and `200` |
+| a requirement's `description` | appended to the operation's, including entitlements and policies, which OpenAPI cannot state |
 
-- **Scopes.** `@AccessControl(scopes = …)` becomes the operation's `security`. OpenAPI's security array is
-  disjunctive normal form — entries are alternatives, scopes within an entry are all required — and a two-level
-  `ALL_OF`/`ANY_OF` requirement always has such a form, so `(A or B) and (C or D)` is published as four
-  alternatives. Access control supplies the scopes; the OAS configuration supplies the flows they hang off. A
-  requirement declared here wins over `@OasOperationInfo(securityConfig = …)`: the document should state what is
-  enforced, and this is what enforces it.
-- **Public endpoints.** `@AccessControl(authenticated = ANONYMOUS)` publishes `security: []`, which is how OpenAPI
-  says an operation overrides the document default and needs no authentication.
-- **`403`.** Added to writes that actually carry a requirement, rather than to every write. A denied read is
-  answered with an empty document and a `200` so that compound-document resolution can continue, so reads never
-  carry one.
-- **Reasons.** Every requirement's `description` is appended to the operation's, including for entitlements and
-  policies, which OpenAPI has no field for. A reader learns why they might be refused.
-
-A scope named by access control but missing from `jsonapi4j.oas.oauth2.*.scopes` fails document generation rather
-than publishing a reference that resolves to nothing — the two lists have to agree, and a dangling scope is what
-breaks the Swagger UI authorize button.
+Access control supplies the scopes; the OAS configuration supplies the flows they hang off. A requirement declared
+there wins over `@OasOperationInfo(securityConfig = …)`, and a scope missing from `jsonapi4j.oas.oauth2.*.scopes`
+fails generation rather than publishing a reference to nothing.
 
 ### Customizing the Generated Document
 

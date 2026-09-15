@@ -464,7 +464,7 @@ This operation will be available under [/countries?filter[id]=NO,FI,US](http://l
 Also, ensure Compound Docs feature is enabled:
 ```yaml
 jsonapi4j:
-  compound-docs:
+  cd:
     enabled: true
     maxHops: 3
 ```

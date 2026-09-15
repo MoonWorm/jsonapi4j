@@ -232,7 +232,7 @@ The `ownership` setting works differently depending on the evaluation stage:
 | **Inbound** (pre-retrieval) | `ownerIdExtractor` | A class that extracts the owner ID from the incoming request (e.g. from the URL path) |
 | **Outbound** (post-retrieval) | `ownerIdFieldPath` | A field path pointing to the owner ID in the JSON:API response (e.g. `"id"`) |
 
-Review the examples below to get a better grasp of how and where to declare your access requirements.
+The examples below show these placements at work.
 
 ### Policies: Deciding Access in Code
 
@@ -335,7 +335,7 @@ First, let's limit access to a personal data for all non-authorized users.
 Secondly, let's hide the user's credit card number from everyone except the owner. To achieve this, we need place the `@AccessControl` annotation on top of the class declaration and on the `creditCardNumber` field.
 Notes:
 1. `authenticated = Authenticated.AUTHENTICATED` - requires the framework to check whether the client that initiated this request is authenticated.
-2. `@AccessControlScopes(requiredScopes = {"users.sensitive.read"})` - forces the framework to check if client initiated this request has got permissions from the resource owner to access their sensitive data.
+2. `@AccessControlScopes(@ScopesGroup("users.sensitive.read"))` - forces the framework to check if client initiated this request has got permissions from the resource owner to access their sensitive data.
 3. `@AccessControlOwnership(ownerIdFieldPath = "id")` - tells the framework that the owner id is located in the `id` field of the JSON:API Resource Object. That is true because we deal with users and user id represents who own this data.
 
 ```java
@@ -348,7 +348,7 @@ public class UserAttributes {
 
     @AccessControl(
             authenticated = Authenticated.AUTHENTICATED,
-            scopes = @AccessControlScopes(requiredScopes = {"users.sensitive.read"}),
+            scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")),
             entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
@@ -362,12 +362,6 @@ public class UserAttributes {
 #### Example 3: Outbound Access Control for Resource Object
 
 Now, let's showcase how to hide some sections on the Resource Object level. Since we don't have a dedicated class for it, we need to use our `Resource` declaration class for it.
-
-Here is the list of available places where you can place `@AccessControl` annotation:
-1. On top of the Resource declaration - in order to control access to the entire JSON:API Resource Object
-2. For `Resource#resolveAttributes(...)` method to control access just for resource `attributes` section. As it was already shown above an alternative option is also to place `@AccessControl` on top of the attributes custom class.
-3. For `Resource#resolveResourceLinks(...)` method to control access just for resource `links` section.
-4. For `Resource#resolveResourceMeta(...)` method to control access just for resource `meta` section.
 
 In the example below we've configured our entire `UserResource` in a way it's visible only for authenticated users while its `meta` section is only visible for clients with **ADMIN** entitlement:
 
@@ -388,16 +382,12 @@ public class UserResource implements Resource<UserDbEntity> {
 
 The last example will show how to hide some sections on the Resource Identifier Object level. This object is used for all relationship operations in a response document instead of well known Resource Object. Since we don't have a dedicated class for it, we need to use our Relationship declaration class for it.
 
-Here is the list of available places where you can place `@AccessControl` annotation:
-1. On top of the `Relationship` declaration - in order to control access to the entire JSON:API Resource Identifier Object
-2. For `Relationship#resolveResourceIdentifierMeta(...)` method to control access just for resource identifier `meta` section.
-
 In the example below we've configured our entire `UserCitizenshipsRelationship` in a way this relationship is visible only for authenticated users that have been granted 'users.citizenships.read' scope for a client. Moreover, `ownership` setting requires a user to be an owner; thus, this information is only visible for a user it belongs to. And finally, lets expose its `meta` section for clients with **ADMIN** entitlement only:
 
 ```java
 @AccessControl(
         authenticated = Authenticated.AUTHENTICATED,
-        scopes = @AccessControlScopes(requiredScopes = {"users.citizenships.read"}),
+        scopes = @AccessControlScopes(@ScopesGroup("users.citizenships.read")),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
 public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {

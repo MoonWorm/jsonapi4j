@@ -21,7 +21,7 @@ feature_row_main:
   - title: "Auto-Generated OpenAPI"
     excerpt: "Always-in-sync API documentation derived from the same metadata used at runtime via the [OpenAPI plugin](/openapi-plugin/). Powerful customization capabilities. Exposed as JSON or YAML via a dedicated endpoint."  
   - title: "Framework Agnostic"
-    excerpt: "Works with [**Spring Boot**](/getting-started/#spring-boot), [**Quarkus**](/getting-started/#quarkus), and plain [**Jakarta Servlet API**](/getting-started/#jakarta-servlet). Add one dependency and the framework auto-configures itself in your environment."
+    excerpt: "Works with [**Spring Boot**](/getting-started/#1-add-dependency), [**Quarkus**](/getting-started/#1-add-dependency), and plain [**Jakarta Servlet API**](/getting-started/#1-add-dependency). Add one dependency and the framework auto-configures itself in your environment."
   
 feature_row_advanced:
   - title: "Pluggable Architecture"
