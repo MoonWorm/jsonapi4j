@@ -24,12 +24,15 @@ import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlModel;
 import pro.api4.jsonapi4j.plugin.ac.model.AccessControlScopesModel;
+import pro.api4.jsonapi4j.plugin.ac.model.outbound.OutboundAccessControlForCustomClass;
 import pro.api4.jsonapi4j.plugin.ac.model.ScopesGroupModel;
 import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.diagnostics.OasDiagnostics;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSecuritySchemes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasOperationInfoUtil.resolveRelationshipOperationPath;
@@ -86,6 +90,7 @@ public class AccessControlOasCustomizer implements OasCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
+        describeGuardedAttributes(openApi);
         if (openApi.getPaths() == null) {
             return;
         }
@@ -96,6 +101,103 @@ public class AccessControlOasCustomizer implements OasCustomizer {
                             .forEach(relationshipName -> describeRelationshipOperations(openApi, resourceType, relationshipName));
                 });
     }
+
+    /**
+     * Says which attributes access control can withhold, and what it wants in exchange.
+     * <p>
+     * An anonymized attribute is simply absent from the response - which the response schema already allows, since it
+     * requires nothing - but absence alone tells a client nothing about why. Naming the requirement on the attribute
+     * turns "sometimes this field is missing" into something a caller can act on: ask for the scope.
+     */
+    private void describeGuardedAttributes(OpenAPI openApi) {
+        if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
+            return;
+        }
+        OasResourceTypes.registeredResourcesExcludingMeta(domainRegistry).forEach(registeredResource -> {
+            ResourceType resourceType = registeredResource.getResourceType();
+            Class<?> attributesType = OasResourceInfoUtil.attributesType(domainRegistry, resourceType);
+            Schema<?> attributesSchema = openApi.getComponents().getSchemas()
+                    .get(OasSchemaNamesUtil.attributesSchemaName(resourceType));
+            if (attributesType == null || attributesSchema == null) {
+                return;
+            }
+            OutboundAccessControlForCustomClass accessControl = OutboundAccessControlForCustomClass
+                    .forClass(attributesType);
+            if (accessControl == null) {
+                return;
+            }
+            describeGuardedClass(attributesSchema, accessControl.getClassLevel());
+            emptyIfNull(accessControl.getFieldLevel())
+                    .forEach((fieldName, model) -> describeGuardedField(attributesSchema, fieldName, model));
+        });
+    }
+
+    private void describeGuardedClass(Schema<?> attributesSchema,
+                                      AccessControlModel classLevel) {
+        requirementPhrase(classLevel).ifPresent(phrase -> SchemaGeneratorUtil.appendDescription(
+                attributesSchema,
+                String.format("Every attribute is withheld from a caller who does not qualify - requires %s.", phrase)
+        ));
+    }
+
+    private void describeGuardedField(Schema<?> attributesSchema,
+                                      String fieldName,
+                                      AccessControlModel fieldLevel) {
+        if (attributesSchema.getProperties() == null) {
+            return;
+        }
+        Schema<?> property = (Schema<?>) attributesSchema.getProperties().get(fieldName);
+        if (property == null) {
+            return;
+        }
+        requirementPhrase(fieldLevel).ifPresent(phrase -> SchemaGeneratorUtil.appendDescription(
+                property,
+                String.format("Absent from the response unless the caller qualifies - requires %s.", phrase)
+        ));
+    }
+
+    /**
+     * What the requirement asks for, in the words the application chose where it supplied any. A requirement with no
+     * description falls back to naming its scopes, which is the part a caller can actually do something about.
+     */
+    private Optional<String> requirementPhrase(AccessControlModel accessControl) {
+        if (accessControl == null || accessControl.declaresNoRequirements()) {
+            return Optional.empty();
+        }
+        List<String> reasons = new ArrayList<>();
+        if (accessControl.getRequiredScopes() != null) {
+            reasons.add(StringUtils.isNotBlank(accessControl.getRequiredScopes().getDescription())
+                    ? accessControl.getRequiredScopes().getDescription()
+                    : "the scopes " + String.join(", ", declaredScopeNames(accessControl.getRequiredScopes())));
+        }
+        if (accessControl.getRequiredEntitlements() != null) {
+            reasons.add(StringUtils.isNotBlank(accessControl.getRequiredEntitlements().getDescription())
+                    ? accessControl.getRequiredEntitlements().getDescription()
+                    : "an entitlement");
+        }
+        if (accessControl.getRequiredPolicy() != null) {
+            reasons.add(StringUtils.isNotBlank(accessControl.getRequiredPolicy().getDescription())
+                    ? accessControl.getRequiredPolicy().getDescription()
+                    : "an access policy");
+        }
+        if (accessControl.getRequiredOwnership() != null) {
+            reasons.add("ownership of the resource");
+        }
+        if (accessControl.getAuthenticated() != null
+                && accessControl.getAuthenticated().getAuthenticated() == Authenticated.AUTHENTICATED) {
+            reasons.add("an authenticated caller");
+        }
+        return reasons.stream().filter(StringUtils::isNotBlank).distinct()
+                .reduce((one, other) -> one + " and " + other);
+    }
+
+    private Set<String> declaredScopeNames(AccessControlScopesModel requiredScopes) {
+        return CollectionUtils.emptyIfNull(requiredScopes.getGroups()).stream()
+                .flatMap(group -> CollectionUtils.emptyIfNull(group.getScopes()).stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+
 
     private void describeResourceOperations(OpenAPI openApi,
                                             ResourceType resourceType) {

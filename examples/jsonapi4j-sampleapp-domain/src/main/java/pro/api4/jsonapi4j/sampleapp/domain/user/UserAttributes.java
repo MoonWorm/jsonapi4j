@@ -31,7 +31,7 @@ public class UserAttributes {
             scopes = @AccessControlScopes(@ScopesGroup("users.sensitive.read")),
             ownership = @AccessControlOwnership(ownerIdFieldPath = "id")
     )
-    @Schema(description = "User's credit card number", example = "123456789", requiredMode = REQUIRED)
+    @Schema(description = "User's credit card number", example = "123456789")
     private final String creditCardNumber;
 
     @ArraySchema(

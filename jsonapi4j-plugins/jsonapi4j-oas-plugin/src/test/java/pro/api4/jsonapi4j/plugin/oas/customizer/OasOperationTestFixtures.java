@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2GrantFlow;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties.DefaultOAuth2Scope;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
 import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo.SecurityConfig;
@@ -33,6 +34,7 @@ import java.util.List;
 final class OasOperationTestFixtures {
 
     static final String SECURED_RESOURCE_TYPE = "secured";
+    static final String MANDATORY = "mandatory";
     static final String SCOPE = "secured.read";
     static final String CUSTOM_SUMMARY = "Fetch one secured thing";
     static final String CUSTOM_DESCRIPTION = "Returns the secured thing the caller asked for.";
@@ -173,6 +175,75 @@ final class OasOperationTestFixtures {
     }
 
     public record SecuredAttributes(String id) {
+    }
+
+    /**
+     * Attributes the resource declares mandatory. A response may still omit any of them - unset values are not
+     * serialized, sparse fieldsets narrow the set, access control withholds what a caller may not see - so the two
+     * directions disagree about what is required, which is what the split schema exists for.
+     */
+    public record MandatoryAttributes(
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String name,
+            @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String email,
+            String nickname) {
+    }
+
+    @JsonApiResource(resourceType = MANDATORY)
+    @OasResourceInfo(attributes = MandatoryAttributes.class, resourceNameSingle = "mandatory")
+    public static class MandatoryResource implements Resource<MandatoryAttributes> {
+
+        @Override
+        public String resolveResourceId(MandatoryAttributes attributes) {
+            return attributes.name();
+        }
+
+        @Override
+        public MandatoryAttributes resolveAttributes(MandatoryAttributes attributes) {
+            return attributes;
+        }
+
+    }
+
+    /** Readable only - so no request-side attributes schema should be published. */
+    @JsonApiResourceOperation(resource = MandatoryResource.class)
+    public static class MandatoryReadOperations implements ResourceOperations<MandatoryAttributes> {
+
+        @Override
+        public MandatoryAttributes readById(JsonApiRequest request) {
+            return new MandatoryAttributes("n", "e", null);
+        }
+
+    }
+
+    /** Updatable only - so only the update form of the attributes schema is published. */
+    @JsonApiResourceOperation(resource = MandatoryResource.class)
+    public static class MandatoryUpdateOperations implements ResourceOperations<MandatoryAttributes> {
+
+        @Override
+        public MandatoryAttributes readById(JsonApiRequest request) {
+            return new MandatoryAttributes("n", "e", null);
+        }
+
+        @Override
+        public void update(JsonApiRequest request) {
+        }
+
+    }
+
+    /** Readable and creatable - the create form of the attributes schema is published. */
+    @JsonApiResourceOperation(resource = MandatoryResource.class)
+    public static class MandatoryWriteOperations implements ResourceOperations<MandatoryAttributes> {
+
+        @Override
+        public MandatoryAttributes readById(JsonApiRequest request) {
+            return new MandatoryAttributes("n", "e", null);
+        }
+
+        @Override
+        public MandatoryAttributes create(JsonApiRequest request) {
+            return new MandatoryAttributes("n", "e", null);
+        }
+
     }
 
     @JsonApiResourceOperation(resource = SecuredResource.class)

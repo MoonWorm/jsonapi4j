@@ -22,7 +22,7 @@ public class UserResource implements Resource<UserDbEntity> { … }
 
 | Annotation | Declares |
 |---|---|
-| `@OasResourceInfo` on the `Resource` | `attributes` (see above), `resourceNameSingle` (the singular guess — `countries`→`country`; override when it reads wrong), `resourceIdDescription` / `resourceIdExample` (reach the `{id}` path param of *every* operation on the resource plus the `id` member of its schema), `deprecated` |
+| `@OasResourceInfo` on the `Resource` | `attributes` (see above — published per direction: `<Type>Attributes` for responses and `<Type>UpdateAttributes` with no `required`, `<Type>CreateAttributes` with `required` intact), `resourceNameSingle` (the singular guess — `countries`→`country`; override when it reads wrong), `resourceIdDescription` / `resourceIdExample` (reach the `{id}` path param of *every* operation on the resource plus the `id` member of its schema), `deprecated` |
 | `@OasRelationshipInfo` on the `Relationship` | `relationshipTypes` (which resource types the linkage may point at) and `resourceLinkageMetaType` (the type of the linkage's `meta`) |
 | `@OasOperationInfo` on the operation class **or** one method | `summary`, `description`, `sortableFields`, `filters`, `pagination`, `deprecated`, `parameters`, `payloadType`, `securityConfig`. A method-level annotation wins over the class-level one |
 
@@ -85,9 +85,14 @@ Already serving a document through **springdoc**? Don't run both endpoints — s
   in production. `FAIL_ON_STARTUP` builds it during boot and refuses to start, at the cost of a few
   hundred ms per boot. And note the setting governs *reports* only: a document that would say something
   untrue (two schemas claiming one name) is rejected in every mode, `DISABLED` included.
-- **Sparse fieldsets and AC anonymization can contradict `required`.** An attributes field marked
-  `requiredMode = REQUIRED` stays required in the schema even though `?fields[…]=` or a denied scope
-  legitimately omits it. Strict response validators and generated non-nullable fields will trip on it.
+- **`requiredMode = REQUIRED` reaches the create schema only.** Attributes are published in three
+  forms: `<Type>CreateAttributes` keeps `required`; `<Type>UpdateAttributes` drops it (PATCH is a
+  partial update); `<Type>Attributes` (responses) drops it too, because an unset value is not
+  serialized, `?fields[…]=` selects a subset, and access control withholds what the caller may not see.
+  Each is published only where its operation exists — on a read-only resource the annotation publishes
+  nothing. And `required` is a claim, not enforcement: the framework won't reject a create for a missing
+  attribute, so keep it in step with what your `validateCreate` actually checks. Where AC guards an
+  attribute, the *response* schema names the scope on it.
 - **Schema names come from Java simple names**, so two resources with same-named nested types collide —
   generation fails rather than publishing one under the other's shape. Rename the Java type.
 - Deprecation only widens: `@OasResourceInfo(deprecated = true)` marks every operation on the resource,

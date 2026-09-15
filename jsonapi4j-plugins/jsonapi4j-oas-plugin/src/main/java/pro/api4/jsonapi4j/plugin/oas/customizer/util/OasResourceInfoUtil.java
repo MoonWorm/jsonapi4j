@@ -44,6 +44,17 @@ public final class OasResourceInfoUtil {
                 : resourceInfo(domainRegistry.getResource(resourceType));
     }
 
+    /**
+     * @return the class a resource declared as its attributes, or {@code null} when it declared none - in which case
+     * the published attributes schema describes nothing, and says so
+     */
+    public static Class<?> attributesType(DomainRegistry domainRegistry,
+                                          ResourceType resourceType) {
+        return resourceInfo(domainRegistry, resourceType)
+                .map(OasResourceInfoModel::getAttributes)
+                .orElse(null);
+    }
+
     public static String resourceIdDescription(Optional<OasResourceInfoModel> resourceInfo) {
         return resourceInfo
                 .map(OasResourceInfoModel::getResourceIdDescription)

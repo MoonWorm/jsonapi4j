@@ -5,9 +5,18 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.CustomPayloadOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryAttributes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryReadOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryResource;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryUpdateOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryWriteOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
@@ -32,6 +41,71 @@ class JsonApiRequestBodySchemaCustomizerTests {
         sut.customise(openApi);
 
         return openApi.getComponents() == null ? Map.of() : openApi.getComponents().getSchemas();
+    }
+
+    /**
+     * The request direction keeps what the resource declared mandatory - that is exactly what a client has to send.
+     * It is the response that cannot promise the same, which is why the two are separate schemas.
+     */
+    @Nested
+    class RequestAttributes {
+
+        private Map<String, Schema> mandatorySchemas(ResourceOperations<MandatoryAttributes> operations) {
+            PluginRegistry plugins = PluginRegistry.builder()
+                    .register(new JsonApiOasPlugin(new DefaultOasProperties()))
+                    .build();
+            JsonApi4j jsonApi4j = JsonApi4j.builder()
+                    .pluginRegistry(plugins)
+                    .domainRegistry(DomainRegistry.builder(plugins).resource(new MandatoryResource()).build())
+                    .operationsRegistry(OperationsRegistry.builder(plugins).operations(operations).build())
+                    .build();
+            OpenAPI openApi = new OpenAPI();
+            new JsonApiRequestBodySchemaCustomizer(jsonApi4j).customise(openApi);
+            return openApi.getComponents() == null ? Map.of() : openApi.getComponents().getSchemas();
+        }
+
+        private String attributesRefOf(Map<String, Schema> schemas,
+                                       String resourceSchemaName) {
+            return ((Schema<?>) schemas.get(resourceSchemaName).getProperties().get("attributes")).get$ref();
+        }
+
+        @Test
+        void customise_create_keepsTheAttributesTheResourceDeclaresRequired() {
+            Map<String, Schema> schemas = mandatorySchemas(new MandatoryWriteOperations());
+
+            assertThat(schemas.get("MandatoryCreateAttributes").getRequired())
+                    .containsExactlyInAnyOrder("name", "email");
+            assertThat(attributesRefOf(schemas, "MandatoryCreateResource"))
+                    .isEqualTo("#/components/schemas/MandatoryCreateAttributes");
+        }
+
+        /**
+         * PATCH is a partial update - a client sends the attributes it is changing - so requiring any of them would
+         * reject a perfectly valid request.
+         */
+        @Test
+        void customise_update_requiresNothingSincePatchIsPartial() {
+            Map<String, Schema> schemas = mandatorySchemas(new MandatoryUpdateOperations());
+
+            assertThat(schemas.get("MandatoryUpdateAttributes").getRequired()).isNullOrEmpty();
+            assertThat(schemas.get("MandatoryUpdateAttributes").getDescription())
+                    .contains("partial update");
+            assertThat(attributesRefOf(schemas, "MandatoryUpdateResource"))
+                    .isEqualTo("#/components/schemas/MandatoryUpdateAttributes");
+        }
+
+        @Test
+        void customise_createOnlyResource_publishesNoUpdateAttributes() {
+            assertThat(mandatorySchemas(new MandatoryWriteOperations()))
+                    .doesNotContainKey("MandatoryUpdateAttributes");
+        }
+
+        @Test
+        void customise_readOnlyResource_publishesNeitherWriteForm() {
+            assertThat(mandatorySchemas(new MandatoryReadOperations()))
+                    .doesNotContainKeys("MandatoryCreateAttributes", "MandatoryUpdateAttributes");
+        }
+
     }
 
     @Nested

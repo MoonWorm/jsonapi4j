@@ -131,6 +131,47 @@ optional on create but mandatory on update. To document a body the framework can
 `@OasOperationInfo(payloadType = YourPayload.class)` — the declared type replaces the derived one and its schema is
 registered automatically.
 
+### Required Attributes Are a Create-Only Promise
+
+`@Schema(requiredMode = REQUIRED)` on an attribute says what a **create** must carry, and that is the one place it is
+published — `<Type>CreateAttributes`. The other two forms require nothing:
+
+| Schema | Referenced by | `required` |
+|---|---|---|
+| `<Type>CreateAttributes` | `POST /{type}` | as the resource declared it |
+| `<Type>UpdateAttributes` | `PATCH /{type}/{id}` | nothing — `PATCH` is a partial update, so a client sends only what it is changing |
+| `<Type>Attributes` | every response | nothing — see below |
+
+That is not a weakening — it is the only honest reading. A response cannot promise an attribute is present:
+
+- an attribute with no value is not serialized at all — true of every application, with no plugins involved;
+- sparse fieldsets let a client ask for a subset (`?fields[users]=fullName`);
+- access control withholds what the caller may not see.
+
+Each of those produces a response that a `required` list copied from the attributes class would reject. A generated
+client would model the attribute as non-nullable and fail to read a response the server is entitled to send, and a
+strict response validator would reject it — which is exactly what used to happen. The same reasoning is what separates
+create from update: requiring an attribute on `PATCH` would reject a partial update the framework accepts.
+
+Each reason is described by whoever owns it, so a document never mentions a plugin the application does not run. The
+framework's own pass states the first line only; the sparse fieldsets customizer adds *"A client can narrow what is
+returned with `fields[users]`"*, and access control adds what it withholds. Turn both plugins off and the attributes
+schema says just the one sentence.
+
+Each form is published only for the operation that uses it: a read-only resource gets none of the write forms, and a
+resource with only an update gets only `<Type>UpdateAttributes`. On a read-only resource the annotation therefore
+publishes nothing at all.
+
+One thing `required` is *not*: enforced. The framework does not reject a create for a missing attribute on the strength
+of `requiredMode` — that is what `validateCreate` is for. So the annotation is a claim about your own operation, and it
+is worth keeping the two in step: the sample app declares `fullName` and `email` required and its `validateCreate`
+checks both. A `required` the validator does not enforce is a document that promises something the server does not do.
+
+Where the Access Control plugin guards an individual attribute, the response schema also says so on that attribute —
+*"Absent from the response unless the caller qualifies — requires the scopes `users.sensitive.read`"* — using the
+requirement's own `description()` where one was given. Absence alone tells a client nothing; naming the requirement
+turns it into something they can act on.
+
 ### Operation Ids
 
 Every operation gets an `operationId`, derived from what it does and what it acts on:

@@ -32,6 +32,11 @@ class SharedComponentsCustomizerTests {
         return new Parameter().name("page[cursor]").in("query").schema(new StringSchema());
     }
 
+    private static Operation operationAnswering(String status,
+                                                ApiResponse response) {
+        return new Operation().responses(new ApiResponses().addApiResponse(status, response));
+    }
+
     private static Operation operation(ApiResponse response,
                                        List<Parameter> parameters) {
         return new Operation()
@@ -136,6 +141,53 @@ class SharedComponentsCustomizerTests {
             sut.customise(openApi);
 
             assertThat(openApi.getComponents().getParameters()).isNull();
+        }
+
+    }
+
+    /**
+     * A response key is not always a number: OpenAPI also allows {@code default} and the {@code 4XX} range
+     * wildcards, and the documented way to add one is an application's own {@link OasCustomizer} - which runs before
+     * this pass. Naming such a key must not be the thing that brings document generation down.
+     */
+    @Nested
+    class NonNumericStatusKeys {
+
+        @Test
+        void customise_defaultResponseRepeated_isSharedRatherThanCrashing() {
+            OpenAPI openApi = document(
+                    operationAnswering("default", new ApiResponse().description("Unexpected error.")),
+                    operationAnswering("default", new ApiResponse().description("Unexpected error.")));
+
+            sut.customise(openApi);
+
+            assertThat(openApi.getComponents().getResponses()).containsOnlyKeys("Default");
+            assertThat(openApi.getPaths().values())
+                    .flatMap(PathItem::readOperations)
+                    .allSatisfy(operation -> assertThat(operation.getResponses().get("default").get$ref())
+                            .isEqualTo("#/components/responses/Default"));
+        }
+
+        @Test
+        void customise_rangeWildcardRepeated_isSharedUnderALegalComponentKey() {
+            OpenAPI openApi = document(
+                    operationAnswering("4XX", new ApiResponse().description("Client error.")),
+                    operationAnswering("4XX", new ApiResponse().description("Client error.")));
+
+            sut.customise(openApi);
+
+            assertThat(openApi.getComponents().getResponses()).containsOnlyKeys("Status4XX");
+        }
+
+        @Test
+        void customise_unknownNumericStatusRepeated_isNamedAfterTheCode() {
+            OpenAPI openApi = document(
+                    operationAnswering("599", new ApiResponse().description("Bespoke.")),
+                    operationAnswering("599", new ApiResponse().description("Bespoke.")));
+
+            sut.customise(openApi);
+
+            assertThat(openApi.getComponents().getResponses()).containsOnlyKeys("Status599");
         }
 
     }

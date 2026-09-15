@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,6 +23,7 @@ class SparseFieldsetsOasCustomizerTests {
         JsonApi4j jsonApi4j = OasIncludedTypesTestFixtures.jsonApi4j();
 
         OpenAPI openApi = new OpenAPI();
+        new JsonApiResponseSchemaCustomizer(jsonApi4j).customise(openApi);
         new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
         if (sparseFieldsetsActive) {
             new SparseFieldsetsOasCustomizer(jsonApi4j).customise(openApi);
@@ -69,6 +71,40 @@ class SparseFieldsetsOasCustomizerTests {
 
             assertThat(names.indexOf("include")).isLessThan(names.indexOf("fields[articles]"));
             assertThat(names.indexOf("fields[articles]")).isLessThan(names.indexOf("fields[authors]"));
+        }
+
+    }
+
+
+    /**
+     * The attributes schema requires nothing whether or not this plugin is around - a response never guarantees an
+     * attribute. What only this plugin can say is that a client may narrow the set on purpose, so that sentence has
+     * to appear with it and stay away without it.
+     */
+    @Nested
+    class SelectableAttributesDescription {
+
+        /**
+         * Empty rather than {@code null}: a schema with nothing to relax and no plugin to describe carries no
+         * description at all, which is the case the second test is about.
+         */
+        private String attributesDescription(boolean sparseFieldsetsActive,
+                                             String schemaName) {
+            return Objects.toString(
+                    document(sparseFieldsetsActive).getComponents().getSchemas().get(schemaName).getDescription(),
+                    "");
+        }
+
+        @Test
+        void customise_applied_saysTheAttributesCanBeNarrowed() {
+            assertThat(attributesDescription(true, "ArticlesAttributes"))
+                    .contains("narrow what is returned with 'fields[articles]'");
+        }
+
+        @Test
+        void customise_notApplied_saysNothingAboutSparseFieldsets() {
+            assertThat(attributesDescription(false, "ArticlesAttributes"))
+                    .doesNotContain("fields[");
         }
 
     }

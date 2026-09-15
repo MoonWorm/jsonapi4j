@@ -145,6 +145,25 @@ public final class OasSchemaNamesUtil {
         return capitalize(resourceType.getType()) + "Attributes";
     }
 
+    /**
+     * The attributes a create must carry. It is separate from the response form because the two genuinely differ on
+     * what is mandatory: a create must carry what the resource declares required, while a response may legitimately
+     * omit any attribute - an unset value is not serialized, and sparse fieldsets and access control narrow it
+     * further.
+     */
+    public static String createAttributesSchemaName(ResourceType resourceType) {
+        return capitalize(resourceType.getType()) + "CreateAttributes";
+    }
+
+    /**
+     * The attributes an update may carry. Separate from the create form because JSON:API's {@code PATCH} is a partial
+     * update - a client sends the attributes it is changing and no others - so nothing is required here even where a
+     * create requires it.
+     */
+    public static String updateAttributesSchemaName(ResourceType resourceType) {
+        return capitalize(resourceType.getType()) + "UpdateAttributes";
+    }
+
     public static String relationshipsSchemaName(ResourceType resourceType) {
         return capitalize(resourceType.getType()) + "Relationships";
     }

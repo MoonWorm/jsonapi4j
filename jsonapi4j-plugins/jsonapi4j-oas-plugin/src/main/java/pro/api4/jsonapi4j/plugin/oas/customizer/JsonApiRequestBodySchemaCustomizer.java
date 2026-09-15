@@ -17,7 +17,6 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasLinkageMetaUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
-import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.PrimaryAndNestedSchemas;
 import pro.api4.jsonapi4j.plugin.oas.operation.model.NotApplicable;
@@ -44,7 +43,8 @@ import static pro.api4.jsonapi4j.operation.OperationType.DELETE_TO_MANY_RELATION
 import static pro.api4.jsonapi4j.operation.OperationType.UPDATE_RESOURCE;
 import static pro.api4.jsonapi4j.operation.OperationType.UPDATE_TO_MANY_RELATIONSHIPS;
 import static pro.api4.jsonapi4j.operation.OperationType.UPDATE_TO_ONE_RELATIONSHIP;
-import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.attributesSchemaName;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.createAttributesSchemaName;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.updateAttributesSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.createRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.createResourceSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.customToManyRelationshipsRequestDocSchemaName;
@@ -54,6 +54,7 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.t
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.toOneRelationshipRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.updateRequestDocSchemaName;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.updateResourceSchemaName;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.appendDescription;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.generateAllSchemasFromType;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.generateSchemaFromType;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.registerSchemaIfNotExists;
@@ -76,6 +77,14 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Getter
 public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
+
+    private static final String CREATE_ATTRIBUTES_DESCRIPTION =
+            "What a create must carry. The response form of these attributes requires nothing, since a response may "
+                    + "legitimately omit any of them.";
+
+    private static final String UPDATE_ATTRIBUTES_DESCRIPTION =
+            "The attributes to change. PATCH is a partial update, so send only the ones being changed - nothing here "
+                    + "is required, even where a create requires it.";
 
     private static final Set<OperationType> RELATIONSHIP_WRITES = Set.of(
             UPDATE_TO_ONE_RELATIONSHIP,
@@ -145,35 +154,72 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
 
         String relationshipsSchemaName = registerRequestRelationshipsSchema(resourceType, relationshipProperties, openApi);
         if (createConfigured) {
+            registerAttributesSchema(resourceType, createAttributesSchemaName(resourceType),
+                    CREATE_ATTRIBUTES_DESCRIPTION, true, openApi);
             registerResourceRequestSchemas(
                     resourceType,
                     createResourceSchemaName(resourceType),
                     createRequestDocSchemaName(resourceType),
                     List.of(TYPE_FIELD),
+                    createAttributesSchemaName(resourceType),
                     relationshipsSchemaName,
                     openApi
             );
         }
         if (updateConfigured) {
+            registerAttributesSchema(resourceType, updateAttributesSchemaName(resourceType),
+                    UPDATE_ATTRIBUTES_DESCRIPTION, false, openApi);
             registerResourceRequestSchemas(
                     resourceType,
                     updateResourceSchemaName(resourceType),
                     updateRequestDocSchemaName(resourceType),
                     List.of(ID_FIELD, TYPE_FIELD),
+                    updateAttributesSchemaName(resourceType),
                     relationshipsSchemaName,
                     openApi
             );
         }
     }
 
+    /**
+     * One attributes schema per write operation, because all three directions disagree about what is mandatory: a
+     * create must carry what the resource declares required, a {@code PATCH} carries only what is being changed, and a
+     * response may omit anything at all. OpenAPI has no way to narrow a {@code $ref}, so each gets its own schema.
+     * <p>
+     * Registered only for the operations that exist, so a read-only resource gains none of them and an update-only
+     * resource gains one. Nested schemas are shared with the response side: they are generated from the same classes
+     * and so are identical.
+     *
+     * @param keepRequired whether the attributes the resource declared mandatory stay mandatory here
+     */
+    private void registerAttributesSchema(ResourceType resourceType,
+                                          String schemaName,
+                                          String description,
+                                          boolean keepRequired,
+                                          OpenAPI openApi) {
+        Class<?> attributesType = OasResourceInfoUtil.attributesType(domainRegistry, resourceType);
+        PrimaryAndNestedSchemas schemas = attributesType == null
+                ? new PrimaryAndNestedSchemas(new Schema(), List.of())
+                : generateAllSchemasFromType(attributesType);
+        Schema<?> attributes = schemas.getPrimarySchema();
+        attributes.setName(schemaName);
+        if (!keepRequired) {
+            attributes.setRequired(null);
+        }
+        appendDescription(attributes, description);
+        registerSchemaIfNotExists(attributes, openApi);
+        schemas.getNestedSchemas().forEach(nested -> registerSchemaIfNotExists(nested, openApi));
+    }
+
     private void registerResourceRequestSchemas(ResourceType resourceType,
                                                 String resourceSchemaName,
                                                 String docSchemaName,
                                                 List<String> required,
+                                                String attributesSchemaName,
                                                 String relationshipsSchemaName,
                                                 OpenAPI openApi) {
         registerSchemaIfNotExists(
-                requestResourceSchema(resourceType, resourceSchemaName, required, relationshipsSchemaName),
+                requestResourceSchema(resourceType, resourceSchemaName, required, attributesSchemaName, relationshipsSchemaName),
                 openApi
         );
         registerSchemaIfNotExists(
@@ -270,6 +316,7 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
     private Schema<?> requestResourceSchema(ResourceType resourceType,
                                             String schemaName,
                                             List<String> required,
+                                            String attributesSchemaName,
                                             String relationshipsSchemaName) {
         Schema<?> resourceSchema = generateSchemaFromType(ResourceObject.class);
         resourceSchema.setName(schemaName);
@@ -286,7 +333,7 @@ public class JsonApiRequestBodySchemaCustomizer implements OasCustomizer {
         typeSchema.setDescription("Resource type");
 
         resourceSchema.setRequired(required);
-        resourceSchema.getProperties().put(ATTRIBUTES_FIELD, new Schema<>().$ref(attributesSchemaName(resourceType)));
+        resourceSchema.getProperties().put(ATTRIBUTES_FIELD, new Schema<>().$ref(attributesSchemaName));
         if (relationshipsSchemaName == null) {
             resourceSchema.getProperties().remove(RELATIONSHIPS_FIELD);
         } else {

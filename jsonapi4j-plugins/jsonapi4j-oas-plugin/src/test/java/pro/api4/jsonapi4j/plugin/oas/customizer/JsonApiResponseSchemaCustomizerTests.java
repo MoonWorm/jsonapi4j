@@ -8,6 +8,17 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.operation.OperationsRegistry;
+import pro.api4.jsonapi4j.operation.ResourceOperations;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryAttributes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryReadOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryResource;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryWriteOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredResource;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -19,6 +30,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasCustomizerTestFixtures.build;
 
 class JsonApiResponseSchemaCustomizerTests {
+
+    private static JsonApi4j withOperations(ResourceOperations<MandatoryAttributes> operations) {
+        PluginRegistry plugins = PluginRegistry.builder()
+                .register(new JsonApiOasPlugin(new DefaultOasProperties()))
+                .build();
+        return JsonApi4j.builder()
+                .pluginRegistry(plugins)
+                .domainRegistry(DomainRegistry.builder(plugins).resource(new MandatoryResource()).build())
+                .operationsRegistry(OperationsRegistry.builder(plugins).operations(operations).build())
+                .build();
+    }
 
     private static Map<String, Schema> responseSchemas(JsonApi4j jsonApi4j) {
         OpenAPI openApi = new OpenAPI();
@@ -36,6 +58,61 @@ class JsonApiResponseSchemaCustomizerTests {
      * external signal to pass or to drift out of sync. So a meta-enabled registry must produce exactly the same
      * schemas as an empty, meta-disabled one.
      */
+    /**
+     * A response cannot promise an attribute is present: one with no value is not serialized, sparse fieldsets let a
+     * client ask for a subset, and access control withholds what the caller may not see. What a *write* must carry is
+     * a different question, so it gets a schema of its own rather than the two directions disagreeing under one name.
+     */
+    @Nested
+    class RequiredAttributes {
+
+        @Test
+        void customise_attributesTheResourceDeclaresRequired_areNotRequiredInTheResponseSchema() {
+            Map<String, Schema> schemas = responseSchemas(withOperations(new MandatoryWriteOperations()));
+
+            assertThat(schemas.get("MandatoryAttributes").getRequired()).isNullOrEmpty();
+        }
+
+        @Test
+        void customise_relaxedAttributes_sayWhyNothingIsGuaranteed() {
+            Map<String, Schema> schemas = responseSchemas(withOperations(new MandatoryWriteOperations()));
+
+            assertThat(schemas.get("MandatoryAttributes").getDescription())
+                    .contains("No attribute is guaranteed to be present")
+                    .contains("MandatoryCreateAttributes");
+        }
+
+        @Test
+        void customise_readOnlyResource_doesNotPointAtARequestSchemaThatIsNeverPublished() {
+            Map<String, Schema> schemas = responseSchemas(withOperations(new MandatoryReadOperations()));
+
+            assertThat(schemas.get("MandatoryAttributes").getDescription())
+                    .contains("No attribute is guaranteed to be present")
+                    .doesNotContain("MandatoryCreateAttributes");
+            assertThat(schemas).doesNotContainKey("MandatoryCreateAttributes");
+        }
+
+        /**
+         * Nothing to relax means nothing to explain: a resource whose attributes were never declared required gets
+         * the schema it always had.
+         */
+        @Test
+        void customise_attributesWithNothingRequired_areLeftUndescribed() {
+            PluginRegistry plugins = PluginRegistry.builder()
+                    .register(new JsonApiOasPlugin(new DefaultOasProperties()))
+                    .build();
+            Map<String, Schema> schemas = responseSchemas(JsonApi4j.builder()
+                    .pluginRegistry(plugins)
+                    .domainRegistry(DomainRegistry.builder(plugins).resource(new SecuredResource()).build())
+                    .operationsRegistry(OperationsRegistry.builder(plugins).operations(new SecuredOperations()).build())
+                    .build());
+
+            assertThat(schemas.get("SecuredAttributes").getRequired()).isNullOrEmpty();
+            assertThat(schemas.get("SecuredAttributes").getDescription()).isNull();
+        }
+
+    }
+
     @Nested
     class MetaTypes {
 

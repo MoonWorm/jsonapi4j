@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,6 +15,7 @@ import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.SecuredResource;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.WriteOperations;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +105,55 @@ class OasDocumentTests {
     }
 
     /**
+     * A customizer adding a response OpenAPI allows but the framework never generates - {@code default}, a range
+     * wildcard - is the documented way to extend the document, and it runs before the two document-wide passes. The
+     * self-check runs last, so a name those passes invent that resolves to nothing fails this.
+     */
+    @Nested
+    class CustomizerAddedResponses {
+
+        /**
+         * Three operations, so a repeated response is actually a candidate for sharing, and
+         * {@link DiagnosticsMode#FAIL_ON_REQUEST} so the self-check turns a name that resolves to nothing into a
+         * failure rather than a log line.
+         */
+        private JsonApi4j strict() {
+            DefaultOasProperties oasProperties = new DefaultOasProperties();
+            oasProperties.setDiagnostics(DiagnosticsMode.FAIL_ON_REQUEST);
+            PluginRegistry plugins = PluginRegistry.builder()
+                    .register(new JsonApiOasPlugin(oasProperties, List.of(new ExtraResponsesCustomizer())))
+                    .build();
+            return JsonApi4j.builder()
+                    .pluginRegistry(plugins)
+                    .domainRegistry(DomainRegistry.builder(plugins).resource(new SecuredResource()).build())
+                    .operationsRegistry(OperationsRegistry.builder(plugins).operations(new WriteOperations()).build())
+                    .build();
+        }
+
+        @Test
+        void generate_customizerAddsNonNumericResponses_producesResolvableReferences() {
+            OpenAPI openApi = OasDocument.generate(strict());
+
+            assertThat(openApi.getComponents().getResponses()).containsKeys("Default", "Status4XX");
+        }
+
+        @Test
+        void generate_customizerAddsNonNumericResponses_leavesEveryOperationPointingAtThem() {
+            OpenAPI openApi = OasDocument.generate(strict());
+
+            assertThat(openApi.getPaths().values())
+                    .flatMap(pathItem -> pathItem.readOperations())
+                    .allSatisfy(operation -> {
+                        assertThat(operation.getResponses().get("default").get$ref())
+                                .isEqualTo("#/components/responses/Default");
+                        assertThat(operation.getResponses().get("4XX").get$ref())
+                                .isEqualTo("#/components/responses/Status4XX");
+                    });
+        }
+
+    }
+
+    /**
      * The self-check exists only to report, so the mode that reports nothing should not pay for the walk over the
      * whole document either.
      */
@@ -132,6 +183,22 @@ class OasDocumentTests {
         void customizers_diagnosticsDisabled_stillFoldsSharedComponents() {
             assertThat(OasDocument.customizers(withDiagnostics(DiagnosticsMode.DISABLED)))
                     .last().isInstanceOf(SharedComponentsCustomizer.class);
+        }
+
+    }
+
+    private static final class ExtraResponsesCustomizer implements OasCustomizer {
+
+        @Override
+        public void customise(OpenAPI openApi) {
+            openApi.getPaths().values().stream()
+                    .flatMap(pathItem -> pathItem.readOperations().stream())
+                    .forEach(operation -> {
+                        operation.getResponses().addApiResponse("default",
+                                new ApiResponse().description("Unexpected error."));
+                        operation.getResponses().addApiResponse("4XX",
+                                new ApiResponse().description("Client error."));
+                    });
         }
 
     }

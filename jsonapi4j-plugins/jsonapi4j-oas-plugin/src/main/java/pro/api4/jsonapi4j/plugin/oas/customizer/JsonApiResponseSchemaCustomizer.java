@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import org.apache.commons.collections4.CollectionUtils;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Discriminator;
 import io.swagger.v3.oas.models.media.Schema;
@@ -170,6 +171,18 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         return schemas;
     }
 
+    /**
+     * The attributes a response may carry - none of them required.
+     * <p>
+     * A required attribute is a promise that it is always there, and a response is in no position to make it. An
+     * attribute with no value is not serialized at all; sparse fieldsets let a client ask for a subset; access
+     * control withholds what the caller may not see. Each of those produces a response that a {@code required} list
+     * copied from the attributes class would reject, and a generated client would model the attribute as
+     * non-nullable and fail to read it.
+     * <p>
+     * What a write must carry is a different question with a different answer, so it gets a schema of its own - see
+     * {@link OasSchemaNamesUtil#requestAttributesSchemaName(ResourceType)}.
+     */
     private PrimaryAndNestedSchemas generateJsonApiAttributesSchema(RegisteredResource<Resource<?>> registeredResource) {
         PrimaryAndNestedSchemas result;
         Object pluginInfo = emptyIfNull(registeredResource.getPluginInfo()).get(JsonApiOasPlugin.NAME);
@@ -179,8 +192,38 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         } else {
             result = new PrimaryAndNestedSchemas(new Schema(), Collections.emptyList());
         }
-        result.getPrimarySchema().setName(attributesSchemaName(registeredResource.getResourceType()));
+        ResourceType resourceType = registeredResource.getResourceType();
+        Schema<?> attributesSchema = result.getPrimarySchema();
+        attributesSchema.setName(attributesSchemaName(resourceType));
+        relaxRequired(attributesSchema, resourceType);
         return result;
+    }
+
+    private void relaxRequired(Schema<?> attributesSchema,
+                               ResourceType resourceType) {
+        if (CollectionUtils.isEmpty(attributesSchema.getRequired())) {
+            return;
+        }
+        attributesSchema.setRequired(null);
+        appendDescription(attributesSchema, attributesDisclaimer(resourceType));
+    }
+
+    /**
+     * Points at the request form only when there is one - a read-only resource has no write schema to compare
+     * against, and naming one that the document does not publish would send a reader looking for it.
+     */
+    /**
+     * Says only what is true of every application: an attribute with no value is not serialized, so a response never
+     * guarantees one. Plugins that narrow a response further - sparse fieldsets, access control - add their own
+     * sentence from their own customizer, so an application running neither is not told about them.
+     */
+    private String attributesDisclaimer(ResourceType resourceType) {
+        String disclaimer = "No attribute is guaranteed to be present in a response: one with no value is omitted.";
+        return operationsRegistry.isResourceOperationConfigured(resourceType, OperationType.CREATE_RESOURCE)
+                ? disclaimer + String.format(
+                        " See %s for what a create must carry.",
+                        OasSchemaNamesUtil.createAttributesSchemaName(resourceType))
+                : disclaimer;
     }
 
     private Optional<PrimaryAndNestedSchemas> generateJsonApiRelationshipsSchema(

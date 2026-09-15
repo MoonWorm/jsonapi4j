@@ -3,13 +3,17 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.domain.RegisteredResource;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasIncludableTypesUtil;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
+import pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
@@ -49,6 +53,7 @@ public class SparseFieldsetsOasCustomizer implements OasCustomizer {
 
     @Override
     public void customise(OpenAPI openApi) {
+        describeSelectableAttributes(openApi);
         if (openApi.getPaths() == null) {
             return;
         }
@@ -61,6 +66,31 @@ public class SparseFieldsetsOasCustomizer implements OasCustomizer {
                     .filter(this::answersWithABody)
                     .forEach(operation -> addFieldsParams(operation, resourceType));
         });
+    }
+
+    /**
+     * Notes on each resource's attributes schema that a client can narrow what comes back.
+     * <p>
+     * The schema already requires nothing - a response never guarantees an attribute - but this plugin is one of the
+     * reasons why, and only this plugin knows it is enabled. The framework's own pass says only what holds with no
+     * plugins at all, so the sentence belongs here rather than there.
+     */
+    private void describeSelectableAttributes(OpenAPI openApi) {
+        if (openApi.getComponents() == null || openApi.getComponents().getSchemas() == null) {
+            return;
+        }
+        OasResourceTypes.registeredResourcesExcludingMeta(domainRegistry)
+                .map(RegisteredResource::getResourceType)
+                .forEach(resourceType -> {
+                    Schema<?> attributesSchema = openApi.getComponents().getSchemas()
+                            .get(OasSchemaNamesUtil.attributesSchemaName(resourceType));
+                    if (attributesSchema == null) {
+                        return;
+                    }
+                    SchemaGeneratorUtil.appendDescription(attributesSchema, String.format(
+                            "A client can narrow what is returned with '%s'.",
+                            SparseFieldsetsAwareRequest.getFieldsParam(resourceType.getType())));
+                });
     }
 
     /**

@@ -18,6 +18,7 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.EntitlementsGroup;
 import pro.api4.jsonapi4j.plugin.ac.annotation.ScopesGroup;
 import pro.api4.jsonapi4j.plugin.ac.config.DefaultAcProperties;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
+import pro.api4.jsonapi4j.plugin.oas.domain.annotation.OasResourceInfo;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
 import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
@@ -42,6 +43,8 @@ final class OasAccessControlTestFixtures {
     static final String READ = "guarded.read";
     static final String WRITE = "guarded.write";
     static final String ADMIN = "admin.full";
+    static final String SENSITIVE = "guarded.sensitive";
+    static final String SENSITIVE_REASON = "a support role";
     static final String SCOPES_REASON = "read access to guarded data, or full admin access";
     static final String ENTITLEMENTS_REASON = "internal support staff";
 
@@ -120,6 +123,7 @@ final class OasAccessControlTestFixtures {
     }
 
     @JsonApiResource(resourceType = GUARDED)
+    @OasResourceInfo(attributes = GuardedAttributes.class)
     public static class GuardedResource implements Resource<GuardedAttributes> {
 
         @Override
@@ -134,7 +138,13 @@ final class OasAccessControlTestFixtures {
 
     }
 
-    public record GuardedAttributes(String id) {
+    @AccessControl(authenticated = Authenticated.AUTHENTICATED)
+    public record GuardedAttributes(
+            String id,
+            @AccessControl(scopes = @AccessControlScopes(@ScopesGroup(SENSITIVE))) String secret,
+            @AccessControl(
+                    scopes = @AccessControlScopes(description = SENSITIVE_REASON, value = @ScopesGroup(SENSITIVE)))
+            String described) {
     }
 
     @JsonApiResourceOperation(resource = GuardedResource.class)
@@ -149,7 +159,7 @@ final class OasAccessControlTestFixtures {
                 }))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
         @AccessControl(
@@ -159,7 +169,7 @@ final class OasAccessControlTestFixtures {
                         value = @EntitlementsGroup("SUPPORT")))
         @Override
         public GuardedAttributes create(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
         @AccessControl(authenticated = Authenticated.ANONYMOUS)
@@ -182,7 +192,7 @@ final class OasAccessControlTestFixtures {
         @AccessControl(scopes = @AccessControlScopes(@ScopesGroup("never.declared")))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
     }
@@ -197,7 +207,7 @@ final class OasAccessControlTestFixtures {
         @AccessControl(scopes = @AccessControlScopes(@ScopesGroup({READ, WRITE})))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
     }
@@ -215,7 +225,7 @@ final class OasAccessControlTestFixtures {
                 requiredScopes = READ))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
     }
@@ -234,7 +244,7 @@ final class OasAccessControlTestFixtures {
                 }))
         @Override
         public GuardedAttributes readById(JsonApiRequest request) {
-            return new GuardedAttributes(request.getResourceId());
+            return new GuardedAttributes(request.getResourceId(), null, null);
         }
 
     }

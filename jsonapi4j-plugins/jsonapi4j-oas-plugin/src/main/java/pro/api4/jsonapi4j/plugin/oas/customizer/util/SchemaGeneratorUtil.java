@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -67,6 +68,22 @@ public final class SchemaGeneratorUtil {
                 .filter(s -> !HAND_WRITTEN_SCHEMA_NAMES.contains(s.getName()))
                 .toList();
         return new PrimaryAndNestedSchemas(parentSchema, parentSchemaWithoutNested);
+    }
+
+    /**
+     * Adds a sentence to whatever a schema already says, rather than replacing it. Descriptions are contributed by
+     * several passes - the generator reads one off the Java type, access control adds what it withholds - and the
+     * separator is chosen so the result reads as prose whether or not the existing text ended a sentence.
+     */
+    public static void appendDescription(Schema<?> schema,
+                                         String note) {
+        String existing = StringUtils.trimToNull(schema.getDescription());
+        if (existing == null) {
+            schema.setDescription(note);
+            return;
+        }
+        String separator = StringUtils.endsWithAny(existing, ".", "!", "?") ? " " : ". ";
+        schema.setDescription(existing + separator + note);
     }
 
     public static String getSchemaName(Class<?> clazz) {

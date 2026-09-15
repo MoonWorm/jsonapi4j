@@ -380,6 +380,7 @@
     },
     "schemas" : {
       "CountriesAttributes" : {
+        "description" : "A client can narrow what is returned with 'fields[countries]'.",
         "properties" : {
           "name" : {
             "description" : "Country's official name",
@@ -392,7 +393,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "name", "region" ],
         "type" : "object"
       },
       "CountriesMultipleResourcesDoc" : {
@@ -537,6 +537,7 @@
         "type" : "object"
       },
       "CurrenciesAttributes" : {
+        "description" : "A client can narrow what is returned with 'fields[currencies]'.",
         "properties" : {
           "name" : {
             "description" : "Currency's full name",
@@ -549,7 +550,6 @@
             "type" : "string"
           }
         },
-        "required" : [ "name", "symbol" ],
         "type" : "object"
       },
       "CurrenciesMultipleResourcesDoc" : {
@@ -834,6 +834,35 @@
         "type" : "object"
       },
       "UsersAttributes" : {
+        "description" : "No attribute is guaranteed to be present in a response: one with no value is omitted. See UsersCreateAttributes for what a create must carry. Every attribute is withheld from a caller who does not qualify - requires an authenticated caller. A client can narrow what is returned with 'fields[users]'.",
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress"
+            },
+            "type" : "array"
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number. Absent from the response unless the caller qualifies - requires the scopes users.sensitive.read and ownership of the resource.",
+            "example" : "123456789",
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "type" : "string"
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersCreateAttributes" : {
+        "description" : "What a create must carry. The response form of these attributes requires nothing, since a response may legitimately omit any of them.",
         "properties" : {
           "addresses" : {
             "description" : "Known addresses. Send an empty array to remove them all.",
@@ -858,7 +887,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "creditCardNumber", "email", "fullName" ],
+        "required" : [ "email", "fullName" ],
         "type" : "object"
       },
       "UsersCreateRequestDoc" : {
@@ -873,7 +902,7 @@
       "UsersCreateResource" : {
         "properties" : {
           "attributes" : {
-            "$ref" : "#/components/schemas/UsersAttributes"
+            "$ref" : "#/components/schemas/UsersCreateAttributes"
           },
           "id" : {
             "description" : "Client-generated resource identifier. Optional — omit it to let the server assign one",
@@ -1159,6 +1188,34 @@
         },
         "type" : "object"
       },
+      "UsersUpdateAttributes" : {
+        "description" : "The attributes to change. PATCH is a partial update, so send only the ones being changed - nothing here is required, even where a create requires it.",
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress"
+            },
+            "type" : "array"
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number",
+            "example" : "123456789",
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "type" : "string"
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
       "UsersUpdateRequestDoc" : {
         "properties" : {
           "data" : {
@@ -1171,7 +1228,7 @@
       "UsersUpdateResource" : {
         "properties" : {
           "attributes" : {
-            "$ref" : "#/components/schemas/UsersAttributes"
+            "$ref" : "#/components/schemas/UsersUpdateAttributes"
           },
           "id" : {
             "description" : "Resource unique identifier. Must match the id in the URL path",

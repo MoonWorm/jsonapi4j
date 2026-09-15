@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.oas.customizer;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtu
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.READ;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCHEME;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SCOPES_REASON;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SENSITIVE;
+import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.SENSITIVE_REASON;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.WRITE;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.allScopes;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.OasAccessControlTestFixtures.jsonApi4j;
@@ -48,9 +51,20 @@ class AccessControlOasCustomizerTests {
 
     private static OpenAPI document(JsonApi4j jsonApi4j) {
         OpenAPI openApi = new OpenAPI();
+        new JsonApiResponseSchemaCustomizer(jsonApi4j).customise(openApi);
+        new JsonApiRequestBodySchemaCustomizer(jsonApi4j).customise(openApi);
         new JsonApiOperationsCustomizer(jsonApi4j).customise(openApi);
         new AccessControlOasCustomizer(jsonApi4j).customise(openApi);
         return openApi;
+    }
+
+    private static Schema<?> attributesSchema(OpenAPI openApi) {
+        return openApi.getComponents().getSchemas().get("GuardedAttributes");
+    }
+
+    private static Schema<?> attribute(OpenAPI openApi,
+                                       String name) {
+        return (Schema<?>) attributesSchema(openApi).getProperties().get(name);
     }
 
     private static OpenAPI guardedDocument() {
@@ -188,6 +202,54 @@ class AccessControlOasCustomizerTests {
             assertThat(security).hasSize(1);
             assertThat(security.get(0)).containsOnlyKeys(PKCE_SCHEME);
             assertThat(security.get(0).get(PKCE_SCHEME)).containsExactly(READ);
+        }
+
+    }
+
+    /**
+     * An anonymized attribute is simply absent, which the response schema allows - it requires nothing. What the
+     * schema adds is why, so a caller reading it knows there is a scope to ask for rather than a bug to report.
+     */
+    @Nested
+    class GuardedAttributesDescriptions {
+
+        @Test
+        void customise_attributeGuardedByScopes_namesThemWhenNoDescriptionWasGiven() {
+            assertThat(attribute(guardedDocument(), "secret").getDescription())
+                    .isEqualTo("Absent from the response unless the caller qualifies - requires the scopes "
+                            + SENSITIVE + ".");
+        }
+
+        @Test
+        void customise_attributeWithADescribedRequirement_usesTheApplicationsWords() {
+            assertThat(attribute(guardedDocument(), "described").getDescription())
+                    .contains(SENSITIVE_REASON)
+                    .doesNotContain(SENSITIVE);
+        }
+
+        /**
+         * Anonymization is outbound, so a guarded attribute is only ever missing from a response. The request form
+         * says what a write must carry and is none of access control's business here.
+         */
+        @Test
+        void customise_requestAttributes_areNotAnnotated() {
+            Schema<?> createAttributes = guardedDocument().getComponents().getSchemas()
+                    .get("GuardedCreateAttributes");
+
+            assertThat(createAttributes).isNotNull();
+            assertThat(((Schema<?>) createAttributes.getProperties().get("secret")).getDescription()).isNull();
+        }
+
+        @Test
+        void customise_unguardedAttribute_isLeftAlone() {
+            assertThat(attribute(guardedDocument(), "id").getDescription()).isNull();
+        }
+
+        @Test
+        void customise_attributesClassGuardedAsAWhole_saysSoOnTheSchema() {
+            assertThat(attributesSchema(guardedDocument()).getDescription())
+                    .contains("Every attribute is withheld")
+                    .contains("an authenticated caller");
         }
 
     }
