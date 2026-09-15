@@ -73,7 +73,7 @@ Each `ErrorObject` has the following fields:
 
 ## Built-in Exception Handling
 
-JsonApi4j registers two default error handler factories.
+JsonApi4j registers one error handler factory by default.
 
 ### DefaultErrorHandlerFactory
 
