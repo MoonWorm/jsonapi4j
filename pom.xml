@@ -91,7 +91,7 @@
         <apache.commons-io.version>2.22.0</apache.commons-io.version>
 
         <!--logging-->
-        <slf4j-api.version>1.7.32</slf4j-api.version>
+        <slf4j-api.version>2.0.19</slf4j-api.version>
 
         <!--codegen-->
         <lombok.version>1.18.48</lombok.version>
