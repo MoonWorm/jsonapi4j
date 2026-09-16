@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.operation.ResourceOperations;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import pro.api4.jsonapi4j.plugin.oas.config.DefaultOasProperties;
+import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.ListingOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryAttributes;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryReadOperations;
 import pro.api4.jsonapi4j.plugin.oas.customizer.OasOperationTestFixtures.MandatoryResource;
@@ -109,6 +110,80 @@ class JsonApiResponseSchemaCustomizerTests {
 
             assertThat(schemas.get("SecuredAttributes").getRequired()).isNullOrEmpty();
             assertThat(schemas.get("SecuredAttributes").getDescription()).isNull();
+        }
+
+    }
+
+    /**
+     * A paginated response carries pagination links and pagination meta, and before these schemas the document said
+     * only "links is a map of links" and "meta is an object" - a client could not find out how to ask for page two.
+     * The documents that are <em>not</em> a page of anything must keep saying the plain thing.
+     */
+    @Nested
+    class Pagination {
+
+        private Map<String, Schema> schemas() {
+            return responseSchemas(OasIncludedTypesTestFixtures.jsonApi4j());
+        }
+
+        private String refOf(Schema<?> schema,
+                             String member) {
+            return ((Schema<?>) schema.getProperties().get(member)).get$ref();
+        }
+
+        @Test
+        void customise_always_namesEveryPaginationLink() {
+            assertThat(schemas().get("PaginationLinksObject").getProperties())
+                    .containsOnlyKeys("self", "first", "prev", "next", "last");
+        }
+
+        @Test
+        void customise_always_namesThePaginationMetaKeys() {
+            Map<String, Schema> properties = schemas().get("PaginationMetaObject").getProperties();
+
+            assertThat(properties).containsOnlyKeys("pagination.nextCursor", "pagination.totalItems");
+            assertThat(properties.get("pagination.nextCursor").getType()).isEqualTo("string");
+            assertThat(properties.get("pagination.totalItems").getType()).isEqualTo("integer");
+        }
+
+        /**
+         * {@code meta} is open by definition and a link may be an application's own, so naming the framework's
+         * members must not close either object.
+         */
+        @Test
+        void customise_always_leavesBothObjectsOpenToTheApplication() {
+            assertThat(schemas().get("PaginationMetaObject").getAdditionalProperties()).isNotNull();
+            assertThat(schemas().get("PaginationLinksObject").getAdditionalProperties()).isNotNull();
+        }
+
+        @Test
+        void customise_collectionDocument_pointsAtThePaginationSchemas() {
+            Schema<?> collection = responseSchemas(
+                    OasOperationTestFixtures.jsonApi4j(new DefaultOasProperties(), new ListingOperations()))
+                    .get("SecuredMultipleResourcesDoc");
+
+            assertThat(refOf(collection, "links")).isEqualTo("#/components/schemas/PaginationLinksObject");
+            assertThat(refOf(collection, "meta")).isEqualTo("#/components/schemas/PaginationMetaObject");
+        }
+
+        /**
+         * The to-many document nested in a resource's {@code relationships} is not a page of anything - it is linkage
+         * rendered alongside its parent - so it keeps the plain links object.
+         */
+        @Test
+        void customise_nestedRelationshipDocument_doesNotClaimToBePaged() {
+            Schema<?> nested = schemas().get("ToManyRelationshipsDoc");
+
+            assertThat(refOf(nested, "links")).isEqualTo("#/components/schemas/LinksObject");
+            assertThat(((Schema<?>) nested.getProperties().get("meta")).get$ref()).isNull();
+        }
+
+        @Test
+        void customise_singleResourceDocument_doesNotClaimToBePaged() {
+            assertThat(refOf(schemas().get("ArticlesSingleResourceDoc"), "links"))
+                    .isEqualTo("#/components/schemas/LinksObject");
+            assertThat(((Schema<?>) schemas().get("ArticlesSingleResourceDoc").getProperties().get("meta")).get$ref())
+                    .isNull();
         }
 
     }

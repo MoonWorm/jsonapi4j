@@ -41,6 +41,10 @@ the most common surprise: a working `sort` that no client can discover.
 | `sort` | `@OasOperationInfo(sortableFields = {"fullName", "email"})` — also becomes the enum of allowed values, both directions (`fullName`, `-fullName`) |
 | `filter[x]` | `@OasOperationInfo(filters = @Filter(name = "region", example = "Asia"))` — the framework owns the spelling, array shape and `maxItems` |
 
+Paginated responses name their `links` and `meta` members, so paging is discoverable from the document:
+following `links.next` and resending `meta."pagination.nextCursor"` as `page[cursor]` are the same
+request.
+
 Limits under `jsonapi4j.validation` are projected into the schemas automatically (`page[limit]`'s
 `maximum`, `include`/`sort`'s `maxItems`, the id's `maxLength`), so don't restate them.
 

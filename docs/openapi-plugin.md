@@ -284,6 +284,9 @@ Every operation documents the status it answers with, including the writes that 
 | `POST /{type}` | `201` with `<Type>SingleResourceDoc` |
 | `PATCH` / `DELETE`, and every relationship write | `204`, no body |
 
+Collection and to-many responses name their pagination `links` and `meta` members rather than leaving them an untyped
+map, so a client can page from the document alone — see [Pagination](/pagination/) for what each one means.
+
 The error responses an operation documents are derived from what the framework can actually answer with, so a
 generated client handles every failure it may see and none that it cannot:
 

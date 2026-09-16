@@ -141,6 +141,23 @@ public final class OasSchemaNamesUtil {
 
     }
 
+    /**
+     * The links a paginated document carries. Separate from {@code LinksObject} because pagination links only appear
+     * on a collection or a standalone to-many relationship - a single resource has no next page - so naming them on
+     * the shared schema would advertise them everywhere.
+     */
+    public static String paginationLinksObjectSchemaName() {
+        return "PaginationLinksObject";
+    }
+
+    /**
+     * The {@code meta} a paginated document carries. {@code meta} is open by definition, so this documents the keys
+     * the framework itself puts there without closing it to an application's own.
+     */
+    public static String paginationMetaObjectSchemaName() {
+        return "PaginationMetaObject";
+    }
+
     public static String attributesSchemaName(ResourceType resourceType) {
         return capitalize(resourceType.getType()) + "Attributes";
     }

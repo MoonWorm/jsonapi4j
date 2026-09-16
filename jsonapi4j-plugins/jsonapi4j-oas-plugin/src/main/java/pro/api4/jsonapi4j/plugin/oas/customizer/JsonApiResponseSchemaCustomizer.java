@@ -4,7 +4,9 @@ import io.swagger.v3.oas.models.OpenAPI;
 import org.apache.commons.collections4.CollectionUtils;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Discriminator;
+import io.swagger.v3.oas.models.media.IntegerSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import lombok.Getter;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.domain.*;
@@ -14,7 +16,9 @@ import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceInfoUtil;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasResourceTypes;
 import pro.api4.jsonapi4j.plugin.oas.domain.model.OasResourceInfoModel;
 import pro.api4.jsonapi4j.model.document.LinkObject;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.LinksObject;
+import pro.api4.jsonapi4j.request.CursorAwareRequest;
 import pro.api4.jsonapi4j.model.document.data.*;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil;
@@ -25,6 +29,8 @@ import pro.api4.jsonapi4j.plugin.oas.JsonApiOasPlugin;
 import java.util.*;
 
 import static org.apache.commons.collections4.MapUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_NEXT_CURSOR_KEY_META;
+import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_TOTAL_ITEMS_KEY_META;
 import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.SingleResourceDoc.INCLUDED_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
@@ -46,24 +52,109 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
     @Override
     public void customise(OpenAPI openApi) {
         registerLinksObjectSchema(openApi);
+        registerPaginationSchemas(openApi);
         registerResourceIdentifierObjectSchema(openApi);
         registerErrorDocSchemas(openApi);
         registerDataDocsSchemas(openApi);
     }
 
     private void registerLinksObjectSchema(OpenAPI openApi) {
+        Schema<Object> linksObjectSchema = new Schema<>();
+        linksObjectSchema.setName(LinksObject.class.getSimpleName());
+        linksObjectSchema.setType("object");
+        linksObjectSchema.setDescription("A JSON:API links object. May contain additional custom links beyond the standard ones.");
+        linksObjectSchema.setAdditionalProperties(linkValueSchema());
+        registerSchemaIfNotExists(linksObjectSchema, openApi);
+    }
+
+    /**
+     * A JSON:API link is either a URL string or a link object, so every link member - named or not - is that union.
+     */
+    private Schema<Object> linkValueSchema() {
         Schema<Object> linkValueSchema = new Schema<>();
         linkValueSchema.oneOf(List.of(
                 new Schema<String>().type("string").description("A URL string"),
                 generateSchemaFromType(LinkObject.class).required(List.of("href"))
         ));
+        return linkValueSchema;
+    }
 
-        Schema<Object> linksObjectSchema = new Schema<>();
-        linksObjectSchema.setName(LinksObject.class.getSimpleName());
-        linksObjectSchema.setType("object");
-        linksObjectSchema.setDescription("A JSON:API links object. May contain additional custom links beyond the standard ones.");
-        linksObjectSchema.setAdditionalProperties(linkValueSchema);
-        registerSchemaIfNotExists(linksObjectSchema, openApi);
+    /**
+     * Names the pagination members of {@code links} and {@code meta}, so a client can page from the document rather
+     * than by guessing.
+     * <p>
+     * Which of them a given response carries is up to what the operation can compute - {@code next} stops once there
+     * are no further pages, and {@code prev} and {@code last} need a position or a total that a cursor-paged
+     * operation may not have - so all of them are optional and say so. What matters is that they are discoverable at
+     * all: without this the whole contract was an untyped map.
+     */
+    private void registerPaginationSchemas(OpenAPI openApi) {
+        Schema<Object> paginationLinks = new Schema<>();
+        paginationLinks.setName(OasSchemaNamesUtil.paginationLinksObjectSchemaName());
+        paginationLinks.setType("object");
+        paginationLinks.setDescription("Links for paging through the collection, alongside any custom links. Every "
+                + "member is optional: which ones a response carries depends on what the operation can work out.");
+        paginationLinks.setAdditionalProperties(linkValueSchema());
+        paginationLinks.addProperty(LinksObject.SELF_FIELD,
+                paginationLink("This page, exactly as it was requested."));
+        paginationLinks.addProperty(LinksObject.FIRST_FIELD,
+                paginationLink("The first page of the collection."));
+        paginationLinks.addProperty(LinksObject.PREV_FIELD,
+                paginationLink("The previous page. Absent on the first page, and whenever the operation cannot "
+                        + "address a page backwards."));
+        paginationLinks.addProperty(LinksObject.NEXT_FIELD,
+                paginationLink(String.format(
+                        "The next page, ready to follow. Absent once there are no further pages. Equivalent to "
+                                + "sending '%s' back as '%s'.",
+                        PAGINATION_NEXT_CURSOR_KEY_META, CursorAwareRequest.CURSOR_PARAM)));
+        paginationLinks.addProperty(LinksObject.LAST_FIELD,
+                paginationLink("The last page. Absent unless the operation knows how many there are."));
+        registerSchemaIfNotExists(paginationLinks, openApi);
+
+        Schema<Object> paginationMeta = new Schema<>();
+        paginationMeta.setName(OasSchemaNamesUtil.paginationMetaObjectSchemaName());
+        paginationMeta.setType("object");
+        paginationMeta.setDescription("Pagination metadata. Open to whatever else the application puts in 'meta'.");
+        paginationMeta.setAdditionalProperties(true);
+        paginationMeta.addProperty(PAGINATION_NEXT_CURSOR_KEY_META, new StringSchema()
+                .description(String.format(
+                        "Cursor for the next page - send it back as '%s'. Absent once there are no further pages.",
+                        CursorAwareRequest.CURSOR_PARAM)));
+        paginationMeta.addProperty(PAGINATION_TOTAL_ITEMS_KEY_META, new IntegerSchema()
+                .format("int64")
+                .description("Total number of items across every page. Absent unless the operation counts them."));
+        registerSchemaIfNotExists(paginationMeta, openApi);
+    }
+
+    /**
+     * A URL string rather than the string-or-link-object union {@code additionalProperties} allows: the builders that
+     * produce these ({@code LinksObject.builder().next(String)}) take an href, so a pagination link is never an
+     * object. Saying so keeps the schema both accurate and readable - the union inlined per member buried the
+     * descriptions that are the point of naming them.
+     */
+    private Schema<String> paginationLink(String description) {
+        return new StringSchema().description(description);
+    }
+
+    /**
+     * Points a paginated document's {@code links} and {@code meta} at the schemas that name their pagination members.
+     * Only the documents a paginated operation answers with get these - a document nested inside a resource's
+     * {@code relationships} is not a page of anything.
+     */
+    private PrimaryAndNestedSchemas withPaginationRefs(PrimaryAndNestedSchemas schemas) {
+        Schema<?> doc = schemas.getPrimarySchema();
+        if (doc.getProperties() == null) {
+            return schemas;
+        }
+        if (doc.getProperties().containsKey(BaseDoc.LINKS_FIELD)) {
+            doc.getProperties().put(BaseDoc.LINKS_FIELD,
+                    new Schema<>().$ref(OasSchemaNamesUtil.paginationLinksObjectSchemaName()));
+        }
+        if (doc.getProperties().containsKey(BaseDoc.META_FIELD)) {
+            doc.getProperties().put(BaseDoc.META_FIELD,
+                    new Schema<>().$ref(OasSchemaNamesUtil.paginationMetaObjectSchemaName()));
+        }
+        return schemas;
     }
 
     private void registerResourceIdentifierObjectSchema(OpenAPI openApi) {
@@ -382,7 +473,8 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
             RegisteredResource<Resource<?>> registeredResource,
             Schema<?> resourceSchema
     ) {
-        PrimaryAndNestedSchemas multipleResourceSchema = withLinksObjectRef(generateAllSchemasFromType(MultipleResourcesDoc.class));
+        PrimaryAndNestedSchemas multipleResourceSchema = withPaginationRefs(
+                withLinksObjectRef(generateAllSchemasFromType(MultipleResourcesDoc.class)));
         multipleResourceSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceSchema.getName())));
         applyIncludedSchema(multipleResourceSchema, generateIncludedSchema(registeredResource.getResourceType(), false));
         multipleResourceSchema.getPrimarySchema().setName(multipleResourcesDocSchemaName(registeredResource.getResourceType()));
@@ -393,7 +485,8 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
             RegisteredResource<Resource<?>> registeredResource,
             String resourceIdentifierSchemaName
     ) {
-        PrimaryAndNestedSchemas toManyRelationshipsDocSchema = withLinksObjectRef(generateAllSchemasFromType(ToManyRelationshipsDoc.class));
+        PrimaryAndNestedSchemas toManyRelationshipsDocSchema = withPaginationRefs(
+                withLinksObjectRef(generateAllSchemasFromType(ToManyRelationshipsDoc.class)));
         toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceIdentifierSchemaName)));
         applyIncludedSchema(toManyRelationshipsDocSchema, generateIncludedSchema(registeredResource.getResourceType(), true));
         toManyRelationshipsDocSchema.getPrimarySchema().setName(toManyRelationshipsDocSchemaName(registeredResource.getResourceType()));

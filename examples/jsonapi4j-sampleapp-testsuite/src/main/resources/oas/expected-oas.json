@@ -421,10 +421,10 @@
             "$ref" : "#/components/schemas/JsonApiObject"
           },
           "links" : {
-            "$ref" : "#/components/schemas/LinksObject"
+            "$ref" : "#/components/schemas/PaginationLinksObject"
           },
           "meta" : {
-            "type" : "object"
+            "$ref" : "#/components/schemas/PaginationMetaObject"
           }
         },
         "type" : "object"
@@ -528,10 +528,10 @@
             "$ref" : "#/components/schemas/JsonApiObject"
           },
           "links" : {
-            "$ref" : "#/components/schemas/LinksObject"
+            "$ref" : "#/components/schemas/PaginationLinksObject"
           },
           "meta" : {
-            "type" : "object"
+            "$ref" : "#/components/schemas/PaginationMetaObject"
           }
         },
         "type" : "object"
@@ -564,10 +564,10 @@
             "$ref" : "#/components/schemas/JsonApiObject"
           },
           "links" : {
-            "$ref" : "#/components/schemas/LinksObject"
+            "$ref" : "#/components/schemas/PaginationLinksObject"
           },
           "meta" : {
-            "type" : "object"
+            "$ref" : "#/components/schemas/PaginationMetaObject"
           }
         },
         "type" : "object"
@@ -748,6 +748,81 @@
           } ]
         },
         "description" : "A JSON:API links object. May contain additional custom links beyond the standard ones.",
+        "type" : "object"
+      },
+      "PaginationLinksObject" : {
+        "additionalProperties" : {
+          "oneOf" : [ {
+            "description" : "A URL string",
+            "type" : "string"
+          }, {
+            "properties" : {
+              "describedby" : {
+                "format" : "uri",
+                "type" : "string"
+              },
+              "href" : {
+                "type" : "string"
+              },
+              "hreflang" : {
+                "type" : "object"
+              },
+              "meta" : {
+                "type" : "object"
+              },
+              "rel" : {
+                "type" : "string"
+              },
+              "title" : {
+                "type" : "string"
+              },
+              "type" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "href" ],
+            "type" : "object"
+          } ]
+        },
+        "description" : "Links for paging through the collection, alongside any custom links. Every member is optional: which ones a response carries depends on what the operation can work out.",
+        "properties" : {
+          "first" : {
+            "description" : "The first page of the collection.",
+            "type" : "string"
+          },
+          "last" : {
+            "description" : "The last page. Absent unless the operation knows how many there are.",
+            "type" : "string"
+          },
+          "next" : {
+            "description" : "The next page, ready to follow. Absent once there are no further pages. Equivalent to sending 'pagination.nextCursor' back as 'page[cursor]'.",
+            "type" : "string"
+          },
+          "prev" : {
+            "description" : "The previous page. Absent on the first page, and whenever the operation cannot address a page backwards.",
+            "type" : "string"
+          },
+          "self" : {
+            "description" : "This page, exactly as it was requested.",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginationMetaObject" : {
+        "additionalProperties" : true,
+        "description" : "Pagination metadata. Open to whatever else the application puts in 'meta'.",
+        "properties" : {
+          "pagination.nextCursor" : {
+            "description" : "Cursor for the next page - send it back as 'page[cursor]'. Absent once there are no further pages.",
+            "type" : "string"
+          },
+          "pagination.totalItems" : {
+            "description" : "Total number of items across every page. Absent unless the operation counts them.",
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
         "type" : "object"
       },
       "ResourceIdentifierObject" : {
@@ -957,10 +1032,10 @@
             "$ref" : "#/components/schemas/JsonApiObject"
           },
           "links" : {
-            "$ref" : "#/components/schemas/LinksObject"
+            "$ref" : "#/components/schemas/PaginationLinksObject"
           },
           "meta" : {
-            "type" : "object"
+            "$ref" : "#/components/schemas/PaginationMetaObject"
           }
         },
         "type" : "object"
@@ -1146,10 +1221,10 @@
             "$ref" : "#/components/schemas/JsonApiObject"
           },
           "links" : {
-            "$ref" : "#/components/schemas/LinksObject"
+            "$ref" : "#/components/schemas/PaginationLinksObject"
           },
           "meta" : {
-            "type" : "object"
+            "$ref" : "#/components/schemas/PaginationMetaObject"
           }
         },
         "type" : "object"
