@@ -25,7 +25,8 @@ If you're using Spring Boot or Quarkus, the plugin is auto-configured with defau
 
 By default, the specification is available at `/jsonapi/oas`. It supports an optional `format` query parameter (`json` or `yaml`) — defaulting to `json` if not provided.
 
-![Swagger UI](/assets/images/swagger-ui-screenshot.png)
+The document the sample app produces is published as a [live OpenAPI example](/oas-example/) — regenerated on
+every build and asserted by the test suite, so it is what the plugin emits today rather than what it emitted once.
 
 Out of the box, **JsonApi4j** generates all schemas and operations automatically. JSON:API parameters, request/response schemas, and error models are all included.
 

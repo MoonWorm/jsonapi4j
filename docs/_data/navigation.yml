@@ -61,6 +61,8 @@ docs:
         url: /sparse-fieldsets-plugin/
       - title: "OpenAPI Plugin"
         url: /openapi-plugin/
+      - title: "Live OpenAPI Example"
+        url: /oas-example/
       - title: "Compound Documents Plugin"
         url: /compound-docs-plugin/
       - title: "Writing a Custom Plugin"

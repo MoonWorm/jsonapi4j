@@ -174,9 +174,9 @@ Unauthenticated requests see no attributes. Authenticated non-owners see `fullNa
 
 Auto-generates an OpenAPI specification from your declared domain — resources, operations, relationships, and JSON:API parameters. Zero configuration required.
 
-![Swagger UI](/docs/assets/images/swagger-ui-screenshot.png)
-
-Access the spec at `/jsonapi/oas` in JSON or YAML format. [Read more](https://api4.pro/openapi-plugin/)
+Access the spec at `/jsonapi/oas` in JSON or YAML format. Browse a
+[live example](https://api4.pro/oas-example/) — the document generated for the sample app.
+[Read more](https://api4.pro/openapi-plugin/)
 
 ### 🔍 Sparse Fieldsets
 

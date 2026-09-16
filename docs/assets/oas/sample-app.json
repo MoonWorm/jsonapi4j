@@ -1,0 +1,2786 @@
+{
+  "components" : {
+    "examples" : {
+      "BadRequestErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "INVALID_ENUM_VALUE",
+            "detail" : "countryCca2 must be a valid ISO2 string",
+            "id" : "550e8401-e29b-41d4-a716-446655440000",
+            "source" : {
+              "parameter" : "countryCca2"
+            },
+            "status" : "400"
+          }, {
+            "code" : "VALUE_INVALID_FORMAT",
+            "detail" : "region should be a valid region string: ['europe', 'asia', 'africa', etc.]",
+            "id" : "770e8402-e29b-41d4-a716-446655440000",
+            "source" : {
+              "parameter" : "filter[region]"
+            },
+            "status" : "400"
+          } ]
+        }
+      },
+      "ConflictErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "CONFLICT",
+            "detail" : "resource type does not belong to this collection",
+            "id" : "6c3e2d54-8f01-4b46-a072-3e9c5f1d7b04",
+            "source" : {
+              "pointer" : "/data/type"
+            },
+            "status" : "409"
+          }, {
+            "code" : "CONFLICT",
+            "detail" : "resource id does not match the one in the request path",
+            "id" : "7d4f3e65-9012-4c57-b183-4f0d6a2e8c15",
+            "source" : {
+              "pointer" : "/data/id"
+            },
+            "status" : "409"
+          } ]
+        }
+      },
+      "ForbiddenErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "CLIENT_GENERATED_ID_NOT_SUPPORTED",
+            "detail" : "resource id is assigned by the server, omit it from the request",
+            "id" : "3a7c9b21-5d18-4e6f-8b02-6c9e1f3a7d42",
+            "source" : {
+              "pointer" : "/data/id"
+            },
+            "status" : "403"
+          }, {
+            "code" : "INSUFFICIENT_ENTITLEMENTS",
+            "detail" : "Access to the operation is forbidden",
+            "id" : "5b2d1c43-7e90-4a35-9f61-2d8b4e0c6a93",
+            "status" : "403"
+          } ]
+        }
+      },
+      "InternalServerErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "INTERNAL_SERVER_ERROR",
+            "detail" : "The service encountered an error",
+            "id" : "120e8403-e29b-41d4-a716-446655440000",
+            "status" : "500"
+          } ]
+        }
+      },
+      "MethodNotSupportedErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "METHOD_NOT_SUPPORTED",
+            "detail" : "HTTP method is not supported: PATCH. Ensure a proper HTTP method for an HTTP request is used: GET, POST",
+            "id" : "ddc96100-efe7-4217-b9d5-e36877c6197a",
+            "status" : "405"
+          } ]
+        }
+      },
+      "NotAcceptableErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "NOT_ACCEPTABLE",
+            "detail" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types.",
+            "id" : "e9e3c771-f8fb-4f36-a01e-713d2f98dd43",
+            "status" : "406"
+          } ]
+        }
+      },
+      "ResourceNotFoundErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "NOT_FOUND",
+            "detail" : "'users' resource of a given id (43023048) is not found",
+            "id" : "770e8406-e29b-41d4-a716-446655440000",
+            "status" : "404"
+          } ]
+        }
+      },
+      "TooManyRequestsErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "TOO_MANY_REQUESTS",
+            "detail" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+            "id" : "880e8407-e29b-41d4-a716-446655440321",
+            "status" : "429"
+          } ]
+        }
+      },
+      "UnauthorizedErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "ACCESS_TOKEN_EXPIRED",
+            "detail" : "The access token has expired. Obtain a new one and retry the request.",
+            "id" : "2f1e8a10-3c44-4b9e-9a77-1d4a2b6c8e01",
+            "status" : "401"
+          } ]
+        }
+      },
+      "UnsupportedMediaTypeErrors" : {
+        "value" : {
+          "errors" : [ {
+            "code" : "UNSUPPORTED_MEDIA_TYPE",
+            "detail" : "Unsupported Media Type: application/json. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header - application/vnd.api+json.",
+            "id" : "880e8407-e29b-41d4-a716-446655440000",
+            "status" : "415"
+          } ]
+        }
+      }
+    },
+    "parameters" : {
+      "FieldsCountries" : {
+        "description" : "Limits the attributes returned for 'countries' resources to the listed ones. Nested paths are allowed (address.city). See the CountriesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
+        "in" : "query",
+        "name" : "fields[countries]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "style" : "form"
+      },
+      "FieldsCurrencies" : {
+        "description" : "Limits the attributes returned for 'currencies' resources to the listed ones. Nested paths are allowed (address.city). See the CurrenciesAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
+        "in" : "query",
+        "name" : "fields[currencies]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "style" : "form"
+      },
+      "FieldsUsers" : {
+        "description" : "Limits the attributes returned for 'users' resources to the listed ones. Nested paths are allowed (address.city). See the UsersAttributes schema for what can be asked for. An empty value returns no attributes.",
+        "explode" : false,
+        "in" : "query",
+        "name" : "fields[users]",
+        "required" : false,
+        "schema" : {
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "style" : "form"
+      },
+      "PageCursor" : {
+        "description" : "Server-generated cursor value pointing to a certain page of items. Optional, targets first page if not specified",
+        "in" : "query",
+        "name" : "page[cursor]",
+        "required" : false,
+        "schema" : {
+          "type" : "string"
+        }
+      }
+    },
+    "responses" : {
+      "BadRequest" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "BadRequestErrors" : {
+                "$ref" : "#/components/examples/BadRequestErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Bad request. Ensure the client composed and sent a proper HTTP request (query parameters, headers, request body, etc.)."
+      },
+      "Conflict" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "ConflictErrors" : {
+                "$ref" : "#/components/examples/ConflictErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Conflict. The requested resource already exists or conflicting with the other existing resources."
+      },
+      "Forbidden" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "ForbiddenErrors" : {
+                "$ref" : "#/components/examples/ForbiddenErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Forbidden. The server understood the request but refuses to authorize it."
+      },
+      "InternalServerError" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "InternalServerErrors" : {
+                "$ref" : "#/components/examples/InternalServerErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Internal Server Error. Something went wrong on the server party."
+      },
+      "MethodNotSupported" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "MethodNotSupportedErrors" : {
+                "$ref" : "#/components/examples/MethodNotSupportedErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Method is not supported. Ensure a proper HTTP method for an HTTP request is used."
+      },
+      "NoContent" : {
+        "description" : "No Content. The server has successfully fulfilled the request and there is no content to send in the response body."
+      },
+      "NotAcceptable" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "NotAcceptableErrors" : {
+                "$ref" : "#/components/examples/NotAcceptableErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Not acceptable. The server doesn't support any of the requested by client acceptable content types."
+      },
+      "ResourceNotFound" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "ResourceNotFoundErrors" : {
+                "$ref" : "#/components/examples/ResourceNotFoundErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Resource not found. The requested operation or resource is not found."
+      },
+      "TooManyRequests" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "TooManyRequestsErrors" : {
+                "$ref" : "#/components/examples/TooManyRequestsErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Too many requests. Client error indicates that a user or application has sent too many requests to a server within a given timeframe.",
+        "headers" : {
+          "X-RateLimit-Burst-Capacity" : {
+            "description" : "Initial number of tokens, and max number of tokens that can be replenished.",
+            "example" : 20,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Remaining" : {
+            "description" : "Number of tokens currently remaining. Refer to X-RateLimit-Replenish-Rate header for replenishment information.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Replenish-Rate" : {
+            "description" : "Number of tokens replenished per second.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "X-RateLimit-Requested-Tokens" : {
+            "description" : "Request cost in tokens.",
+            "example" : 5,
+            "required" : true,
+            "schema" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          }
+        }
+      },
+      "Unauthorized" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "UnauthorizedErrors" : {
+                "$ref" : "#/components/examples/UnauthorizedErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Unauthorized. The request requires user authentication."
+      },
+      "UnsupportedMediaType" : {
+        "content" : {
+          "application/vnd.api+json" : {
+            "examples" : {
+              "UnsupportedMediaTypeErrors" : {
+                "$ref" : "#/components/examples/UnsupportedMediaTypeErrors"
+              }
+            },
+            "schema" : {
+              "$ref" : "#/components/schemas/ErrorsDoc"
+            }
+          }
+        },
+        "description" : "Unsupported Media Type. The JSON:API is using content negotiation. Ensure the proper media type is set into 'Content-Type' header."
+      }
+    },
+    "schemas" : {
+      "CountriesAttributes" : {
+        "description" : "A client can narrow what is returned with 'fields[countries]'.",
+        "properties" : {
+          "name" : {
+            "description" : "Country's official name",
+            "example" : "Belgium",
+            "type" : "string"
+          },
+          "region" : {
+            "description" : "Country's region",
+            "example" : "Europe",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CountriesMultipleResourcesDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CountriesResource"
+            },
+            "type" : "array"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/PaginationLinksObject"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMetaObject"
+          }
+        },
+        "type" : "object"
+      },
+      "CountriesRelationships" : {
+        "properties" : {
+          "currencies" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsDoc"
+          }
+        }
+      },
+      "CountriesResource" : {
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/CountriesAttributes"
+          },
+          "id" : {
+            "description" : "Country unique identifier (ISO 3166)",
+            "example" : "US",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/CountriesRelationships"
+          },
+          "type" : {
+            "description" : "Resource type",
+            "enum" : [ "countries" ],
+            "example" : "countries",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "CountriesSingleResourceDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/CountriesResource"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "CountriesToManyRelationshipsDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject"
+            },
+            "type" : "array"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "currencies" : "#/components/schemas/CurrenciesResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CurrenciesResource"
+              }, {
+                "$ref" : "#/components/schemas/CountriesResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/PaginationLinksObject"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMetaObject"
+          }
+        },
+        "type" : "object"
+      },
+      "CurrenciesAttributes" : {
+        "description" : "A client can narrow what is returned with 'fields[currencies]'.",
+        "properties" : {
+          "name" : {
+            "description" : "Currency's full name",
+            "example" : "South Korean won",
+            "type" : "string"
+          },
+          "symbol" : {
+            "description" : "Currency's symbol",
+            "example" : "€",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "CurrenciesMultipleResourcesDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CurrenciesResource"
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/PaginationLinksObject"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMetaObject"
+          }
+        },
+        "type" : "object"
+      },
+      "CurrenciesResource" : {
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/CurrenciesAttributes"
+          },
+          "id" : {
+            "description" : "Currency code (ISO 4217)",
+            "example" : "NOK",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "type" : {
+            "description" : "Resource type",
+            "enum" : [ "currencies" ],
+            "example" : "currencies",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "ErrorObject" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/ErrorSourceObject"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ErrorSourceObject" : {
+        "properties" : {
+          "header" : {
+            "type" : "string"
+          },
+          "parameter" : {
+            "type" : "string"
+          },
+          "path" : {
+            "type" : "string"
+          },
+          "pointer" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ErrorsDoc" : {
+        "properties" : {
+          "errors" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ErrorObject"
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "HomeAddress" : {
+        "description" : "An address. Carrying a door code makes it a home address, which is reflected in the response; omit it for an ordinary one.",
+        "properties" : {
+          "city" : {
+            "description" : "City",
+            "example" : "Oslo",
+            "type" : "string"
+          },
+          "doorCode" : {
+            "description" : "Door code",
+            "example" : "1234",
+            "type" : "string"
+          },
+          "zip" : {
+            "description" : "Postal code",
+            "example" : "0150",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "JsonApiObject" : {
+        "properties" : {
+          "ext" : {
+            "items" : {
+              "format" : "uri",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "profile" : {
+            "items" : {
+              "format" : "uri",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "LinksObject" : {
+        "additionalProperties" : {
+          "oneOf" : [ {
+            "description" : "A URL string",
+            "type" : "string"
+          }, {
+            "properties" : {
+              "describedby" : {
+                "format" : "uri",
+                "type" : "string"
+              },
+              "href" : {
+                "type" : "string"
+              },
+              "hreflang" : {
+                "type" : "object"
+              },
+              "meta" : {
+                "type" : "object"
+              },
+              "rel" : {
+                "type" : "string"
+              },
+              "title" : {
+                "type" : "string"
+              },
+              "type" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "href" ],
+            "type" : "object"
+          } ]
+        },
+        "description" : "A JSON:API links object. May contain additional custom links beyond the standard ones.",
+        "type" : "object"
+      },
+      "PaginationLinksObject" : {
+        "additionalProperties" : {
+          "oneOf" : [ {
+            "description" : "A URL string",
+            "type" : "string"
+          }, {
+            "properties" : {
+              "describedby" : {
+                "format" : "uri",
+                "type" : "string"
+              },
+              "href" : {
+                "type" : "string"
+              },
+              "hreflang" : {
+                "type" : "object"
+              },
+              "meta" : {
+                "type" : "object"
+              },
+              "rel" : {
+                "type" : "string"
+              },
+              "title" : {
+                "type" : "string"
+              },
+              "type" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "href" ],
+            "type" : "object"
+          } ]
+        },
+        "description" : "Links for paging through the collection, alongside any custom links. Every member is optional: which ones a response carries depends on what the operation can work out.",
+        "properties" : {
+          "first" : {
+            "description" : "The first page of the collection.",
+            "type" : "string"
+          },
+          "last" : {
+            "description" : "The last page. Absent unless the operation knows how many there are.",
+            "type" : "string"
+          },
+          "next" : {
+            "description" : "The next page, ready to follow. Absent once there are no further pages. Equivalent to sending 'pagination.nextCursor' back as 'page[cursor]'.",
+            "type" : "string"
+          },
+          "prev" : {
+            "description" : "The previous page. Absent on the first page, and whenever the operation cannot address a page backwards.",
+            "type" : "string"
+          },
+          "self" : {
+            "description" : "This page, exactly as it was requested.",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "PaginationMetaObject" : {
+        "additionalProperties" : true,
+        "description" : "Pagination metadata. Open to whatever else the application puts in 'meta'.",
+        "properties" : {
+          "pagination.nextCursor" : {
+            "description" : "Cursor for the next page - send it back as 'page[cursor]'. Absent once there are no further pages.",
+            "type" : "string"
+          },
+          "pagination.totalItems" : {
+            "description" : "Total number of items across every page. Absent unless the operation counts them.",
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "type" : "object"
+      },
+      "ResourceIdentifierObject" : {
+        "properties" : {
+          "id" : {
+            "description" : "Linked resource unique identifier",
+            "example" : "12345",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "type" : {
+            "description" : "Linked resource type",
+            "example" : "articles",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "ToManyRelationshipsDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject"
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "ToManyRelationshipsRequestDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "ToOneRelationshipDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/ResourceIdentifierObject"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "ToOneRelationshipRequestDoc" : {
+        "properties" : {
+          "data" : {
+            "allOf" : [ {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject"
+            } ],
+            "description" : "Resource linkage, or null to clear the relationship",
+            "nullable" : true
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersAttributes" : {
+        "description" : "No attribute is guaranteed to be present in a response: one with no value is omitted. See UsersCreateAttributes for what a create must carry. Every attribute is withheld from a caller who does not qualify - requires an authenticated caller. A client can narrow what is returned with 'fields[users]'.",
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress"
+            },
+            "type" : "array"
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number. Absent from the response unless the caller qualifies - requires the scopes users.sensitive.read and ownership of the resource.",
+            "example" : "123456789",
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "type" : "string"
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersCreateAttributes" : {
+        "description" : "What a create must carry. The response form of these attributes requires nothing, since a response may legitimately omit any of them.",
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress"
+            },
+            "type" : "array"
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number",
+            "example" : "123456789",
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "type" : "string"
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "fullName" ],
+        "type" : "object"
+      },
+      "UsersCreateRequestDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersCreateResource"
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersCreateResource" : {
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersCreateAttributes"
+          },
+          "id" : {
+            "description" : "Client-generated resource identifier. Optional — omit it to let the server assign one",
+            "example" : "3",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRequestRelationships"
+          },
+          "type" : {
+            "description" : "Resource type",
+            "enum" : [ "users" ],
+            "example" : "users",
+            "type" : "string"
+          }
+        },
+        "required" : [ "type" ],
+        "type" : "object"
+      },
+      "UsersMultipleResourcesDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UsersResource"
+            },
+            "type" : "array"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource"
+              }, {
+                "$ref" : "#/components/schemas/UsersResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/PaginationLinksObject"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMetaObject"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersRelationships" : {
+        "properties" : {
+          "citizenships" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsDoc"
+          },
+          "placeOfBirth" : {
+            "$ref" : "#/components/schemas/ToOneRelationshipDoc"
+          },
+          "relatives" : {
+            "$ref" : "#/components/schemas/UsersRelativesToManyRelationshipsDoc"
+          }
+        }
+      },
+      "UsersRelativesResourceIdentifier" : {
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/UsersRelativesResourceIdentifierMeta"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersRelativesResourceIdentifierMeta" : {
+        "properties" : {
+          "relationshipType" : {
+            "enum" : [ "HUSBAND", "WIFE", "SON", "DAUGHTER", "MOTHER", "FATHER", "BROTHER" ],
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersRelativesToManyRelationshipsDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UsersRelativesResourceIdentifier"
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersRelativesToManyRelationshipsRequestDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/UsersRelativesResourceIdentifier"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersRequestRelationships" : {
+        "description" : "Relationship linkage to write alongside the resource. Every member is optional — omit one to leave that relationship untouched.",
+        "properties" : {
+          "citizenships" : {
+            "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc"
+          },
+          "placeOfBirth" : {
+            "$ref" : "#/components/schemas/ToOneRelationshipRequestDoc"
+          },
+          "relatives" : {
+            "$ref" : "#/components/schemas/UsersRelativesToManyRelationshipsRequestDoc"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersResource" : {
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersAttributes"
+          },
+          "id" : {
+            "description" : "User unique identifier",
+            "example" : "3",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRelationships"
+          },
+          "type" : {
+            "description" : "Resource type",
+            "enum" : [ "users" ],
+            "example" : "users",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      },
+      "UsersSingleResourceDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersResource"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource"
+              }, {
+                "$ref" : "#/components/schemas/UsersResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersToManyRelationshipsDoc" : {
+        "properties" : {
+          "data" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ResourceIdentifierObject"
+            },
+            "type" : "array"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource"
+              }, {
+                "$ref" : "#/components/schemas/UsersResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/PaginationLinksObject"
+          },
+          "meta" : {
+            "$ref" : "#/components/schemas/PaginationMetaObject"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersToOneRelationshipDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/ResourceIdentifierObject"
+          },
+          "included" : {
+            "items" : {
+              "discriminator" : {
+                "mapping" : {
+                  "countries" : "#/components/schemas/CountriesResource",
+                  "users" : "#/components/schemas/UsersResource"
+                },
+                "propertyName" : "type"
+              },
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/CountriesResource"
+              }, {
+                "$ref" : "#/components/schemas/UsersResource"
+              } ]
+            },
+            "type" : "array"
+          },
+          "jsonapi" : {
+            "$ref" : "#/components/schemas/JsonApiObject"
+          },
+          "links" : {
+            "$ref" : "#/components/schemas/LinksObject"
+          },
+          "meta" : {
+            "type" : "object"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersUpdateAttributes" : {
+        "description" : "The attributes to change. PATCH is a partial update, so send only the ones being changed - nothing here is required, even where a create requires it.",
+        "properties" : {
+          "addresses" : {
+            "description" : "Known addresses. Send an empty array to remove them all.",
+            "items" : {
+              "$ref" : "#/components/schemas/HomeAddress"
+            },
+            "type" : "array"
+          },
+          "creditCardNumber" : {
+            "description" : "User's credit card number",
+            "example" : "123456789",
+            "type" : "string"
+          },
+          "email" : {
+            "description" : "Email",
+            "example" : "john@doe.com",
+            "type" : "string"
+          },
+          "fullName" : {
+            "description" : "First and last name together",
+            "example" : "John Smith",
+            "type" : "string"
+          }
+        },
+        "type" : "object"
+      },
+      "UsersUpdateRequestDoc" : {
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/UsersUpdateResource"
+          }
+        },
+        "required" : [ "data" ],
+        "type" : "object"
+      },
+      "UsersUpdateResource" : {
+        "properties" : {
+          "attributes" : {
+            "$ref" : "#/components/schemas/UsersUpdateAttributes"
+          },
+          "id" : {
+            "description" : "Resource unique identifier. Must match the id in the URL path",
+            "example" : "3",
+            "type" : "string"
+          },
+          "lid" : {
+            "type" : "string"
+          },
+          "meta" : {
+            "type" : "object"
+          },
+          "relationships" : {
+            "$ref" : "#/components/schemas/UsersRequestRelationships"
+          },
+          "type" : {
+            "description" : "Resource type",
+            "enum" : [ "users" ],
+            "example" : "users",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "type" ],
+        "type" : "object"
+      }
+    },
+    "securitySchemes" : {
+      "Authorization_Code_With_PKCE" : {
+        "description" : "Use this grant flow to access personalized user data.",
+        "flows" : {
+          "authorizationCode" : {
+            "authorizationUrl" : "http://foo.bar/authorizationUrl",
+            "scopes" : {
+              "users.citizenships.read" : "Read a user's citizenships relationship",
+              "users.read" : "Read-only access to a user data",
+              "users.sensitive.read" : "Read a user's sensitive attributes"
+            },
+            "tokenUrl" : "http://foo.bar/tokenUrl"
+          }
+        },
+        "type" : "oauth2"
+      },
+      "Client_Credentials" : {
+        "description" : "Use this grant flow to access non-personalized data.",
+        "flows" : {
+          "clientCredentials" : {
+            "scopes" : { },
+            "tokenUrl" : "http://foo.bar/tokenUrl"
+          }
+        },
+        "type" : "oauth2"
+      }
+    }
+  },
+  "externalDocs" : {
+    "description" : "Extra documentation description",
+    "url" : "http://foo.bar.docs/article-1"
+  },
+  "info" : {
+    "contact" : {
+      "email" : "john.doe@foo.bar",
+      "name" : "John Doe",
+      "url" : "http://users.foo.bar/john"
+    },
+    "description" : "JSON:API Users & Countries Sample App",
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title" : "JSON:API Users & Countries",
+    "version" : "1.0.0"
+  },
+  "openapi" : "3.0.1",
+  "paths" : {
+    "/jsonapi/countries" : {
+      "get" : {
+        "description" : "Retrieves all country details with available filters (if applicable).",
+        "operationId" : "get-all-countries",
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
+          "example" : "currencies",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCurrencies"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        }, {
+          "description" : "Allows to filter countries based on id attribute value",
+          "explode" : false,
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "US",
+              "type" : "string"
+            },
+            "maxItems" : 20,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Allows to filter countries based on region attribute value",
+          "explode" : false,
+          "in" : "query",
+          "name" : "filter[region]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "Asia",
+              "type" : "string"
+            },
+            "maxItems" : 20,
+            "type" : "array"
+          },
+          "style" : "form"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesMultipleResourcesDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Get all countries",
+        "tags" : [ "Countries" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "currencies" ]
+        }
+      }
+    },
+    "/jsonapi/countries/{id}" : {
+      "get" : {
+        "description" : "Retrieves country details by resource id.",
+        "operationId" : "get-single-country",
+        "parameters" : [ {
+          "description" : "Country unique identifier (ISO 3166). Required",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
+          "example" : "currencies",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCurrencies"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesSingleResourceDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Get single country",
+        "tags" : [ "Countries" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "currencies" ]
+        }
+      }
+    },
+    "/jsonapi/countries/{id}/relationships/currencies" : {
+      "get" : {
+        "description" : "Retrieves currencies to-many relationship details of the related country resource.",
+        "operationId" : "get-country-currencies-relationship",
+        "parameters" : [ {
+          "description" : "Country unique identifier (ISO 3166). Required",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
+          "example" : "currencies",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "currencies",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCurrencies"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CountriesToManyRelationshipsDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: currencies",
+        "tags" : [ "Countries" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "currencies" ]
+        }
+      }
+    },
+    "/jsonapi/currencies" : {
+      "get" : {
+        "description" : "Retrieves all currency details with available filters (if applicable).",
+        "operationId" : "get-all-currencies",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FieldsCurrencies"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        }, {
+          "description" : "Allows to filter currencies based on id attribute value",
+          "explode" : false,
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "NOK",
+              "type" : "string"
+            },
+            "maxItems" : 20,
+            "type" : "array"
+          },
+          "style" : "form"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CurrenciesMultipleResourcesDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Get all currencies",
+        "tags" : [ "Currencies" ]
+      }
+    },
+    "/jsonapi/users" : {
+      "get" : {
+        "description" : "Retrieves all user details with available filters (if applicable).",
+        "operationId" : "get-all-users",
+        "parameters" : [ {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
+          "example" : "citizenships",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        }, {
+          "description" : "Maximum number of items to return in a single page. Optional",
+          "in" : "query",
+          "name" : "page[limit]",
+          "required" : false,
+          "schema" : {
+            "default" : 20,
+            "format" : "int64",
+            "maximum" : 100,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Number of items to skip before collecting the page. Optional",
+          "in" : "query",
+          "name" : "page[offset]",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Sort order. Prefix a field with '-' for descending, e.g. '-fullName'. Optional",
+          "example" : "fullName",
+          "explode" : false,
+          "in" : "query",
+          "name" : "sort",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "enum" : [ "fullName", "-fullName", "email", "-email" ],
+              "type" : "string"
+            },
+            "maxItems" : 5,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "description" : "Allows to filter users based on id attribute value",
+          "explode" : false,
+          "in" : "query",
+          "name" : "filter[id]",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "3",
+              "type" : "string"
+            },
+            "maxItems" : 20,
+            "type" : "array"
+          },
+          "style" : "form"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersMultipleResourcesDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Get all users",
+        "tags" : [ "Users" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ]
+        }
+      },
+      "post" : {
+        "description" : "Creates a new instance of user's resource with relationships (if applicable).",
+        "operationId" : "create-single-user",
+        "parameters" : [ {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersCreateRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersSingleResourceDoc"
+                }
+              }
+            },
+            "description" : "Created. The request has been fulfilled and a new resource has been created."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Create single user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}" : {
+      "delete" : {
+        "description" : "Deletes the existing instance of user's resource.",
+        "operationId" : "delete-single-user",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Delete single user",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves user details by resource id.",
+        "operationId" : "get-single-user",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
+          "example" : "citizenships",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersSingleResourceDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Get single user",
+        "tags" : [ "Users" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "citizenships", "placeOfBirth", "relatives" ]
+        }
+      },
+      "patch" : {
+        "description" : "Updates the existing instance of user's resource.",
+        "operationId" : "update-single-user",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersUpdateRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "$ref" : "#/components/responses/Conflict"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Update single user",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/citizenships" : {
+      "delete" : {
+        "description" : "Removes members from citizenships to-many relationship of the related user resource.",
+        "operationId" : "delete-user-citizenships-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
+        } ],
+        "summary" : "Relationship: citizenships (delete)",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves citizenships to-many relationship details of the related user resource.",
+        "operationId" : "get-user-citizenships-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
+          "example" : "citizenships",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "citizenships",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToManyRelationshipsDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
+        } ],
+        "summary" : "Relationship: citizenships",
+        "tags" : [ "Users" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "citizenships" ]
+        }
+      },
+      "patch" : {
+        "description" : "Manages citizenships to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-citizenships-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
+        } ],
+        "summary" : "Relationship: citizenships (create/update/delete)",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Adds members to citizenships to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "operationId" : "add-user-citizenships-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Authorization_Code_With_PKCE" : [ "users.citizenships.read" ]
+        } ],
+        "summary" : "Relationship: citizenships (add)",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/placeOfBirth" : {
+      "get" : {
+        "description" : "Retrieves placeOfBirth to-one relationship details of the related user resource.",
+        "operationId" : "get-user-placeofbirth-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth. Dotted paths reach further levels (e.g. 'placeOfBirth.<relationship>'); this document describes the first level only",
+          "example" : "placeOfBirth",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "placeOfBirth",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToOneRelationshipDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: placeOfBirth(read)",
+        "tags" : [ "Users" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "placeOfBirth" ]
+        }
+      },
+      "patch" : {
+        "description" : "Manages placeOfBirth to-one relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-placeofbirth-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ToOneRelationshipRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: placeOfBirth (create/update/delete)",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/jsonapi/users/{id}/relationships/relatives" : {
+      "delete" : {
+        "description" : "Removes members from relatives to-many relationship of the related user resource.",
+        "operationId" : "delete-user-relatives-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersRelativesToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: relatives (delete)",
+        "tags" : [ "Users" ]
+      },
+      "get" : {
+        "description" : "Retrieves relatives to-many relationship details of the related user resource.",
+        "operationId" : "get-user-relatives-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
+          "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives. Dotted paths reach further levels (e.g. 'relatives.<relationship>'); this document describes the first level only",
+          "example" : "relatives",
+          "explode" : false,
+          "in" : "query",
+          "name" : "include",
+          "required" : false,
+          "schema" : {
+            "items" : {
+              "example" : "relatives",
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "type" : "array"
+          },
+          "style" : "form"
+        }, {
+          "$ref" : "#/components/parameters/FieldsUsers"
+        }, {
+          "$ref" : "#/components/parameters/FieldsCountries"
+        }, {
+          "$ref" : "#/components/parameters/PageCursor"
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/vnd.api+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UsersToManyRelationshipsDoc"
+                }
+              }
+            },
+            "description" : "OK. The request has succeeded."
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: relatives",
+        "tags" : [ "Users" ],
+        "x-operation-properties" : {
+          "jsonapi-available-relationships" : [ "relatives" ]
+        }
+      },
+      "patch" : {
+        "description" : "Manages relatives to-many relationship details of the related user resource. Use this operation if you need to create, update or delete relationship's linkage.",
+        "operationId" : "update-user-relatives-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersRelativesToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: relatives (create/update/delete)",
+        "tags" : [ "Users" ]
+      },
+      "post" : {
+        "description" : "Adds members to relatives to-many relationship of the related user resource. Members that already exist will not be added again.",
+        "operationId" : "add-user-relatives-relationship",
+        "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/vnd.api+json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UsersRelativesToManyRelationshipsRequestDoc"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "$ref" : "#/components/responses/NoContent"
+          },
+          "400" : {
+            "$ref" : "#/components/responses/BadRequest"
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthorized"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/ResourceNotFound"
+          },
+          "405" : {
+            "$ref" : "#/components/responses/MethodNotSupported"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "415" : {
+            "$ref" : "#/components/responses/UnsupportedMediaType"
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/InternalServerError"
+          }
+        },
+        "security" : [ {
+          "Client_Credentials" : [ ]
+        }, {
+          "Authorization_Code_With_PKCE" : [ ]
+        } ],
+        "summary" : "Relationship: relatives (add)",
+        "tags" : [ "Users" ]
+      }
+    }
+  },
+  "security" : [ {
+    "Client_Credentials" : [ ]
+  }, {
+    "Authorization_Code_With_PKCE" : [ ]
+  } ],
+  "servers" : [ {
+    "description" : "Localhost",
+    "url" : "http://localhost:8080"
+  } ],
+  "tags" : [ {
+    "name" : "Countries"
+  }, {
+    "name" : "Currencies"
+  }, {
+    "name" : "Users"
+  } ]
+}

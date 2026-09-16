@@ -37,10 +37,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  */
 public abstract class OasDocumentTests {
 
-    private static final String GOLDEN_RESOURCE = "/oas/expected-oas.json";
-    private static final String TESTSUITE_MODULE = "examples/jsonapi4j-sampleapp-testsuite";
-    private static final String GOLDEN_SOURCE = TESTSUITE_MODULE + "/src/main/resources" + GOLDEN_RESOURCE;
-    private static final String UPDATE_GOLDEN_PROPERTY = "jsonapi4j.oas.golden.update";
+
 
     private static final String JSON_CONTENT_TYPE = "application/json";
     private static final String YAML_CONTENT_TYPE = "application/yaml";
@@ -144,59 +141,25 @@ public abstract class OasDocumentTests {
     }
 
     private boolean isUpdatingGoldenFile() {
-        return Boolean.getBoolean(UPDATE_GOLDEN_PROPERTY);
+        return GoldenOasDocument.isBeingRegenerated();
     }
 
     private void assertMatchesGoldenFile(String actual) {
         if (isUpdatingGoldenFile()) {
-            Path goldenSourceFile = resolveGoldenSourceFile();
-            writeGoldenFile(goldenSourceFile, actual);
+            Path goldenSourceFile = GoldenOasDocument.repositoryFile(GoldenOasDocument.GOLDEN_SOURCE);
+            Path publishedCopy = GoldenOasDocument.repositoryFile(GoldenOasDocument.PUBLISHED_COPY);
+            GoldenOasDocument.write(goldenSourceFile, actual);
+            GoldenOasDocument.write(publishedCopy, actual);
             fail(String.format(
-                    "Golden OAS file regenerated at %s. Review the diff, then re-run without -D%s=true.",
-                    goldenSourceFile, UPDATE_GOLDEN_PROPERTY
+                    "Golden OAS file regenerated at %s and %s. Review the diff, then re-run without -D%s=true.",
+                    goldenSourceFile, publishedCopy, GoldenOasDocument.UPDATE_GOLDEN_PROPERTY
             ));
         }
         assertJsonEquals(readGoldenFile(), actual);
     }
 
     private String readGoldenFile() {
-        try (InputStream in = OasDocumentTests.class.getResourceAsStream(GOLDEN_RESOURCE)) {
-            if (in == null) {
-                return fail(String.format(
-                        "Golden OAS file %s is missing from the classpath. Generate it with -D%s=true.",
-                        GOLDEN_RESOURCE, UPDATE_GOLDEN_PROPERTY
-                ));
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private void writeGoldenFile(Path goldenSourceFile, String content) {
-        try {
-            Files.createDirectories(goldenSourceFile.getParent());
-            Files.writeString(goldenSourceFile, content + System.lineSeparator(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /**
-     * Tests run from a sample app module, while the golden file lives in the shared testsuite module. Walk
-     * up from the working directory until the repository root - the first ancestor holding the testsuite
-     * source tree - comes into view.
-     */
-    private Path resolveGoldenSourceFile() {
-        for (Path candidate = Paths.get("").toAbsolutePath(); candidate != null; candidate = candidate.getParent()) {
-            if (Files.isRegularFile(candidate.resolve(TESTSUITE_MODULE).resolve("pom.xml"))) {
-                return candidate.resolve(GOLDEN_SOURCE);
-            }
-        }
-        return fail(String.format(
-                "Cannot locate %s above the working directory %s. Run the test from within the repository.",
-                GOLDEN_SOURCE, Paths.get("").toAbsolutePath()
-        ));
+        return GoldenOasDocument.readGolden();
     }
 
     private Map<String, Object> readJson(String body) {
