@@ -85,6 +85,64 @@ public abstract class OasDocumentTests {
         assertJsonEquals(first, second);
     }
 
+    /**
+     * The document endpoint serves one thing and only reads: anything but a GET or a HEAD is a mistake worth saying
+     * out loud, with {@code Allow} so the caller learns what is on offer.
+     */
+    @Test
+    public void request_methodOtherThanGetOrHead_isRefusedWithAllow() {
+        Response response = given().post(oasUrl()).thenReturn();
+
+        assertThat(response.statusCode()).isEqualTo(405);
+        assertThat(response.header("Allow")).isEqualTo("GET, HEAD");
+    }
+
+    @Test
+    public void get_acceptYaml_servesYamlWithoutAFormatParameter() {
+        Response response = given().header("Accept", YAML_CONTENT_TYPE).get(oasUrl()).thenReturn();
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.contentType()).startsWith(YAML_CONTENT_TYPE);
+    }
+
+    /**
+     * An explicit {@code format} is the caller being specific, so it outranks whatever the client library happened
+     * to put in {@code Accept}.
+     */
+    @Test
+    public void get_formatParameter_winsOverTheAcceptHeader() {
+        Response response = given()
+                .header("Accept", YAML_CONTENT_TYPE)
+                .queryParam("format", "json")
+                .get(oasUrl())
+                .thenReturn();
+
+        assertThat(response.contentType()).startsWith(JSON_CONTENT_TYPE);
+    }
+
+    /**
+     * The document is built once and served from a cache, so a caller holding its {@code ETag} should not have to
+     * download it again - these endpoints get polled.
+     */
+    @Test
+    public void get_eTagTheCallerAlreadyHolds_answersNotModifiedWithNoBody() {
+        String eTag = given().get(oasUrl()).thenReturn().header("ETag");
+        assertThat(eTag).isNotBlank();
+
+        Response response = given().header("If-None-Match", eTag).get(oasUrl()).thenReturn();
+
+        assertThat(response.statusCode()).isEqualTo(304);
+        assertThat(response.asString()).isEmpty();
+    }
+
+    @Test
+    public void get_eTagThatNoLongerMatches_servesTheDocumentAgain() {
+        Response response = given().header("If-None-Match", "\"stale\"").get(oasUrl()).thenReturn();
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.asString()).isNotEmpty();
+    }
+
     private boolean isUpdatingGoldenFile() {
         return Boolean.getBoolean(UPDATE_GOLDEN_PROPERTY);
     }

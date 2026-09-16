@@ -294,7 +294,7 @@ generated client handles every failure it may see and none that it cannot:
 |--------|---------------|
 | `400`, `405`, `406`, `429`, `500` | every operation |
 | `401` | operations declaring an OAuth2 security requirement — the host's security layer rejects the request before the framework sees it |
-| `403` | `POST /{type}` (JSON:API reserves id generation to the server), and every write when the Access Control plugin is enabled |
+| `403` | `POST /{type}` (JSON:API reserves id generation to the server), and any write that declares an `@AccessControl` requirement — a write the plugin does not guard has nothing to refuse |
 | `404` | operations whose path carries an `{id}` — a collection read and a create have nothing that can be missing |
 | `409` | `POST /{type}` and `PATCH /{type}/{id}`, whose body repeats a type or id the collection or path already fixed |
 | `415` | operations carrying a request body |

@@ -17,6 +17,12 @@ public enum HttpHeaders {
     CACHE_CONTROL("Cache-Control"),
     /** The standard {@code Location} response header (used on 201 Created responses). */
     LOCATION("Location"),
+    /** The standard {@code ETag} response header, identifying the exact bytes served. */
+    ETAG("ETag"),
+    /** The standard {@code If-None-Match} request header, carrying an {@code ETag} the caller already holds. */
+    IF_NONE_MATCH("If-None-Match"),
+    /** The standard {@code Allow} response header, listing the methods a resource accepts. */
+    ALLOW("Allow"),
     /**
      * Custom header that instructs the compound-documents resolver to skip
      * {@code included} relationship expansion for the current request.

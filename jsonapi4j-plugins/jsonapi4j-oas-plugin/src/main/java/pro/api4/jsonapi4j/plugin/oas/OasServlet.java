@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
@@ -35,6 +36,10 @@ public class OasServlet extends HttpServlet {
     private static final String JSON_FORMAT = "json";
     private static final String YAML_CONTENT_TYPE = "application/yaml";
     private static final String JSON_CONTENT_TYPE = "application/json";
+
+    private static final String GET_METHOD = "GET";
+    private static final String HEAD_METHOD = "HEAD";
+    private static final String ALLOWED_METHODS = GET_METHOD + ", " + HEAD_METHOD;
 
     private JsonApi4j jsonApi4j;
     private OasProperties oasProperties;
@@ -124,11 +129,16 @@ public class OasServlet extends HttpServlet {
             resp.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
+        if (!GET_METHOD.equals(req.getMethod()) && !HEAD_METHOD.equals(req.getMethod())) {
+            resp.setHeader(HttpHeaders.ALLOW.getName(), ALLOWED_METHODS);
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            return;
+        }
         String format = getFormat(req);
         boolean yaml = format.equals(YAML_FORMAT);
         String cached = yaml ? cachedOasYaml : cachedOasJson;
         if (cached != null) {
-            writeToResponse(resp, yaml, cached);
+            writeToResponse(req, resp, yaml, cached);
             return;
         }
 
@@ -139,7 +149,7 @@ public class OasServlet extends HttpServlet {
             writeGenerationFailure(resp, e);
             return;
         }
-        writeOasToResponse(resp, yaml, openAPI);
+        writeOasToResponse(req, resp, yaml, openAPI);
     }
 
     /**
@@ -164,21 +174,42 @@ public class OasServlet extends HttpServlet {
         resp.getWriter().write(objectMapper.writeValueAsString(errorsDoc));
     }
 
+    /**
+     * An explicit {@code ?format=} wins, since it is the caller being specific. With none, the {@code Accept} header
+     * decides - a tool that asks for YAML and gets JSON has to guess what happened - and JSON is the answer when
+     * neither says anything.
+     */
     private String getFormat(HttpServletRequest req) {
         String format = req.getParameter(FORMAT_QUERY_PARAM);
-        if (format == null) {
-            return JSON_FORMAT;
+        if (format != null) {
+            return format.equalsIgnoreCase(YAML_FORMAT) ? YAML_FORMAT : JSON_FORMAT;
         }
-        return format.equalsIgnoreCase(YAML_FORMAT) ? YAML_FORMAT : JSON_FORMAT;
-
+        String accept = req.getHeader(HttpHeaders.ACCEPT.getName());
+        return accept != null && accept.toLowerCase().contains(YAML_CONTENT_TYPE) ? YAML_FORMAT : JSON_FORMAT;
     }
 
-    private void writeToResponse(HttpServletResponse resp,
+    /**
+     * The document is rebuilt only when the cache is empty, so the same bytes are served for the life of the
+     * process. An {@code ETag} over them lets a caller that already has it skip the download - Swagger UI and CI
+     * jobs poll this endpoint - while staying correct if a restart produces a different document.
+     */
+    private void writeToResponse(HttpServletRequest req,
+                                 HttpServletResponse resp,
                                  boolean yaml,
                                  String oasString) throws IOException {
+        String eTag = eTagOf(oasString);
+        resp.setHeader(HttpHeaders.ETAG.getName(), eTag);
         resp.setContentType(yaml ? YAML_CONTENT_TYPE : JSON_CONTENT_TYPE);
         resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        if (eTag.equals(req.getHeader(HttpHeaders.IF_NONE_MATCH.getName()))) {
+            resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return;
+        }
         resp.getWriter().write(oasString);
+    }
+
+    private String eTagOf(String oasString) {
+        return "\"" + Integer.toHexString(oasString.hashCode()) + "\"";
     }
 
     /**
@@ -186,7 +217,8 @@ public class OasServlet extends HttpServlet {
      * library's bookkeeping fields — {@code exampleSetFlag}, {@code types}, {@code jsonSchema} — out of the document;
      * a plain mapper serializes them as if they were OpenAPI keywords, which they are not.
      */
-    private void writeOasToResponse(HttpServletResponse resp,
+    private void writeOasToResponse(HttpServletRequest req,
+                                    HttpServletResponse resp,
                                     boolean yaml,
                                     OpenAPI openAPI) throws IOException {
         String oasString = yaml ? Yaml.pretty(openAPI) : Json.pretty(openAPI);
@@ -195,7 +227,7 @@ public class OasServlet extends HttpServlet {
         } else {
             cachedOasJson = oasString;
         }
-        writeToResponse(resp, yaml, oasString);
+        writeToResponse(req, resp, yaml, oasString);
     }
 
 }

@@ -538,6 +538,10 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
                                                       OasOperationInfoUtil.Info extraOperationInfo,
                                                       OasOperationInfoModel oasOperationInfo) {
         List<Parameter> params = new ArrayList<>();
+        // the path parameter first: it is part of the address, while everything after it only tunes the request
+        if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
+            params.add(createDefaultIdPathParam(extraOperationInfo.getResourceType()));
+        }
         if (CollectionUtils.isNotEmpty(availableIncludes)) {
             params.add(createIncludeParam(availableIncludes));
         }
@@ -548,9 +552,6 @@ public class JsonApiOperationsCustomizer implements OasCustomizer {
         }
         createSortParam(sortableFieldsOf(oasOperationInfo)).ifPresent(params::add);
         params.addAll(createFilterParams(filtersOf(oasOperationInfo)));
-        if (OperationType.getExistingResourceAwareOperations().contains(extraOperationInfo.getOperationType())) {
-            params.add(createDefaultIdPathParam(extraOperationInfo.getResourceType()));
-        }
         return params;
     }
 

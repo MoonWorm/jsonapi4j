@@ -1482,6 +1482,16 @@
         "description" : "Retrieves country details by resource id.",
         "operationId" : "get-single-country",
         "parameters" : [ {
+          "description" : "Country unique identifier (ISO 3166). Required",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
           "explode" : false,
@@ -1501,16 +1511,6 @@
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
           "$ref" : "#/components/parameters/FieldsCurrencies"
-        }, {
-          "description" : "Country unique identifier (ISO 3166). Required",
-          "example" : "US",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -1562,6 +1562,16 @@
         "description" : "Retrieves currencies to-many relationship details of the related country resource.",
         "operationId" : "get-country-currencies-relationship",
         "parameters" : [ {
+          "description" : "Country unique identifier (ISO 3166). Required",
+          "example" : "US",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: currencies. Dotted paths reach further levels (e.g. 'currencies.<relationship>'); this document describes the first level only",
           "example" : "currencies",
           "explode" : false,
@@ -1583,16 +1593,6 @@
           "$ref" : "#/components/parameters/FieldsCurrencies"
         }, {
           "$ref" : "#/components/parameters/PageCursor"
-        }, {
-          "description" : "Country unique identifier (ISO 3166). Required",
-          "example" : "US",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -1946,6 +1946,16 @@
         "description" : "Retrieves user details by resource id.",
         "operationId" : "get-single-user",
         "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships, placeOfBirth, relatives. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
           "explode" : false,
@@ -1965,16 +1975,6 @@
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
           "$ref" : "#/components/parameters/FieldsCountries"
-        }, {
-          "description" : "User unique identifier. Required",
-          "example" : "3",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -2155,6 +2155,16 @@
         "description" : "Retrieves citizenships to-many relationship details of the related user resource.",
         "operationId" : "get-user-citizenships-relationship",
         "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: citizenships. Dotted paths reach further levels (e.g. 'citizenships.<relationship>'); this document describes the first level only",
           "example" : "citizenships",
           "explode" : false,
@@ -2176,16 +2186,6 @@
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
           "$ref" : "#/components/parameters/PageCursor"
-        }, {
-          "description" : "User unique identifier. Required",
-          "example" : "3",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -2359,6 +2359,16 @@
         "description" : "Retrieves placeOfBirth to-one relationship details of the related user resource.",
         "operationId" : "get-user-placeofbirth-relationship",
         "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: placeOfBirth. Dotted paths reach further levels (e.g. 'placeOfBirth.<relationship>'); this document describes the first level only",
           "example" : "placeOfBirth",
           "explode" : false,
@@ -2378,16 +2388,6 @@
           "$ref" : "#/components/parameters/FieldsUsers"
         }, {
           "$ref" : "#/components/parameters/FieldsCountries"
-        }, {
-          "description" : "User unique identifier. Required",
-          "example" : "3",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -2564,6 +2564,16 @@
         "description" : "Retrieves relatives to-many relationship details of the related user resource.",
         "operationId" : "get-user-relatives-relationship",
         "parameters" : [ {
+          "description" : "User unique identifier. Required",
+          "example" : "3",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "maxLength" : 64,
+            "type" : "string"
+          }
+        }, {
           "description" : "Allows clients to customize which related resources should be returned in compound docs. Available relationships: relatives. Dotted paths reach further levels (e.g. 'relatives.<relationship>'); this document describes the first level only",
           "example" : "relatives",
           "explode" : false,
@@ -2585,16 +2595,6 @@
           "$ref" : "#/components/parameters/FieldsCountries"
         }, {
           "$ref" : "#/components/parameters/PageCursor"
-        }, {
-          "description" : "User unique identifier. Required",
-          "example" : "3",
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "maxLength" : 64,
-            "type" : "string"
-          }
         } ],
         "responses" : {
           "200" : {
