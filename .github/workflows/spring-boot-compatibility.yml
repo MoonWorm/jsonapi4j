@@ -41,14 +41,22 @@ jobs:
           # spring-test is only pulled in transitively from Boot 3.3 onwards, so the test classpath declares it
           # explicitly and its version has to be named alongside each Boot version. Spring does not support
           # mixing Framework module versions.
+          #
+          # springdoc has to be named too. It is not part of the Boot BOM, it tracks a single Boot generation,
+          # and the Spring sample app pulls in springdoc-openapi-starter-webmvc-ui for its Swagger UI; leaving
+          # the default there makes the sample app - not jsonapi4j - the thing that fails on an older Boot.
           - spring-boot: '3.0.0'   # the documented floor
             framework: '6.0.2'
+            springdoc: '2.0.4'
           - spring-boot: '3.2.0'
             framework: '6.1.1'
+            springdoc: '2.3.0'
           - spring-boot: '3.4.2'
             framework: '6.2.2'
-          - spring-boot: '4.1.0'   # carried by the profile, which sets both properties itself
+            springdoc: '2.8.8'
+          - spring-boot: '4.1.0'   # carried by the profile, which sets all three properties itself
             framework: ''
+            springdoc: ''
 
     steps:
       - uses: actions/checkout@v7
@@ -67,7 +75,8 @@ jobs:
           else
             mvn -B clean verify \
               -Dspring.boot.version=${{ matrix.spring-boot }} \
-              -Dspring.framework.version=${{ matrix.framework }}
+              -Dspring.framework.version=${{ matrix.framework }} \
+              -Dspringdoc-openapi.version=${{ matrix.springdoc }}
           fi
 
   published-artifact-on-boot4:
