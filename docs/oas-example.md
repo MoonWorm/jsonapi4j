@@ -11,10 +11,6 @@ This is the OpenAPI document the [OpenAPI Plugin](/openapi-plugin/) generates fo
 their operations. Nothing here was written by hand: it is produced from the same registries the framework serves
 from, and regenerated on every build, so what you are reading is what the plugin actually emits.
 
-Worth opening first: **`UsersCreateAttributes`** against **`UsersAttributes`** (what a create must carry, versus what
-a response guarantees — nothing), the **`security`** on the `citizenships` operations (scopes published only on the
-grant flow that declares them), and **`PaginationLinksObject`** on any collection.
-
 The `servers` entry points at `localhost` because this is the sample app's own document — there is no hosted
 backend behind it. It is here to be read, not called.
 
