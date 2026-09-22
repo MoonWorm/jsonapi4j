@@ -38,25 +38,51 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # spring-test is only pulled in transitively from Boot 3.3 onwards, so the test classpath declares it
-          # explicitly and its version has to be named alongside each Boot version. Spring does not support
+          # spring-test is only pulled in transitively from Spring Boot 3.3 onwards, so the test classpath declares it
+          # explicitly and its version has to be named alongside each Spring Boot version. Spring does not support
           # mixing Framework module versions.
           #
           # springdoc has to be named too. It is not part of the Boot BOM, it tracks a single Boot generation,
           # and the Spring sample app pulls in springdoc-openapi-starter-webmvc-ui for its Swagger UI; leaving
           # the default there makes the sample app - not jsonapi4j - the thing that fails on an older Boot.
+          #
+          # Jackson is the one that is easy to miss. Unlike Spring Boot it is not `provided`: it is compile-scope
+          # in jsonapi4j-rest and jsonapi4j-compound-docs-resolver, so it ships in the published poms, and the
+          # framework declares its own version rather than inheriting one. Overriding spring.boot.version alone
+          # therefore leaves Jackson wherever the root pom put it, and no combination anywhere compiles the
+          # framework against the Jackson a floor-version Spring Boot user actually has. Naming it per entry is what
+          # turns "Jackson 2.x is fine" from an assumption into a result. The version is the one that Spring Boot
+          # version's BOM manages - read jackson-bom.version out of its spring-boot-dependencies pom when adding
+          # an entry, do not guess.
+          #
+          # slf4j is the same shape as Jackson - compile-scope in five published modules, version declared here
+          # rather than inherited - with one difference: the framework uses only debug/info/warn/error and
+          # isDebugEnabled, so what this axis guards is not an API but the api/provider generation pairing. Each
+          # entry names the slf4j the Boot BOM manages, which is the jar a consumer on that Boot actually has.
           - spring-boot: '3.0.0'   # the documented floor
             framework: '6.0.2'
             springdoc: '2.0.4'
+            jackson: '2.14.1'
+            slf4j: '2.0.4'
           - spring-boot: '3.2.0'
             framework: '6.1.1'
             springdoc: '2.3.0'
+            jackson: '2.15.3'
+            slf4j: '2.0.9'
           - spring-boot: '3.4.2'
             framework: '6.2.2'
             springdoc: '2.8.8'
-          - spring-boot: '4.1.0'   # carried by the profile, which sets all three properties itself
+            jackson: '2.18.2'
+            slf4j: '2.0.16'
+          # Spring Boot 4 manages Jackson 3 (tools.jackson), which the framework does not use - it builds its own
+          # Jackson 2 ObjectMapper, and the two coexist on one classpath. There is no Jackson 2 version for this
+          # entry to name, so it keeps the framework's own. slf4j it does still manage, and the profile does not
+          # set it, so that one is passed alongside the profile below.
+          - spring-boot: '4.1.0'   # boot, framework and springdoc are carried by the profile itself
             framework: ''
             springdoc: ''
+            jackson: ''
+            slf4j: '2.0.18'
 
     steps:
       - uses: actions/checkout@v7
@@ -71,12 +97,14 @@ jobs:
       - name: Verify against Spring Boot ${{ matrix.spring-boot }}
         run: |
           if [ "${{ matrix.spring-boot }}" = "4.1.0" ]; then
-            mvn -B clean verify -Pspring-boot-4
+            mvn -B clean verify -Pspring-boot-4 -Dslf4j-api.version=${{ matrix.slf4j }}
           else
             mvn -B clean verify \
               -Dspring.boot.version=${{ matrix.spring-boot }} \
               -Dspring.framework.version=${{ matrix.framework }} \
-              -Dspringdoc-openapi.version=${{ matrix.springdoc }}
+              -Dspringdoc-openapi.version=${{ matrix.springdoc }} \
+              -Djackson.version=${{ matrix.jackson }} \
+              -Dslf4j-api.version=${{ matrix.slf4j }}
           fi
 
   published-artifact-on-boot4:

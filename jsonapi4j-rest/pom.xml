@@ -44,8 +44,6 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-        <jackson-module-parameter-names.version>2.22.2</jackson-module-parameter-names.version>
     </properties>
 
     <dependencies>
@@ -72,7 +70,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-parameter-names</artifactId>
-            <version>${jackson-module-parameter-names.version}</version>
         </dependency>
 
         <!-- Servlet API -->

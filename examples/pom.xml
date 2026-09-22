@@ -35,7 +35,7 @@
         <junit-jupiter.version>6.1.3</junit-jupiter.version>
         <assertj-core.version>3.27.7</assertj-core.version>
         <rest-assured.version>6.0.1</rest-assured.version>
-        <json-unit.version>6.2.0</json-unit.version>
+        <json-unit.version>2.40.0</json-unit.version>
     </properties>
 
     <dependencyManagement>
@@ -143,7 +143,11 @@
             <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>
                 <artifactId>json-unit</artifactId>
-                <version>${json-unit.version}</version> <!-- Use latest -->
+                <!--Held on the 2.x line, not tracking latest: json-unit 6 reads
+                    JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES, which Jackson only added in 2.15, while
+                    the Spring Boot 3.0 floor manages Jackson 2.14.1. On that floor the sample apps fail with
+                    NoSuchFieldError before a single assertion runs.-->
+                <version>${json-unit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

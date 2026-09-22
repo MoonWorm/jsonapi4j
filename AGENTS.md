@@ -73,18 +73,36 @@ Two things about that profile, both easy to break:
   the oldest version still supported, so using anything newer is a compile error rather than a runtime failure
   in someone else's application. Raise a floor only when that version is dropped from support.
 - **Dependabot is configured to ignore the floor coordinates** (`.github/dependabot.yml`): Spring Boot,
-  `spring-test`, Quarkus, `jakarta.servlet-api` and `slf4j-api`, plus springdoc *majors*. A bump there raises
-  the floor *silently* — compiling against a newer version never fails — so the build would stay green while
-  the published jar quietly stopped matching `docs/compatibility.md`. Raise a floor by hand: edit the property,
+  `spring-test`, Quarkus, `jakarta.servlet-api`, `slf4j-api`, springdoc and json-unit. A bump there raises the
+  floor *silently* — compiling against a newer version never fails — so the build would stay green while the
+  published jar quietly stopped matching `docs/compatibility.md`. Raise a floor by hand: edit the property,
   run the matching compatibility workflow, then update the table in `docs/compatibility.md`.
-- The test for whether a dependency is a floor is **does it reach a consumer's classpath**, not whether it
-  belongs to the framework or to a sample app. Build plugins and test-scope libraries (json-unit, RestAssured,
-  JUnit, AssertJ, Mockito) reach nobody, so they track latest. Compile-scope dependencies of a published
-  module do reach consumers — `slf4j-api`, `jackson-core`, `jackson-datatype-jsr310`, `commons-lang3`,
-  `commons-collections4`, `base62`, `objenesis` — and their declared versions are floors. Note that a consumer
-  with a BOM overrides them anyway (a Boot 3.4 sample app resolves slf4j 2.0.16 and Jackson 2.18.2, not the
-  1.7.32 and 2.22.2 declared here), so bumping buys BOM-using consumers nothing while pushing the floor out
-  from under the BOM-less ones.
+- **Two separate things make a dependency a floor**, and a bump is safe only when neither applies:
+  - *It reaches a consumer's classpath.* Compile-scope dependencies of a published module do — `slf4j-api`,
+    `jackson-core`, `jackson-datatype-jsr310`, `commons-lang3`, `commons-collections4`, `base62`, `objenesis`
+    — so their declared versions are floors. A consumer with a BOM overrides them anyway (a Boot 3.4 sample app
+    resolves slf4j 2.0.16 and Jackson 2.18.2, not the 2.0.19 and 2.22.2 declared here), so bumping buys
+    BOM-using consumers nothing while pushing the floor out from under the BOM-less ones. Declare something
+    current rather than the floor, though: unlike a `provided` dependency, this version is what a BOM-less
+    consumer actually gets, so pinning it low ships them an old jar. Ship current, *test* the floor - that is
+    what the Jackson and slf4j entries in `spring-boot-compatibility.yml` are for.
+  - *It binds to something that moves with Spring Boot or Quarkus.* This catches test-scope libraries, which
+    are otherwise free to track latest. json-unit 6 reads a `JsonNodeFeature` constant added in Jackson 2.15
+    while the Boot 3.0 floor ships Jackson 2.14.1, so it is red on the floor axis and green on every pull
+    request (#186). springdoc is built against one specific Boot release and breaks on any other, at minor
+    boundaries as well as major ones (#187, #206). Pull-request CI cannot see either, because it builds the
+    Boot 3 *baseline*, not the floor.
+  Being a sample-app or test dependency is therefore not by itself a reason to take a bump. Build plugins and
+  libraries that touch neither axis (JUnit, AssertJ, Mockito, RestAssured) do track latest.
+- **`provided` vs `compile`** is decided by three questions, and `provided` needs all three to be yes: does the
+  integration *guarantee* the dependency at runtime; do we use the **host's** instance of it rather than our
+  own; do its types cross the boundary between us and the host, so that a second copy would be actively wrong?
+  Spring Boot, Quarkus and `jakarta.servlet-api` answer yes three times. Jackson answers no three times - a
+  plain servlet user may not have it, Boot 4 ships Jackson 3 under `tools.jackson`, and the framework builds its
+  **own** Jackson 2 `ObjectMapper` rather than injecting the application's - so it stays `compile`, and so does
+  `slf4j-api`, which nothing guarantees for a servlet user. Lombok is neither: it is compile-time only (nothing
+  it generates references the jar at runtime), so it is `provided` to keep it off consumers' classpaths, and
+  every module that uses its annotations must declare it, since `provided` does not propagate between modules.
 - **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
   `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
   `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —

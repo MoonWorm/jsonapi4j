@@ -48,14 +48,27 @@ updates:
       # providers were found" and falls back to a NOP logger, so the application silently stops logging.
       # Staying on 1.7 also keeps the fluent 2.x API (atInfo(), atLevel()) a compile error here.
       - dependency-name: "org.slf4j:slf4j-api"          # floor 1.7.32
-      # springdoc's MAJOR version is a function of the Spring Boot generation, so it moves with the profile
-      # rather than on its own: springdoc 3.x depends on spring-boot-webmvc, spring-boot-web-server and
-      # spring-boot-health, which exist only in Boot 4, and on a Boot 3 context it drags those modules in and
-      # the context fails with duplicate auto-configuration beans (conventionErrorViewResolver). The
-      # spring-boot-4 profile in examples/pom.xml carries springdoc 3.x for that axis; the default property
-      # stays on the generation that targets Boot 3. Minor and patch updates within 2.x are still wanted.
+      # springdoc tracks the Spring Boot version of the sample app, not semver, so every update to it is a
+      # decision about the sample app's Boot version rather than a library bump. Each springdoc release is built
+      # on one Boot release - 2.8.8 on Boot 3.4.5, 2.9.1 on Boot 3.5.16 - and the mismatch does not degrade
+      # gracefully:
+      #
+      #   * springdoc 3 on Boot 3 (#187) fails the context with duplicate auto-configuration beans
+      #     (conventionErrorViewResolver), because springdoc 3 drags Boot 4 modules onto the classpath;
+      #   * springdoc 2.9 on Boot 3.4 (#206) fails the context with PatternParseException while building
+      #     resourceHandlerMapping, because its swagger-ui resource pattern needs the newer path parser.
+      #
+      # The first was a major and the second a minor, which is why this is a blanket ignore rather than one
+      # scoped to majors. Move springdoc by hand when spring.boot.version in examples/pom.xml moves, as a pair.
+      # There is no security argument for automating it: springdoc is used only by the Spring sample app, never
+      # by a published module.
       - dependency-name: "org.springdoc:*"
-        update-types: ["version-update:semver-major"]
+      # json-unit is test-scope, which normally means it tracks latest - but it binds to Jackson, and Jackson
+      # moves with Spring Boot. json-unit 6 reads JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES, added in
+      # Jackson 2.15, while the Boot 3.0 floor manages Jackson 2.14.1, so #186 turned the whole floor axis red
+      # (NoSuchFieldError in the sample apps, before any assertion ran) while every pull request stayed green.
+      # Held on the 2.x line until the Boot floor moves past 3.1.
+      - dependency-name: "net.javacrumbs.json-unit:*"   # floor: works with the Jackson the Boot 3.0 BOM ships
     groups:
       maven-minor-and-patch:
         patterns:
