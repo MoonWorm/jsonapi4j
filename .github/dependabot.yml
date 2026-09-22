@@ -40,6 +40,22 @@ updates:
       - dependency-name: "io.quarkus:*"                 # quarkus.version - floor 3.20.6
       - dependency-name: "io.quarkus.platform:*"        # the sample app's platform BOM follows quarkus.version
       - dependency-name: "jakarta.servlet:jakarta.servlet-api"  # floor 6.0.0
+      # slf4j-api is compile-scope in jsonapi4j-core, -base, -compound-docs-resolver and both plugins, so it
+      # ships in the published poms and its version is a floor like the integration coordinates above. Every
+      # consumer with a BOM overrides it anyway - a Boot 3.4 application resolves slf4j 2.0.16, not this - so a
+      # bump buys them nothing. The consumers who do get this version are the BOM-less servlet ones, where
+      # slf4j-api 2.x against a 1.7-era binding (logback 1.2.x) does not fail the build: it prints "No SLF4J
+      # providers were found" and falls back to a NOP logger, so the application silently stops logging.
+      # Staying on 1.7 also keeps the fluent 2.x API (atInfo(), atLevel()) a compile error here.
+      - dependency-name: "org.slf4j:slf4j-api"          # floor 1.7.32
+      # springdoc's MAJOR version is a function of the Spring Boot generation, so it moves with the profile
+      # rather than on its own: springdoc 3.x depends on spring-boot-webmvc, spring-boot-web-server and
+      # spring-boot-health, which exist only in Boot 4, and on a Boot 3 context it drags those modules in and
+      # the context fails with duplicate auto-configuration beans (conventionErrorViewResolver). The
+      # spring-boot-4 profile in examples/pom.xml carries springdoc 3.x for that axis; the default property
+      # stays on the generation that targets Boot 3. Minor and patch updates within 2.x are still wanted.
+      - dependency-name: "org.springdoc:*"
+        update-types: ["version-update:semver-major"]
     groups:
       maven-minor-and-patch:
         patterns:

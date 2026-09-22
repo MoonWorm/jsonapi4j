@@ -73,10 +73,18 @@ Two things about that profile, both easy to break:
   the oldest version still supported, so using anything newer is a compile error rather than a runtime failure
   in someone else's application. Raise a floor only when that version is dropped from support.
 - **Dependabot is configured to ignore the floor coordinates** (`.github/dependabot.yml`): Spring Boot,
-  `spring-test`, Quarkus and `jakarta.servlet-api`. A bump there raises the floor *silently* — compiling
-  against a newer version never fails — so the build would stay green while the published jar quietly stopped
-  matching `docs/compatibility.md`. Raise a floor by hand: edit the property, run the matching compatibility
-  workflow, then update the table in `docs/compatibility.md`.
+  `spring-test`, Quarkus, `jakarta.servlet-api` and `slf4j-api`, plus springdoc *majors*. A bump there raises
+  the floor *silently* — compiling against a newer version never fails — so the build would stay green while
+  the published jar quietly stopped matching `docs/compatibility.md`. Raise a floor by hand: edit the property,
+  run the matching compatibility workflow, then update the table in `docs/compatibility.md`.
+- The test for whether a dependency is a floor is **does it reach a consumer's classpath**, not whether it
+  belongs to the framework or to a sample app. Build plugins and test-scope libraries (json-unit, RestAssured,
+  JUnit, AssertJ, Mockito) reach nobody, so they track latest. Compile-scope dependencies of a published
+  module do reach consumers — `slf4j-api`, `jackson-core`, `jackson-datatype-jsr310`, `commons-lang3`,
+  `commons-collections4`, `base62`, `objenesis` — and their declared versions are floors. Note that a consumer
+  with a BOM overrides them anyway (a Boot 3.4 sample app resolves slf4j 2.0.16 and Jackson 2.18.2, not the
+  1.7.32 and 2.22.2 declared here), so bumping buys BOM-using consumers nothing while pushing the floor out
+  from under the BOM-less ones.
 - **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
   `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
   `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —
