@@ -90,14 +90,14 @@ public class FieldMaskingPlugin implements JsonApi4jPlugin {
     @Override
     public Object extractPluginInfoFromResource(Resource<?> resource) {
         // Find the attributes class by inspecting the resolveAttributes method
-        Method method = ReflectionUtils.findMethod(
-            resource.getClass(),
-            Resource.RESOLVE_ATTRIBUTES_METHOD_NAME
-        );
-        if (method == null) {
+        Class<?> attributesClass = Arrays.stream(resource.getClass().getMethods())
+            .filter(m -> m.getName().equals(Resource.RESOLVE_ATTRIBUTES_METHOD_NAME) && !m.isBridge())
+            .map(Method::getReturnType)
+            .findFirst()
+            .orElse(null);
+        if (attributesClass == null) {
             return null;
         }
-        Class<?> attributesClass = method.getReturnType();
         List<MaskedFieldInfo> maskedFields = new ArrayList<>();
         for (Field field : attributesClass.getDeclaredFields()) {
             Masked masked = field.getAnnotation(Masked.class);
@@ -124,6 +124,7 @@ public class FieldMaskingPlugin implements JsonApi4jPlugin {
 
 **Key points:**
 - `extractPluginInfoFromResource()` runs once at startup for each registered resource. It scans the attributes class for `@Masked` fields and returns a list of `MaskedFieldInfo`. This metadata is later available in visitors via `ctx.getPluginInfo().getResourcePluginInfo()`.
+- The `!m.isBridge()` filter matters: `resolveAttributes` overrides a generic interface method, so the compiler also generates a bridge method returning `Object`. Picking that one would find no `@Masked` fields.
 - `singleResourceVisitors()` and `multipleResourcesVisitors()` return visitor implementations that handle the actual masking.
 
 ## Step 4: Implement the Visitors
@@ -233,12 +234,22 @@ class FieldMaskingMultipleResourcesVisitors implements MultipleResourcesVisitors
 <span class="o">}</span></code></pre></div></div>
   </div>
   <div id="plug-servlet" class="tab-panel">
-    <p>Pass the plugin to the <code>JsonApi4j</code> builder.</p>
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">JsonApi4j</span> <span class="n">jsonApi4j</span> <span class="o">=</span> <span class="nc">JsonApi4j</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
-    <span class="o">.</span><span class="na">domainRegistry</span><span class="o">(</span><span class="n">domainRegistry</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">operationsRegistry</span><span class="o">(</span><span class="n">operationsRegistry</span><span class="o">)</span>
-    <span class="o">.</span><span class="na">plugins</span><span class="o">(</span><span class="nc">List</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="k">new</span> <span class="nc">FieldMaskingPlugin</span><span class="o">()))</span>
-    <span class="o">.</span><span class="na">build</span><span class="o">();</span></code></pre></div></div>
+    <p>Build a <code>PluginRegistry</code> and pass the same registry to the <code>DomainRegistry</code> and <code>OperationsRegistry</code> builders — plugin metadata is extracted while those registries are built. Then publish the registries from a <code>ServletContextListener</code>, as shown in <a href="/deployment/#deploying-as-a-war">Deployment</a>.</p>
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">PluginRegistry</span> <span class="n">plugins</span> <span class="o">=</span> <span class="nc">PluginRegistry</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="k">new</span> <span class="nc">FieldMaskingPlugin</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+
+<span class="nc">DomainRegistry</span> <span class="n">domainRegistry</span> <span class="o">=</span> <span class="nc">DomainRegistry</span><span class="o">.</span><span class="na">builder</span><span class="o">(</span><span class="n">plugins</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">resource</span><span class="o">(</span><span class="k">new</span> <span class="nc">UserResource</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+
+<span class="nc">OperationsRegistry</span> <span class="n">operationsRegistry</span> <span class="o">=</span> <span class="nc">OperationsRegistry</span><span class="o">.</span><span class="na">builder</span><span class="o">(</span><span class="n">plugins</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">operations</span><span class="o">(</span><span class="k">new</span> <span class="nc">UserOperations</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+
+<span class="n">servletContext</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span><span class="no">PLUGIN_REGISTRY_ATT_NAME</span><span class="o">,</span> <span class="n">plugins</span><span class="o">);</span>
+<span class="n">servletContext</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span><span class="no">DOMAIN_REGISTRY_ATT_NAME</span><span class="o">,</span> <span class="n">domainRegistry</span><span class="o">);</span>
+<span class="n">servletContext</span><span class="o">.</span><span class="na">setAttribute</span><span class="o">(</span><span class="no">OPERATION_REGISTRY_ATT_NAME</span><span class="o">,</span> <span class="n">operationsRegistry</span><span class="o">);</span></code></pre></div></div>
   </div>
 </div>
 
@@ -276,6 +287,10 @@ public interface FieldMaskingProperties extends PluginProperties {
     @Override
     default String section() {
         return FM_PROPERTY;      // binds jsonapi4j.fm.*
+    }
+
+    default boolean enabled() {
+        return true;
     }
 
     default String maskCharacter() {
@@ -333,7 +348,7 @@ plugin extracts, and the id of its `plugins` meta resource) and **config section
 | Plugin info model | `MaskedFieldInfo` | Carries annotation metadata through the pipeline |
 | Plugin class | `FieldMaskingPlugin` | Entry point — extracts metadata and provides visitors |
 | Visitors | `SingleResourceVisitors`, `MultipleResourcesVisitors` | Hooks into the pipeline to transform the response |
-| Registration | Spring `@Bean` / Quarkus `@Produces` / Builder | Makes the framework aware of your plugin |
+| Registration | Spring `@Bean` / Quarkus `@Produces` / `PluginRegistry` | Makes the framework aware of your plugin |
 | Configuration *(optional)* | `PluginProperties` + `validate()` | Binds `jsonapi4j.<section>.*`, publishes it to the `config` meta resource, and validates it at startup |
 
 For more on how the pipeline stages work, see [Plugin System](/plugins/) and [Request Processing Pipeline](/request-processing-pipeline/).
