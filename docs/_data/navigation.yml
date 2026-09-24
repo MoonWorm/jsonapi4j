@@ -1,6 +1,8 @@
 main:
   - title: "Documentation"
     url: /documentation/
+  - title: "Showcase"
+    url: /showcase/
   - title: "Blog"
     url: /blog/
   - title: "Contact"

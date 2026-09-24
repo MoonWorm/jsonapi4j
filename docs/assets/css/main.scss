@@ -647,3 +647,125 @@
     padding: 0.5em 0.5em 0.5em 0;
   }
 }
+
+// Showcase page
+.page__content .showcase-intro {
+  max-width: 720px;
+  margin: 0.5em auto 2em;
+  text-align: center;
+  color: #555;
+  font-size: 1.05em;
+  line-height: 1.6;
+}
+
+.showcase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5em;
+  margin: 0 0 2.5em;
+}
+
+.showcase-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e1e4e8;
+  border-top: 4px solid var(--accent, #0f3460);
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    color: inherit;
+
+    .showcase-card__link {
+      gap: 0.5em;
+    }
+  }
+
+  &__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 170px;
+    padding: 1.2em;
+
+    img {
+      max-height: 100%;
+      max-width: 80%;
+      object-fit: contain;
+    }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 1.4em 1.5em 1.5em;
+  }
+
+  &__category {
+    font-size: 0.7em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent, #0f3460);
+    margin-bottom: 0.4em;
+  }
+
+  &__name {
+    font-size: 1.35em;
+    color: #1a1a2e;
+    line-height: 1.2;
+  }
+
+  &__tagline {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1em;
+    color: #444;
+    margin: 0.3em 0 0.8em;
+  }
+
+  .page__content &__description {
+    font-size: 0.85em;
+    color: #555;
+    line-height: 1.6;
+    margin: 0 0 1em;
+  }
+
+  &__platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    list-style: none;
+    margin: 0 0 1.2em;
+    padding: 0;
+
+    .page__content & li {
+      font-size: 0.7em;
+      margin: 0;
+      padding: 0.25em 0.7em;
+      border-radius: 999px;
+      background: #f0f2f6;
+      color: #1a1a2e;
+    }
+  }
+
+  &__link {
+    display: inline-flex;
+    gap: 0.25em;
+    margin-top: auto;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--accent, #0f3460);
+    transition: gap 0.2s ease;
+  }
+}
+
+.showcase-cta .site-cta-footer__buttons {
+  margin-top: 1.5em;
+}

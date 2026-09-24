@@ -1,0 +1,29 @@
+- name: "TV Radar"
+  url: "https://tv-radar.com"
+  logo: "/assets/images/showcase/tv-radar-logo.png"
+  logo_bg: "#02050d"
+  accent: "#ff7a1a"
+  category: "Entertainment"
+  tagline: "Never miss a new episode."
+  description: "A TV show tracker that follows thousands of series and alerts viewers before every new episode, season premiere, and finale. Watchlists, release calendars, and notifications stay in sync across every client."
+  platforms: ["Web", "iOS", "Android", "Chrome Extension", "Telegram Bot"]
+
+- name: "GrammarMama"
+  url: "https://grammarmama.com"
+  logo: "/assets/images/showcase/grammarmama-logo.png"
+  logo_bg: "#fdf6ec"
+  accent: "#2f7d7a"
+  category: "Education"
+  tagline: "Check your grammar, Dear!"
+  description: "An adaptive grammar checker and language tutor. It explains every correction, tracks mistakes until they're mastered, and builds three personalized exercises a day with spaced-repetition vocabulary review, in 10+ languages."
+  platforms: ["Web", "Chrome Extension", "Telegram Bot"]
+
+- name: "Text2Event"
+  url: "https://text2event.com"
+  logo: "/assets/images/showcase/text2event-logo.png"
+  logo_bg: "#d1f2ea"
+  accent: "#6b4bd8"
+  category: "Productivity"
+  tagline: "From a short description to a calendar event."
+  description: "Turns plain text, photos, or voice notes into ready-to-import calendar events and reminders, with recurring events and timezones. Works with Google Calendar, Outlook, Apple Calendar, and anything else that reads .ics."
+  platforms: ["Web", "Chrome Extension", "iOS Shortcuts", "Android PWA"]
