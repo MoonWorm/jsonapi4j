@@ -11,6 +11,12 @@
   float: left;
   padding-left: 20px;
 
+  // Below $large the theme sets no width, so the float shrink-wraps to its widest
+  // content (e.g. the embedded Redoc panel) and pushes past the masthead and footer.
+  @media (max-width: #{$large - 1px}) {
+    width: 100%;
+  }
+
   @include breakpoint($large) {
     padding-right: 0;
   }
