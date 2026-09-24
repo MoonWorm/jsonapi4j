@@ -9,6 +9,10 @@ guarantees across them.
 The short answer: the framework adds no version requirement of its own beyond what your web framework already
 imposes. Every integration dependency is `provided`, so your application decides what is on the classpath.
 
+**Any JVM language works — Java, Kotlin, Scala, Groovy and others.** Write your resources, relationships and
+operations in whichever one your team uses.
+{: .notice--info}
+
 ## Supported Versions
 
 | | Supported | Verified against |
