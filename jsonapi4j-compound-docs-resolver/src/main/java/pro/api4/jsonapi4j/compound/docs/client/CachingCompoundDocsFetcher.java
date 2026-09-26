@@ -10,9 +10,11 @@ import pro.api4.jsonapi4j.compound.docs.cache.CacheResult;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
+import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -130,25 +132,24 @@ public class CachingCompoundDocsFetcher {
                                             CompoundDocsResolverConfig config,
                                             Map<String, String> metaHeaders) {
         Set<String> fields = resolveFieldsQueryParam(resourceType, originalRequest, config);
+        ResourceType type = new ResourceType(resourceType);
 
         // Build CacheKeys for all requested IDs
-        Map<CacheKey, String> keyToId = ids.stream()
-                .collect(Collectors.toMap(
-                        id -> new CacheKey(resourceType, id, includes, fields),
-                        id -> id
-                ));
+        Set<CacheKey> keys = ids.stream()
+                .map(id -> new CacheKey(new IdAndType(id, type), includes, fields))
+                .collect(Collectors.toSet());
 
         // Cache lookup on the FULL id set
-        Map<CacheKey, CacheResult> cacheHits = cache.getAll(keyToId.keySet());
+        Map<CacheKey, CacheResult> cacheHits = cache.getAll(keys);
 
         List<String> cacheHitJsons = cacheHits.values().stream()
                 .map(CacheResult::getResourceJson)
                 .toList();
 
         // Calculate miss IDs
-        Set<String> missIds = keyToId.entrySet().stream()
-                .filter(e -> !cacheHits.containsKey(e.getKey()))
-                .map(Map.Entry::getValue)
+        Set<String> missIds = keys.stream()
+                .filter(key -> !cacheHits.containsKey(key))
+                .map(CacheKey::getResourceId)
                 .collect(Collectors.toSet());
 
         log.debug("Cache lookup for type '{}': {} hits, {} misses", resourceType, cacheHits.size(), missIds.size());
@@ -170,8 +171,8 @@ public class CachingCompoundDocsFetcher {
                     CacheControlParser.parse(chunkResult.cacheControlHeader());
             for (ParsedResource parsed : chunkResult.resources()) {
                 httpResultJsons.add(parsed.json());
-                if (parsed.type() != null && parsed.id() != null) {
-                    CacheKey key = new CacheKey(resourceType, parsed.id(), includes, fields);
+                if (parsed.idAndType() != null) {
+                    CacheKey key = new CacheKey(new IdAndType(parsed.idAndType().getId(), type), includes, fields);
                     cache.put(key, parsed.json(), chunkDirectives);
                 }
             }

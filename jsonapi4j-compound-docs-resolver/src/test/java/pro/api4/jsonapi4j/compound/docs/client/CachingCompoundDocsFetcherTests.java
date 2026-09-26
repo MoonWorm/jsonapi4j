@@ -32,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 
 @ExtendWith(MockitoExtension.class)
 class CachingCompoundDocsFetcherTests {
@@ -56,7 +57,7 @@ class CachingCompoundDocsFetcherTests {
     private ExecutorService executor;
 
     private static ParsedResource parsedResource(String type, String id, String json) {
-        return new ParsedResource(type, id, json);
+        return new ParsedResource(type == null || id == null ? null : idAndType(type, id), json);
     }
 
     @BeforeEach
@@ -122,8 +123,8 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_allCached_noHttpCallMade() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
-        CacheKey keyNO = CacheKey.of("countries", "NO");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey keyNO = CacheKey.of(idAndType("countries", "NO"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
         cache.put(keyNO, COUNTRY_NO_JSON, CacheControlParser.parse("max-age=300"));
 
@@ -142,7 +143,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_allCached_returnsCachedResources() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
         var fetcher = newFetcher(cache);
@@ -194,7 +195,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
         assertThat(cache.get(keyFI).get().getResourceJson()).isEqualTo(COUNTRY_FI_JSON);
     }
@@ -213,7 +214,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
         assertThat(cache.get(keyFI).get().getRemainingTtlSeconds()).isLessThanOrEqualTo(60);
         assertThat(cache.get(keyFI).get().getRemainingTtlSeconds()).isGreaterThan(0);
@@ -224,7 +225,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_someCached_fetchesOnlyMissesViaHttp() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
         when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
@@ -250,7 +251,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_someCached_mergesAllResources() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
         when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO", "SE")),
@@ -274,7 +275,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_someCached_storesOnlyHttpResultsInCache() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
         when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
@@ -289,7 +290,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI", "NO"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyNO = CacheKey.of("countries", "NO");
+        CacheKey keyNO = CacheKey.of(idAndType("countries", "NO"));
         assertThat(cache.get(keyNO)).isPresent();
         assertThat(cache.get(keyNO).get().getResourceJson()).isEqualTo(COUNTRY_NO_JSON);
     }
@@ -313,7 +314,7 @@ class CachingCompoundDocsFetcherTests {
 
         assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
 
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isEmpty();
     }
 
@@ -331,7 +332,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isEmpty();
     }
 
@@ -349,7 +350,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
     }
 
@@ -371,10 +372,10 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), includes,
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyWithIncludes = CacheKey.of("countries", "FI", includes);
+        CacheKey keyWithIncludes = CacheKey.of(idAndType("countries", "FI"), includes);
         assertThat(cache.get(keyWithIncludes)).isPresent();
 
-        CacheKey keyWithoutIncludes = CacheKey.of("countries", "FI");
+        CacheKey keyWithoutIncludes = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyWithoutIncludes)).isEmpty();
     }
 
@@ -394,10 +395,10 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyWithFields = new CacheKey("countries", "FI", Collections.emptySet(), Set.of("name", "code"));
+        CacheKey keyWithFields = new CacheKey(idAndType("countries", "FI"), Collections.emptySet(), Set.of("name", "code"));
         assertThat(cache.get(keyWithFields)).isPresent();
 
-        CacheKey keyWithoutFields = CacheKey.of("countries", "FI");
+        CacheKey keyWithoutFields = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyWithoutFields)).isEmpty();
     }
 
@@ -416,7 +417,7 @@ class CachingCompoundDocsFetcherTests {
                 Set.of("FI"), Collections.emptySet(),
                 mockRequest, mockConfig, Map.of());
 
-        CacheKey keyNoFields = CacheKey.of("countries", "FI");
+        CacheKey keyNoFields = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyNoFields)).isPresent();
     }
 
@@ -522,8 +523,8 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_allCached_directivesReflectMinRemainingTtl() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
-        CacheKey keyNO = CacheKey.of("countries", "NO");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey keyNO = CacheKey.of(idAndType("countries", "NO"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
         cache.put(keyNO, COUNTRY_NO_JSON, CacheControlParser.parse("max-age=60"));
 
@@ -566,7 +567,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_someCached_directivesMergedFromCacheAndHttp() {
         stubConfigNoPropagation();
-        CacheKey keyFI = CacheKey.of("countries", "FI");
+        CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
         when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
@@ -695,7 +696,7 @@ class CachingCompoundDocsFetcherTests {
         DomainSettings settings = new DomainSettings(DOMAIN_URL, 2);
 
         // Pre-cache one resource → misses are A, C, D, E (4 ids → 2 chunks of 2)
-        cache.put(CacheKey.of("countries", "B"), "cached-B", CacheControlParser.parse("max-age=300"));
+        cache.put(CacheKey.of(idAndType("countries", "B")), "cached-B", CacheControlParser.parse("max-age=300"));
 
         when(httpClient.doBatchFetch(any(), eq("countries"), argThat(chunk -> chunk != null && chunk.size() <= 2),
                 any(), any(), any(), any()))
@@ -770,7 +771,7 @@ class CachingCompoundDocsFetcherTests {
                 mockRequest, mockConfig, Map.of());
 
         for (String id : ids) {
-            assertThat(cache.get(CacheKey.of("countries", id))).isPresent();
+            assertThat(cache.get(CacheKey.of(idAndType("countries", id)))).isPresent();
         }
     }
 

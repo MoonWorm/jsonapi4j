@@ -8,33 +8,41 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 
 class CacheKeyTests {
 
     @Test
-    void constructor_nullResourceType_throwsNullPointerException() {
-        assertThatThrownBy(() -> new CacheKey(null, "1", null, null))
+    void constructor_nullResource_throwsNullPointerException() {
+        assertThatThrownBy(() -> new CacheKey(null, null, null))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("resourceType");
+                .hasMessageContaining("idAndType must not be null");
+    }
+
+    @Test
+    void constructor_nullResourceType_throwsNullPointerException() {
+        assertThatThrownBy(() -> new CacheKey(idAndType(null, "1"), null, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("resource type");
     }
 
     @Test
     void constructor_nullResourceId_throwsNullPointerException() {
-        assertThatThrownBy(() -> new CacheKey("countries", null, null, null))
+        assertThatThrownBy(() -> new CacheKey(idAndType("countries", null), null, null))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("resourceId");
+                .hasMessageContaining("resource id");
     }
 
     @Test
     void constructor_nullIncludes_treatedAsEmptySet() {
-        CacheKey key = new CacheKey("countries", "FI", null, null);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), null, null);
 
         assertThat(key.getIncludes()).isEmpty();
     }
 
     @Test
     void constructor_nullFields_treatedAsEmptySet() {
-        CacheKey key = new CacheKey("countries", "FI", null, null);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), null, null);
 
         assertThat(key.getFields()).isEmpty();
     }
@@ -46,7 +54,7 @@ class CacheKeyTests {
         unordered.add("airports");
         unordered.add("languages");
 
-        CacheKey key = new CacheKey("countries", "FI", unordered, null);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), unordered, null);
 
         assertThat(key.getIncludes()).containsExactly("airports", "currencies", "languages");
     }
@@ -58,14 +66,14 @@ class CacheKeyTests {
         unordered.add("name");
         unordered.add("area");
 
-        CacheKey key = new CacheKey("countries", "FI", null, unordered);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), null, unordered);
 
         assertThat(key.getFields()).containsExactly("area", "name", "population");
     }
 
     @Test
     void constructor_includesAreImmutable_throwsOnModification() {
-        CacheKey key = new CacheKey("countries", "FI", Set.of("currencies"), null);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), null);
 
         assertThatThrownBy(() -> key.getIncludes().add("languages"))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -73,7 +81,7 @@ class CacheKeyTests {
 
     @Test
     void constructor_fieldsAreImmutable_throwsOnModification() {
-        CacheKey key = new CacheKey("countries", "FI", null, Set.of("name"));
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), null, Set.of("name"));
 
         assertThatThrownBy(() -> key.getFields().add("population"))
                 .isInstanceOf(UnsupportedOperationException.class);
@@ -84,7 +92,7 @@ class CacheKeyTests {
         Set<String> mutableIncludes = new HashSet<>();
         mutableIncludes.add("currencies");
 
-        CacheKey key = new CacheKey("countries", "FI", mutableIncludes, null);
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), mutableIncludes, null);
         mutableIncludes.add("languages");
 
         assertThat(key.getIncludes()).containsExactly("currencies");
@@ -92,7 +100,7 @@ class CacheKeyTests {
 
     @Test
     void of_typeAndIdOnly_createsKeyWithEmptySets() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         assertThat(key.getResourceType()).isEqualTo("countries");
         assertThat(key.getResourceId()).isEqualTo("FI");
@@ -102,7 +110,7 @@ class CacheKeyTests {
 
     @Test
     void of_typeIdAndIncludes_createsKeyWithEmptyFields() {
-        CacheKey key = CacheKey.of("countries", "FI", Set.of("currencies"));
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"), Set.of("currencies"));
 
         assertThat(key.getResourceType()).isEqualTo("countries");
         assertThat(key.getResourceId()).isEqualTo("FI");
@@ -112,71 +120,71 @@ class CacheKeyTests {
 
     @Test
     void equals_sameValues_areEqual() {
-        CacheKey key1 = new CacheKey("countries", "FI", Set.of("currencies"), Set.of("name"));
-        CacheKey key2 = new CacheKey("countries", "FI", Set.of("currencies"), Set.of("name"));
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), Set.of("name"));
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), Set.of("name"));
 
         assertThat(key1).isEqualTo(key2);
     }
 
     @Test
     void equals_differentType_areNotEqual() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("users", "FI");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("users", "FI"));
 
         assertThat(key1).isNotEqualTo(key2);
     }
 
     @Test
     void equals_differentId_areNotEqual() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         assertThat(key1).isNotEqualTo(key2);
     }
 
     @Test
     void equals_differentIncludes_areNotEqual() {
-        CacheKey key1 = CacheKey.of("countries", "FI", Set.of("currencies"));
-        CacheKey key2 = CacheKey.of("countries", "FI", Set.of("languages"));
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"), Set.of("currencies"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "FI"), Set.of("languages"));
 
         assertThat(key1).isNotEqualTo(key2);
     }
 
     @Test
     void equals_differentFields_areNotEqual() {
-        CacheKey key1 = new CacheKey("countries", "FI", null, Set.of("name"));
-        CacheKey key2 = new CacheKey("countries", "FI", null, Set.of("population"));
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), null, Set.of("name"));
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), null, Set.of("population"));
 
         assertThat(key1).isNotEqualTo(key2);
     }
 
     @Test
     void equals_emptyIncludesVsNonEmpty_areNotEqual() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "FI", Set.of("currencies"));
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "FI"), Set.of("currencies"));
 
         assertThat(key1).isNotEqualTo(key2);
     }
 
     @Test
     void hashCode_sameValues_sameHash() {
-        CacheKey key1 = new CacheKey("countries", "FI", Set.of("currencies"), Set.of("name"));
-        CacheKey key2 = new CacheKey("countries", "FI", Set.of("currencies"), Set.of("name"));
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), Set.of("name"));
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), Set.of("name"));
 
         assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
     }
 
     @Test
     void hashCode_differentValues_differentHash() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         assertThat(key1.hashCode()).isNotEqualTo(key2.hashCode());
     }
 
     @Test
     void toString_containsAllFields() {
-        CacheKey key = new CacheKey("countries", "FI", Set.of("currencies"), Set.of("name"));
+        CacheKey key = new CacheKey(idAndType("countries", "FI"), Set.of("currencies"), Set.of("name"));
 
         String result = key.toString();
 

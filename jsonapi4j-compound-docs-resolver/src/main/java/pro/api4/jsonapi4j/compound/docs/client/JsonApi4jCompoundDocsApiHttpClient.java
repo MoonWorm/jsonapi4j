@@ -8,6 +8,7 @@ import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 
 import java.io.IOException;
 import java.net.URI;
@@ -151,11 +152,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
     }
 
     private ParsedResource toParsedResource(JsonNode node) throws IOException {
-        String type = node.has("type") && node.get("type").isTextual()
-                ? node.get("type").asText() : null;
-        String id = node.has("id") && node.get("id").isTextual()
-                ? node.get("id").asText() : null;
-        return new ParsedResource(type, id, objectMapper.writeValueAsString(node));
+        return new ParsedResource(JsonApiResponseParser.readIdAndType(node), objectMapper.writeValueAsString(node));
     }
 
 }

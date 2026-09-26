@@ -44,14 +44,14 @@ public abstract class CompoundDocsOperationsTests {
                 // included resources — countries, currencies, and relative users resolved via CD, deduplicated:
                 // - users (relatives): {2, 3}
                 // - countries (citizenships ∪ placeOfBirth): {NO, FI, US}
-                // - currencies (currencies of all included countries): NO -> NOK, FI -> EUR, US -> USD => {NOK, EUR, USD}
-                .body("included", hasSize(8))
+                // - currencies (placeOfBirth only): US -> USD => {USD}
+                .body("included", hasSize(6))
                 .body("included.findAll { it.type == 'users' }.size()", equalTo(2))
                 .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("2", "3"))
                 .body("included.findAll { it.type == 'countries' }.size()", equalTo(3))
                 .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
-                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(3))
-                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("NOK", "EUR", "USD"))
+                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(1))
+                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("USD"))
                 .body("included.find { it.id == 'US' && it.type == 'countries' }.attributes.name", equalTo("United States"))
                 .body("included.find { it.id == 'USD' && it.type == 'currencies' }.attributes.name", equalTo("United States dollar"))
                 .body("included.find { it.id == '2' && it.type == 'users' }.attributes.fullName", equalTo("Jane Doe"))
@@ -73,14 +73,14 @@ public abstract class CompoundDocsOperationsTests {
                 // included resources from both users' relationships, deduplicated:
                 // - users (relatives): user 1 -> {2, 3}, user 2 -> {1, 4} => {1, 2, 3, 4}
                 // - countries (citizenships ∪ placeOfBirth): user 1 -> {NO, FI, US} + US; user 2 -> {US} + FI => {NO, FI, US}
-                // - currencies (currencies of all included countries): NO -> NOK, FI -> EUR, US -> USD => {NOK, EUR, USD}
-                .body("included", hasSize(10))
+                // - currencies (placeOfBirth only): user 1 -> US -> USD; user 2 -> FI -> EUR => {USD, EUR}
+                .body("included", hasSize(9))
                 .body("included.findAll { it.type == 'users' }.size()", equalTo(4))
                 .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("1", "2", "3", "4"))
                 .body("included.findAll { it.type == 'countries' }.size()", equalTo(3))
                 .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
-                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(3))
-                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("NOK", "EUR", "USD"));
+                .body("included.findAll { it.type == 'currencies' }.size()", equalTo(2))
+                .body("included.findAll { it.type == 'currencies' }.id", containsInAnyOrder("USD", "EUR"));
     }
 
     @Test

@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 
 class InMemoryCompoundDocsResourceCacheTests {
 
@@ -52,7 +53,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_afterPut_returnsCachedResult() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_300S);
 
@@ -65,14 +66,14 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_missingKey_returnsEmpty() {
         var cache = new InMemoryCompoundDocsResourceCache(100);
 
-        assertThat(cache.get(CacheKey.of("countries", "FI"))).isEmpty();
+        assertThat(cache.get(CacheKey.of(idAndType("countries", "FI")))).isEmpty();
     }
 
     @Test
     void put_sameKeyTwice_overwritesPrevious() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, "{\"version\":1}", CACHEABLE_300S);
         cache.put(key, "{\"version\":2}", CACHEABLE_300S);
@@ -84,8 +85,8 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_differentKeys_storedIndependently() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_300S);
@@ -100,7 +101,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_beforeExpiration_returnsResult() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_60S);
 
@@ -112,7 +113,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_exactlyAtExpiration_returnsEmpty() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_60S);
 
@@ -124,7 +125,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_afterExpiration_returnsEmpty() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_60S);
         assertThat(cache.get(key)).isPresent();
@@ -137,8 +138,8 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_afterExpiration_removesEntry() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_60S);
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_300S);
@@ -149,7 +150,7 @@ class InMemoryCompoundDocsResourceCacheTests {
         assertThat(cache.get(key1)).isEmpty();
 
         // Put a new entry — if key1 was not removed, this would trigger eviction of key2
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
         cache.put(key3, "{\"id\":\"SE\"}", CACHEABLE_300S);
 
         assertThat(cache.get(key2)).isPresent();
@@ -160,7 +161,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_remainingTtl_computedDynamically() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_300S);
         assertThat(cache.get(key).get().getRemainingTtlSeconds()).isEqualTo(300);
@@ -175,7 +176,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_sMaxAgePresent_usesSMaxAgeForTtl() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
         CacheControlDirectives directives = CacheControlParser.parse("max-age=300, s-maxage=120");
 
         cache.put(key, RESOURCE_JSON, directives);
@@ -190,7 +191,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_onlyMaxAge_usesMaxAgeForTtl() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(100, clock);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CACHEABLE_300S);
 
@@ -202,7 +203,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     @Test
     void put_noStoreDirective_doesNotStore() {
         var cache = new InMemoryCompoundDocsResourceCache(100);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CacheControlParser.parse("no-store"));
 
@@ -212,7 +213,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     @Test
     void put_noCacheDirective_doesNotStore() {
         var cache = new InMemoryCompoundDocsResourceCache(100);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CacheControlParser.parse("no-cache"));
 
@@ -222,7 +223,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     @Test
     void put_privateDirective_doesNotStore() {
         var cache = new InMemoryCompoundDocsResourceCache(100);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CacheControlParser.parse("private, max-age=300"));
 
@@ -232,7 +233,7 @@ class InMemoryCompoundDocsResourceCacheTests {
     @Test
     void put_nonCacheableConstant_doesNotStore() {
         var cache = new InMemoryCompoundDocsResourceCache(100);
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, RESOURCE_JSON, CacheControlDirectives.NON_CACHEABLE);
 
@@ -245,8 +246,8 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_belowMaxSize_noEviction() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(10, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_300S);
@@ -259,9 +260,9 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_exceedsMaxSize_evictsLruEntry() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         clock.advance(Duration.ofSeconds(1));
@@ -280,9 +281,9 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_exceedsMaxSize_recentlyAccessedEntryKept() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         clock.advance(Duration.ofSeconds(1));
@@ -305,9 +306,9 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_exceedsMaxSizeWithExpiredEntries_evictsExpiredFirst() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_60S);   // expires at T+60
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_300S);   // expires at T+300
@@ -325,9 +326,9 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_exceedsMaxSizeAllExpired_clearsAllExpired() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_60S);
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_60S);
@@ -345,8 +346,8 @@ class InMemoryCompoundDocsResourceCacheTests {
     void put_maxSizeOne_onlyOneEntryAtATime() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(1, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         assertThat(cache.get(key1)).isPresent();
@@ -364,9 +365,9 @@ class InMemoryCompoundDocsResourceCacheTests {
     void get_updatesLastAccessTime_affectsEvictionOrder() {
         MutableClock clock = new MutableClock(Instant.parse("2025-01-01T00:00:00Z"));
         var cache = new InMemoryCompoundDocsResourceCache(2, clock);
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
-        CacheKey key3 = CacheKey.of("countries", "SE");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey key3 = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_300S);
         clock.advance(Duration.ofSeconds(1));
@@ -400,7 +401,7 @@ class InMemoryCompoundDocsResourceCacheTests {
             new Thread(() -> {
                 try {
                     for (int i = 0; i < opsPerThread; i++) {
-                        CacheKey key = CacheKey.of("type", "id-" + threadId + "-" + i);
+                        CacheKey key = CacheKey.of(idAndType("type", "id-" + threadId + "-" + i));
                         cache.put(key, "{\"id\":\"" + i + "\"}", CACHEABLE_300S);
                         cache.get(key); // may or may not be present (eviction)
                     }

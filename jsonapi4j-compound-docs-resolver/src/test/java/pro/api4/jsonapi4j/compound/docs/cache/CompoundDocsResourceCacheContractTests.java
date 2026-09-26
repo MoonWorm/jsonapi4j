@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 
 class CompoundDocsResourceCacheContractTests {
 
@@ -29,7 +30,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_thenGet_returnsCachedResult() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, "{\"type\":\"countries\",\"id\":\"FI\"}", CACHEABLE_DIRECTIVES);
 
@@ -41,15 +42,15 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void get_missingKey_returnsEmpty() {
-        Optional<CacheResult> result = cache.get(CacheKey.of("countries", "FI"));
+        Optional<CacheResult> result = cache.get(CacheKey.of(idAndType("countries", "FI")));
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void put_differentKeys_storedIndependently() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
 
         cache.put(key1, "{\"id\":\"FI\"}", CACHEABLE_DIRECTIVES);
         cache.put(key2, "{\"id\":\"NO\"}", CACHEABLE_DIRECTIVES);
@@ -60,7 +61,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_sameKeyTwice_overwritesPrevious() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, "{\"version\":1}", CACHEABLE_DIRECTIVES);
         cache.put(key, "{\"version\":2}", CACHEABLE_DIRECTIVES);
@@ -72,7 +73,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_nonCacheableNoStore_doesNotStore() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
         CacheControlDirectives directives = CacheControlParser.parse("no-store");
 
         cache.put(key, "{}", directives);
@@ -82,7 +83,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_nonCacheableNoCache_doesNotStore() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
         CacheControlDirectives directives = CacheControlParser.parse("no-cache");
 
         cache.put(key, "{}", directives);
@@ -92,7 +93,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_nonCacheablePrivate_doesNotStore() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
         CacheControlDirectives directives = CacheControlParser.parse("private, max-age=300");
 
         cache.put(key, "{}", directives);
@@ -102,7 +103,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_nonCacheableNullTtl_doesNotStore() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, "{}", CacheControlDirectives.NON_CACHEABLE);
 
@@ -111,7 +112,7 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void put_cacheableDirectives_stores() {
-        CacheKey key = CacheKey.of("countries", "FI");
+        CacheKey key = CacheKey.of(idAndType("countries", "FI"));
 
         cache.put(key, "{\"id\":\"FI\"}", CACHEABLE_DIRECTIVES);
 
@@ -122,8 +123,8 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void get_differentIncludesForSameTypeAndId_returnsDifferentResults() {
-        CacheKey keyWithCurrencies = CacheKey.of("countries", "FI", Set.of("currencies"));
-        CacheKey keyWithLanguages = CacheKey.of("countries", "FI", Set.of("languages"));
+        CacheKey keyWithCurrencies = CacheKey.of(idAndType("countries", "FI"), Set.of("currencies"));
+        CacheKey keyWithLanguages = CacheKey.of(idAndType("countries", "FI"), Set.of("languages"));
 
         cache.put(keyWithCurrencies, "{\"includes\":\"currencies\"}", CACHEABLE_DIRECTIVES);
         cache.put(keyWithLanguages, "{\"includes\":\"languages\"}", CACHEABLE_DIRECTIVES);
@@ -136,8 +137,8 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void get_differentFieldsForSameTypeAndId_returnsDifferentResults() {
-        CacheKey keyWithName = new CacheKey("countries", "FI", null, Set.of("name"));
-        CacheKey keyWithPopulation = new CacheKey("countries", "FI", null, Set.of("population"));
+        CacheKey keyWithName = new CacheKey(idAndType("countries", "FI"), null, Set.of("name"));
+        CacheKey keyWithPopulation = new CacheKey(idAndType("countries", "FI"), null, Set.of("population"));
 
         cache.put(keyWithName, "{\"fields\":\"name\"}", CACHEABLE_DIRECTIVES);
         cache.put(keyWithPopulation, "{\"fields\":\"population\"}", CACHEABLE_DIRECTIVES);
@@ -150,8 +151,8 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void get_sameKeyWithIncludesInDifferentOrder_returnsSameResult() {
-        CacheKey key1 = CacheKey.of("countries", "FI", Set.of("currencies", "languages"));
-        CacheKey key2 = CacheKey.of("countries", "FI", Set.of("languages", "currencies"));
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"), Set.of("currencies", "languages"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "FI"), Set.of("languages", "currencies"));
 
         cache.put(key1, "{\"data\":\"test\"}", CACHEABLE_DIRECTIVES);
 
@@ -163,9 +164,9 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void getAll_mixOfHitsAndMisses_returnsOnlyHits() {
-        CacheKey hit1 = CacheKey.of("countries", "FI");
-        CacheKey hit2 = CacheKey.of("countries", "NO");
-        CacheKey miss = CacheKey.of("countries", "SE");
+        CacheKey hit1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey hit2 = CacheKey.of(idAndType("countries", "NO"));
+        CacheKey miss = CacheKey.of(idAndType("countries", "SE"));
 
         cache.put(hit1, "{\"id\":\"FI\"}", CACHEABLE_DIRECTIVES);
         cache.put(hit2, "{\"id\":\"NO\"}", CACHEABLE_DIRECTIVES);
@@ -188,15 +189,15 @@ class CompoundDocsResourceCacheContractTests {
     @Test
     void getAll_allMisses_returnsEmptyMap() {
         Map<CacheKey, CacheResult> results = cache.getAll(
-                List.of(CacheKey.of("countries", "FI"), CacheKey.of("countries", "NO")));
+                List.of(CacheKey.of(idAndType("countries", "FI")), CacheKey.of(idAndType("countries", "NO"))));
 
         assertThat(results).isEmpty();
     }
 
     @Test
     void putAll_storesAllEntries() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
         Map<CacheKey, String> resources = Map.of(
                 key1, "{\"id\":\"FI\"}",
                 key2, "{\"id\":\"NO\"}");
@@ -209,8 +210,8 @@ class CompoundDocsResourceCacheContractTests {
 
     @Test
     void putAll_nonCacheableDirectives_storesNothing() {
-        CacheKey key1 = CacheKey.of("countries", "FI");
-        CacheKey key2 = CacheKey.of("countries", "NO");
+        CacheKey key1 = CacheKey.of(idAndType("countries", "FI"));
+        CacheKey key2 = CacheKey.of(idAndType("countries", "NO"));
         Map<CacheKey, String> resources = Map.of(
                 key1, "{\"id\":\"FI\"}",
                 key2, "{\"id\":\"NO\"}");

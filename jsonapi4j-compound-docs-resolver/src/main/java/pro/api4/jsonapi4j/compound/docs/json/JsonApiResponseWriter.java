@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseExceptio
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import java.util.Collection;
 
 public class JsonApiResponseWriter {
 
@@ -21,7 +21,7 @@ public class JsonApiResponseWriter {
         this.objectMapper = objectMapper;
     }
 
-    public String composeWithIncludedMember(ObjectNode rootNode, Set<String> resources) {
+    public String composeWithIncludedMember(ObjectNode rootNode, Collection<String> resources) {
         ArrayNode includedNode = objectMapper.createArrayNode();
         resources.stream().sorted().forEach(r -> {
             try {

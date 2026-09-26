@@ -6,12 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
+import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.processor.IdAndType;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class JsonApiResponseParser {
 
@@ -23,192 +27,122 @@ public class JsonApiResponseParser {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Parses a primary resource document and merges the relationship linkage of all its primary resources.
+     */
     public ParseResult parsePrimaryResourceDoc(String jsonApiResponse) {
-        return parseDoc(jsonApiResponse, this::parseResourceDocData);
+        JsonNode rootNode = readDocument(jsonApiResponse);
+        Map<String, Set<IdAndType>> relationships = new HashMap<>();
+        forEachObject(rootNode.get("data"), resourceNode -> readRelationships(resourceNode).forEach(
+                (relationshipName, linkage) -> relationships
+                        .computeIfAbsent(relationshipName, n -> new LinkedHashSet<>())
+                        .addAll(linkage)
+        ));
+        return new ParseResult(Collections.unmodifiableMap(relationships), rootNode);
     }
 
+    /**
+     * Parses a relationship document, treating its primary data as the linkage of {@code relationshipName}.
+     */
     public ParseResult parseRelationshipDoc(String jsonApiResponse, String relationshipName) {
-        return parseDoc(jsonApiResponse, dataNode -> parseRelationshipDocData(dataNode, relationshipName));
+        JsonNode rootNode = readDocument(jsonApiResponse);
+        Set<IdAndType> linkage = readLinkage(rootNode.get("data"));
+        Map<String, Set<IdAndType>> relationships = linkage.isEmpty()
+                ? Collections.emptyMap()
+                : Map.of(relationshipName, linkage);
+        return new ParseResult(relationships, rootNode);
     }
 
-    private ParseResult parseDoc(String jsonApiResponse,
-                                 Function<JsonNode, IntermediateParseResult> dataProcessor) {
-        if (jsonApiResponse == null) {
-            throw new InvalidJsonApiResponseException("jsonApiResponse is null");
-        }
-        try {
-            JsonNode rootNode = objectMapper.readTree(jsonApiResponse);
-            IntermediateParseResult parseResult = parseData(rootNode, dataProcessor);
-            return new ParseResult(parseResult.typeToIdsMap, parseResult.typeToRelationshipNamesMap, rootNode);
-        } catch (JsonProcessingException e) {
-            LOG.error("Failed to parse Json:Api response: {}", jsonApiResponse, e);
-            throw new InvalidJsonApiResponseException("Failed to parse Json:Api response: " + jsonApiResponse);
-        }
-    }
-
-    public IntermediateParseResult parseResourceDocData(String jsonApiResource) {
+    /**
+     * Parses a single resource object.
+     */
+    public ResourceLinkage parseResource(String jsonApiResource) {
         if (jsonApiResource == null) {
             throw new InvalidJsonApiResponseException("jsonApiResource is null");
         }
         try {
-            JsonNode rootNode = objectMapper.readTree(jsonApiResource);
-            return parseResourceDocData(rootNode);
+            JsonNode resourceNode = objectMapper.readTree(jsonApiResource);
+            return new ResourceLinkage(readIdAndType(resourceNode), readRelationships(resourceNode));
         } catch (JsonProcessingException e) {
             LOG.error("Failed to parse Json:Api resource: {}", jsonApiResource, e);
             throw new InvalidJsonApiResponseException("Failed to parse Json:Api resource: " + jsonApiResource);
         }
     }
 
-    private IntermediateParseResult parseResourceDocData(JsonNode dataNode) {
-        Map<String, Set<String>> typeToIdsMap = new HashMap<>();
-        Map<String, Set<String>> typeToRelationshipNamesMap = new HashMap<>();
-        processObjectOrArray(dataNode,
-                n -> {
-                    IntermediateParseResult intermediateParseResult = processRelationshipsNode(n);
-                    intermediateParseResult.typeToIdsMap().forEach((key, value) -> typeToIdsMap.merge(
-                            key,
-                            value,
-                            (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(Collectors.toSet())
-                    ));
-                    intermediateParseResult.typeToRelationshipNamesMap().forEach((key, value) -> typeToRelationshipNamesMap.merge(
-                            key,
-                            value,
-                            (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(Collectors.toSet())
-                    ));
-                }
-        );
-        return new IntermediateParseResult(
-                Collections.unmodifiableMap(typeToIdsMap),
-                Collections.unmodifiableMap(typeToRelationshipNamesMap)
-        );
-    }
-
-    private IntermediateParseResult parseRelationshipDocData(JsonNode dataNode, String relationshipName) {
-        Map<String, Set<String>> typeToIdsMap = new HashMap<>();
-        Map<String, Set<String>> typeToRelationshipNamesMap = new HashMap<>();
-        processObjectOrArray(dataNode,
-                n -> {
-                    IntermediateParseResult intermediateParseResult = processDataNodeForRelationshipDoc(n, relationshipName);
-                    intermediateParseResult.typeToIdsMap().forEach((key, value) -> typeToIdsMap.merge(
-                            key,
-                            value,
-                            (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(Collectors.toSet())
-                    ));
-                    intermediateParseResult.typeToRelationshipNamesMap().forEach((key, value) -> typeToRelationshipNamesMap.merge(
-                            key,
-                            value,
-                            (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(Collectors.toSet())
-                    ));
-                }
-        );
-        return new IntermediateParseResult(
-                Collections.unmodifiableMap(typeToIdsMap),
-                Collections.unmodifiableMap(typeToRelationshipNamesMap)
-        );
-    }
-
-    private IntermediateParseResult processDataNodeForRelationshipDoc(JsonNode dataObjectNode, String relationshipName) {
-        String type = dataObjectNode.get("type").asText();
-        String id = dataObjectNode.get("id").asText();
-        LOG.debug("Processing data object for relationship doc: type = {}, id = {}", type, id);
-        Map<String, Set<String>> typeToIdsMap = Map.of(type, Set.of(id));
-        Map<String, Set<String>> typeToRelationshipNamesMap = Map.of(type, Set.of(relationshipName));
-        return new IntermediateParseResult(typeToIdsMap, typeToRelationshipNamesMap);
-    }
-
-    private IntermediateParseResult parseData(JsonNode rootNode,
-                                              Function<JsonNode, IntermediateParseResult> dataProcessor) {
+    private JsonNode readDocument(String jsonApiResponse) {
+        if (jsonApiResponse == null) {
+            throw new InvalidJsonApiResponseException("jsonApiResponse is null");
+        }
+        JsonNode rootNode;
+        try {
+            rootNode = objectMapper.readTree(jsonApiResponse);
+        } catch (JsonProcessingException e) {
+            LOG.error("Failed to parse Json:Api response: {}", jsonApiResponse, e);
+            throw new InvalidJsonApiResponseException("Failed to parse Json:Api response: " + jsonApiResponse);
+        }
         if (rootNode == null || !rootNode.isObject()) {
-            throw new InvalidJsonApiResponseException("Json:Api response must contain top-level 'data' member");
+            throw new InvalidJsonApiResponseException("Json:Api response must be a JSON object");
         }
-        if (rootNode.get("data") == null) {
-            return new IntermediateParseResult(Collections.emptyMap(), Collections.emptyMap());
-        }
-        JsonNode dataNode = rootNode.get("data");
-        return dataProcessor.apply(dataNode);
+        return rootNode;
     }
 
-    private IntermediateParseResult processRelationshipsNode(JsonNode dataObjectNode) {
-        LOG.debug("Processing relationships for the resource: {} - {}", dataObjectNode.get("type").asText(), dataObjectNode.get("id").asText());
-        JsonNode relationshipsNode = dataObjectNode.get("relationships");
+    private Map<String, Set<IdAndType>> readRelationships(JsonNode resourceNode) {
+        JsonNode relationshipsNode = resourceNode.get("relationships");
         if (relationshipsNode == null || !relationshipsNode.isObject()) {
-            return new IntermediateParseResult(Collections.emptyMap(), Collections.emptyMap());
+            return Collections.emptyMap();
         }
-        Map<String, Set<String>> typeToIdsMap = new HashMap<>();
-        Map<String, Set<String>> typeToRelationshipNamesMap = new HashMap<>();
-        for (Iterator<String> it = relationshipsNode.fieldNames(); it.hasNext(); ) {
-            String relationshipName = it.next();
-            LOG.debug("Processing relationship: {}", relationshipName);
-            JsonNode relationshipNode = relationshipsNode.get(relationshipName);
-            if (relationshipNode != null && relationshipNode.isObject()) {
-                JsonNode relationshipDataNode = relationshipNode.get("data");
-                processObjectOrArray(
-                        relationshipDataNode,
-                        n -> processRelationshipDataNode(n, relationshipName, typeToIdsMap, typeToRelationshipNamesMap)
-                );
+        Map<String, Set<IdAndType>> relationships = new HashMap<>();
+        for (Iterator<Map.Entry<String, JsonNode>> it = relationshipsNode.fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> relationship = it.next();
+            if (relationship.getValue().isObject()) {
+                Set<IdAndType> linkage = readLinkage(relationship.getValue().get("data"));
+                if (!linkage.isEmpty()) {
+                    relationships.put(relationship.getKey(), linkage);
+                }
             }
         }
-        return new IntermediateParseResult(
-                Collections.unmodifiableMap(typeToIdsMap),
-                Collections.unmodifiableMap(typeToRelationshipNamesMap)
-        );
+        return Collections.unmodifiableMap(relationships);
     }
 
-    private void processObjectOrArray(JsonNode node, Consumer<JsonNode> consumer) {
-        if (node != null && node.isObject()) {
+    private Set<IdAndType> readLinkage(JsonNode dataNode) {
+        Set<IdAndType> linkage = new LinkedHashSet<>();
+        forEachObject(dataNode, identifierNode -> {
+            IdAndType key = readIdAndType(identifierNode);
+            if (key != null) {
+                linkage.add(key);
+            }
+        });
+        return linkage;
+    }
+
+    /**
+     * @return the {@code type} and {@code id} of a resource or resource identifier object, or {@code null} when either
+     * is missing or not textual
+     */
+    public static IdAndType readIdAndType(JsonNode node) {
+        String type = readStringValue(node, "type");
+        String id = readStringValue(node, "id");
+        return type == null || id == null ? null : new IdAndType(id, new ResourceType(type));
+    }
+
+    private void forEachObject(JsonNode node, Consumer<JsonNode> consumer) {
+        if (node == null) {
+            return;
+        }
+        if (node.isObject()) {
             consumer.accept(node);
-        } else if (node != null && node.isArray()) {
-            node.forEach(consumer);
+        } else if (node.isArray()) {
+            node.forEach(element -> {
+                if (element.isObject()) {
+                    consumer.accept(element);
+                }
+            });
         }
     }
 
-    private void processRelationshipDataNode(JsonNode relationshipDataNode,
-                                             String relationshipName,
-                                             Map<String, Set<String>> typeToIdsMap,
-                                             Map<String, Set<String>> typeToRelationshipNamesMap) {
-        IdAndType idAndType = getTypeAndId(relationshipDataNode);
-        if (idAndType != null) {
-            LOG.debug("Processing data entry: {} - {}", idAndType.type, idAndType.id);
-            // save type - ids relation
-            if (typeToIdsMap.containsKey(idAndType.type)) {
-                typeToIdsMap.get(idAndType.type).add(idAndType.id);
-            } else {
-                Set<String> ids = new HashSet<>();
-                ids.add(idAndType.id);
-                typeToIdsMap.put(idAndType.type, ids);
-            }
-            // save type - rel relation
-            if (typeToRelationshipNamesMap.containsKey(idAndType.type)) {
-                typeToRelationshipNamesMap.get(idAndType.type).add(relationshipName);
-            } else {
-                Set<String> relationshipNames = new HashSet<>();
-                relationshipNames.add(relationshipName);
-                typeToRelationshipNamesMap.put(idAndType.type, relationshipNames);
-            }
-        }
-    }
-
-    private IdAndType getTypeAndId(JsonNode relationshipDataNode) {
-        String id = readStringValue(relationshipDataNode, "id");
-        String type = readStringValue(relationshipDataNode, "type");
-        return id == null || type == null ? null : new IdAndType(id, type);
-    }
-
-    private String readStringValue(JsonNode node, String fieldName) {
-        JsonNode idNode = node.get(fieldName);
-        if (idNode != null && idNode.isTextual()) {
-            return idNode.asText();
-        } else {
-            return null;
-        }
-    }
-
-    private record IdAndType(String id, String type) {
-
-    }
-
-    public record IntermediateParseResult(Map<String, Set<String>> typeToIdsMap,
-                                          Map<String, Set<String>> typeToRelationshipNamesMap) {
+    private static String readStringValue(JsonNode node, String fieldName) {
+        JsonNode valueNode = node.get(fieldName);
+        return valueNode != null && valueNode.isTextual() ? valueNode.asText() : null;
     }
 
 }
