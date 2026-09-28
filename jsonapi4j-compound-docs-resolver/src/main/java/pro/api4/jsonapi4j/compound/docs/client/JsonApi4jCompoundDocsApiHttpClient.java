@@ -19,10 +19,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+
+import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 @Slf4j
 public class JsonApi4jCompoundDocsApiHttpClient {
@@ -34,30 +35,47 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             "host",
             "upgrade"
     );
-    private final ObjectMapper objectMapper;
-    private final ErrorStrategy errorStrategy;
-    private final ConcurrentMap<Long, HttpClient> clientsByConnectTimeoutMs = new ConcurrentHashMap<>();
 
+    /**
+     * Headers that claim a client address are never propagated. An include call is the app calling a service directly -
+     * on loopback for same-app types - and a container that trusts loopback as a proxy (e.g. Tomcat's
+     * {@code RemoteIpValve}) would otherwise take the caller's own, unverified claim as the remote address.
+     */
+    private static final Set<String> CLIENT_ADDRESS_HEADERS = Set.of(
+            "forwarded",
+            "x-forwarded-for",
+            "x-real-ip"
+    );
+
+    private final ObjectMapper objectMapper;
+    private final CompoundDocsResolverConfig config;
+    private final HttpClient client;
+
+    /**
+     * One {@code HttpClient} is shared by every fetch, deliberately not built per fetch: it owns a connection pool and a
+     * selector thread, so a per-fetch instance gives up connection reuse across the chunks a single request fans out
+     * into, and only becomes reclaimable once the garbage collector notices it. It also cannot be closed here - the
+     * framework targets Java 17, where {@code HttpClient} is not {@link AutoCloseable}.
+     */
     public JsonApi4jCompoundDocsApiHttpClient(ObjectMapper objectMapper,
-                                              ErrorStrategy errorStrategy) {
+                                              CompoundDocsResolverConfig config) {
         this.objectMapper = objectMapper;
-        this.errorStrategy = errorStrategy;
+        this.config = config;
+        this.client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
+                .build();
     }
 
-    public HttpFetchResult doBatchFetch(URI domainBaseUrl,
-                                        String resourceType,
-                                        Set<String> ids,
-                                        Set<String> includes,
-                                        CompoundDocsRequest originalRequest,
-                                        CompoundDocsResolverConfig config,
-                                        Map<String, String> metaHeaders) {
+    /**
+     * Fetches one batch. The request always carries {@code X-Disable-Compound-Docs: true}, since the resolver assembles
+     * {@code included} itself and the downstream must not do it again.
+     */
+    public HttpFetchResult doBatchFetch(BatchFetch batch, CompoundDocsRequest originalRequest) {
         try {
-            HttpClient client = httpClient(config);
-
-            JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(domainBaseUrl)
-                    .resourceType(resourceType)
-                    .filterParam("id", ids.stream().sorted().toList())
-                    .includeParam(includes);
+            JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(batch.domainSettings().url())
+                    .resourceType(batch.resourceType())
+                    .filterParam("id", batch.ids().stream().sorted().toList())
+                    .includeParam(batch.includes());
 
             if (config.getPropagation().contains(Propagation.FIELDS)) {
                 urlBuilder.fieldsParams(originalRequest.getFieldSets());
@@ -75,22 +93,19 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                 Map<String, String> headers = originalRequest.getHeaders();
                 if (headers != null) {
                     headers.forEach((header, value) -> {
-                        if (!DISALLOWED_HEADERS.contains(header.toLowerCase())) {
+                        if (isPropagatable(header)) {
                             requestBuilder.header(header, value);
                         }
                     });
                 }
             }
 
-            // add meta headers
-            if (metaHeaders != null) {
-                metaHeaders.forEach(requestBuilder::header);
-            }
+            requestBuilder.header(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true));
 
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                if (errorStrategy == ErrorStrategy.IGNORE) {
+                if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
                     log.warn("Non-200 response ({}) from GET {}, ignoring per error strategy", response.statusCode(), uri);
                     return new HttpFetchResult(Collections.emptyList(), null);
                 } else {
@@ -108,22 +123,9 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         }
     }
 
-    /**
-     * Returns the client to fetch with, reusing one instance per connect timeout.
-     * <p>
-     * A client is deliberately not built per fetch: {@code HttpClient} owns a connection pool and a selector
-     * thread, so a per-fetch instance gives up connection reuse across the chunks a single request fans out into,
-     * and only becomes reclaimable once the garbage collector notices it. It also cannot be closed here - the
-     * framework targets Java 17, where {@code HttpClient} is not {@link AutoCloseable} - which makes a shared
-     * instance the only shape that does not accumulate clients.
-     */
-    private HttpClient httpClient(CompoundDocsResolverConfig config) {
-        return clientsByConnectTimeoutMs.computeIfAbsent(
-                config.getHttpConnectTimeoutMs(),
-                connectTimeoutMs -> HttpClient.newBuilder()
-                        .connectTimeout(Duration.ofMillis(connectTimeoutMs))
-                        .build()
-        );
+    static boolean isPropagatable(String header) {
+        String name = header.toLowerCase(Locale.ROOT);
+        return !DISALLOWED_HEADERS.contains(name) && !CLIENT_ADDRESS_HEADERS.contains(name);
     }
 
     private List<ParsedResource> parseResponse(HttpResponse<String> response) {

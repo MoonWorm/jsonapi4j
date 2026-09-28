@@ -6,13 +6,11 @@ import java.net.URI;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DefaultDomainSettingsResolverTests {
 
     private static final URI USERS_URL = URI.create("http://users.example.com");
     private static final URI COUNTRIES_URL = URI.create("http://countries.example.com");
-    private static final String SELF_BASE_URL = "https://host:8443/ctx/jsonapi";
 
     @Test
     void resolveDomainSettings_mappedType_returnsMappedUrl() {
@@ -23,32 +21,19 @@ class DefaultDomainSettingsResolverTests {
                 DomainSettings.DEFAULT_MAX_BATCH_SIZE
         );
 
-        assertThat(resolver.resolveDomainSettings("users", SELF_BASE_URL).url()).isEqualTo(USERS_URL);
-        assertThat(resolver.resolveDomainSettings("countries", SELF_BASE_URL).url()).isEqualTo(COUNTRIES_URL);
+        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::url).isEqualTo(USERS_URL);
+        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::url).isEqualTo(COUNTRIES_URL);
     }
 
     @Test
-    void resolveDomainSettings_unmappedType_usesSelfBaseUrl() {
+    void resolveDomainSettings_unmappedType_returnsEmpty() {
         DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
                 Map.of("users", USERS_URL.toString()),
-                Map.of(),
+                Map.of("state", 50),
                 DomainSettings.DEFAULT_MAX_BATCH_SIZE
         );
 
-        assertThat(resolver.resolveDomainSettings("state", SELF_BASE_URL).url())
-                .isEqualTo(URI.create(SELF_BASE_URL));
-    }
-
-    @Test
-    void resolveDomainSettings_unmappedType_nullSelfBaseUrl_failsFast() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString()),
-                Map.of(),
-                DomainSettings.DEFAULT_MAX_BATCH_SIZE
-        );
-
-        assertThatThrownBy(() -> resolver.resolveDomainSettings("state", null))
-                .isInstanceOf(NullPointerException.class);
+        assertThat(resolver.resolveDomainSettings("state")).isEmpty();
     }
 
     @Test
@@ -59,7 +44,7 @@ class DefaultDomainSettingsResolverTests {
                 DomainSettings.DEFAULT_MAX_BATCH_SIZE
         );
 
-        assertThat(resolver.resolveDomainSettings("users", null).maxBatchSize())
+        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize)
                 .isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
     }
 
@@ -72,8 +57,8 @@ class DefaultDomainSettingsResolverTests {
                 DomainSettings.DEFAULT_MAX_BATCH_SIZE
         );
 
-        assertThat(resolver.resolveDomainSettings("users", null).maxBatchSize()).isEqualTo(50);
-        assertThat(resolver.resolveDomainSettings("countries", null).maxBatchSize())
+        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(50);
+        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::maxBatchSize)
                 .isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
     }
 
@@ -85,7 +70,7 @@ class DefaultDomainSettingsResolverTests {
                 100
         );
 
-        assertThat(resolver.resolveDomainSettings("users", null).maxBatchSize()).isEqualTo(100);
+        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(100);
     }
 
     @Test
@@ -97,21 +82,8 @@ class DefaultDomainSettingsResolverTests {
                 100
         );
 
-        assertThat(resolver.resolveDomainSettings("users", null).maxBatchSize()).isEqualTo(100);
-        assertThat(resolver.resolveDomainSettings("countries", null).maxBatchSize()).isEqualTo(5);
+        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(100);
+        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(5);
     }
 
-    @Test
-    void resolveDomainSettings_unmappedType_usesSelfBaseUrlAndGlobalDefaultBatchSize() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString()),
-                Map.of("users", 50),
-                100
-        );
-
-        DomainSettings settings = resolver.resolveDomainSettings("state", SELF_BASE_URL);
-
-        assertThat(settings.url()).isEqualTo(URI.create(SELF_BASE_URL));
-        assertThat(settings.maxBatchSize()).isEqualTo(100);
-    }
 }

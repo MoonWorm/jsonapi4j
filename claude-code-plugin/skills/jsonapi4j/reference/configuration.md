@@ -19,6 +19,7 @@ jsonapi4j:
       countries: 20
     mapping:                    # ONLY for types another service serves; same-app types need no entry
       orders: https://orders.internal/jsonapi
+      default: https://api.internal:8443/jsonapi   # optional: same-app types when loopback isn't reachable
     httpConnectTimeoutMs: 1000
     httpTotalTimeoutMs: 5000
     cache:
@@ -53,7 +54,11 @@ jsonapi4j:
 
 Notes:
 - `cd.mapping` is for cross-service types only. Same-app includes (and the built-in meta types) resolve
-  against the endpoint the request arrived on, so there is no base URL or port to keep in sync.
+  against loopback (`127.0.0.1`, or `[::1]` over IPv6) at the local port the request arrived on (never the
+  `Host` header), so there is no base URL or port to keep in sync. When the app isn't reachable on loopback
+  as-is (TLS terminated in the app, a server bound to one specific non-loopback address), set
+  `cd.mapping.default`, e.g. via `JSONAPI4J_CD_MAPPING_DEFAULT`. `default` is reserved: a resource type
+  named `default` fails startup.
 - The exact set of keys can grow between versions — confirm against your version's property classes /
   the docs below.
 

@@ -1,6 +1,7 @@
 package pro.api4.jsonapi4j.plugin.cd.config;
 
 import org.apache.commons.lang3.StringUtils;
+import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.config.PluginProperties;
@@ -18,6 +19,11 @@ public interface CompoundDocsProperties extends PluginProperties {
     String MAX_INCLUDED_RESOURCES_PROPERTY = "maxIncludedResources";
     String ERROR_STRATEGY_PROPERTY = "errorStrategy";
     String MAPPING_PROPERTY = "mapping";
+    /**
+     * Reserved {@code mapping} key: the base URL for every resource type without an entry of its own, used instead of
+     * calling this app over loopback. A resource type can therefore not be named {@code default}.
+     */
+    String DEFAULT_MAPPING_KEY = "default";
     String BATCH_SIZE_MAPPING_PROPERTY = "batchSizeMapping";
     String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
     String PROPAGATION_PROPERTY = "propagation";
@@ -39,7 +45,12 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_DEDUPLICATE_RESOURCES = "true";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
-    String DEFAULT_MAX_BATCH_SIZE = "20";
+    /**
+     * Derived from {@link DomainSettings#DEFAULT_MAX_BATCH_SIZE} so the resolver and the plugin share one default. Kept
+     * a compile-time constant {@code String}, like the other defaults, so it can be used in annotations such as
+     * Quarkus' {@code @WithDefault}.
+     */
+    String DEFAULT_MAX_BATCH_SIZE = "" + DomainSettings.DEFAULT_MAX_BATCH_SIZE;
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);
@@ -59,6 +70,25 @@ public interface CompoundDocsProperties extends PluginProperties {
 
     default Map<String, String> mapping() {
         return Collections.emptyMap();
+    }
+
+    /**
+     * @return {@code mapping.default}, the base URL for resource types without an entry of their own, if set
+     */
+    default Optional<String> defaultMapping() {
+        return mapping() == null ? Optional.empty() : Optional.ofNullable(mapping().get(DEFAULT_MAPPING_KEY));
+    }
+
+    /**
+     * @return the per-resource-type entries of {@code mapping}, without the reserved {@code default} key
+     */
+    default Map<String, String> typeMappings() {
+        if (mapping() == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> typeMappings = new HashMap<>(mapping());
+        typeMappings.remove(DEFAULT_MAPPING_KEY);
+        return Collections.unmodifiableMap(typeMappings);
     }
 
     default Map<String, Integer> batchSizeMapping() {

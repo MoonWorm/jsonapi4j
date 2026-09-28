@@ -72,7 +72,7 @@ public class UserResource implements Resource<UserDbEntity> {
    for field-level/ownership gating.
 5. **Compound docs**: if the type is includable, support `filter[id]` on its `readPage` (+ a
    `jsonapi4j.cd.batchSizeMapping.<type>` entry). A `cd.mapping` entry is only for types another
-   service serves — same-app types resolve against the incoming request.
+   service serves — same-app types resolve against loopback at the local port.
 6. **OpenAPI** (if the OAS plugin is on): `@OasResourceInfo(attributes = XAttributes.class)` on the
    `Resource` — without it the published schema is empty. Declare `sortableFields` / `filters` on the
    operation, or they go undocumented even though they work.

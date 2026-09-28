@@ -42,7 +42,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
     @Bean
     public DomainSettingsResolver jsonApi4jCdDomainSettingsResolver(CompoundDocsProperties cdProperties) {
         return DefaultDomainSettingsResolver.from(
-                cdProperties.mapping(),
+                cdProperties.typeMappings(),
                 cdProperties.batchSizeMapping(),
                 cdProperties.defaultMaxBatchSize()
         );

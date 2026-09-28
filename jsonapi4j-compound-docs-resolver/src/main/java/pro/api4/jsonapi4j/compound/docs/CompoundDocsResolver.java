@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
@@ -22,9 +23,6 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Supplier;
-
-import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 /**
  * Resolves the {@code included} member of a JSON:API document hop by hop.
@@ -38,7 +36,6 @@ import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 public class CompoundDocsResolver {
 
     private final CompoundDocsResolverConfig config;
-    private final DomainSettingsResolver domainSettingsResolver;
 
     private final CachingCompoundDocsFetcher fetcher;
 
@@ -48,10 +45,9 @@ public class CompoundDocsResolver {
     private final ExecutorService executorService;
 
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
-                                DomainSettingsResolver domainSettingsResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService) {
-        this(config, domainSettingsResolver, objectMapper, executorService, (CompoundDocsResourceCache) null);
+        this(config, objectMapper, executorService, (CompoundDocsResourceCache) null);
     }
 
     /**
@@ -60,40 +56,36 @@ public class CompoundDocsResolver {
      * @param cache the resource cache, or {@code null} to disable caching
      */
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
-                                DomainSettingsResolver domainSettingsResolver,
                                 ObjectMapper objectMapper,
                                 ExecutorService executorService,
                                 CompoundDocsResourceCache cache) {
         this(
                 config,
-                domainSettingsResolver,
                 objectMapper,
                 executorService,
                 new CachingCompoundDocsFetcher(
                         new JsonApi4jCompoundDocsApiHttpClient(
                                 Validate.notNull(objectMapper, "ObjectMapper is not configured"),
-                                Validate.notNull(config, "CompoundDocsResolverConfig is not configured").getErrorStrategy()
+                                Validate.notNull(config, "CompoundDocsResolverConfig is not configured")
                         ),
                         cache,
-                        Validate.notNull(executorService, "ExecutorService is not configured")
+                        Validate.notNull(executorService, "ExecutorService is not configured"),
+                        config
                 )
         );
     }
 
     CompoundDocsResolver(CompoundDocsResolverConfig config,
-                         DomainSettingsResolver domainSettingsResolver,
                          ObjectMapper objectMapper,
                          ExecutorService executorService,
                          CachingCompoundDocsFetcher fetcher) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
-        Validate.notNull(domainSettingsResolver, "DomainSettingsResolver is not configured");
 
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
         Validate.notNull(executorService, "ExecutorService is not configured");
         Validate.notNull(fetcher, "CachingCompoundDocsFetcher is not configured");
 
         this.config = config;
-        this.domainSettingsResolver = domainSettingsResolver;
         this.fetcher = fetcher;
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
@@ -102,84 +94,59 @@ public class CompoundDocsResolver {
         this.executorService = executorService;
     }
 
+    /**
+     * Enriches {@code originalJsonApiResponse} with the {@code included} member the request asks for.
+     *
+     * @param domainSettingsResolver where each included resource type is fetched from. Passed per call, as routing may
+     *                               depend on the request - the CD plugin falls back to the app itself at the local port
+     *                               the request arrived on - while a gateway simply passes the same resolver each time
+     */
     public CompoundDocsResult resolveCompoundDocs(String originalJsonApiResponse,
-                                                  CompoundDocsRequest compoundDocsRequest) {
+                                                  CompoundDocsRequest compoundDocsRequest,
+                                                  DomainSettingsResolver domainSettingsResolver) {
+        Validate.notNull(domainSettingsResolver, "DomainSettingsResolver must not be null");
+        if (!compoundDocsRequest.isProcessable()) {
+            return new CompoundDocsResult(originalJsonApiResponse, null);
+        }
         String relationshipName = compoundDocsRequest.getRelationshipNameFromRequestUri();
         if (relationshipName == null) {
-            return resolveCompoundDocsForPrimaryResourceResponse(
-                    originalJsonApiResponse,
-                    compoundDocsRequest
-            );
-        }
-        return resolveCompoundDocsForRelationshipResponse(
-                originalJsonApiResponse,
-                compoundDocsRequest,
-                relationshipName
-        );
-    }
-
-    public CompoundDocsResult resolveCompoundDocsForPrimaryResourceResponse(
-            String originalJsonApiResponse,
-            CompoundDocsRequest compoundDocsRequest
-    ) throws ErrorJsonApiResponseException {
-        if (compoundDocsRequest.isProcessable()) {
             return resolveCompoundDocsInternal(
                     originalJsonApiResponse,
+                    jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse),
                     compoundDocsRequest.getIncludes(),
                     compoundDocsRequest,
-                    () -> jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
+                    domainSettingsResolver
             );
         }
-        return new CompoundDocsResult(originalJsonApiResponse, null);
-    }
-
-    public CompoundDocsResult resolveCompoundDocsForRelationshipResponse(String originalJsonApiResponse,
-                                                                         CompoundDocsRequest compoundDocsRequest,
-                                                                         String relationshipName) throws ErrorJsonApiResponseException {
-        if (compoundDocsRequest.isProcessable()) {
-            List<String> effectiveOriginalRequestIncludes =
-                    compoundDocsRequest.getIncludes() == null ?
-                            Collections.emptyList() :
-                            compoundDocsRequest.getIncludes()
-                                    .stream()
-                                    .filter(i -> i.startsWith(relationshipName))
-                                    .toList();
-            return resolveCompoundDocsInternal(
-                    originalJsonApiResponse,
-                    effectiveOriginalRequestIncludes,
-                    compoundDocsRequest,
-                    () -> jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName)
-            );
-        }
-        return new CompoundDocsResult(originalJsonApiResponse, null);
-    }
-
-    private CompletableFuture<BatchFetchResult> sendJsonApiRequestAsync(Set<String> ids,
-                                                                       String resourceType,
-                                                                       Set<String> requestIncludes,
-                                                                       CompoundDocsRequest originalRequest,
-                                                                       Map<String, String> metaHeaders) {
-        DomainSettings domainSettings = resolveDomainSettings(resourceType, originalRequest.getSelfBaseUrl());
-        return CompletableFuture.supplyAsync(
-                () -> fetcher.fetch(
-                        domainSettings,
-                        resourceType,
-                        ids,
-                        requestIncludes,
-                        originalRequest,
-                        config,
-                        metaHeaders
-                ),
-                executorService
+        return resolveCompoundDocsInternal(
+                originalJsonApiResponse,
+                jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName),
+                includesUnder(relationshipName, compoundDocsRequest),
+                compoundDocsRequest,
+                domainSettingsResolver
         );
+    }
+
+    /**
+     * On a relationship endpoint include paths start at the relationship itself, so only those apply.
+     */
+    private List<String> includesUnder(String relationshipName, CompoundDocsRequest compoundDocsRequest) {
+        return compoundDocsRequest.getIncludes()
+                .stream()
+                .filter(i -> i.startsWith(relationshipName))
+                .toList();
+    }
+
+    private CompletableFuture<BatchFetchResult> fetchAsync(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executorService);
     }
 
     private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
+                                                           ParseResult originalParseResult,
                                                            List<String> effectiveRequestIncludes,
                                                            CompoundDocsRequest request,
-                                                           Supplier<ParseResult> parseResultSupplier) throws ErrorJsonApiResponseException {
+                                                           DomainSettingsResolver domainSettingsResolver) throws ErrorJsonApiResponseException {
 
-        ParseResult originalParseResult = parseResultSupplier.get();
         IncludeTree includeTree = IncludeTree.of(effectiveRequestIncludes);
         CacheControlAggregator aggregator = new CacheControlAggregator();
 
@@ -218,12 +185,14 @@ public class CompoundDocsResolver {
                 Set<String> typeIncludes = includesByType.get(resourceType);
                 futures.put(
                         resourceType,
-                        sendJsonApiRequestAsync(
-                                ids,
-                                resourceType,
-                                typeIncludes,
-                                request,
-                                Map.of(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true))
+                        fetchAsync(
+                                new BatchFetch(
+                                        resolveDomainSettings(domainSettingsResolver, resourceType),
+                                        resourceType,
+                                        ids,
+                                        typeIncludes
+                                ),
+                                request
                         )
                 );
                 log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, typeIncludes);
@@ -266,17 +235,20 @@ public class CompoundDocsResolver {
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
     }
 
-    private DomainSettings resolveDomainSettings(String resourceType, String selfBaseUrl) {
+    private DomainSettings resolveDomainSettings(DomainSettingsResolver domainSettingsResolver, String resourceType) {
+        Optional<DomainSettings> settings;
         try {
-            DomainSettings settings = domainSettingsResolver.resolveDomainSettings(resourceType, selfBaseUrl);
-            if (settings == null) {
-                throw new NullPointerException("DomainSettingsResolver returned null DomainSettings");
-            }
-            return settings;
+            settings = domainSettingsResolver.resolveDomainSettings(resourceType);
         } catch (Exception e) {
             log.warn("Failed to resolve domain settings for resource type '{}': {}", resourceType, e.getMessage());
             throw new DomainResolutionException("Error resolving domain settings", e);
         }
+        if (settings == null) {
+            throw new DomainResolutionException("DomainSettingsResolver returned null instead of an Optional");
+        }
+        return settings.orElseThrow(() -> new DomainResolutionException(
+                String.format("Resource type '%s' has no mapping", resourceType)
+        ));
     }
 
 }

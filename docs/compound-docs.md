@@ -74,7 +74,7 @@ DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
 );
 ```
 
-`DomainSettingsResolver` is a strict functional interface — `DomainSettings resolveDomainSettings(String resourceType)` — so any custom implementation has full control over both the URL and the per-type batch size.
+`DomainSettingsResolver` is a strict functional interface — `Optional<DomainSettings> resolveDomainSettings(String resourceType)` — so any custom implementation has full control over both the URL and the per-type batch size. An empty result means there is no route for the type: used standalone (e.g. in an API gateway), resolution then fails with `Resource type '<type>' has no mapping`, so every type your API can include must be mapped. The [Compound Documents Plugin](/compound-docs-plugin/) instead treats such a type as served by the app itself.
 
 ### Standalone Resolver
 
@@ -89,6 +89,57 @@ The resolver is provided by a separate module: `jsonapi4j-compound-docs-resolver
 ```
 
 It handles multi-hop traversal, parallel batch fetching, resource deduplication, caching, and Cache-Control aggregation — all without requiring the JsonApi4j framework or Servlet API.
+
+Build the resolver and its routing once at startup. Every resource type your API can include must be mapped:
+
+```java
+DomainSettingsResolver routing = DefaultDomainSettingsResolver.from(
+    Map.of("users",      "http://users-service/jsonapi",
+           "countries",  "http://geo-service/jsonapi",
+           "currencies", "http://geo-service/jsonapi"),
+    Map.of("users", 50),                      // per-type filter[id] batch size overrides
+    DomainSettings.DEFAULT_MAX_BATCH_SIZE
+);
+
+CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
+    true,                                     // enabled
+    2,                                        // maxHops
+    100,                                      // maxIncludedResources
+    ErrorStrategy.IGNORE,
+    List.of(Propagation.FIELDS, Propagation.HEADERS),
+    true,                                     // deduplicateResources
+    5000,                                     // httpConnectTimeoutMs
+    10000,                                    // httpTotalTimeoutMs
+    true,                                     // cacheEnabled
+    1000                                      // cacheMaxSize
+);
+
+CompoundDocsResolver resolver = new CompoundDocsResolver(
+    config,
+    new ObjectMapper(),
+    Executors.newCachedThreadPool(),
+    new InMemoryCompoundDocsResourceCache(1000)   // or null to disable caching
+);
+```
+
+Then, for every proxied `GET` that carries an `include` parameter and got a `2xx` from the backend:
+
+```java
+CompoundDocsRequest request = new CompoundDocsRequest(
+    "GET",
+    List.of("relatives", "placeOfBirth.currencies"), // the split `include` parameter
+    Map.of("users", List.of("fullName")),            // fields[type], or Map.of()
+    headers,                                         // incoming headers, propagated per `propagation`
+    "/users/1",                                      // request path, e.g. /users/1/relationships/relatives
+    Map.of()                                         // custom query params
+);
+
+CompoundDocsResult result = resolver.resolveCompoundDocs(backendResponseBody, request, routing);
+// respond with result.responseBody(); when result.cacheControlDirectives() isn't null,
+// set Cache-Control to CacheControlParser.format(result.cacheControlDirectives())
+```
+
+Each backend must serve `GET /{type}?filter[id]=a,b,c` and emit relationship linkage for the relationships named in `include`. It doesn't resolve includes itself: the resolver's calls carry `X-Disable-Compound-Docs: true` and the gateway assembles `included`.
 
 ### Caching
 

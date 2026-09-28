@@ -7,8 +7,8 @@ Servlet) — mirror that structure.
 
 - **Ordinary endpoints**: `@SpringBootTest(webEnvironment = RANDOM_PORT)`, set `RestAssured.port` from
   `@LocalServerPort` in `@BeforeEach`. Send `Accept` / `Content-Type: application/vnd.api+json`.
-- **Compound-docs (`?include=`) tests**: same-app includes resolve against the endpoint the request
-  arrived on, so `RANDOM_PORT` works — no pinned port and no `cd.mapping` needed. (The sample apps still
+- **Compound-docs (`?include=`) tests**: same-app includes resolve against loopback at the local port the
+  request arrived on, so `RANDOM_PORT` works — no pinned port and no `cd.mapping` needed. (The sample apps still
   use `DEFINED_PORT` + `@DirtiesContext` here; that predates auto-resolution.) Pin the port only if you
   configure a `cd.mapping` entry pointing back at the app under test.
 - **Layer test profiles**: keep CD **disabled** in the plain profile, enable it only in the CD profile

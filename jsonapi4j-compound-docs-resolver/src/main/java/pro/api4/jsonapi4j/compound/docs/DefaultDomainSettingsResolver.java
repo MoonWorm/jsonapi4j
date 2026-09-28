@@ -2,17 +2,15 @@ package pro.api4.jsonapi4j.compound.docs;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toMap;
 
 /**
  * Default {@link DomainSettingsResolver} backed by per-resource-type maps for base URLs and batch sizes.
  *
- * <p>An explicit {@code jsonapi4j.cd.mapping.<type>} entry always wins and is only needed for resource types served by
- * a <em>different</em> service. Any unmapped type is treated as same-app and resolved against {@code selfBaseUrl} — the
- * app's own JSON:API root derived from the incoming request — so same-app types (including the built-in meta types)
- * resolve with no configuration. Resource types without an explicit batch size override fall back to
- * {@code defaultMaxBatchSize}.
+ * <p>Only mapped resource types have a route; any other type resolves to empty. Resource types without an explicit batch
+ * size override fall back to {@code defaultMaxBatchSize}.
  */
 public class DefaultDomainSettingsResolver implements DomainSettingsResolver {
 
@@ -38,20 +36,14 @@ public class DefaultDomainSettingsResolver implements DomainSettingsResolver {
         );
     }
 
-    /**
-     * An explicit mapping always wins (federated/remote types). An unmapped type resolves against {@code selfBaseUrl} —
-     * the app's own JSON:API root derived from the incoming request — so same-app types (including the meta types)
-     * resolve against the exact endpoint the request arrived on. {@code selfBaseUrl} is required for unmapped types (it
-     * is guaranteed non-null by {@link CompoundDocsRequest}).
-     */
     @Override
-    public DomainSettings resolveDomainSettings(String resourceType, String selfBaseUrl) {
-        URI url = mappings.get(resourceType);
-        if (url == null) {
-            url = URI.create(selfBaseUrl);
-        }
-        int batchSize = batchSizeMappings.getOrDefault(resourceType, defaultMaxBatchSize);
-        return new DomainSettings(url, batchSize);
+    public Optional<DomainSettings> resolveDomainSettings(String resourceType) {
+        return Optional.ofNullable(mappings.get(resourceType))
+                .map(url -> new DomainSettings(url, maxBatchSize(resourceType)));
+    }
+
+    private int maxBatchSize(String resourceType) {
+        return batchSizeMappings.getOrDefault(resourceType, defaultMaxBatchSize);
     }
 
     private static Map<String, URI> toUriMap(Map<String, String> mappings) {

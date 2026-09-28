@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -72,7 +71,11 @@ class CachingCompoundDocsFetcherTests {
     }
 
     private CachingCompoundDocsFetcher newFetcher(InMemoryCompoundDocsResourceCache cacheArg) {
-        return new CachingCompoundDocsFetcher(httpClient, cacheArg, executor);
+        return new CachingCompoundDocsFetcher(httpClient, cacheArg, executor, mockConfig);
+    }
+
+    private static boolean batchOf(BatchFetch batch, Set<String> ids) {
+        return batch != null && "countries".equals(batch.resourceType()) && ids.equals(batch.ids());
     }
 
     private void stubConfigNoPropagation() {
@@ -83,25 +86,22 @@ class CachingCompoundDocsFetcherTests {
 
     @Test
     void fetch_nullCache_delegatesToHttpClient() {
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(null);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
-        verify(httpClient).doBatchFetch(any(), any(), any(), any(), any(), any(), any());
+        verify(httpClient).doBatchFetch(any(), any());
     }
 
     @Test
     void fetch_nullCache_returnsAllHttpResources() {
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON),
                                 parsedResource("countries", "NO", COUNTRY_NO_JSON)),
@@ -109,10 +109,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(null);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(2);
         assertThat(result.resources()).contains(COUNTRY_FI_JSON, COUNTRY_NO_JSON);
@@ -130,10 +127,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(2);
         assertThat(result.resources()).contains(COUNTRY_FI_JSON, COUNTRY_NO_JSON);
@@ -148,10 +142,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
     }
@@ -161,8 +152,7 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_noneCached_fetchesAllViaHttp() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("FI", "NO")),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("FI", "NO"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON),
                                 parsedResource("countries", "NO", COUNTRY_NO_JSON)),
@@ -170,30 +160,24 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(2);
         assertThat(result.resources()).contains(COUNTRY_FI_JSON, COUNTRY_NO_JSON);
-        verify(httpClient).doBatchFetch(any(), eq("countries"), eq(Set.of("FI", "NO")),
-                any(), any(), any(), any());
+        verify(httpClient).doBatchFetch(argThat(batch -> batchOf(batch, Set.of("FI", "NO"))), any());
     }
 
     @Test
     void fetch_noneCached_storesResourcesInCache() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
@@ -203,16 +187,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_noneCached_parsesCacheControlHeader() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=60"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
@@ -228,24 +210,19 @@ class CachingCompoundDocsFetcherTests {
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(2);
         assertThat(result.resources()).contains(COUNTRY_FI_JSON, COUNTRY_NO_JSON);
 
-        verify(httpClient).doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
-                any(), any(), any(), any());
+        verify(httpClient).doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any());
     }
 
     @Test
@@ -254,8 +231,7 @@ class CachingCompoundDocsFetcherTests {
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO", "SE")),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO", "SE"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON),
                                 parsedResource("countries", "SE", COUNTRY_SE_JSON)),
@@ -263,10 +239,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO", "SE"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO", "SE"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(3);
         assertThat(result.resources()).contains(COUNTRY_FI_JSON, COUNTRY_NO_JSON, COUNTRY_SE_JSON);
@@ -278,17 +251,14 @@ class CachingCompoundDocsFetcherTests {
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         CacheKey keyNO = CacheKey.of(idAndType("countries", "NO"));
         assertThat(cache.get(keyNO)).isPresent();
@@ -300,17 +270,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_noCacheControlHeader_resourcesNotCached() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         null));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
 
@@ -321,16 +288,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_nonCacheableResponse_resourcesNotCached() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "no-store"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isEmpty();
@@ -339,16 +304,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_cacheableResponse_resourcesCached() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyFI)).isPresent();
@@ -361,16 +324,14 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         Set<String> includes = Set.of("regions");
 
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), includes,
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), includes), mockRequest);
 
         CacheKey keyWithIncludes = CacheKey.of(idAndType("countries", "FI"), includes);
         assertThat(cache.get(keyWithIncludes)).isPresent();
@@ -384,16 +345,14 @@ class CachingCompoundDocsFetcherTests {
         when(mockConfig.getPropagation()).thenReturn(List.of(Propagation.FIELDS));
         when(mockRequest.getFieldSets()).thenReturn(Map.of("countries", List.of("name", "code")));
 
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyWithFields = new CacheKey(idAndType("countries", "FI"), Collections.emptySet(), Set.of("name", "code"));
         assertThat(cache.get(keyWithFields)).isPresent();
@@ -406,16 +365,14 @@ class CachingCompoundDocsFetcherTests {
     void fetch_fieldsPropagationDisabled_cacheKeyHasEmptyFields() {
         when(mockConfig.getPropagation()).thenReturn(List.of());
 
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheKey keyNoFields = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyNoFields)).isPresent();
@@ -427,10 +384,7 @@ class CachingCompoundDocsFetcherTests {
     void fetch_emptyIds_returnsEmptyResult() {
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Collections.emptySet(), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Collections.emptySet(), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).isEmpty();
         verifyNoInteractions(httpClient);
@@ -440,10 +394,7 @@ class CachingCompoundDocsFetcherTests {
     void fetch_nullIds_returnsEmptyResult() {
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                null, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", null, Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).isEmpty();
         verifyNoInteractions(httpClient);
@@ -452,15 +403,12 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_httpClientThrows_exceptionPropagates() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenThrow(new RuntimeException("Connection refused"));
 
         var fetcher = newFetcher(cache);
 
-        assertThatThrownBy(() -> fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of()))
+        assertThatThrownBy(() -> fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Connection refused");
     }
@@ -469,31 +417,35 @@ class CachingCompoundDocsFetcherTests {
     void fetch_resourceWithNullTypeAndId_stillIncludedInResultsButNotCached() {
         stubConfigNoPropagation();
         String malformedJson = "{\"attributes\":{\"name\":\"Unknown\"}}";
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource(null, null, malformedJson)),
                         "max-age=300"));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).containsExactly(malformedJson);
     }
 
     @Test
     void constructor_nullHttpClient_throwsNullPointerException() {
-        assertThatThrownBy(() -> new CachingCompoundDocsFetcher(null, cache, executor))
+        assertThatThrownBy(() -> new CachingCompoundDocsFetcher(null, cache, executor, mockConfig))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("httpClient must not be null");
     }
 
     @Test
+    void constructor_nullConfig_throwsNullPointerException() {
+        assertThatThrownBy(() -> new CachingCompoundDocsFetcher(httpClient, cache, executor, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("config must not be null");
+    }
+
+    @Test
     void constructor_nullExecutor_throwsNullPointerException() {
-        assertThatThrownBy(() -> new CachingCompoundDocsFetcher(httpClient, cache, null))
+        assertThatThrownBy(() -> new CachingCompoundDocsFetcher(httpClient, cache, null, mockConfig))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("executorService must not be null");
     }
@@ -502,17 +454,14 @@ class CachingCompoundDocsFetcherTests {
 
     @Test
     void fetch_nullCache_returnsParsedDirectives() {
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=300"));
 
         var fetcher = newFetcher(null);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.directives()).isNotNull();
         assertThat(result.directives().getMaxAge()).isEqualTo(300L);
@@ -530,10 +479,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         assertThat(result.directives()).isNotNull();
         assertThat(result.directives().getMaxAge()).isLessThanOrEqualTo(60L);
@@ -545,17 +491,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_noneCached_directivesFromHttpResponse() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         "max-age=120, no-cache"));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         assertThat(result.directives()).isNotNull();
         assertThat(result.directives().getMaxAge()).isEqualTo(120L);
@@ -570,18 +513,14 @@ class CachingCompoundDocsFetcherTests {
         CacheKey keyFI = CacheKey.of(idAndType("countries", "FI"));
         cache.put(keyFI, COUNTRY_FI_JSON, CacheControlParser.parse("max-age=300"));
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(Set.of("NO")),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
                         "max-age=60"));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI", "NO"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI", "NO"), Collections.emptySet()), mockRequest);
 
         CacheControlDirectives directives = result.directives();
         assertThat(directives).isNotNull();
@@ -593,17 +532,14 @@ class CachingCompoundDocsFetcherTests {
     @Test
     void fetch_noCacheControlHeader_directivesNonCacheable() {
         stubConfigNoPropagation();
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
                         null));
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                DOMAIN_SETTINGS, "countries",
-                Set.of("FI"), Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
 
         CacheControlDirectives directives = result.directives();
         assertThat(directives).isNotNull();
@@ -619,8 +555,7 @@ class CachingCompoundDocsFetcherTests {
         DomainSettings settings = new DomainSettings(DOMAIN_URL, 3);
         Set<String> ids = Set.of("A", "B", "C");
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), eq(ids),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, ids)), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "A", "{\"id\":\"A\"}"),
                                 parsedResource("countries", "B", "{\"id\":\"B\"}"),
@@ -629,12 +564,10 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                settings, "countries", ids, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(settings, "countries", ids, Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).hasSize(3);
-        verify(httpClient, times(1)).doBatchFetch(any(), any(), any(), any(), any(), any(), any());
+        verify(httpClient, times(1)).doBatchFetch(any(), any());
     }
 
     @Test
@@ -644,11 +577,10 @@ class CachingCompoundDocsFetcherTests {
         Set<String> ids = Set.of("A", "B", "C", "D", "E");
 
         // Any chunk of size <= 2 returns its inputs as parsed resources
-        when(httpClient.doBatchFetch(any(), eq("countries"), argThat(chunk -> chunk != null && chunk.size() <= 2),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> "countries".equals(batch.resourceType()) && batch.ids().size() <= 2), any()))
                 .thenAnswer(inv -> {
                     @SuppressWarnings("unchecked")
-                    Set<String> chunkIds = (Set<String>) inv.getArgument(2);
+                    Set<String> chunkIds = ((BatchFetch) inv.getArgument(0)).ids();
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "{\"id\":\"" + id + "\"}"))
                             .toList();
@@ -657,12 +589,10 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                settings, "countries", ids, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(settings, "countries", ids, Collections.emptySet()), mockRequest);
 
         // 5 ids / 2 per chunk = 3 chunks (ceil)
-        verify(httpClient, times(3)).doBatchFetch(any(), any(), any(), any(), any(), any(), any());
+        verify(httpClient, times(3)).doBatchFetch(any(), any());
         assertThat(result.resources()).hasSize(5);
     }
 
@@ -671,10 +601,10 @@ class CachingCompoundDocsFetcherTests {
         DomainSettings settings = new DomainSettings(DOMAIN_URL, 2);
         Set<String> ids = Set.of("A", "B", "C", "D");
 
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenAnswer(inv -> {
                     @SuppressWarnings("unchecked")
-                    Set<String> chunkIds = (Set<String>) inv.getArgument(2);
+                    Set<String> chunkIds = ((BatchFetch) inv.getArgument(0)).ids();
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
                             .toList();
@@ -683,9 +613,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(null);
 
-        BatchFetchResult result = fetcher.fetch(
-                settings, "countries", ids, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(settings, "countries", ids, Collections.emptySet()), mockRequest);
 
         assertThat(result.resources()).containsExactlyInAnyOrder("json-A", "json-B", "json-C", "json-D");
     }
@@ -698,11 +626,10 @@ class CachingCompoundDocsFetcherTests {
         // Pre-cache one resource → misses are A, C, D, E (4 ids → 2 chunks of 2)
         cache.put(CacheKey.of(idAndType("countries", "B")), "cached-B", CacheControlParser.parse("max-age=300"));
 
-        when(httpClient.doBatchFetch(any(), eq("countries"), argThat(chunk -> chunk != null && chunk.size() <= 2),
-                any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(argThat(batch -> "countries".equals(batch.resourceType()) && batch.ids().size() <= 2), any()))
                 .thenAnswer(inv -> {
                     @SuppressWarnings("unchecked")
-                    Set<String> chunkIds = (Set<String>) inv.getArgument(2);
+                    Set<String> chunkIds = ((BatchFetch) inv.getArgument(0)).ids();
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "fetched-" + id))
                             .toList();
@@ -711,13 +638,10 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        BatchFetchResult result = fetcher.fetch(
-                settings, "countries", Set.of("A", "B", "C", "D", "E"),
-                Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(settings, "countries", Set.of("A", "B", "C", "D", "E"), Collections.emptySet()), mockRequest);
 
         // 4 misses (A,C,D,E) split into 2 chunks of 2
-        verify(httpClient, times(2)).doBatchFetch(any(), any(), any(), any(), any(), any(), any());
+        verify(httpClient, times(2)).doBatchFetch(any(), any());
         assertThat(result.resources()).hasSize(5);
         assertThat(result.resources()).contains("cached-B", "fetched-A", "fetched-C", "fetched-D", "fetched-E");
     }
@@ -728,10 +652,10 @@ class CachingCompoundDocsFetcherTests {
         Set<String> ids = Set.of("A", "B", "C", "D");
 
         // Different chunks return different Cache-Control directives → aggregator picks the most restrictive
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenAnswer(inv -> {
                     @SuppressWarnings("unchecked")
-                    Set<String> chunkIds = (Set<String>) inv.getArgument(2);
+                    Set<String> chunkIds = ((BatchFetch) inv.getArgument(0)).ids();
                     String header = chunkIds.contains("A") ? "max-age=300" : "max-age=30";
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
@@ -741,9 +665,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(null);
 
-        BatchFetchResult result = fetcher.fetch(
-                settings, "countries", ids, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        BatchFetchResult result = fetcher.fetch(new BatchFetch(settings, "countries", ids, Collections.emptySet()), mockRequest);
 
         assertThat(result.directives()).isNotNull();
         assertThat(result.directives().getMaxAge()).isEqualTo(30L);
@@ -755,10 +677,10 @@ class CachingCompoundDocsFetcherTests {
         DomainSettings settings = new DomainSettings(DOMAIN_URL, 2);
         Set<String> ids = Set.of("A", "B", "C");
 
-        when(httpClient.doBatchFetch(any(), any(), any(), any(), any(), any(), any()))
+        when(httpClient.doBatchFetch(any(), any()))
                 .thenAnswer(inv -> {
                     @SuppressWarnings("unchecked")
-                    Set<String> chunkIds = (Set<String>) inv.getArgument(2);
+                    Set<String> chunkIds = ((BatchFetch) inv.getArgument(0)).ids();
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
                             .toList();
@@ -767,8 +689,7 @@ class CachingCompoundDocsFetcherTests {
 
         var fetcher = newFetcher(cache);
 
-        fetcher.fetch(settings, "countries", ids, Collections.emptySet(),
-                mockRequest, mockConfig, Map.of());
+        fetcher.fetch(new BatchFetch(settings, "countries", ids, Collections.emptySet()), mockRequest);
 
         for (String id : ids) {
             assertThat(cache.get(CacheKey.of(idAndType("countries", id)))).isPresent();

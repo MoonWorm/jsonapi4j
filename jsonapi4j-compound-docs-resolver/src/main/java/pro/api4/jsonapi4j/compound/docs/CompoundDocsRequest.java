@@ -27,7 +27,6 @@ public final class CompoundDocsRequest {
     private final Map<String, List<String>> fieldSets;
     private final Map<String, String> headers;
     private final Map<String, List<String>> customQueryParams;
-    private final String selfBaseUrl;
     private final String relationshipNameFromRequestUri;
 
     private String relativePath;
@@ -38,19 +37,16 @@ public final class CompoundDocsRequest {
                                Map<String, List<String>> fieldSets,
                                Map<String, String> headers,
                                String relativePath,
-                               Map<String, List<String>> customQueryParams,
-                               String selfBaseUrl) {
+                               Map<String, List<String>> customQueryParams) {
         Validate.notBlank(method, "method must not be blank");
         Validate.notNull(fieldSets, "fieldSets must not be null");
         Validate.notNull(headers, "headers must not be null");
         Validate.notBlank(relativePath, "relativePath must not be blank");
         Validate.notNull(customQueryParams, "customQueryParams must not be null");
-        Validate.notBlank(selfBaseUrl, "selfBaseUrl must not be blank");
         this.includes = includes;
         this.fieldSets = fieldSets;
         this.headers = headers;
         this.customQueryParams = customQueryParams;
-        this.selfBaseUrl = selfBaseUrl;
         this.relationshipNameFromRequestUri = getRelationshipNameFromRequestUri(relativePath);
         this.processable = calculateProcessable(method, headers, includes);
     }

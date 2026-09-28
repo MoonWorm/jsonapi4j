@@ -11,10 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.net.URI;
@@ -22,11 +24,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
@@ -35,6 +39,8 @@ import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 public class CompoundDocsResolverTests {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final URI BASE_URL = URI.create("http://localhost/jsonapi");
+    private static final DomainSettingsResolver ROUTE_ALL = resourceType -> Optional.of(DomainSettings.of(BASE_URL));
 
     private static final IdAndType USER_1 = idAndType("users", "1");
     private static final IdAndType USER_2 = idAndType("users", "2");
@@ -89,7 +95,8 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("citizenships", "placeOfBirth")),
-                    request("/users/1", "citizenships", "placeOfBirth.currencies")
+                    request("/users/1", "citizenships", "placeOfBirth.currencies"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactlyInAnyOrder(NORWAY, USA, USD);
@@ -106,7 +113,8 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     "{\"data\":[{\"type\":\"countries\",\"id\":\"NO\"},{\"type\":\"countries\",\"id\":\"US\"}]}",
-                    request("/users/1/relationships/citizenships", "citizenships.currencies")
+                    request("/users/1/relationships/citizenships", "citizenships.currencies"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactlyInAnyOrder(NORWAY, USA, NOK, USD);
@@ -119,7 +127,8 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("relatives")),
-                    request("/users/1", "relatives", "relatives.relatives.placeOfBirth")
+                    request("/users/1", "relatives", "relatives.relatives.placeOfBirth"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3, NORWAY);
@@ -137,7 +146,8 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("relatives")),
-                    request("/users/1", "relatives.relatives")
+                    request("/users/1", "relatives.relatives"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
@@ -153,7 +163,8 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("placeOfBirth")),
-                    request("/users/1", "placeOfBirth.currencies")
+                    request("/users/1", "placeOfBirth.currencies"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactly(USA);
@@ -166,10 +177,32 @@ public class CompoundDocsResolverTests {
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("relatives", "citizenships", "placeOfBirth")),
-                    request("/users/1", "placeOfBirth")
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
             );
 
             assertThat(included(result)).containsExactly(USA);
+        }
+
+    }
+
+    @Nested
+    class Routing {
+
+        @Test
+        public void resolveCompoundDocs_includedTypeWithoutRoute_throwsDomainResolutionException() {
+            CompoundDocsResolver sut = resolver(3, true);
+            stubDownstream();
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    resourceType -> "countries".equals(resourceType)
+                            ? Optional.of(DomainSettings.of(BASE_URL))
+                            : Optional.empty()
+            ))
+                    .isInstanceOf(DomainResolutionException.class)
+                    .hasMessage("Resource type 'currencies' has no mapping");
         }
 
     }
@@ -178,21 +211,16 @@ public class CompoundDocsResolverTests {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                 true, maxHops, 100, ErrorStrategy.FAIL, List.of(), deduplicateResources, 1000, 1000, false, 1
         );
-        return new CompoundDocsResolver(
-                config,
-                (resourceType, selfBaseUrl) -> DomainSettings.of(URI.create(selfBaseUrl)),
-                MAPPER,
-                executorService,
-                fetcher
-        );
+        return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);
     }
 
     @SuppressWarnings("unchecked")
     private void stubDownstream() {
-        when(fetcher.fetch(any(), any(), any(), any(), any(), any(), any())).thenAnswer(invocation -> {
-            String type = invocation.getArgument(1);
-            Set<String> ids = invocation.getArgument(2);
-            Set<String> includes = invocation.getArgument(3);
+        when(fetcher.fetch(any(), any())).thenAnswer(invocation -> {
+            BatchFetch batch = invocation.getArgument(0);
+            String type = batch.resourceType();
+            Set<String> ids = batch.ids();
+            Set<String> includes = batch.includes();
             fetchCalls.add(new FetchCall(type, Set.copyOf(ids), Set.copyOf(includes)));
             List<String> resources = new ArrayList<>();
             for (String id : ids) {
@@ -203,15 +231,7 @@ public class CompoundDocsResolverTests {
     }
 
     private static CompoundDocsRequest request(String relativePath, String... includes) {
-        return new CompoundDocsRequest(
-                "GET",
-                List.of(includes),
-                Map.of(),
-                Map.of(),
-                relativePath,
-                Map.of(),
-                "http://localhost/jsonapi"
-        );
+        return new CompoundDocsRequest("GET", List.of(includes), Map.of(), Map.of(), relativePath, Map.of());
     }
 
     private static String primaryDoc(IdAndType resource, Set<String> linkedRelationships) throws JsonProcessingException {

@@ -49,7 +49,8 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     ErrorStrategy errorStrategy();
 
     /**
-     * Per-resource mapping for downstream URLs.
+     * Per-resource mapping for downstream URLs. The reserved {@code default} key sets the base URL for every same-app
+     * type without an entry of its own, used instead of loopback.
      */
     Map<String, String> mapping();
 

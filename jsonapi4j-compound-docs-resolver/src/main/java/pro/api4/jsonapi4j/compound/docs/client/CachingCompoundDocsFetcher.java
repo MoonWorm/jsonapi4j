@@ -42,6 +42,7 @@ public class CachingCompoundDocsFetcher {
     private final JsonApi4jCompoundDocsApiHttpClient httpClient;
     private final CompoundDocsResourceCache cache;
     private final ExecutorService executorService;
+    private final CompoundDocsResolverConfig config;
 
     /**
      * @param httpClient      the HTTP client for downstream fetches, must not be null
@@ -49,12 +50,15 @@ public class CachingCompoundDocsFetcher {
      *                        (fetcher acts as a pass-through to the HTTP client)
      * @param executorService executor used to fan-out chunked HTTP fetches in parallel,
      *                        must not be null
+     * @param config          resolver configuration, must not be null
      */
     public CachingCompoundDocsFetcher(JsonApi4jCompoundDocsApiHttpClient httpClient,
                                       CompoundDocsResourceCache cache,
-                                      ExecutorService executorService) {
+                                      ExecutorService executorService,
+                                      CompoundDocsResolverConfig config) {
         this.httpClient = Validate.notNull(httpClient, "httpClient must not be null");
         this.executorService = Validate.notNull(executorService, "executorService must not be null");
+        this.config = Validate.notNull(config, "config must not be null");
         this.cache = cache;
     }
 
@@ -73,45 +77,24 @@ public class CachingCompoundDocsFetcher {
      *
      * <p>Flow without cache: same chunking and parallelism, no cache I/O.
      *
-     * @param domainSettings  base URL + max batch size for this resource type, must not be null
-     * @param resourceType    the JSON:API resource type (e.g. {@code "countries"})
-     * @param ids             set of resource IDs to fetch
-     * @param includes        relationship names for downstream {@code include} parameter
+     * @param batch           the resources to fetch and where from
      * @param originalRequest the original compound docs request (for header/field propagation)
-     * @param config          resolver configuration
-     * @param metaHeaders     metadata headers to add to the downstream request
      * @return the merged fetch result containing all requested resources
      */
-    public BatchFetchResult fetch(DomainSettings domainSettings,
-                                  String resourceType,
-                                  Set<String> ids,
-                                  Set<String> includes,
-                                  CompoundDocsRequest originalRequest,
-                                  CompoundDocsResolverConfig config,
-                                  Map<String, String> metaHeaders) {
-        if (CollectionUtils.isEmpty(ids)) {
+    public BatchFetchResult fetch(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        if (CollectionUtils.isEmpty(batch.ids())) {
             return new BatchFetchResult(Collections.emptyList(), null);
         }
 
         if (cache == null) {
-            return fetchWithoutCache(domainSettings, resourceType, ids, includes,
-                    originalRequest, config, metaHeaders);
+            return fetchWithoutCache(batch, originalRequest);
         }
 
-        return fetchWithCache(domainSettings, resourceType, ids, includes,
-                originalRequest, config, metaHeaders);
+        return fetchWithCache(batch, originalRequest);
     }
 
-    private BatchFetchResult fetchWithoutCache(DomainSettings domainSettings,
-                                               String resourceType,
-                                               Set<String> ids,
-                                               Set<String> includes,
-                                               CompoundDocsRequest originalRequest,
-                                               CompoundDocsResolverConfig config,
-                                               Map<String, String> metaHeaders) {
-        List<HttpFetchResult> chunkResults = fetchChunksInParallel(
-                domainSettings, resourceType, ids, includes,
-                originalRequest, config, metaHeaders);
+    private BatchFetchResult fetchWithoutCache(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        List<HttpFetchResult> chunkResults = fetchChunksInParallel(batch, originalRequest);
 
         List<String> resources = new ArrayList<>();
         CacheControlAggregator aggregator = new CacheControlAggregator();
@@ -124,18 +107,14 @@ public class CachingCompoundDocsFetcher {
         return new BatchFetchResult(resources, aggregator.getResult());
     }
 
-    private BatchFetchResult fetchWithCache(DomainSettings domainSettings,
-                                            String resourceType,
-                                            Set<String> ids,
-                                            Set<String> includes,
-                                            CompoundDocsRequest originalRequest,
-                                            CompoundDocsResolverConfig config,
-                                            Map<String, String> metaHeaders) {
-        Set<String> fields = resolveFieldsQueryParam(resourceType, originalRequest, config);
+    private BatchFetchResult fetchWithCache(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        String resourceType = batch.resourceType();
+        Set<String> includes = batch.includes();
+        Set<String> fields = resolveFieldsQueryParam(resourceType, originalRequest);
         ResourceType type = new ResourceType(resourceType);
 
         // Build CacheKeys for all requested IDs
-        Set<CacheKey> keys = ids.stream()
+        Set<CacheKey> keys = batch.ids().stream()
                 .map(id -> new CacheKey(new IdAndType(id, type), includes, fields))
                 .collect(Collectors.toSet());
 
@@ -160,9 +139,7 @@ public class CachingCompoundDocsFetcher {
         }
 
         // Fetch misses in parallel chunks
-        List<HttpFetchResult> chunkResults = fetchChunksInParallel(
-                domainSettings, resourceType, missIds, includes,
-                originalRequest, config, metaHeaders);
+        List<HttpFetchResult> chunkResults = fetchChunksInParallel(batch.withIds(missIds), originalRequest);
 
         // Store fetched resources in cache (per-chunk Cache-Control governs that chunk's resources)
         List<String> httpResultJsons = new ArrayList<>();
@@ -187,7 +164,7 @@ public class CachingCompoundDocsFetcher {
     }
 
     /**
-     * Splits {@code ids} into chunks of size {@code domainSettings.maxBatchSize()} and fires a
+     * Splits the batch's ids into chunks of size {@code domainSettings.maxBatchSize()} and fires a
      * downstream HTTP fetch per chunk via the executor. Blocks on
      * {@link CompletableFuture#allOf(CompletableFuture[])} and returns each chunk's result.
      *
@@ -196,29 +173,20 @@ public class CachingCompoundDocsFetcher {
      * {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE} the HTTP client itself
      * absorbs non-200 responses and returns an empty result, so other chunks continue.
      */
-    private List<HttpFetchResult> fetchChunksInParallel(DomainSettings domainSettings,
-                                                       String resourceType,
-                                                       Set<String> ids,
-                                                       Set<String> includes,
-                                                       CompoundDocsRequest originalRequest,
-                                                       CompoundDocsResolverConfig config,
-                                                       Map<String, String> metaHeaders) {
-        List<Set<String>> chunks = chunk(ids, domainSettings.maxBatchSize());
+    private List<HttpFetchResult> fetchChunksInParallel(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        int maxBatchSize = batch.domainSettings().maxBatchSize();
+        List<Set<String>> chunks = chunk(batch.ids(), maxBatchSize);
         if (chunks.size() == 1) {
             // Fast path: no fan-out needed
-            return Collections.singletonList(httpClient.doBatchFetch(
-                    domainSettings.url(), resourceType, chunks.get(0),
-                    includes, originalRequest, config, metaHeaders));
+            return Collections.singletonList(httpClient.doBatchFetch(batch.withIds(chunks.get(0)), originalRequest));
         }
 
         log.debug("Chunked fetch for type '{}': {} ids → {} chunks (maxBatchSize={})",
-                resourceType, ids.size(), chunks.size(), domainSettings.maxBatchSize());
+                batch.resourceType(), batch.ids().size(), chunks.size(), maxBatchSize);
 
         List<CompletableFuture<HttpFetchResult>> futures = chunks.stream()
                 .map(chunk -> CompletableFuture.supplyAsync(
-                        () -> httpClient.doBatchFetch(
-                                domainSettings.url(), resourceType, chunk,
-                                includes, originalRequest, config, metaHeaders),
+                        () -> httpClient.doBatchFetch(batch.withIds(chunk), originalRequest),
                         executorService))
                 .toList();
 
@@ -278,9 +246,7 @@ public class CachingCompoundDocsFetcher {
      *
      * @return the set of field names, or empty set if fields are not propagated
      */
-    private Set<String> resolveFieldsQueryParam(String resourceType,
-                                                CompoundDocsRequest originalRequest,
-                                                CompoundDocsResolverConfig config) {
+    private Set<String> resolveFieldsQueryParam(String resourceType, CompoundDocsRequest originalRequest) {
         if (!config.getPropagation().contains(Propagation.FIELDS)) {
             return Collections.emptySet();
         }

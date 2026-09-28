@@ -1,5 +1,7 @@
 package pro.api4.jsonapi4j.compound.docs;
 
+import java.util.Optional;
+
 /**
  * SPI used by the compound documents resolver to look up per-domain settings — base URL plus the
  * maximum number of resource IDs that can be requested in a single downstream
@@ -12,16 +14,15 @@ package pro.api4.jsonapi4j.compound.docs;
 public interface DomainSettingsResolver {
 
     /**
-     * Resolves the settings for {@code resourceType}. Implementations may use {@code selfBaseUrl} — the requesting
-     * app's own JSON:API base URL derived from the incoming request (e.g. {@code https://host:port/ctx/jsonapi}) — to
-     * default unmapped, same-app resource types (notably the built-in meta types) to the very endpoint the request
-     * arrived on, so no {@code jsonapi4j.cd.mapping.*} entry and no configured base URL are required for them.
+     * Resolves where {@code resourceType} is fetched from.
+     *
+     * <p>An empty result means there is no route for the type. Used standalone (e.g. in an API gateway) that fails
+     * resolution with an error naming the type. The CD plugin instead treats such a type as served by the app itself
+     * and fetches it over loopback.
      *
      * @param resourceType the JSON:API resource type to resolve
-     * @param selfBaseUrl  the requesting app's own JSON:API root derived from the incoming request, or {@code null}
-     *                     when unavailable
-     * @return the resolved settings for {@code resourceType}
+     * @return the settings for {@code resourceType}, or empty when there is no route for it
      */
-    DomainSettings resolveDomainSettings(String resourceType, String selfBaseUrl);
+    Optional<DomainSettings> resolveDomainSettings(String resourceType);
 
 }

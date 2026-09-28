@@ -29,6 +29,7 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 public class CompoundDocsFilter implements Filter {
 
     private CompoundDocsRequestSupplier requestSupplier;
+    private SelfFallbackRouting routing;
     private CompoundDocsResolver resolver;
 
     @Override
@@ -41,10 +42,15 @@ public class CompoundDocsFilter implements Filter {
         if (cdProperties != null && cdProperties.enabled()) {
             JsonApi4jProperties jsonApi4jProperties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
 
-            this.requestSupplier = new CompoundDocsRequestSupplier(jsonApi4jProperties.rootPath());
-
             DomainSettingsResolver domainSettingsResolver = (DomainSettingsResolver) filterConfig.getServletContext()
                     .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME);
+
+            this.requestSupplier = new CompoundDocsRequestSupplier();
+            this.routing = new SelfFallbackRouting(
+                    domainSettingsResolver,
+                    cdProperties,
+                    jsonApi4jProperties.rootPath()
+            );
 
             CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                     cdProperties.enabled(),
@@ -69,7 +75,6 @@ public class CompoundDocsFilter implements Filter {
 
             resolver = new CompoundDocsResolver(
                     config,
-                    domainSettingsResolver,
                     objectMapper,
                     executorService,
                     cache
@@ -91,7 +96,7 @@ public class CompoundDocsFilter implements Filter {
                          ServletResponse servletResponse,
                          FilterChain chain) throws IOException, ServletException {
 
-        if (this.resolver == null || this.requestSupplier == null) {
+        if (this.resolver == null || this.requestSupplier == null || this.routing == null) {
             log.debug("{} has not been initialized, CD plugin initialization failer or plugin is disabled", CompoundDocsFilter.class.getSimpleName());
             chain.doFilter(servletRequest, servletResponse);
         } else {
@@ -106,7 +111,11 @@ public class CompoundDocsFilter implements Filter {
 
                     String responseBody = responseWrapper.getCaptureAsString();
                     if (is2xxResponseCode(responseWrapper.getStatus())) {
-                        CompoundDocsResult result = resolver.resolveCompoundDocs(responseBody, compoundDocsRequest);
+                        CompoundDocsResult result = resolver.resolveCompoundDocs(
+                                responseBody,
+                                compoundDocsRequest,
+                                routing.forRequest(httpServletRequest)
+                        );
                         applyCacheControlHeader(httpServletResponse, responseWrapper, result);
                         servletResponse.getWriter().write(result.responseBody());
                     } else {

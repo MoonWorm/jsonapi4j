@@ -79,6 +79,37 @@ public class CompoundDocsPropertiesTests {
     }
 
     @Nested
+    class DefaultMapping {
+
+        @Test
+        public void defaultMapping_defaultKeySet_returnsIt() {
+            sut.setMapping(Map.of("users", "http://users.foo.bar/jsonapi", "default", "https://api.internal/jsonapi"));
+
+            assertThat(sut.defaultMapping()).contains("https://api.internal/jsonapi");
+        }
+
+        @Test
+        public void defaultMapping_defaultKeyNotSet_returnsEmpty() {
+            assertThat(sut.defaultMapping()).isEmpty();
+        }
+
+        @Test
+        public void typeMappings_defaultKeySet_excludesIt() {
+            sut.setMapping(Map.of("users", "http://users.foo.bar/jsonapi", "default", "https://api.internal/jsonapi"));
+
+            assertThat(sut.typeMappings()).isEqualTo(Map.of("users", "http://users.foo.bar/jsonapi"));
+        }
+
+        @Test
+        public void validate_defaultMappingIsNotAbsolute_reportsError() {
+            sut.setMapping(Map.of("default", "/jsonapi"));
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.default");
+        }
+
+    }
+
+    @Nested
     class Mapping {
 
         @ParameterizedTest

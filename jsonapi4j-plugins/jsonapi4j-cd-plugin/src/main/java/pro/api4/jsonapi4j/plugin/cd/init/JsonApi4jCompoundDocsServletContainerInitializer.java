@@ -80,7 +80,7 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
                     DefaultDomainSettingsResolver.class.getSimpleName()
             );
             DomainSettingsResolver domainSettingsResolver = DefaultDomainSettingsResolver.from(
-                    cdProperties.mapping(),
+                    cdProperties.typeMappings(),
                     cdProperties.batchSizeMapping(),
                     cdProperties.defaultMaxBatchSize()
             );
