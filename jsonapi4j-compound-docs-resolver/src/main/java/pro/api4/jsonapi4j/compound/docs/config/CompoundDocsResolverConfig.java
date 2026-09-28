@@ -12,7 +12,7 @@ public class CompoundDocsResolverConfig {
     private final int maxIncludedResources;
     private final ErrorStrategy errorStrategy;
     private final List<Propagation> propagation;
-    private final boolean deduplicateResources;
+    private final Deduplication deduplication;
     private final long httpConnectTimeoutMs;
     private final long httpTotalTimeoutMs;
     private final boolean cacheEnabled;

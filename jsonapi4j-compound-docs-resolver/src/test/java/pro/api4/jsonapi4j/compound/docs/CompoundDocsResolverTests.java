@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -45,6 +46,8 @@ public class CompoundDocsResolverTests {
     private static final IdAndType USER_1 = idAndType("users", "1");
     private static final IdAndType USER_2 = idAndType("users", "2");
     private static final IdAndType USER_3 = idAndType("users", "3");
+    private static final IdAndType USER_4 = idAndType("users", "4");
+    private static final IdAndType USER_5 = idAndType("users", "5");
     private static final IdAndType NORWAY = idAndType("countries", "NO");
     private static final IdAndType FINLAND = idAndType("countries", "FI");
     private static final IdAndType USA = idAndType("countries", "US");
@@ -52,23 +55,31 @@ public class CompoundDocsResolverTests {
     private static final IdAndType EUR = idAndType("currencies", "EUR");
     private static final IdAndType USD = idAndType("currencies", "USD");
 
-    private static final Map<IdAndType, Map<String, List<IdAndType>>> DOWNSTREAM = Map.of(
-            USER_1, Map.of(
+    private static final Map<IdAndType, Map<String, List<IdAndType>>> DOWNSTREAM = Map.ofEntries(
+            Map.entry(USER_1, Map.of(
                     "relatives", List.of(USER_2, USER_3),
                     "citizenships", List.of(NORWAY, USA),
                     "placeOfBirth", List.of(USA)
-            ),
-            USER_2, Map.of(
+            )),
+            Map.entry(USER_2, Map.of(
                     "relatives", List.of(USER_3),
                     "placeOfBirth", List.of(FINLAND)
-            ),
-            USER_3, Map.of(
+            )),
+            Map.entry(USER_3, Map.of(
                     "relatives", List.of(),
                     "placeOfBirth", List.of(NORWAY)
-            ),
-            NORWAY, Map.of("currencies", List.of(NOK)),
-            FINLAND, Map.of("currencies", List.of(EUR)),
-            USA, Map.of("currencies", List.of(USD))
+            )),
+            Map.entry(USER_4, Map.of(
+                    "relatives", List.of(USER_5),
+                    "placeOfBirth", List.of(FINLAND)
+            )),
+            Map.entry(USER_5, Map.of(
+                    "relatives", List.of(USER_4),
+                    "placeOfBirth", List.of(USA)
+            )),
+            Map.entry(NORWAY, Map.of("currencies", List.of(NOK))),
+            Map.entry(FINLAND, Map.of("currencies", List.of(EUR))),
+            Map.entry(USA, Map.of("currencies", List.of(USD)))
     );
 
     private record FetchCall(String type, Set<String> ids, Set<String> includes) {
@@ -90,7 +101,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_includePathsReachingSameType_includesOnlyResourcesOnRequestedPaths() throws Exception {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -108,7 +119,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_relationshipDoc_followsIncludesFromRelationshipName() throws Exception {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -122,7 +133,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_resourceReachedAgainNeedingMoreIncludes_refetchesItWithCombinedIncludes() throws Exception {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -141,7 +152,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_resourceReachedAgainWithCoveredIncludes_doesNotRefetchIt() throws Exception {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -158,7 +169,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_includeDeeperThanMaxHops_stopsAtMaxHops() throws Exception {
-            CompoundDocsResolver sut = resolver(1, true);
+            CompoundDocsResolver sut = resolver(1, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -172,7 +183,7 @@ public class CompoundDocsResolverTests {
 
         @Test
         public void resolveCompoundDocs_linkageForRelationshipNotRequested_ignoresIt() throws Exception {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -187,11 +198,98 @@ public class CompoundDocsResolverTests {
     }
 
     @Nested
+    class PrimaryResources {
+
+        @Test
+        public void resolveCompoundDocs_pathCyclesBackToPrimaryResource_neitherIncludesNorFetchesIt() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_5, Set.of("relatives")),
+                    request("/users/5", "relatives.relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactly(USER_4);
+            assertThat(fetchCalls).containsExactly(new FetchCall("users", Set.of("4"), Set.of("relatives")));
+        }
+
+        @Test
+        public void resolveCompoundDocs_pathContinuesThroughPrimaryResource_fetchesItsLinkageButExcludesIt() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_5, Set.of("relatives")),
+                    request("/users/5", "relatives.relatives.placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_4, USA);
+            assertThat(fetchCalls).containsExactly(
+                    new FetchCall("users", Set.of("4"), Set.of("relatives")),
+                    new FetchCall("users", Set.of("5"), Set.of("relatives", "placeOfBirth")),
+                    new FetchCall("countries", Set.of("US"), Set.of())
+            );
+        }
+
+        @Test
+        public void resolveCompoundDocs_listWithPrimaryResourcesRelatedToEachOther_includesOnlyTheOthers() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryListDoc(Set.of("relatives"), USER_1, USER_2),
+                    request("/users", "relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactly(USER_3);
+            assertThat(fetchCalls).containsExactly(new FetchCall("users", Set.of("3"), Set.of()));
+        }
+
+        @Test
+        public void resolveCompoundDocs_includedOnly_repeatsReachedPrimaryResourcesWithoutFetchingThem() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.INCLUDED_ONLY);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryListDoc(Set.of("relatives"), USER_1, USER_2),
+                    request("/users", "relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
+            assertThat(fetchCalls).containsExactly(new FetchCall("users", Set.of("3"), Set.of()));
+        }
+
+        @Test
+        public void resolveCompoundDocs_none_fetchesAndIncludesReachedPrimaryResources() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.NONE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_5, Set.of("relatives")),
+                    request("/users/5", "relatives.relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_4, USER_5);
+            assertThat(fetchCalls).containsExactly(
+                    new FetchCall("users", Set.of("4"), Set.of("relatives")),
+                    new FetchCall("users", Set.of("5"), Set.of("relatives"))
+            );
+        }
+
+    }
+
+    @Nested
     class Routing {
 
         @Test
         public void resolveCompoundDocs_includedTypeWithoutRoute_throwsDomainResolutionException() {
-            CompoundDocsResolver sut = resolver(3, true);
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
 
             assertThatThrownBy(() -> sut.resolveCompoundDocs(
@@ -207,9 +305,9 @@ public class CompoundDocsResolverTests {
 
     }
 
-    private CompoundDocsResolver resolver(int maxHops, boolean deduplicateResources) {
+    private CompoundDocsResolver resolver(int maxHops, Deduplication deduplication) {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
-                true, maxHops, 100, ErrorStrategy.FAIL, List.of(), deduplicateResources, 1000, 1000, false, 1
+                true, maxHops, 100, ErrorStrategy.FAIL, List.of(), deduplication, 1000, 1000, false, 1
         );
         return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);
     }
@@ -237,6 +335,15 @@ public class CompoundDocsResolverTests {
     private static String primaryDoc(IdAndType resource, Set<String> linkedRelationships) throws JsonProcessingException {
         ObjectNode document = MAPPER.createObjectNode();
         document.set("data", resourceNode(resource, linkedRelationships));
+        return MAPPER.writeValueAsString(document);
+    }
+
+    private static String primaryListDoc(Set<String> linkedRelationships, IdAndType... resources) throws JsonProcessingException {
+        ObjectNode document = MAPPER.createObjectNode();
+        ArrayNode data = document.putArray("data");
+        for (IdAndType resource : resources) {
+            data.add(resourceNode(resource, linkedRelationships));
+        }
         return MAPPER.writeValueAsString(document);
     }
 

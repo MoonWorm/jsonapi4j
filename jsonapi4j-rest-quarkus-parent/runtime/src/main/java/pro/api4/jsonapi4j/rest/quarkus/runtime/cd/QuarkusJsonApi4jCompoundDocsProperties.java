@@ -5,6 +5,7 @@ import io.quarkus.runtime.annotations.ConfigRoot;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
@@ -76,10 +77,10 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     List<Propagation> propagation();
 
     /**
-     * Defines if Compound Docs plugin should deduplicate resources in 'included' section (by 'type' / 'id')
+     * How resource objects repeat across 'data' and 'included' (by 'type' / 'id').
      */
-    @WithDefault(DEFAULT_DEDUPLICATE_RESOURCES)
-    boolean deduplicateResources();
+    @WithDefault(DEFAULT_DEDUPLICATION)
+    Deduplication deduplication();
 
     /**
      * Controls how long to wait when establishing TCP connection (in millisecond).
@@ -143,7 +144,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setBatchSizeMapping(batchSizeMapping());
         cdProperties.setDefaultMaxBatchSize(defaultMaxBatchSize());
         cdProperties.setPropagation(propagation());
-        cdProperties.setDeduplicateResources(deduplicateResources());
+        cdProperties.setDeduplication(deduplication());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
         cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
         cdProperties.setCache(cache().map(c -> {

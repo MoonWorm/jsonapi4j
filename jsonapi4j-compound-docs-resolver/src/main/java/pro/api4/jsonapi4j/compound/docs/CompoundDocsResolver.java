@@ -11,11 +11,13 @@ import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
+import pro.api4.jsonapi4j.compound.docs.json.PrimaryResource;
 import pro.api4.jsonapi4j.compound.docs.json.ResourceLinkage;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -152,7 +154,15 @@ public class CompoundDocsResolver {
 
         Map<IdAndType, Set<String>> requestedIncludes = new HashMap<>();
         Map<IdAndType, ResourceLinkage> linkages = new HashMap<>();
-        IncludedResources included = new IncludedResources(config.isDeduplicateResources());
+        Map<IdAndType, String> primaryResourceJsons = new HashMap<>();
+        for (PrimaryResource primaryResource : originalParseResult.primaryResources()) {
+            ResourceLinkage resourceLinkage = primaryResource.linkage();
+            IdAndType idAndType = resourceLinkage.idAndType();
+            linkages.put(idAndType, resourceLinkage);
+            requestedIncludes.put(idAndType, includeTree.children(IncludeTree.ROOT));
+            primaryResourceJsons.put(idAndType, primaryResource.json());
+        }
+        IncludedResources included = new IncludedResources(config.getDeduplication(), primaryResourceJsons);
 
         IncludeFrontier frontier = IncludeFrontier.start(includeTree, originalParseResult.relationships());
 
@@ -165,9 +175,10 @@ public class CompoundDocsResolver {
             Map<String, Set<String>> idsByType = new HashMap<>();
             Map<String, Set<String>> includesByType = new HashMap<>();
             for (IdAndType resource : frontier.resources()) {
+                included.reached(resource);
                 Set<String> requiredIncludes = frontier.requiredIncludes(resource);
                 Set<String> alreadyRequestedIncludes = requestedIncludes.get(resource);
-                if (config.isDeduplicateResources()
+                if (config.getDeduplication() != Deduplication.NONE
                         && alreadyRequestedIncludes != null
                         && alreadyRequestedIncludes.containsAll(requiredIncludes)) {
                     continue;

@@ -13,7 +13,7 @@ jsonapi4j:
     maxIncludedResources: 100   # caps total resolved resources per response
     errorStrategy: IGNORE       # IGNORE -> a failed include leaves `included` empty rather than erroring
     propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]   # what to forward to downstream self-HTTP calls
-    deduplicateResources: true
+    deduplication: DATA_AND_INCLUDED   # or INCLUDED_ONLY (repeat reached primary resources in included) | NONE
     defaultMaxBatchSize: 20
     batchSizeMapping:           # per-type override of the filter[id] batch size
       countries: 20

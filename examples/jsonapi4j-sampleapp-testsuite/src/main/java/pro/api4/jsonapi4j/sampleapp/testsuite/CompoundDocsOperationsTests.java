@@ -8,6 +8,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.not;
@@ -71,12 +72,12 @@ public abstract class CompoundDocsOperationsTests {
                 .body("data[0].relationships.citizenships.data", hasSize(3))
                 .body("data[1].relationships.citizenships.data", hasSize(1))
                 // included resources from both users' relationships, deduplicated:
-                // - users (relatives): user 1 -> {2, 3}, user 2 -> {1, 4} => {1, 2, 3, 4}
+                // - users (relatives): user 1 -> {2, 3}, user 2 -> {1, 4} => {3, 4}; users 1 and 2 are primary data
                 // - countries (citizenships ∪ placeOfBirth): user 1 -> {NO, FI, US} + US; user 2 -> {US} + FI => {NO, FI, US}
                 // - currencies (placeOfBirth only): user 1 -> US -> USD; user 2 -> FI -> EUR => {USD, EUR}
-                .body("included", hasSize(9))
-                .body("included.findAll { it.type == 'users' }.size()", equalTo(4))
-                .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("1", "2", "3", "4"))
+                .body("included", hasSize(7))
+                .body("included.findAll { it.type == 'users' }.size()", equalTo(2))
+                .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("3", "4"))
                 .body("included.findAll { it.type == 'countries' }.size()", equalTo(3))
                 .body("included.findAll { it.type == 'countries' }.id", containsInAnyOrder("NO", "FI", "US"))
                 .body("included.findAll { it.type == 'currencies' }.size()", equalTo(2))
@@ -129,7 +130,7 @@ public abstract class CompoundDocsOperationsTests {
     public void test_readById_maxHopsExceeded_stopsAtConfiguredDepth() {
         // maxHops=3, requesting 4 hops: relatives.relatives.relatives.relatives
         // should produce the same result as 3 hops since the 4th hop is cut off
-        // with 3 hops of relatives, all 5 users are reachable and deduplicated
+        // with 3 hops of relatives, users 2-4 are reachable; user 1 is primary data, so not repeated in included
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives.relatives.relatives.relatives")
@@ -139,9 +140,9 @@ public abstract class CompoundDocsOperationsTests {
                 .statusCode(200)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body("data.id", equalTo("1"))
-                // included should contain users 1-4 (deduplicated, resolved up to 3 hops)
-                .body("included.findAll { it.type == 'users' }.size()", equalTo(4))
-                .body("included.find { it.id == '1' }.attributes.fullName", equalTo("John Doe"))
+                // included should contain users 2-4 (deduplicated, resolved up to 3 hops)
+                .body("included.findAll { it.type == 'users' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'users' }.id", not(hasItem("1")))
                 .body("included.find { it.id == '2' }.attributes.fullName", equalTo("Jane Doe"))
                 .body("included.find { it.id == '3' }.attributes.fullName", equalTo("Jack Doe"))
                 .body("included.find { it.id == '4' }.attributes.fullName", equalTo("Jessy Doe"));
@@ -180,8 +181,9 @@ public abstract class CompoundDocsOperationsTests {
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
                 .body("data.id", equalTo("1"))
                 .body("data.relationships.relatives.data", hasSize(2))
-                // included users deduplicated — users 1,2,3,4 (all reachable within 3 hops)
-                .body("included.findAll { it.type == 'users' }.size()", equalTo(4))
+                // included users deduplicated across data and included — users 2,3,4 (user 1 is primary data)
+                .body("included.findAll { it.type == 'users' }.size()", equalTo(3))
+                .body("included.findAll { it.type == 'users' }.id", containsInAnyOrder("2", "3", "4"))
                 // user 3 has empty relatives
                 .body("included.find { it.id == '3' }.relationships.relatives.data", hasSize(0))
                 // user 4 has 2 relatives

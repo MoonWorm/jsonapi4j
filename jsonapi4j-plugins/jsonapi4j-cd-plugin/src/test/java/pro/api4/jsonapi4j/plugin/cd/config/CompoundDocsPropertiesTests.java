@@ -68,6 +68,13 @@ public class CompoundDocsPropertiesTests {
         }
 
         @Test
+        public void validate_nullDeduplication_reportsError() {
+            sut.setDeduplication(null);
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.deduplication");
+        }
+
+        @Test
         public void validate_severalInvalidProperties_reportsAllOfThem() {
             sut.setMaxHops(0);
             sut.setMaxIncludedResources(-1);
@@ -230,6 +237,7 @@ public class CompoundDocsPropertiesTests {
             properties.setHttpTotalTimeoutMs(0);
             properties.setErrorStrategy(null);
             properties.setPropagation(null);
+            properties.setDeduplication(null);
             properties.setMapping(Map.of("users", "/jsonapi"));
             properties.setBatchSizeMapping(Map.of("users", 0));
             properties.getCache().setMaxSize(0);

@@ -22,7 +22,7 @@ In rough order of impact:
    to make the cache effective. For distributed/Redis caching, provide your own
    `CompoundDocsResourceCache` bean (the in-memory default is overridable).
 6. `cd.httpConnectTimeoutMs` / `cd.httpTotalTimeoutMs` bound the self-HTTP downstream calls;
-   `cd.deduplicateResources` avoids refetching an already-resolved resource within one response.
+   `cd.deduplication` (default `DATA_AND_INCLUDED`) avoids refetching an already-resolved resource within one response; `NONE` refetches every time.
 
 ---
 

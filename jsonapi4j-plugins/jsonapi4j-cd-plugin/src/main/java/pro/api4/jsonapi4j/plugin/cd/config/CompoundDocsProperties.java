@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.cd.config;
 
 import org.apache.commons.lang3.StringUtils;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.config.PluginProperties;
@@ -27,7 +28,7 @@ public interface CompoundDocsProperties extends PluginProperties {
     String BATCH_SIZE_MAPPING_PROPERTY = "batchSizeMapping";
     String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
     String PROPAGATION_PROPERTY = "propagation";
-    String DEDUPLICATE_RESOURCES_PROPERTY = "deduplicateResources";
+    String DEDUPLICATION_PROPERTY = "deduplication";
     String HTTP_CONNECT_TIMEOUT_MS_PROPERTY = "httpConnectTimeoutMs";
     String HTTP_TOTAL_TIMEOUT_MS_PROPERTY = "httpTotalTimeoutMs";
     String CACHE_PROPERTY = "cache";
@@ -42,7 +43,7 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_MAX_INCLUDED_RESOURCES = "100";
     String DEFAULT_ERROR_STRATEGY = "IGNORE";
     String DEFAULT_PROPAGATION = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
-    String DEFAULT_DEDUPLICATE_RESOURCES = "true";
+    String DEFAULT_DEDUPLICATION = "DATA_AND_INCLUDED";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
     /**
@@ -110,8 +111,8 @@ public interface CompoundDocsProperties extends PluginProperties {
                 .toList();
     }
 
-    default boolean deduplicateResources() {
-        return Boolean.parseBoolean(DEFAULT_DEDUPLICATE_RESOURCES);
+    default Deduplication deduplication() {
+        return Deduplication.valueOf(DEFAULT_DEDUPLICATION);
     }
 
     default long httpConnectTimeoutMs() {
@@ -134,7 +135,8 @@ public interface CompoundDocsProperties extends PluginProperties {
                 .requirePositive(propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs())
                 .requirePositive(propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs())
                 .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
-                .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation());
+                .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation())
+                .requireNotNull(propertyPath(DEDUPLICATION_PROPERTY), deduplication());
         validateMapping(builder);
         validateBatchSizeMapping(builder);
         validateCache(builder);

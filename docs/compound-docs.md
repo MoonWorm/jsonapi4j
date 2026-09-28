@@ -107,7 +107,7 @@ CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
     100,                                      // maxIncludedResources
     ErrorStrategy.IGNORE,
     List.of(Propagation.FIELDS, Propagation.HEADERS),
-    true,                                     // deduplicateResources
+    Deduplication.DATA_AND_INCLUDED,
     5000,                                     // httpConnectTimeoutMs
     10000,                                    // httpTotalTimeoutMs
     true,                                     // cacheEnabled

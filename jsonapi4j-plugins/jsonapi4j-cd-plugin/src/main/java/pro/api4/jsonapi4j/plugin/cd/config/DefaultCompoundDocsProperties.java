@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin.cd.config;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
@@ -25,7 +26,7 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private Map<String, Integer> batchSizeMapping = Collections.emptyMap();
     private int defaultMaxBatchSize = Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
-    private boolean deduplicateResources = Boolean.parseBoolean(DEFAULT_DEDUPLICATE_RESOURCES);
+    private Deduplication deduplication = Deduplication.valueOf(DEFAULT_DEDUPLICATION);
     private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     private long httpTotalTimeoutMs = Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
     private DefaultCache cache;
@@ -98,8 +99,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     }
 
     @Override
-    public boolean deduplicateResources() {
-        return deduplicateResources;
+    public Deduplication deduplication() {
+        return deduplication;
     }
 
     @Override

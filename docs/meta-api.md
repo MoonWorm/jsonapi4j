@@ -214,7 +214,7 @@ curl -H 'Accept: application/vnd.api+json' \
           "enabled": true,
           "maxHops": 3,
           "propagation": ["FIELDS", "CUSTOM_QUERY_PARAMS", "HEADERS"],
-          "deduplicateResources": true,
+          "deduplication": "DATA_AND_INCLUDED",
           "defaultMaxBatchSize": 20
         }
       }

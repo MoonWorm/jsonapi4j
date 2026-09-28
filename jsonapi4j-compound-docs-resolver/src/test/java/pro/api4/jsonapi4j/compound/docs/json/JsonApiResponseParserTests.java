@@ -7,6 +7,7 @@ import pro.api4.jsonapi4j.compound.docs.ResourceUtil;
 import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,6 +35,22 @@ public class JsonApiResponseParserTests {
                             idAndType("currencies", "USD")
                     )
             ));
+        }
+
+        @Test
+        public void parsePrimaryResourceDoc_resourceObjects_returnsEachPrimaryResourceWithItsLinkage() {
+            String response = """
+                    {"data":[
+                      {"type":"users","id":"1","relationships":{"relatives":{"data":[{"type":"users","id":"2"}]}}},
+                      {"type":"users","id":"2"}]}""";
+
+            List<PrimaryResource> actualResult = sut.parsePrimaryResourceDoc(response).primaryResources();
+
+            assertThat(actualResult).extracting(r -> r.linkage().idAndType())
+                    .containsExactly(idAndType("users", "1"), idAndType("users", "2"));
+            assertThat(actualResult.get(0).linkage().relationships())
+                    .isEqualTo(Map.of("relatives", Set.of(idAndType("users", "2"))));
+            assertThat(actualResult.get(1).json()).isEqualTo("{\"type\":\"users\",\"id\":\"2\"}");
         }
 
         @Test
@@ -77,6 +94,14 @@ public class JsonApiResponseParserTests {
             assertThat(actualResult).isEqualTo(Map.of(
                     "citizenships", Set.of(idAndType("countries", "NO"), idAndType("countries", "FI"))
             ));
+        }
+
+        @Test
+        public void parseRelationshipDoc_identifiers_returnsNoPrimaryResources() {
+            String response = """
+                    {"data":[{"type":"countries","id":"NO"}]}""";
+
+            assertThat(sut.parseRelationshipDoc(response, "citizenships").primaryResources()).isEmpty();
         }
 
         @Test

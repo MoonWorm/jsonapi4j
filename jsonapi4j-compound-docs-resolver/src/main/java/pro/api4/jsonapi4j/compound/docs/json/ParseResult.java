@@ -3,13 +3,18 @@ package pro.api4.jsonapi4j.compound.docs.json;
 import com.fasterxml.jackson.databind.JsonNode;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @param relationships relationship name to the resources the primary data links to; for a relationship document
  *                      this holds the requested relationship itself
+ * @param primaryResources the resource objects of the primary data; empty for a relationship document, whose primary
+ *                         data are resource identifiers rather than resource objects
  * @param rootNode      the parsed top-level document
  */
-public record ParseResult(Map<String, Set<IdAndType>> relationships, JsonNode rootNode) {
+public record ParseResult(Map<String, Set<IdAndType>> relationships,
+                          List<PrimaryResource> primaryResources,
+                          JsonNode rootNode) {
 }

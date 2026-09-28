@@ -9,10 +9,12 @@ import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseExceptio
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -28,17 +30,27 @@ public class JsonApiResponseParser {
     }
 
     /**
-     * Parses a primary resource document and merges the relationship linkage of all its primary resources.
+     * Parses a primary resource document: the merged relationship linkage of all its primary resources, and each
+     * primary resource on its own.
      */
     public ParseResult parsePrimaryResourceDoc(String jsonApiResponse) {
         JsonNode rootNode = readDocument(jsonApiResponse);
         Map<String, Set<IdAndType>> relationships = new HashMap<>();
-        forEachObject(rootNode.get("data"), resourceNode -> readRelationships(resourceNode).forEach(
-                (relationshipName, linkage) -> relationships
-                        .computeIfAbsent(relationshipName, n -> new LinkedHashSet<>())
-                        .addAll(linkage)
-        ));
-        return new ParseResult(Collections.unmodifiableMap(relationships), rootNode);
+        List<PrimaryResource> primaryResources = new ArrayList<>();
+        forEachObject(rootNode.get("data"), resourceNode -> {
+            ResourceLinkage linkage = new ResourceLinkage(readIdAndType(resourceNode), readRelationships(resourceNode));
+            linkage.relationships().forEach((relationshipName, linked) -> relationships
+                    .computeIfAbsent(relationshipName, n -> new LinkedHashSet<>())
+                    .addAll(linked));
+            if (linkage.idAndType() != null) {
+                primaryResources.add(new PrimaryResource(linkage, writeJson(resourceNode)));
+            }
+        });
+        return new ParseResult(
+                Collections.unmodifiableMap(relationships),
+                Collections.unmodifiableList(primaryResources),
+                rootNode
+        );
     }
 
     /**
@@ -50,7 +62,7 @@ public class JsonApiResponseParser {
         Map<String, Set<IdAndType>> relationships = linkage.isEmpty()
                 ? Collections.emptyMap()
                 : Map.of(relationshipName, linkage);
-        return new ParseResult(relationships, rootNode);
+        return new ParseResult(relationships, Collections.emptyList(), rootNode);
     }
 
     /**
@@ -66,6 +78,14 @@ public class JsonApiResponseParser {
         } catch (JsonProcessingException e) {
             LOG.error("Failed to parse Json:Api resource: {}", jsonApiResource, e);
             throw new InvalidJsonApiResponseException("Failed to parse Json:Api resource: " + jsonApiResource);
+        }
+    }
+
+    private String writeJson(JsonNode node) {
+        try {
+            return objectMapper.writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new InvalidJsonApiResponseException("Failed to serialize JSON:API resource: " + node);
         }
     }
 

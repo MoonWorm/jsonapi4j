@@ -24,7 +24,7 @@ cd:
     - FIELDS
     - CUSTOM_QUERY_PARAMS
     - HEADERS
-  deduplicateResources: true
+  deduplication: DATA_AND_INCLUDED
   httpConnectTimeoutMs: 5000
   httpTotalTimeoutMs: 10000
   cache:
