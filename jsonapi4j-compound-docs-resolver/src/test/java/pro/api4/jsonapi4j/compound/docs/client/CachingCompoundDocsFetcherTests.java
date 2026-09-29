@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -376,6 +377,68 @@ class CachingCompoundDocsFetcherTests {
 
         CacheKey keyNoFields = CacheKey.of(idAndType("countries", "FI"));
         assertThat(cache.get(keyNoFields)).isPresent();
+    }
+
+    @Test
+    void fetch_customQueryParamsPropagated_cacheKeyIncludesThem() {
+        when(mockConfig.getPropagation()).thenReturn(List.of(Propagation.CUSTOM_QUERY_PARAMS));
+        when(mockRequest.getCustomQueryParams()).thenReturn(Map.of("lang", List.of("en")));
+
+        when(httpClient.doBatchFetch(any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        "max-age=300"));
+
+        var fetcher = newFetcher(cache);
+
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
+
+        CacheKey keyWithParams = new CacheKey(idAndType("countries", "FI"), null, null, Map.of("lang", List.of("en")));
+        assertThat(cache.get(keyWithParams)).isPresent();
+        assertThat(cache.get(CacheKey.of(idAndType("countries", "FI")))).isEmpty();
+    }
+
+    @Test
+    void fetch_differentCustomQueryParams_doesNotServeCachedResource() {
+        when(mockConfig.getPropagation()).thenReturn(List.of(Propagation.CUSTOM_QUERY_PARAMS));
+        when(mockRequest.getCustomQueryParams()).thenReturn(Map.of("lang", List.of("de")));
+        cache.put(
+                new CacheKey(idAndType("countries", "FI"), null, null, Map.of("lang", List.of("en"))),
+                "english-FI",
+                CacheControlParser.parse("max-age=300")
+        );
+
+        when(httpClient.doBatchFetch(any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        "max-age=300"));
+
+        var fetcher = newFetcher(cache);
+
+        BatchFetchResult result = fetcher.fetch(
+                new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()),
+                mockRequest
+        );
+
+        assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
+        verify(httpClient).doBatchFetch(any(), any());
+    }
+
+    @Test
+    void fetch_customQueryParamsNotPropagated_cacheKeyIgnoresThem() {
+        when(mockConfig.getPropagation()).thenReturn(List.of());
+
+        when(httpClient.doBatchFetch(any(), any()))
+                .thenReturn(new HttpFetchResult(
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
+                        "max-age=300"));
+
+        var fetcher = newFetcher(cache);
+
+        fetcher.fetch(new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()), mockRequest);
+
+        assertThat(cache.get(CacheKey.of(idAndType("countries", "FI")))).isPresent();
+        verify(mockRequest, never()).getCustomQueryParams();
     }
 
     // --- Edge cases ---

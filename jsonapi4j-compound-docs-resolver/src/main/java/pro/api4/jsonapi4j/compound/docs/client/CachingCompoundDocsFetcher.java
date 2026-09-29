@@ -111,11 +111,12 @@ public class CachingCompoundDocsFetcher {
         String resourceType = batch.resourceType();
         Set<String> includes = batch.includes();
         Set<String> fields = resolveFieldsQueryParam(resourceType, originalRequest);
+        Map<String, List<String>> queryParams = resolveCustomQueryParams(originalRequest);
         ResourceType type = new ResourceType(resourceType);
 
         // Build CacheKeys for all requested IDs
         Set<CacheKey> keys = batch.ids().stream()
-                .map(id -> new CacheKey(new IdAndType(id, type), includes, fields))
+                .map(id -> new CacheKey(new IdAndType(id, type), includes, fields, queryParams))
                 .collect(Collectors.toSet());
 
         // Cache lookup on the FULL id set
@@ -149,7 +150,12 @@ public class CachingCompoundDocsFetcher {
             for (ParsedResource parsed : chunkResult.resources()) {
                 httpResultJsons.add(parsed.json());
                 if (parsed.idAndType() != null) {
-                    CacheKey key = new CacheKey(new IdAndType(parsed.idAndType().getId(), type), includes, fields);
+                    CacheKey key = new CacheKey(
+                            new IdAndType(parsed.idAndType().getId(), type),
+                            includes,
+                            fields,
+                            queryParams
+                    );
                     cache.put(key, parsed.json(), chunkDirectives);
                 }
             }
@@ -238,6 +244,19 @@ public class CachingCompoundDocsFetcher {
         }
 
         return aggregator.getResult();
+    }
+
+    /**
+     * The custom query parameters sent downstream, if they are propagated - a downstream response may vary by them,
+     * so they are part of the cache key.
+     *
+     * @return the propagated custom query parameters, or an empty map if they are not propagated
+     */
+    private Map<String, List<String>> resolveCustomQueryParams(CompoundDocsRequest originalRequest) {
+        if (!config.getPropagation().contains(Propagation.CUSTOM_QUERY_PARAMS)) {
+            return Collections.emptyMap();
+        }
+        return originalRequest.getCustomQueryParams();
     }
 
     /**

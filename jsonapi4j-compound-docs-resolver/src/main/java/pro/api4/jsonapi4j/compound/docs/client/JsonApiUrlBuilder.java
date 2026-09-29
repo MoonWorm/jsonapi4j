@@ -3,6 +3,8 @@ package pro.api4.jsonapi4j.compound.docs.client;
 import pro.api4.jsonapi4j.util.BaseUrls;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -13,6 +15,11 @@ import java.util.stream.Collectors;
  * A JSON:API-aware URL builder that provides a fluent API for constructing
  * spec-compliant request URLs with standard query parameters like
  * {@code filter}, {@code include}, {@code fields}, and custom parameters.
+ *
+ * <p>Everything that comes from data or from the client - the resource type, parameter values, custom parameter names
+ * and the type inside {@code fields[...]} - is percent-encoded as UTF-8, so a value can neither break the URL nor
+ * smuggle in extra parameters. The fixed parameter structure ({@code filter[id]}, {@code include}, the brackets) is
+ * kept literal.
  *
  * <p>Example usage:</p>
  * <pre>{@code
@@ -59,7 +66,8 @@ class JsonApiUrlBuilder {
     }
 
     /**
-     * Adds a {@code filter[name]=value1,value2} query parameter.
+     * Adds a {@code filter[name]=value1,value2} query parameter. Each value is encoded on its own, so the commas
+     * separating them stay literal.
      *
      * @param filterName the filter name (e.g. "id", "status")
      * @param values     the filter values
@@ -68,7 +76,7 @@ class JsonApiUrlBuilder {
      */
     public JsonApiUrlBuilder filterParam(String filterName, Collection<String> values) {
         if (values != null && !values.isEmpty()) {
-            queryParams.add(String.format("filter[%s]=%s", filterName, String.join(",", values)));
+            queryParams.add(String.format("filter[%s]=%s", encode(filterName), encodeEach(values)));
         }
         return this;
     }
@@ -82,7 +90,7 @@ class JsonApiUrlBuilder {
      */
     public JsonApiUrlBuilder includeParam(Collection<String> includes) {
         if (includes != null && !includes.isEmpty()) {
-            queryParams.add("include=" + String.join(",", includes));
+            queryParams.add("include=" + encodeEach(includes));
         }
         return this;
     }
@@ -97,7 +105,7 @@ class JsonApiUrlBuilder {
      */
     public JsonApiUrlBuilder fieldsParam(String resourceType, List<String> fields) {
         if (fields != null && !fields.isEmpty()) {
-            queryParams.add(String.format("fields[%s]=%s", resourceType, String.join(",", fields)));
+            queryParams.add(String.format("fields[%s]=%s", encode(resourceType), encodeEach(fields)));
         }
         return this;
     }
@@ -117,15 +125,16 @@ class JsonApiUrlBuilder {
     }
 
     /**
-     * Adds a custom query parameter as {@code key=value1,value2}.
+     * Adds a custom query parameter, repeated once per value ({@code key=value1&key=value2}) - the way it arrived,
+     * rather than joined into one comma-separated value that would change its meaning.
      *
      * @param key    the parameter name
      * @param values the parameter values
      * @return this builder
      */
     public JsonApiUrlBuilder queryParam(String key, List<String> values) {
-        if (values != null && !values.isEmpty()) {
-            queryParams.add(String.format("%s=%s", key, String.join(",", values)));
+        if (values != null) {
+            values.forEach(value -> queryParams.add(String.format("%s=%s", encode(key), encode(value))));
         }
         return this;
     }
@@ -151,12 +160,25 @@ class JsonApiUrlBuilder {
     public String build() {
         StringBuilder sb = new StringBuilder(basePath);
         if (resourceType != null) {
-            sb.append("/").append(resourceType);
+            sb.append("/").append(encode(resourceType));
         }
         if (!queryParams.isEmpty()) {
-            sb.append("?").append(queryParams.stream().collect(Collectors.joining("&")));
+            sb.append("?").append(String.join("&", queryParams));
         }
         return sb.toString();
+    }
+
+    private static String encodeEach(Collection<String> values) {
+        return values.stream().map(JsonApiUrlBuilder::encode).collect(Collectors.joining(","));
+    }
+
+    /**
+     * Percent-encodes {@code value} as UTF-8. {@link URLEncoder} produces form encoding, whose {@code +} for a space
+     * means a space only in a query string, so it is replaced with {@code %20}, which means a space everywhere -
+     * including in the resource type path segment.
+     */
+    private static String encode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
 }

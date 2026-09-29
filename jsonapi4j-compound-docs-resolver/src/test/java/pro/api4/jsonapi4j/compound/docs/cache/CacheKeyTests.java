@@ -3,7 +3,10 @@ package pro.api4.jsonapi4j.compound.docs.cache;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -192,6 +195,39 @@ class CacheKeyTests {
         assertThat(result).contains("FI");
         assertThat(result).contains("currencies");
         assertThat(result).contains("name");
+    }
+
+    @Test
+    void equals_sameQueryParamsInDifferentOrder_equal() {
+        Map<String, List<String>> ordered = new LinkedHashMap<>();
+        ordered.put("a", List.of("1"));
+        ordered.put("b", List.of("2"));
+        Map<String, List<String>> reversed = new LinkedHashMap<>();
+        reversed.put("b", List.of("2"));
+        reversed.put("a", List.of("1"));
+
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), null, null, ordered);
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), null, null, reversed);
+
+        assertThat(key1).isEqualTo(key2);
+        assertThat(key1.hashCode()).isEqualTo(key2.hashCode());
+    }
+
+    @Test
+    void equals_differentQueryParamValues_notEqual() {
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), null, null, Map.of("lang", List.of("en")));
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), null, null, Map.of("lang", List.of("de")));
+
+        assertThat(key1).isNotEqualTo(key2);
+    }
+
+    @Test
+    void equals_noQueryParams_equalsKeyWithoutThem() {
+        CacheKey key1 = new CacheKey(idAndType("countries", "FI"), null, null, Map.of());
+        CacheKey key2 = new CacheKey(idAndType("countries", "FI"), null, null);
+
+        assertThat(key1).isEqualTo(key2);
+        assertThat(key1.getQueryParams()).isEmpty();
     }
 
 }

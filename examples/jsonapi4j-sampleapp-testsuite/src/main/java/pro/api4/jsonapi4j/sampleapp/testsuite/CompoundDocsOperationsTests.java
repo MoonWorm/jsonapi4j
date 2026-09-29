@@ -169,6 +169,24 @@ public abstract class CompoundDocsOperationsTests {
     }
 
     @Test
+    public void test_readById_customQueryParamWithReservedCharacters_propagatedSafely() {
+        // a space, '&' and '=' in a custom param value must be encoded on the internal CD calls,
+        // not break the URL or inject extra parameters
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives")
+                .queryParam("customParam", "a b&filter[id]=5")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(200)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                // user 1's relatives: {2, 3} - an injected filter[id]=5 would have changed that
+                .body("included", hasSize(2))
+                .body("included.id", containsInAnyOrder("2", "3"));
+    }
+
+    @Test
     public void test_readByIdWithIncludesCheckDeduplication() {
         // 3 hops of relatives — all reachable users should be deduplicated
         given()
