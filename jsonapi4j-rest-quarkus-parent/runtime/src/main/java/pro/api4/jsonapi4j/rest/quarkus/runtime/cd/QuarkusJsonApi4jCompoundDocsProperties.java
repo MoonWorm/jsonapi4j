@@ -8,6 +8,7 @@ import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 
@@ -83,6 +84,13 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     Deduplication deduplication();
 
     /**
+     * What a request with an 'include' path deeper than 'maxHops' gets: FAIL answers 400 Bad Request, IGNORE resolves
+     * it only as deep as supported and lists it in 'meta.includedIncomplete'.
+     */
+    @WithDefault(DEFAULT_UNSUPPORTED_INCLUDES)
+    UnsupportedIncludeStrategy unsupportedIncludes();
+
+    /**
      * Controls how long to wait when establishing TCP connection (in millisecond).
      * Covers:
      * <ul>
@@ -145,6 +153,7 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setDefaultMaxBatchSize(defaultMaxBatchSize());
         cdProperties.setPropagation(propagation());
         cdProperties.setDeduplication(deduplication());
+        cdProperties.setUnsupportedIncludes(unsupportedIncludes());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
         cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
         cdProperties.setCache(cache().map(c -> {

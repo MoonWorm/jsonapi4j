@@ -6,6 +6,7 @@ import lombok.Setter;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.config.JsonApi4jConfigReader;
 import pro.api4.jsonapi4j.config.RawConfigAccessor;
 
@@ -27,6 +28,7 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private int defaultMaxBatchSize = Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
     private Deduplication deduplication = Deduplication.valueOf(DEFAULT_DEDUPLICATION);
+    private UnsupportedIncludeStrategy unsupportedIncludes = UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
     private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     private long httpTotalTimeoutMs = Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
     private DefaultCache cache;
@@ -101,6 +103,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public Deduplication deduplication() {
         return deduplication;
+    }
+
+    @Override
+    public UnsupportedIncludeStrategy unsupportedIncludes() {
+        return unsupportedIncludes;
     }
 
     @Override

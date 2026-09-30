@@ -197,8 +197,8 @@ jsonapi4j:
 
 | Property | Default | Effect |
 |----------|---------|--------|
-| `maxHops` | 3 | Limits `?include=a.b.c` depth. A value of 2 means `a.b` works but `a.b.c` stops at `b`. |
-| `maxIncludedResources` | 100 | Caps the total number of resolved included resources. Prevents a single request from triggering thousands of downstream calls. |
+| `maxHops` | 2 | The deepest `?include` path supported. With 2, `a.b` works and `a.b.c` is answered with `400 Bad Request` — or, with `unsupportedIncludes: IGNORE`, resolved to `a.b` and reported in `meta`. |
+| `maxIncludedResources` | 100 | Stops fetching further hops once `included` holds this many resources, reporting the unresolved paths in `meta`. Prevents a single request from triggering thousands of downstream calls. |
 
 For APIs with deep relationship graphs, start with `maxHops: 1` and increase only if clients need deeper traversal.
 

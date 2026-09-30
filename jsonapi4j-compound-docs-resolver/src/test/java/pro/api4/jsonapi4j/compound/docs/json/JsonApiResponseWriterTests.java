@@ -22,17 +22,27 @@ class JsonApiResponseWriterTests {
     class Compose {
 
         @Test
-        void compose_gapsInAnyOrder_listsThemSortedByTypeThenReason() throws Exception {
+        void compose_gapsInAnyOrder_listsThemSortedByReasonThenType() throws Exception {
             JsonNode document = MAPPER.readTree(sut.compose(MAPPER.createObjectNode(), List.of(), List.of(
-                    new IncludedGap(IncompleteReason.NO_ROUTE, "regions"),
-                    new IncludedGap(IncompleteReason.NO_ROUTE, "currencies"),
-                    new IncludedGap(IncompleteReason.FETCH_FAILED, "currencies")
+                    IncludedGap.forType(IncompleteReason.NO_ROUTE, "regions"),
+                    IncludedGap.forType(IncompleteReason.NO_ROUTE, "currencies"),
+                    IncludedGap.forType(IncompleteReason.FETCH_FAILED, "currencies")
             )));
 
             assertThat(document.path("meta").path(JsonApiResponseWriter.INCLUDED_INCOMPLETE_META_FIELD).toString())
                     .isEqualTo("[{\"reason\":\"FETCH_FAILED\",\"type\":\"currencies\"},"
                             + "{\"reason\":\"NO_ROUTE\",\"type\":\"currencies\"},"
                             + "{\"reason\":\"NO_ROUTE\",\"type\":\"regions\"}]");
+        }
+
+        @Test
+        void compose_pathGap_listsPathWithoutType() throws Exception {
+            JsonNode document = MAPPER.readTree(sut.compose(MAPPER.createObjectNode(), List.of(), List.of(
+                    IncludedGap.forPath(IncompleteReason.MAX_INCLUDED_RESOURCES, "relatives.relatives")
+            )));
+
+            assertThat(document.path("meta").path(JsonApiResponseWriter.INCLUDED_INCOMPLETE_META_FIELD).toString())
+                    .isEqualTo("[{\"reason\":\"MAX_INCLUDED_RESOURCES\",\"path\":\"relatives.relatives\"}]");
         }
 
         @Test
@@ -43,7 +53,7 @@ class JsonApiResponseWriterTests {
             JsonNode document = MAPPER.readTree(sut.compose(
                     rootNode,
                     List.of(),
-                    List.of(new IncludedGap(IncompleteReason.NO_ROUTE, "regions"))
+                    List.of(IncludedGap.forType(IncompleteReason.NO_ROUTE, "regions"))
             ));
 
             assertThat(document.get("meta").asText()).isEqualTo("invalid");

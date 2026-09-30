@@ -13,6 +13,8 @@ public enum HttpHeaders {
     ACCEPT("Accept"),
     /** The standard {@code Content-Type} request/response header. */
     CONTENT_TYPE("Content-Type"),
+    /** The standard {@code Content-Length} response header. */
+    CONTENT_LENGTH("Content-Length"),
     /** The standard {@code Cache-Control} request/response header. */
     CACHE_CONTROL("Cache-Control"),
     /** The standard {@code Location} response header (used on 201 Created responses). */

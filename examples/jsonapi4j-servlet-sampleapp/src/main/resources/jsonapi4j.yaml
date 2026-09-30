@@ -25,6 +25,7 @@ cd:
     - CUSTOM_QUERY_PARAMS
     - HEADERS
   deduplication: DATA_AND_INCLUDED
+  unsupportedIncludes: FAIL
   httpConnectTimeoutMs: 5000
   httpTotalTimeoutMs: 10000
   cache:

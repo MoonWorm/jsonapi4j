@@ -104,6 +104,7 @@ DomainSettingsResolver routing = DefaultDomainSettingsResolver.from(
 CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
     true,                                     // enabled
     2,                                        // maxHops
+    UnsupportedIncludeStrategy.FAIL,          // unsupportedIncludes: 400 for a deeper include path
     100,                                      // maxIncludedResources
     ErrorStrategy.IGNORE,
     List.of(Propagation.FIELDS, Propagation.HEADERS),
@@ -137,6 +138,14 @@ CompoundDocsRequest request = new CompoundDocsRequest(
 CompoundDocsResult result = resolver.resolveCompoundDocs(backendResponseBody, request, routing);
 // respond with result.responseBody(); when result.cacheControlDirectives() isn't null,
 // set Cache-Control to CacheControlParser.format(result.cacheControlDirectives())
+```
+
+Under `UnsupportedIncludeStrategy.FAIL`, an include path deeper than `maxHops` makes `resolveCompoundDocs` throw
+`UnsupportedIncludeException`, to be answered with `400 Bad Request`. To reject such a request without calling the
+backend at all, run the same check before proxying it, with a checker built from the same config as the resolver:
+
+```java
+IncludesChecker.from(config).check(request);
 ```
 
 Each backend must serve `GET /{type}?filter[id]=a,b,c` and emit relationship linkage for the relationships named in `include`. It doesn't resolve includes itself: the resolver's calls carry `X-Disable-Compound-Docs: true` and the gateway assembles `included`.

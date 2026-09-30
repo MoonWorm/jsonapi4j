@@ -5,6 +5,7 @@ import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult.PropertiesValidationResultBuilder;
@@ -29,6 +30,7 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
     String PROPAGATION_PROPERTY = "propagation";
     String DEDUPLICATION_PROPERTY = "deduplication";
+    String UNSUPPORTED_INCLUDES_PROPERTY = "unsupportedIncludes";
     String HTTP_CONNECT_TIMEOUT_MS_PROPERTY = "httpConnectTimeoutMs";
     String HTTP_TOTAL_TIMEOUT_MS_PROPERTY = "httpTotalTimeoutMs";
     String CACHE_PROPERTY = "cache";
@@ -44,6 +46,7 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_ERROR_STRATEGY = "IGNORE";
     String DEFAULT_PROPAGATION = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
     String DEFAULT_DEDUPLICATION = "DATA_AND_INCLUDED";
+    String DEFAULT_UNSUPPORTED_INCLUDES = "FAIL";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
     /**
@@ -115,6 +118,10 @@ public interface CompoundDocsProperties extends PluginProperties {
         return Deduplication.valueOf(DEFAULT_DEDUPLICATION);
     }
 
+    default UnsupportedIncludeStrategy unsupportedIncludes() {
+        return UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
+    }
+
     default long httpConnectTimeoutMs() {
         return Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     }
@@ -136,7 +143,8 @@ public interface CompoundDocsProperties extends PluginProperties {
                 .requirePositive(propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs())
                 .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
                 .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation())
-                .requireNotNull(propertyPath(DEDUPLICATION_PROPERTY), deduplication());
+                .requireNotNull(propertyPath(DEDUPLICATION_PROPERTY), deduplication())
+                .requireNotNull(propertyPath(UNSUPPORTED_INCLUDES_PROPERTY), unsupportedIncludes());
         validateMapping(builder);
         validateBatchSizeMapping(builder);
         validateCache(builder);

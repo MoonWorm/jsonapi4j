@@ -17,8 +17,10 @@ import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -168,20 +170,6 @@ public class CompoundDocsResolverTests {
             assertThat(fetchCalls).containsExactly(
                     new FetchCall("users", Set.of("2", "3"), Set.of("relatives"))
             );
-        }
-
-        @Test
-        public void resolveCompoundDocs_includeDeeperThanMaxHops_stopsAtMaxHops() throws Exception {
-            CompoundDocsResolver sut = resolver(1, Deduplication.DATA_AND_INCLUDED);
-            stubDownstream();
-
-            CompoundDocsResult result = sut.resolveCompoundDocs(
-                    primaryDoc(USER_1, Set.of("placeOfBirth")),
-                    request("/users/1", "placeOfBirth.currencies"),
-                    ROUTE_ALL
-            );
-
-            assertThat(included(result)).containsExactly(USA);
         }
 
         @Test
@@ -348,7 +336,7 @@ public class CompoundDocsResolverTests {
                     COUNTRIES_ONLY
             );
 
-            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.NO_ROUTE, "currencies"));
+            assertThat(gaps(result)).containsExactly(IncludedGap.forType(IncompleteReason.NO_ROUTE, "currencies"));
         }
 
         @Test
@@ -364,7 +352,7 @@ public class CompoundDocsResolverTests {
                     ROUTE_ALL
             );
 
-            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.FETCH_FAILED, "countries"));
+            assertThat(gaps(result)).containsExactly(IncludedGap.forType(IncompleteReason.FETCH_FAILED, "countries"));
             assertThat(MAPPER.readTree(result.responseBody()).has("included")).isFalse();
         }
 
@@ -382,7 +370,7 @@ public class CompoundDocsResolverTests {
             );
 
             assertThat(MAPPER.readTree(result.responseBody()).path("meta").path("total").asInt()).isEqualTo(1);
-            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.NO_ROUTE, "currencies"));
+            assertThat(gaps(result)).containsExactly(IncludedGap.forType(IncompleteReason.NO_ROUTE, "currencies"));
         }
 
         @Test
@@ -414,6 +402,94 @@ public class CompoundDocsResolverTests {
     }
 
     @Nested
+    class UnsupportedIncludes {
+
+        @Test
+        public void resolveCompoundDocs_includeDeeperThanMaxHopsUnderFail_throwsBeforeFetching() {
+            CompoundDocsResolver sut = resolver(1, UnsupportedIncludeStrategy.FAIL, 100);
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    ROUTE_ALL
+            )).isInstanceOf(UnsupportedIncludeException.class);
+            assertThat(fetchCalls).isEmpty();
+        }
+
+        @Test
+        public void resolveCompoundDocs_includeDeeperThanMaxHopsUnderIgnore_resolvesSupportedDepthAndListsPath() throws Exception {
+            CompoundDocsResolver sut = resolver(1, UnsupportedIncludeStrategy.IGNORE, 100);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactly(USA);
+            assertThat(fetchCalls).containsExactly(new FetchCall("countries", Set.of("US"), Set.of()));
+            assertThat(gaps(result)).containsExactly(
+                    IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, "placeOfBirth.currencies")
+            );
+        }
+
+    }
+
+    @Nested
+    class MaxIncludedResources {
+
+        @Test
+        public void resolveCompoundDocs_reachedWithResourcesLeftToFetch_stopsAndListsTheirPath() throws Exception {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.FAIL, 2);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives.relatives.placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
+            assertThat(fetchCalls).containsExactly(new FetchCall("users", Set.of("2", "3"), Set.of("relatives")));
+            assertThat(gaps(result)).containsExactly(
+                    IncludedGap.forPath(IncompleteReason.MAX_INCLUDED_RESOURCES, "relatives.relatives")
+            );
+        }
+
+        @Test
+        public void resolveCompoundDocs_reachedWithEverythingAlreadyFetched_completesWithoutGap() throws Exception {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.FAIL, 2);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives.relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
+            assertThat(gaps(result)).isEmpty();
+        }
+
+        @Test
+        public void resolveCompoundDocs_exceededByLastHop_keepsEverythingWithoutGap() throws Exception {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.FAIL, 1);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
+            assertThat(gaps(result)).isEmpty();
+        }
+
+    }
+
+    @Nested
     class Routing {
 
         @Test
@@ -439,8 +515,23 @@ public class CompoundDocsResolverTests {
     }
 
     private CompoundDocsResolver resolver(int maxHops, Deduplication deduplication, ErrorStrategy errorStrategy) {
+        return resolver(maxHops, UnsupportedIncludeStrategy.FAIL, 100, deduplication, errorStrategy);
+    }
+
+    private CompoundDocsResolver resolver(int maxHops,
+                                          UnsupportedIncludeStrategy unsupportedIncludes,
+                                          int maxIncludedResources) {
+        return resolver(maxHops, unsupportedIncludes, maxIncludedResources, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.FAIL);
+    }
+
+    private CompoundDocsResolver resolver(int maxHops,
+                                          UnsupportedIncludeStrategy unsupportedIncludes,
+                                          int maxIncludedResources,
+                                          Deduplication deduplication,
+                                          ErrorStrategy errorStrategy) {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
-                true, maxHops, 100, errorStrategy, List.of(), deduplication, 1000, 1000, false, 1
+                true, maxHops, unsupportedIncludes, maxIncludedResources, errorStrategy, List.of(), deduplication,
+                1000, 1000, false, 1
         );
         return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);
     }
@@ -501,7 +592,11 @@ public class CompoundDocsResolverTests {
                 .path("meta")
                 .path(JsonApiResponseWriter.INCLUDED_INCOMPLETE_META_FIELD);
         for (JsonNode node : gapsNode) {
-            gaps.add(new IncludedGap(IncompleteReason.valueOf(node.get("reason").asText()), node.get("type").asText()));
+            gaps.add(new IncludedGap(
+                    IncompleteReason.valueOf(node.get("reason").asText()),
+                    node.has("type") ? node.get("type").asText() : null,
+                    node.has("path") ? node.get("path").asText() : null
+            ));
         }
         return gaps;
     }

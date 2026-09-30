@@ -21,6 +21,7 @@ public class JsonApiResponseWriter {
     private static final String INCLUDED_FIELD = "included";
     private static final String GAP_REASON_FIELD = "reason";
     private static final String GAP_TYPE_FIELD = "type";
+    private static final String GAP_PATH_FIELD = "path";
 
     private final ObjectMapper objectMapper;
 
@@ -67,9 +68,15 @@ public class JsonApiResponseWriter {
         }
         ObjectNode meta = metaNode == null ? rootNode.putObject(BaseDoc.META_FIELD) : (ObjectNode) metaNode;
         ArrayNode gapsNode = meta.putArray(INCLUDED_INCOMPLETE_META_FIELD);
-        gaps.stream().sorted().forEach(gap -> gapsNode.addObject()
-                .put(GAP_REASON_FIELD, gap.reason().name())
-                .put(GAP_TYPE_FIELD, gap.type()));
+        gaps.stream().sorted().forEach(gap -> {
+            ObjectNode gapNode = gapsNode.addObject().put(GAP_REASON_FIELD, gap.reason().name());
+            if (gap.type() != null) {
+                gapNode.put(GAP_TYPE_FIELD, gap.type());
+            }
+            if (gap.path() != null) {
+                gapNode.put(GAP_PATH_FIELD, gap.path());
+            }
+        });
     }
 
 }

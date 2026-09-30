@@ -65,10 +65,17 @@ final class IncludeFrontier {
     }
 
     /**
+     * @return the include paths {@code resource} was reached through
+     */
+    Set<String> paths(IdAndType resource) {
+        return pathsByResource.getOrDefault(resource, Collections.emptySet());
+    }
+
+    /**
      * @return relationship names to request for {@code resource} so that each of its paths can continue
      */
     Set<String> requiredIncludes(IdAndType resource) {
-        return pathsByResource.getOrDefault(resource, Collections.emptySet())
+        return paths(resource)
                 .stream()
                 .flatMap(path -> includeTree.children(path).stream())
                 .collect(toSet());

@@ -9,8 +9,11 @@ jsonapi4j:
 
   cd:                           # Compound Documents (?include=)
     enabled: true
-    maxHops: 3                  # caps ?include=a.b.c depth
-    maxIncludedResources: 100   # caps total resolved resources per response
+    maxHops: 3                  # deepest ?include path supported (a.b.c = 3)
+    unsupportedIncludes: FAIL   # deeper path: FAIL -> 400 UNSUPPORTED_INCLUDE (spec);
+                                #   IGNORE -> resolved to maxHops, listed in meta.includedIncomplete
+    maxIncludedResources: 100   # no further hops once reached (last hop may overshoot);
+                                #   unresolved paths listed as MAX_INCLUDED_RESOURCES
     errorStrategy: IGNORE       # IGNORE -> failed includes are left out of `included` (response marked no-store,
                                 #   gaps listed in meta.includedIncomplete: FETCH_FAILED | NO_ROUTE per type);
                                 # FAIL -> JSON:API error: 504 timeout, 502 other downstream failure, 500 no route

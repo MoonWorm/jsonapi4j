@@ -8,7 +8,6 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.not;
@@ -127,25 +126,18 @@ public abstract class CompoundDocsOperationsTests {
     }
 
     @Test
-    public void test_readById_maxHopsExceeded_stopsAtConfiguredDepth() {
-        // maxHops=3, requesting 4 hops: relatives.relatives.relatives.relatives
-        // should produce the same result as 3 hops since the 4th hop is cut off
-        // with 3 hops of relatives, users 2-4 are reachable; user 1 is primary data, so not repeated in included
+    public void test_readById_maxHopsExceeded_respondsBadRequestNamingThePath() {
         given()
                 .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
                 .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives.relatives.relatives.relatives")
                 .pathParam("userId", "1")
                 .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
                 .then()
-                .statusCode(200)
+                .statusCode(400)
                 .contentType(JsonApiMediaType.MEDIA_TYPE)
-                .body("data.id", equalTo("1"))
-                // included should contain users 2-4 (deduplicated, resolved up to 3 hops)
-                .body("included.findAll { it.type == 'users' }.size()", equalTo(3))
-                .body("included.findAll { it.type == 'users' }.id", not(hasItem("1")))
-                .body("included.find { it.id == '2' }.attributes.fullName", equalTo("Jane Doe"))
-                .body("included.find { it.id == '3' }.attributes.fullName", equalTo("Jack Doe"))
-                .body("included.find { it.id == '4' }.attributes.fullName", equalTo("Jessy Doe"));
+                .body("errors[0].code", equalTo("UNSUPPORTED_INCLUDE"))
+                .body("errors[0].source.parameter", equalTo("include"))
+                .body("errors[0].detail", containsString("relatives.relatives.relatives.relatives"));
     }
 
     @Test

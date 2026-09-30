@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
+import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
@@ -19,6 +20,7 @@ import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
@@ -33,7 +35,23 @@ public class CompoundDocsFilter implements Filter {
     private CompoundDocsRequestSupplier requestSupplier;
     private SelfFallbackRouting routing;
     private ErrorsDocResponseWriter errorsDocResponseWriter;
+    private IncludesChecker includesChecker;
     private CompoundDocsResolver resolver;
+
+    public CompoundDocsFilter() {
+    }
+
+    CompoundDocsFilter(CompoundDocsRequestSupplier requestSupplier,
+                       SelfFallbackRouting routing,
+                       ErrorsDocResponseWriter errorsDocResponseWriter,
+                       IncludesChecker includesChecker,
+                       CompoundDocsResolver resolver) {
+        this.requestSupplier = requestSupplier;
+        this.routing = routing;
+        this.errorsDocResponseWriter = errorsDocResponseWriter;
+        this.includesChecker = includesChecker;
+        this.resolver = resolver;
+    }
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -58,6 +76,7 @@ public class CompoundDocsFilter implements Filter {
             CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                     cdProperties.enabled(),
                     cdProperties.maxHops(),
+                    cdProperties.unsupportedIncludes(),
                     cdProperties.maxIncludedResources(),
                     cdProperties.errorStrategy(),
                     cdProperties.propagation(),
@@ -68,6 +87,7 @@ public class CompoundDocsFilter implements Filter {
                     cdProperties.cacheMaxSize()
             );
             log.debug("Effective {} settings: {}", CompoundDocsResolverConfig.class.getSimpleName(), config);
+            this.includesChecker = IncludesChecker.from(config);
 
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
@@ -103,7 +123,7 @@ public class CompoundDocsFilter implements Filter {
                          ServletResponse servletResponse,
                          FilterChain chain) throws IOException, ServletException {
 
-        if (this.resolver == null || this.requestSupplier == null || this.routing == null) {
+        if (this.resolver == null || this.includesChecker == null || this.requestSupplier == null || this.routing == null) {
             log.debug("{} has not been initialized, CD plugin initialization failer or plugin is disabled", CompoundDocsFilter.class.getSimpleName());
             chain.doFilter(servletRequest, servletResponse);
         } else {
@@ -113,36 +133,36 @@ public class CompoundDocsFilter implements Filter {
             CompoundDocsRequest compoundDocsRequest = requestSupplier.toCompoundDocsRequest(httpServletRequest);
 
             if (compoundDocsRequest.isProcessable()) {
-                try (BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpServletResponse)) {
-                    chain.doFilter(servletRequest, responseWrapper);
-
-                    String responseBody = responseWrapper.getCaptureAsString();
-                    if (is2xxResponseCode(responseWrapper.getStatus())) {
-                        CompoundDocsResult result;
-                        try {
-                            result = resolver.resolveCompoundDocs(
-                                    responseBody,
-                                    compoundDocsRequest,
-                                    routing.forRequest(httpServletRequest)
-                            );
-                        } catch (RuntimeException e) {
-                            httpServletResponse.setHeader(
-                                    CACHE_CONTROL.getName(),
-                                    CacheControlParser.format(CacheControlDirectives.NO_STORE)
-                            );
-                            errorsDocResponseWriter.write(httpServletResponse, e);
-                            return;
-                        }
-                        applyCacheControlHeader(httpServletResponse, responseWrapper, result);
-                        servletResponse.getWriter().write(result.responseBody());
-                    } else {
-                        servletResponse.getWriter().write(responseBody);
-                    }
-                } catch (IOException | ServletException | RuntimeException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new ServletException(e);
+                try {
+                    includesChecker.check(compoundDocsRequest);
+                } catch (RuntimeException e) {
+                    errorsDocResponseWriter.write(httpServletResponse, e);
+                    return;
                 }
+                BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpServletResponse);
+                chain.doFilter(servletRequest, responseWrapper);
+
+                if (!is2xxResponseCode(responseWrapper.getStatus())) {
+                    writeBody(httpServletResponse, responseWrapper.getCapturedBody());
+                    return;
+                }
+                CompoundDocsResult result;
+                try {
+                    result = resolver.resolveCompoundDocs(
+                            responseWrapper.getCapturedBodyAsString(),
+                            compoundDocsRequest,
+                            routing.forRequest(httpServletRequest)
+                    );
+                } catch (RuntimeException e) {
+                    httpServletResponse.setHeader(
+                            CACHE_CONTROL.getName(),
+                            CacheControlParser.format(CacheControlDirectives.NO_STORE)
+                    );
+                    errorsDocResponseWriter.write(httpServletResponse, e);
+                    return;
+                }
+                applyCacheControlHeader(httpServletResponse, responseWrapper, result);
+                writeBody(httpServletResponse, result.responseBody().getBytes(StandardCharsets.UTF_8));
             } else {
                 chain.doFilter(servletRequest, servletResponse);
             }
@@ -168,6 +188,14 @@ public class CompoundDocsFilter implements Filter {
                 response.setHeader(CACHE_CONTROL.getName(), headerValue);
             }
         }
+    }
+
+    private void writeBody(HttpServletResponse response, byte[] body) throws IOException {
+        if (body.length == 0) {
+            return;
+        }
+        response.setContentLength(body.length);
+        response.getOutputStream().write(body);
     }
 
     private boolean is2xxResponseCode(int statusCode) {

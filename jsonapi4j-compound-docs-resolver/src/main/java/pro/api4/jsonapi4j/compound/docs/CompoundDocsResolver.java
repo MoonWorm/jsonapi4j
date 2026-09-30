@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 public class CompoundDocsResolver {
 
     private final CompoundDocsResolverConfig config;
+    private final IncludesChecker includesChecker;
 
     private final CachingCompoundDocsFetcher fetcher;
 
@@ -92,6 +93,7 @@ public class CompoundDocsResolver {
         Validate.notNull(fetcher, "CachingCompoundDocsFetcher is not configured");
 
         this.config = config;
+        this.includesChecker = IncludesChecker.from(config);
         this.fetcher = fetcher;
 
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
@@ -114,42 +116,27 @@ public class CompoundDocsResolver {
         if (!compoundDocsRequest.isProcessable()) {
             return new CompoundDocsResult(originalJsonApiResponse, null);
         }
+        CheckedIncludes includes = includesChecker.check(compoundDocsRequest);
         String relationshipName = compoundDocsRequest.getRelationshipNameFromRequestUri();
-        if (relationshipName == null) {
-            return resolveCompoundDocsInternal(
-                    originalJsonApiResponse,
-                    jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse),
-                    compoundDocsRequest.getIncludes(),
-                    compoundDocsRequest,
-                    domainSettingsResolver
-            );
-        }
+        ParseResult parseResult = relationshipName == null
+                ? jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
+                : jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName);
         return resolveCompoundDocsInternal(
                 originalJsonApiResponse,
-                jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName),
-                includesUnder(relationshipName, compoundDocsRequest),
+                parseResult,
+                includes,
                 compoundDocsRequest,
                 domainSettingsResolver
         );
     }
 
-    /**
-     * On a relationship endpoint include paths start at the relationship itself, so only those apply.
-     */
-    private List<String> includesUnder(String relationshipName, CompoundDocsRequest compoundDocsRequest) {
-        return compoundDocsRequest.getIncludes()
-                .stream()
-                .filter(i -> i.startsWith(relationshipName))
-                .toList();
-    }
-
     private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
                                                            ParseResult originalParseResult,
-                                                           List<String> effectiveRequestIncludes,
+                                                           CheckedIncludes includes,
                                                            CompoundDocsRequest request,
                                                            DomainSettingsResolver domainSettingsResolver) throws ErrorJsonApiResponseException {
 
-        IncludeTree includeTree = IncludeTree.of(effectiveRequestIncludes);
+        IncludeTree includeTree = IncludeTree.of(includes.paths());
         CacheControlAggregator aggregator = new CacheControlAggregator();
 
         Map<IdAndType, Set<String>> requestedIncludes = new HashMap<>();
@@ -163,27 +150,28 @@ public class CompoundDocsResolver {
             primaryResourceJsons.put(idAndType, primaryResource.json());
         }
         IncludedResources included = new IncludedResources(config.getDeduplication(), primaryResourceJsons);
-        Set<IncludedGap> gaps = new HashSet<>();
+        Set<IncludedGap> gaps = new HashSet<>(includes.gaps());
 
         IncludeFrontier frontier = IncludeFrontier.start(includeTree, originalParseResult.relationships());
 
         int currentLevel = 1;
-        while (!frontier.isEmpty()
-                && currentLevel <= config.getMaxHops()
-                && included.size() <= config.getMaxIncludedResources()) {
+        while (!frontier.isEmpty()) {
             log.debug("Compound docs resolution hop {}, included resources so far: {}", currentLevel, included.size());
+
+            frontier.resources().forEach(included::reached);
+            List<IdAndType> pending = pendingResources(frontier, requestedIncludes);
+            if (!pending.isEmpty() && included.size() >= config.getMaxIncludedResources()) {
+                log.debug("Stopping compound docs resolution at hop {}: {} included resources reach the maximum of {}",
+                        currentLevel, included.size(), config.getMaxIncludedResources());
+                gaps.addAll(truncatedPaths(frontier, pending));
+                break;
+            }
 
             Map<String, Set<String>> idsByType = new HashMap<>();
             Map<String, Set<String>> includesByType = new HashMap<>();
-            for (IdAndType resource : frontier.resources()) {
-                included.reached(resource);
+            for (IdAndType resource : pending) {
                 Set<String> requiredIncludes = frontier.requiredIncludes(resource);
                 Set<String> alreadyRequestedIncludes = requestedIncludes.get(resource);
-                if (config.getDeduplication() != Deduplication.NONE
-                        && alreadyRequestedIncludes != null
-                        && alreadyRequestedIncludes.containsAll(requiredIncludes)) {
-                    continue;
-                }
                 idsByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>()).add(resource.getId());
                 Set<String> typeIncludes = includesByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>());
                 typeIncludes.addAll(requiredIncludes);
@@ -209,7 +197,7 @@ public class CompoundDocsResolver {
                 BatchFetchResult fetchResult = join(e.getValue());
                 aggregator.add(fetchResult.directives());
                 if (fetchResult.incompleteReason() != null) {
-                    gaps.add(new IncludedGap(fetchResult.incompleteReason(), resourceType));
+                    gaps.add(IncludedGap.forType(fetchResult.incompleteReason(), resourceType));
                 }
                 idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
                         new IdAndType(id, new ResourceType(resourceType)),
@@ -243,6 +231,33 @@ public class CompoundDocsResolver {
         }
 
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
+    }
+
+    /**
+     * @return the resources of {@code frontier} still to fetch - all of them, unless deduplicating, which skips those
+     * already requested with every relationship they need now
+     */
+    private List<IdAndType> pendingResources(IncludeFrontier frontier, Map<IdAndType, Set<String>> requestedIncludes) {
+        return frontier.resources()
+                .stream()
+                .filter(resource -> {
+                    Set<String> alreadyRequestedIncludes = requestedIncludes.get(resource);
+                    return config.getDeduplication() == Deduplication.NONE
+                            || alreadyRequestedIncludes == null
+                            || !alreadyRequestedIncludes.containsAll(frontier.requiredIncludes(resource));
+                })
+                .toList();
+    }
+
+    /**
+     * @return a gap for each include path the {@code pending} resources were reached through - resolution stopped
+     * before them, so these paths and everything below them are missing
+     */
+    private Set<IncludedGap> truncatedPaths(IncludeFrontier frontier, List<IdAndType> pending) {
+        return pending.stream()
+                .flatMap(resource -> frontier.paths(resource).stream())
+                .map(path -> IncludedGap.forPath(IncompleteReason.MAX_INCLUDED_RESOURCES, path))
+                .collect(Collectors.toSet());
     }
 
     /**

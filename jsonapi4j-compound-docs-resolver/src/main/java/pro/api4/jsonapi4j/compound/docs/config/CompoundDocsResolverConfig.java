@@ -9,6 +9,7 @@ public class CompoundDocsResolverConfig {
 
     private final boolean enabled;
     private final int maxHops;
+    private final UnsupportedIncludeStrategy unsupportedIncludes;
     private final int maxIncludedResources;
     private final ErrorStrategy errorStrategy;
     private final List<Propagation> propagation;

@@ -41,8 +41,9 @@ jsonapi4j:
 | Property name                         | Default value                        | Description                                                                                                                                                                       |
 |---------------------------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.cd.enabled`                | `false`                              | Enables/disables Compound Documents post-processing.                                                                                                                              |
-| `jsonapi4j.cd.maxHops`                | `2`                                  | Max include traversal depth for compound document resolution.                                                                                                                     |
-| `jsonapi4j.cd.maxIncludedResources`   | `100`                                | Maximum amount of included resources. Doesn't guarantee the exact gap - can be more if fact. Checks before moving to down to the next depth level and adds all resolved resource. |
+| `jsonapi4j.cd.maxHops`                | `2`                                  | The deepest include path supported, in relationships: `a.b` is 2. A deeper one is handled per `unsupportedIncludes`. |
+| `jsonapi4j.cd.unsupportedIncludes`    | `FAIL`                               | What a request with an include path deeper than `maxHops` gets. `FAIL`: `400 Bad Request` naming the path, as the JSON:API spec requires. `IGNORE`: the path is resolved only as deep as supported and listed in `meta.includedIncomplete` as `UNSUPPORTED_INCLUDE`. |
+| `jsonapi4j.cd.maxIncludedResources`   | `100`                                | When `included` reaches this many resources, resolution fetches nothing further, and the include paths left unresolved are listed in `meta.includedIncomplete` as `MAX_INCLUDED_RESOURCES`. Checked between hops, so the last hop can take `included` past it. |
 | `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included`, listed in `meta.includedIncomplete`, and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
 | `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`. `Forwarded`, `X-Forwarded-For` and `X-Real-IP` are never propagated. |
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
@@ -95,21 +96,7 @@ are isolated per `filter[id]` batch, so one failed batch doesn't drop its siblin
 `included` carries `Cache-Control: no-store`, so no shared cache keeps a partial document for the primary resource's
 full `max-age`.
 
-The document also says what is missing. Its top-level `meta` lists every type with resources left out, and why —
-merged into the document's own `meta`, and present only when `included` is incomplete:
-
-```json
-"meta": {
-  "includedIncomplete": [
-    { "reason": "FETCH_FAILED", "type": "currencies" },
-    { "reason": "NO_ROUTE", "type": "regions" }
-  ]
-}
-```
-
-`FETCH_FAILED` is likely transient, so a retry may return the resources; `NO_ROUTE` is a server configuration issue,
-so a retry returns the same. Which resources exactly are missing follows from the document: those linked in
-`relationships` with no matching resource object in `included`.
+The document also says what is missing — see [Incomplete `included`](#incomplete-included).
 
 **`FAIL`** — the request is answered with a JSON:API error document instead of the primary data:
 
@@ -122,6 +109,57 @@ so a retry returns the same. Which resources exactly are missing follows from th
 Error details never name downstream URLs. The documents are rendered through the same error handler registry as every
 other error the API returns, so they share its format — and an application that maps these exceptions itself
 (`DownstreamTimeoutException`, `ErrorJsonApiResponseException`, `DomainResolutionException`) keeps its own mapping.
+
+### Limits
+
+**`maxHops`** is the deepest include path supported. The depth of every path is known from the request alone, so a
+deeper one is handled before the primary data is even fetched. Under `unsupportedIncludes: FAIL` (default) the request
+is answered with `400 Bad Request`, as the JSON:API spec requires for include paths a server doesn't support:
+
+```json
+{ "errors": [ {
+  "status": "400",
+  "code": "UNSUPPORTED_INCLUDE",
+  "detail": "Include path 'relatives.relatives.relatives' spans 3 relationships, more than the supported 2",
+  "source": { "parameter": "include" }
+} ] }
+```
+
+Under `IGNORE` the path is resolved as deep as supported — `relatives.relatives` here — and listed as
+`UNSUPPORTED_INCLUDE`.
+
+**`maxIncludedResources`** bounds the size of `included`, which depends on the data, not the request. Once `included`
+has reached it, nothing further is fetched and the include paths left unresolved are listed as
+`MAX_INCLUDED_RESOURCES`. A hop that has started always finishes, so the last one can take `included` past the limit —
+nothing requested is dropped for it, and no gap is reported when nothing was left to fetch.
+
+### Incomplete `included`
+
+Whenever `included` misses something the request asked for, the document says what and why. Its top-level `meta` lists
+each gap — merged into the document's own `meta`, and present only when `included` is incomplete:
+
+```json
+"meta": {
+  "includedIncomplete": [
+    { "reason": "FETCH_FAILED", "type": "currencies" },
+    { "reason": "NO_ROUTE", "type": "regions" },
+    { "reason": "MAX_INCLUDED_RESOURCES", "path": "relatives.relatives" },
+    { "reason": "UNSUPPORTED_INCLUDE", "path": "relatives.relatives.relatives" }
+  ]
+}
+```
+
+| Reason                   | Names    | What the client can do                                                      |
+|--------------------------|----------|-----------------------------------------------------------------------------|
+| `FETCH_FAILED`           | a type   | Retry — likely transient. The response is marked `no-store`.                |
+| `NO_ROUTE`               | a type   | Nothing — a server configuration issue. The response is marked `no-store`.  |
+| `MAX_INCLUDED_RESOURCES` | a path   | Ask for less: fewer or shallower includes, smaller pages. Everything below the path is missing too. |
+| `UNSUPPORTED_INCLUDE`    | a path   | Ask for a shallower path. The part beyond `maxHops` is missing.             |
+
+A type-level gap comes from a failed fetch, which is batched per type across paths; a path-level gap comes from a
+limit, which cuts the include tree at a depth. Which resources exactly are missing follows from the document: those
+linked in `relationships` with no matching resource object in `included`. Only failures forbid storing the response —
+the limits give the same result on every request, so it may be cached like any other.
 
 ### Limitations
 

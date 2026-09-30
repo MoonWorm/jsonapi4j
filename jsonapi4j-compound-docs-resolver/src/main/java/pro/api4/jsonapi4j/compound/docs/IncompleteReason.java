@@ -1,19 +1,33 @@
 package pro.api4.jsonapi4j.compound.docs;
 
 /**
- * Why resources of an included type are missing from a compound document resolved under
- * {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE}.
+ * Why resources are missing from the {@code included} member of a compound document.
  */
 public enum IncompleteReason {
 
     /**
-     * Fetching them failed - likely transient, so a retry may return them.
+     * Fetching resources of a type failed under {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE}
+     * - likely transient, so a retry may return them.
      */
     FETCH_FAILED,
 
     /**
-     * There is no route to fetch their type from - a server configuration issue, so a retry returns the same.
+     * There is no route to fetch a type from, ignored under
+     * {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE} - a server configuration issue, so a retry
+     * returns the same.
      */
-    NO_ROUTE
+    NO_ROUTE,
+
+    /**
+     * The document reached {@code maxIncludedResources}, so an include path was resolved no further - a retry returns
+     * the same, asking for less does not.
+     */
+    MAX_INCLUDED_RESOURCES,
+
+    /**
+     * An include path is deeper than supported and was resolved only as deep as supported, under
+     * {@link pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy#IGNORE}.
+     */
+    UNSUPPORTED_INCLUDE
 
 }

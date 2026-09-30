@@ -1,9 +1,11 @@
 package pro.api4.jsonapi4j.compound.docs;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,6 +35,21 @@ final class IncludeTree {
             }
         }
         return new IncludeTree(childrenByPath);
+    }
+
+    /**
+     * @return how many relationships {@code include} spans, i.e. how many hops resolving it takes
+     */
+    static int depth(String include) {
+        return include.split("\\.").length;
+    }
+
+    /**
+     * @return the first {@code depth} relationships of {@code include}
+     */
+    static String truncate(String include, int depth) {
+        List<String> relationshipNames = Arrays.asList(include.split("\\."));
+        return String.join(".", relationshipNames.subList(0, Math.min(depth, relationshipNames.size())));
     }
 
     static String childPath(String path, String relationshipName) {

@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 
@@ -31,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class JsonApi4jCompoundDocsApiHttpClientTests {
 
     private static final CompoundDocsResolverConfig CONFIG = new CompoundDocsResolverConfig(
-            true, 2, 100, ErrorStrategy.IGNORE, List.of(), Deduplication.DATA_AND_INCLUDED, 1000, 300, false, 1
+            true, 2, UnsupportedIncludeStrategy.FAIL, 100, ErrorStrategy.IGNORE, List.of(), Deduplication.DATA_AND_INCLUDED, 1000, 300, false, 1
     );
     private static final CompoundDocsRequest REQUEST = new CompoundDocsRequest(
             "GET", List.of("placeOfBirth"), Map.of(), Map.of(), "/users/1", Map.of()
