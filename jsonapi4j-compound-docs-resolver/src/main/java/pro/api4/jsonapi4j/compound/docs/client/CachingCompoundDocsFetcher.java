@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.IncompleteReason;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheResult;
@@ -106,7 +107,7 @@ public class CachingCompoundDocsFetcher {
             }
             aggregator.add(chunkResult.directives());
         }
-        return new BatchFetchResult(resources, aggregator.getResult(), anyFailed(chunkResults));
+        return new BatchFetchResult(resources, aggregator.getResult(), incompleteReason(chunkResults));
     }
 
     private BatchFetchResult fetchWithCache(BatchFetch batch, CompoundDocsRequest originalRequest) {
@@ -167,7 +168,7 @@ public class CachingCompoundDocsFetcher {
         merged.addAll(cacheHitJsons);
         merged.addAll(httpResultJsons);
 
-        return new BatchFetchResult(merged, computeDirectives(cacheHits, chunkResults), anyFailed(chunkResults));
+        return new BatchFetchResult(merged, computeDirectives(cacheHits, chunkResults), incompleteReason(chunkResults));
     }
 
     /**
@@ -225,8 +226,8 @@ public class CachingCompoundDocsFetcher {
         }
     }
 
-    private boolean anyFailed(List<HttpFetchResult> chunkResults) {
-        return chunkResults.stream().anyMatch(HttpFetchResult::failed);
+    private IncompleteReason incompleteReason(List<HttpFetchResult> chunkResults) {
+        return chunkResults.stream().anyMatch(HttpFetchResult::failed) ? IncompleteReason.FETCH_FAILED : null;
     }
 
     /**

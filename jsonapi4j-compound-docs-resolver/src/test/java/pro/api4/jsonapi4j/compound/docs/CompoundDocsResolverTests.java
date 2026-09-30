@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
@@ -311,7 +312,7 @@ public class CompoundDocsResolverTests {
         @Test
         public void resolveCompoundDocs_fetchForbiddingStorage_forbidsStoringTheDocument() throws Exception {
             CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
-            when(fetcher.fetch(any(), any())).thenReturn(new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, true));
+            when(fetcher.fetch(any(), any())).thenReturn(new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED));
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("placeOfBirth")),
@@ -334,6 +335,68 @@ public class CompoundDocsResolverTests {
             );
 
             assertThat(result.cacheControlDirectives()).isNull();
+        }
+
+        @Test
+        public void resolveCompoundDocs_typeWithoutRouteUnderIgnore_listsNoRouteGapInMeta() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    COUNTRIES_ONLY
+            );
+
+            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.NO_ROUTE, "currencies"));
+        }
+
+        @Test
+        public void resolveCompoundDocs_nothingResolvedUnderIgnore_listsFetchFailedGapWithoutIncluded() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            when(fetcher.fetch(any(), any())).thenReturn(
+                    new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED)
+            );
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.FETCH_FAILED, "countries"));
+            assertThat(MAPPER.readTree(result.responseBody()).has("included")).isFalse();
+        }
+
+        @Test
+        public void resolveCompoundDocs_documentWithOwnMeta_keepsItsMembers() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+            ObjectNode document = (ObjectNode) MAPPER.readTree(primaryDoc(USER_1, Set.of("placeOfBirth")));
+            document.putObject("meta").put("total", 1);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    MAPPER.writeValueAsString(document),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    COUNTRIES_ONLY
+            );
+
+            assertThat(MAPPER.readTree(result.responseBody()).path("meta").path("total").asInt()).isEqualTo(1);
+            assertThat(gaps(result)).containsExactly(new IncludedGap(IncompleteReason.NO_ROUTE, "currencies"));
+        }
+
+        @Test
+        public void resolveCompoundDocs_everythingResolved_addsNoMeta() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(MAPPER.readTree(result.responseBody()).has("meta")).isFalse();
         }
 
         @Test
@@ -430,6 +493,17 @@ public class CompoundDocsResolverTests {
             }
         });
         return node;
+    }
+
+    private static List<IncludedGap> gaps(CompoundDocsResult result) throws JsonProcessingException {
+        List<IncludedGap> gaps = new ArrayList<>();
+        JsonNode gapsNode = MAPPER.readTree(result.responseBody())
+                .path("meta")
+                .path(JsonApiResponseWriter.INCLUDED_INCOMPLETE_META_FIELD);
+        for (JsonNode node : gapsNode) {
+            gaps.add(new IncludedGap(IncompleteReason.valueOf(node.get("reason").asText()), node.get("type").asText()));
+        }
+        return gaps;
     }
 
     private static List<IdAndType> included(CompoundDocsResult result) throws JsonProcessingException {

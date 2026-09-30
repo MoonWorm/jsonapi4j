@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
+import pro.api4.jsonapi4j.compound.docs.IncompleteReason;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
@@ -443,7 +444,7 @@ class CachingCompoundDocsFetcherTests {
         );
 
         assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
-        assertThat(result.incomplete()).isTrue();
+        assertThat(result.incompleteReason()).isEqualTo(IncompleteReason.FETCH_FAILED);
         assertThat(result.directives().isNoStore()).isTrue();
     }
 
@@ -460,7 +461,7 @@ class CachingCompoundDocsFetcherTests {
     }
 
     @Test
-    void fetch_allChunksSucceed_notIncomplete() {
+    void fetch_allChunksSucceed_hasNoIncompleteReason() {
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), null));
 
@@ -469,7 +470,7 @@ class CachingCompoundDocsFetcherTests {
                 mockRequest
         );
 
-        assertThat(result.incomplete()).isFalse();
+        assertThat(result.incompleteReason()).isNull();
     }
 
     // --- Edge cases ---

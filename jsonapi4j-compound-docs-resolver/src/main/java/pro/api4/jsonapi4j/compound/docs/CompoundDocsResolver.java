@@ -163,6 +163,7 @@ public class CompoundDocsResolver {
             primaryResourceJsons.put(idAndType, primaryResource.json());
         }
         IncludedResources included = new IncludedResources(config.getDeduplication(), primaryResourceJsons);
+        Set<IncludedGap> gaps = new HashSet<>();
 
         IncludeFrontier frontier = IncludeFrontier.start(includeTree, originalParseResult.relationships());
 
@@ -207,6 +208,9 @@ public class CompoundDocsResolver {
                 String resourceType = e.getKey();
                 BatchFetchResult fetchResult = join(e.getValue());
                 aggregator.add(fetchResult.directives());
+                if (fetchResult.incompleteReason() != null) {
+                    gaps.add(new IncludedGap(fetchResult.incompleteReason(), resourceType));
+                }
                 idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
                         new IdAndType(id, new ResourceType(resourceType)),
                         includesByType.get(resourceType)
@@ -229,10 +233,11 @@ public class CompoundDocsResolver {
         List<String> includedResources = included.toList();
         log.debug("Compound docs resolution completed. Total hops: {}, total included resources: {}", currentLevel - 1, includedResources.size());
 
-        if (!includedResources.isEmpty()) {
-            String responseBody = jsonApiResponseWriter.composeWithIncludedMember(
+        if (!includedResources.isEmpty() || !gaps.isEmpty()) {
+            String responseBody = jsonApiResponseWriter.compose(
                     (ObjectNode) originalParseResult.rootNode(),
-                    includedResources
+                    includedResources,
+                    gaps
             );
             return new CompoundDocsResult(responseBody, aggregator.getResult());
         }

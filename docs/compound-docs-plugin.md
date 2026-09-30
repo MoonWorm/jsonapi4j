@@ -43,7 +43,7 @@ jsonapi4j:
 | `jsonapi4j.cd.enabled`                | `false`                              | Enables/disables Compound Documents post-processing.                                                                                                                              |
 | `jsonapi4j.cd.maxHops`                | `2`                                  | Max include traversal depth for compound document resolution.                                                                                                                     |
 | `jsonapi4j.cd.maxIncludedResources`   | `100`                                | Maximum amount of included resources. Doesn't guarantee the exact gap - can be more if fact. Checks before moving to down to the next depth level and adds all resolved resource. |
-| `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included` and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
+| `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included`, listed in `meta.includedIncomplete`, and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
 | `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`. `Forwarded`, `X-Forwarded-For` and `X-Real-IP` are never propagated. |
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
@@ -94,6 +94,22 @@ of `included`, everything that did resolve is returned with the primary data's s
 are isolated per `filter[id]` batch, so one failed batch doesn't drop its siblings. A response with an incomplete
 `included` carries `Cache-Control: no-store`, so no shared cache keeps a partial document for the primary resource's
 full `max-age`.
+
+The document also says what is missing. Its top-level `meta` lists every type with resources left out, and why —
+merged into the document's own `meta`, and present only when `included` is incomplete:
+
+```json
+"meta": {
+  "includedIncomplete": [
+    { "reason": "FETCH_FAILED", "type": "currencies" },
+    { "reason": "NO_ROUTE", "type": "regions" }
+  ]
+}
+```
+
+`FETCH_FAILED` is likely transient, so a retry may return the resources; `NO_ROUTE` is a server configuration issue,
+so a retry returns the same. Which resources exactly are missing follows from the document: those linked in
+`relationships` with no matching resource object in `included`.
 
 **`FAIL`** — the request is answered with a JSON:API error document instead of the primary data:
 
