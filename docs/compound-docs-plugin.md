@@ -43,7 +43,7 @@ jsonapi4j:
 | `jsonapi4j.cd.enabled`                | `false`                              | Enables/disables Compound Documents post-processing.                                                                                                                              |
 | `jsonapi4j.cd.maxHops`                | `2`                                  | Max include traversal depth for compound document resolution.                                                                                                                     |
 | `jsonapi4j.cd.maxIncludedResources`   | `100`                                | Maximum amount of included resources. Doesn't guarantee the exact gap - can be more if fact. Checks before moving to down to the next depth level and adds all resolved resource. |
-| `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | Error handling strategy in compound docs resolver. Available options: `IGNORE`, `FAIL`                                                                                            |
+| `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included` and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
 | `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`. `Forwarded`, `X-Forwarded-For` and `X-Real-IP` are never propagated. |
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
@@ -81,6 +81,31 @@ machine, and the loopback address always matches a family the server is already 
 The base URL is deliberately **never taken from the `Host` or `X-Forwarded-*` headers**. The client controls those,
 so trusting them would let any caller point the server's include requests — and the shared resource cache — at a
 host of its choosing.
+
+### Error handling
+
+Resolving includes means fetching other resources, and those fetches can fail: a non-`2xx` response, a timeout, a
+connection error, a response that isn't a JSON:API document, or a resource type with no route to fetch it from.
+`jsonapi4j.cd.errorStrategy` decides what happens then.
+
+**`IGNORE` (default)** — a failed include never fails the request. The resources that couldn't be fetched are left out
+of `included`, everything that did resolve is returned with the primary data's status, and the failure is logged
+(`WARN`; `ERROR` for a type with no route, which is a configuration mistake rather than a transient failure). Failures
+are isolated per `filter[id]` batch, so one failed batch doesn't drop its siblings. A response with an incomplete
+`included` carries `Cache-Control: no-store`, so no shared cache keeps a partial document for the primary resource's
+full `max-age`.
+
+**`FAIL`** — the request is answered with a JSON:API error document instead of the primary data:
+
+| Failure                                             | Status | Error `code`       |
+|-----------------------------------------------------|--------|--------------------|
+| a downstream call timed out                         | `504`  | `GATEWAY_TIMEOUT`  |
+| any other downstream failure                        | `502`  | `BAD_GATEWAY`      |
+| a resource type with no route to fetch it from      | `500`  | internal error     |
+
+Error details never name downstream URLs. The documents are rendered through the same error handler registry as every
+other error the API returns, so they share its format — and an application that maps these exceptions itself
+(`DownstreamTimeoutException`, `ErrorJsonApiResponseException`, `DomainResolutionException`) keeps its own mapping.
 
 ### Limitations
 

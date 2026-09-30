@@ -8,12 +8,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import pro.api4.jsonapi4j.compound.docs.DefaultDomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
+import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 
 import java.net.URI;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
@@ -122,6 +124,15 @@ public class SelfFallbackRoutingTests {
 
             assertThat(domainSettings("users").maxBatchSize()).isEqualTo(50);
             assertThat(domainSettings("state").maxBatchSize()).isEqualTo(cdProperties.defaultMaxBatchSize());
+        }
+
+        @Test
+        public void forRequest_configuredResolverReturnsNull_reportsBrokenContract() {
+            SelfFallbackRouting routing = new SelfFallbackRouting(resourceType -> null, cdProperties, "/jsonapi");
+
+            assertThatThrownBy(() -> routing.forRequest(request).requireDomainSettings("users"))
+                    .isInstanceOf(DomainResolutionException.class)
+                    .hasMessage("DomainSettingsResolver returned null instead of an Optional");
         }
 
     }

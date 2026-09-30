@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
@@ -24,7 +25,10 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Resolves the {@code included} member of a JSON:API document hop by hop.
@@ -139,10 +143,6 @@ public class CompoundDocsResolver {
                 .toList();
     }
 
-    private CompletableFuture<BatchFetchResult> fetchAsync(BatchFetch batch, CompoundDocsRequest originalRequest) {
-        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executorService);
-    }
-
     private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
                                                            ParseResult originalParseResult,
                                                            List<String> effectiveRequestIncludes,
@@ -191,27 +191,21 @@ public class CompoundDocsResolver {
                 }
             }
 
-            Map<String, CompletableFuture<BatchFetchResult>> futures = new HashMap<>();
-            idsByType.forEach((resourceType, ids) -> {
-                Set<String> typeIncludes = includesByType.get(resourceType);
-                futures.put(
-                        resourceType,
-                        fetchAsync(
-                                new BatchFetch(
-                                        resolveDomainSettings(domainSettingsResolver, resourceType),
-                                        resourceType,
-                                        ids,
-                                        typeIncludes
-                                ),
-                                request
-                        )
-                );
-                log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, typeIncludes);
-            });
+            Map<String, CompletableFuture<BatchFetchResult>> futures = idsByType.keySet().stream()
+                    .collect(Collectors.toMap(
+                            Function.identity(),
+                            resourceType -> fetchAsync(
+                                    resourceType,
+                                    idsByType.get(resourceType),
+                                    includesByType.get(resourceType),
+                                    domainSettingsResolver,
+                                    request
+                            )
+                    ));
 
             for (Map.Entry<String, CompletableFuture<BatchFetchResult>> e : futures.entrySet()) {
                 String resourceType = e.getKey();
-                BatchFetchResult fetchResult = e.getValue().join();
+                BatchFetchResult fetchResult = join(e.getValue());
                 aggregator.add(fetchResult.directives());
                 idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
                         new IdAndType(id, new ResourceType(resourceType)),
@@ -246,20 +240,56 @@ public class CompoundDocsResolver {
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
     }
 
-    private DomainSettings resolveDomainSettings(DomainSettingsResolver domainSettingsResolver, String resourceType) {
-        Optional<DomainSettings> settings;
+    /**
+     * @return the fetch of {@code ids} of {@code resourceType}, or an already {@link BatchFetchResult#skipped() skipped}
+     * one when there is no route to the type and {@link ErrorStrategy#IGNORE} lets its resources be skipped
+     */
+    private CompletableFuture<BatchFetchResult> fetchAsync(String resourceType,
+                                                           Set<String> ids,
+                                                           Set<String> includes,
+                                                           DomainSettingsResolver domainSettingsResolver,
+                                                           CompoundDocsRequest originalRequest) {
+        Optional<DomainSettings> domainSettings = routeFor(domainSettingsResolver, resourceType);
+        if (domainSettings.isEmpty()) {
+            return CompletableFuture.completedFuture(BatchFetchResult.skipped());
+        }
+        BatchFetch batch = new BatchFetch(domainSettings.get(), resourceType, ids, includes);
+        log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
+        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executorService);
+    }
+
+    /**
+     * @return where to fetch {@code resourceType} from, or empty when there is no route and
+     * {@link ErrorStrategy#IGNORE} lets its resources be skipped
+     */
+    private Optional<DomainSettings> routeFor(DomainSettingsResolver domainSettingsResolver, String resourceType) {
         try {
-            settings = domainSettingsResolver.resolveDomainSettings(resourceType);
-        } catch (Exception e) {
-            log.warn("Failed to resolve domain settings for resource type '{}': {}", resourceType, e.getMessage());
-            throw new DomainResolutionException("Error resolving domain settings", e);
+            return Optional.of(domainSettingsResolver.requireDomainSettings(resourceType));
+        } catch (DomainResolutionException e) {
+            if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
+                log.error(
+                        "Skipping included resources of type '{}' per error strategy - no route to fetch them from: {}",
+                        resourceType,
+                        e.getMessage()
+                );
+                return Optional.empty();
+            }
+            throw e;
         }
-        if (settings == null) {
-            throw new DomainResolutionException("DomainSettingsResolver returned null instead of an Optional");
+    }
+
+    /**
+     * Waits for a fetch, rethrowing its failure as thrown rather than wrapped in a {@link CompletionException}.
+     */
+    private BatchFetchResult join(CompletableFuture<BatchFetchResult> future) {
+        try {
+            return future.join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException cause) {
+                throw cause;
+            }
+            throw e;
         }
-        return settings.orElseThrow(() -> new DomainResolutionException(
-                String.format("Resource type '%s' has no mapping", resourceType)
-        ));
     }
 
 }

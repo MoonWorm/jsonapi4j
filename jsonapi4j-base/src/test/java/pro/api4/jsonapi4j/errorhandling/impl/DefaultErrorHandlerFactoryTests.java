@@ -1,7 +1,8 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
+package pro.api4.jsonapi4j.errorhandling.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pro.api4.jsonapi4j.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
@@ -13,7 +14,6 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

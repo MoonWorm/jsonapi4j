@@ -3,7 +3,7 @@ package pro.api4.jsonapi4j.springboot.autoconfiguration;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
 
 import java.util.Set;
 

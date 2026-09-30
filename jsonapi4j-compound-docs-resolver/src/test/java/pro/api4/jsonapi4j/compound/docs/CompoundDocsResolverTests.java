@@ -18,6 +18,8 @@ import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
+import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.net.URI;
@@ -285,6 +287,70 @@ public class CompoundDocsResolverTests {
     }
 
     @Nested
+    class ErrorStrategies {
+
+        private static final DomainSettingsResolver COUNTRIES_ONLY = resourceType -> "countries".equals(resourceType)
+                ? Optional.of(DomainSettings.of(BASE_URL))
+                : Optional.empty();
+
+        @Test
+        public void resolveCompoundDocs_typeWithoutRouteUnderIgnore_skipsItAndForbidsStoring() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    COUNTRIES_ONLY
+            );
+
+            assertThat(included(result)).containsExactly(USA);
+            assertThat(result.cacheControlDirectives().isNoStore()).isTrue();
+        }
+
+        @Test
+        public void resolveCompoundDocs_fetchForbiddingStorage_forbidsStoringTheDocument() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            when(fetcher.fetch(any(), any())).thenReturn(new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, true));
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(result.cacheControlDirectives().isNoStore()).isTrue();
+        }
+
+        @Test
+        public void resolveCompoundDocs_everythingResolved_allowsStoring() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(result.cacheControlDirectives()).isNull();
+        }
+
+        @Test
+        public void resolveCompoundDocs_fetchFailsUnderFail_rethrowsItUnwrapped() {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.FAIL);
+            when(fetcher.fetch(any(), any())).thenThrow(new ErrorJsonApiResponseException("boom"));
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    ROUTE_ALL
+            )).isExactlyInstanceOf(ErrorJsonApiResponseException.class);
+        }
+
+    }
+
+    @Nested
     class Routing {
 
         @Test
@@ -306,8 +372,12 @@ public class CompoundDocsResolverTests {
     }
 
     private CompoundDocsResolver resolver(int maxHops, Deduplication deduplication) {
+        return resolver(maxHops, deduplication, ErrorStrategy.FAIL);
+    }
+
+    private CompoundDocsResolver resolver(int maxHops, Deduplication deduplication, ErrorStrategy errorStrategy) {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
-                true, maxHops, 100, ErrorStrategy.FAIL, List.of(), deduplication, 1000, 1000, false, 1
+                true, maxHops, 100, errorStrategy, List.of(), deduplication, 1000, 1000, false, 1
         );
         return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);
     }

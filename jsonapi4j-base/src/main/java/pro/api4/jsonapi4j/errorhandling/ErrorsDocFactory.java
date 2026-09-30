@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling;
+package pro.api4.jsonapi4j.errorhandling;
 
 import pro.api4.jsonapi4j.exception.ValidationError;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;

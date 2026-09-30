@@ -35,6 +35,16 @@ public class JsonApiCompoundDocsPluginTests {
     }
 
     @Nested
+    class ErrorHandlerFactory {
+
+        @Test
+        public void errorHandlerFactory_providesCompoundDocsErrorHandlers() {
+            assertThat(sut.errorHandlerFactory()).isInstanceOf(CompoundDocsErrorHandlerFactory.class);
+        }
+
+    }
+
+    @Nested
     class ExtractPluginInfoFromResource {
 
         @Test

@@ -15,7 +15,6 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
-import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
@@ -24,7 +23,7 @@ import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSuppli
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.ResponseHeaders;
 import pro.api4.jsonapi4j.servlet.response.ResponseStatus;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,9 +39,9 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
     private JsonApi4j jsonApi4j;
 
-    private ErrorHandlerFactoriesRegistry errorHandlerFactory;
-
     private ObjectMapper objectMapper;
+
+    private ErrorsDocResponseWriter errorsDocResponseWriter;
 
     private JsonApiRequestSupplier<HttpServletRequest> jsonApiRequestSupplier;
 
@@ -53,7 +52,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         super.init(config);
 
         this.jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
-        this.errorHandlerFactory = (ErrorHandlerFactoriesRegistry) config.getServletContext().getAttribute(ERROR_HANDLER_FACTORIES_REGISTRY_ATT_NAME);
         this.objectMapper = (ObjectMapper) config.getServletContext().getAttribute(OBJECT_MAPPER_ATT_NAME);
 
         List<String> missingComponents = missingMandatoryComponents();
@@ -79,6 +77,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
 
         log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
 
+        this.errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
+
         this.jsonApiRequestSupplier = composeJsonApiRequestSupplier(
                 objectMapper,
                 jsonApi4j.getDomainRegistry()
@@ -91,9 +91,6 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         List<String> missing = new ArrayList<>();
         if (jsonApi4j == null) {
             missing.add(JsonApi4j.class.getSimpleName());
-        }
-        if (errorHandlerFactory == null) {
-            missing.add(ErrorHandlerFactoriesRegistry.class.getSimpleName());
         }
         if (objectMapper == null) {
             missing.add(ObjectMapper.class.getSimpleName());
@@ -145,21 +142,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             writeResponseBody(resp, dataDoc);
 
         } catch (Exception e) {
-            if (errorHandlerFactory != null) {
-                int errorStatusCode = errorHandlerFactory.resolveStatusCode(e);
-                ErrorsDoc errorsDoc = errorHandlerFactory.resolveErrorsDoc(e);
-                if (errorStatusCode / 100 == 4) {
-                    // client-side errors
-                    log.warn("{}. Error message: {}", errorStatusCode + " code", e.getMessage());
-                } else {
-                    // server-side errors
-                    log.error("{}. Error message: {}", errorStatusCode + " code", e.getMessage(), e);
-                }
-                resp.setStatus(errorStatusCode);
-                writeResponseBody(resp, errorsDoc);
-            } else {
-                throw e;
-            }
+            errorsDocResponseWriter.write(resp, e);
         }
     }
 

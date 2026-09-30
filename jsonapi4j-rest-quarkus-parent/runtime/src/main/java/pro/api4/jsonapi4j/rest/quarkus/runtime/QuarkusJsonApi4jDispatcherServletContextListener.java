@@ -11,8 +11,8 @@ import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
 
 import java.util.concurrent.ExecutorService;
 

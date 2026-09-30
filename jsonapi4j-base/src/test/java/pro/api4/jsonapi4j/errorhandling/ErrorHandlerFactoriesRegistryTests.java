@@ -1,8 +1,10 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling;
+package pro.api4.jsonapi4j.errorhandling;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -215,6 +217,36 @@ class ErrorHandlerFactoriesRegistryTests {
         // then — should pick ChildException (most specific ancestor), not ParentException
         assertThat(result.getHttpStatus(new GrandchildException())).isEqualTo(CHILD_STATUS);
         assertThat(result.getErrorResponse(new GrandchildException())).isSameAs(CHILD_ERRORS_DOC);
+    }
+
+    @Test
+    void registerAllIfAbsent_exceptionAlreadyMapped_keepsExistingMapping() {
+        registry.register(ParentException.class, parentSupplier);
+        ErrorsDocSupplier<ParentException> contributed = new ErrorsDocSupplier<>() {
+            @Override
+            public ErrorsDoc getErrorResponse(ParentException ex) {
+                return CHILD_ERRORS_DOC;
+            }
+
+            @Override
+            public int getHttpStatus(ParentException ex) {
+                return CHILD_STATUS;
+            }
+        };
+
+        registry.registerAllIfAbsent(() -> Map.of(ParentException.class, contributed));
+
+        assertThat(registry.getErrorResponseMapper(ParentException.class)).isSameAs(parentSupplier);
+    }
+
+    @Test
+    void registerAllIfAbsent_exceptionNotMappedYet_registersIt() {
+        registry.register(ParentException.class, parentSupplier);
+
+        registry.registerAllIfAbsent(() -> Map.of(ChildException.class, childSupplier));
+
+        assertThat(registry.getErrorResponseMapper(ChildException.class)).isSameAs(childSupplier);
+        assertThat(registry.getErrorResponseMapper(ParentException.class)).isSameAs(parentSupplier);
     }
 
 }

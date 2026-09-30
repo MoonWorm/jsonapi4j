@@ -14,17 +14,13 @@ import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.http.HttpHeaders;
-import pro.api4.jsonapi4j.http.HttpStatusCodes;
-import pro.api4.jsonapi4j.model.document.error.ErrorObject;
-import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
-import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 
@@ -49,6 +45,8 @@ public class OasServlet extends HttpServlet {
      * application emits rather than by a second mapper configured slightly differently.
      */
     private ObjectMapper objectMapper;
+
+    private ErrorsDocResponseWriter errorsDocResponseWriter;
 
     /**
      * A servlet instance is shared by every request thread, so these need safe publication: without {@code volatile}
@@ -79,6 +77,7 @@ public class OasServlet extends HttpServlet {
         jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
         objectMapper = (ObjectMapper) config.getServletContext()
                 .getAttribute(JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME);
+        errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
 
         if (oasProperties.diagnostics().generatesAtStartup()) {
             generateAtStartup();
@@ -146,32 +145,10 @@ public class OasServlet extends HttpServlet {
         try {
             openAPI = OasDocument.generate(jsonApi4j);
         } catch (RuntimeException e) {
-            writeGenerationFailure(resp, e);
+            errorsDocResponseWriter.write(resp, e);
             return;
         }
         writeOasToResponse(req, resp, yaml, openAPI);
-    }
-
-    /**
-     * Answers a document that could not be generated with a JSON:API error document. Letting the exception escape
-     * hands the container's own error page to whoever asked - HTML, with a stack trace in it - from an endpoint
-     * whose every other answer is a JSON:API document.
-     */
-    private void writeGenerationFailure(HttpServletResponse resp,
-                                        RuntimeException cause) throws IOException {
-        log.error("The OpenAPI document could not be generated", cause);
-        ErrorsDoc errorsDoc = new ErrorsDoc(
-                List.of(ErrorObject.builder()
-                        .status(String.valueOf(HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR.getCode()))
-                        .title("The OpenAPI document could not be generated")
-                        .detail(cause.getMessage())
-                        .build()),
-                null
-        );
-        resp.setStatus(HttpStatusCodes.SC_500_INTERNAL_SERVER_ERROR.getCode());
-        resp.setContentType(JsonApiMediaType.MEDIA_TYPE);
-        resp.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        resp.getWriter().write(objectMapper.writeValueAsString(errorsDoc));
     }
 
     /**

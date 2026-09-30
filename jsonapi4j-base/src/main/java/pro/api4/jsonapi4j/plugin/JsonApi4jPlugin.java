@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.plugin;
 import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.operation.Operation;
 
 /**
@@ -83,6 +84,17 @@ public interface JsonApi4jPlugin {
      * @return this plugin's configuration, or {@code null} when it exposes none
      */
     default PluginProperties configProperties() {
+        return null;
+    }
+
+    /**
+     * Maps the plugin's own exceptions to JSON:API error documents. The framework adds them to its error handler
+     * registry without replacing any mapping it already has, so the framework defaults and the application's own
+     * mappings win over a plugin's. Default returns {@code null} (contributes nothing).
+     *
+     * @return this plugin's error handlers, or {@code null} when it has none
+     */
+    default ErrorHandlerFactory errorHandlerFactory() {
         return null;
     }
 

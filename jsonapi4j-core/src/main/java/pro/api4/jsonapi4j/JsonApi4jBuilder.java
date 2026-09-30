@@ -6,10 +6,15 @@ import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.operation.OperationsRegistry;
 import pro.api4.jsonapi4j.operation.exception.OperationsMisconfigurationException;
+import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.processor.ResourceProcessorContext;
 
@@ -25,6 +30,7 @@ public class JsonApi4jBuilder {
     private JsonApiBuildInRequestValidatorFactory validatorFactory = JsonApiBuildInRequestValidatorFactory.NO_OP;
     private MetaContext metaContext = null;
     private JsonApi4jProperties properties = new DefaultJsonApi4jProperties();
+    private ErrorHandlerFactoriesRegistry errorHandlers = null;
 
     JsonApi4jBuilder() {}
 
@@ -64,6 +70,17 @@ public class JsonApi4jBuilder {
         return this;
     }
 
+    /**
+     * The error handler registry to answer failures with. When not set, a registry with the framework's
+     * {@link DefaultErrorHandlerFactory} is used. Either way, {@link #build()} adds the error handlers of every active
+     * plugin to it.
+     */
+    public JsonApi4jBuilder errorHandlers(ErrorHandlerFactoriesRegistry errorHandlers) {
+        Validate.notNull(errorHandlers, "Error Handler Factories Registry must not be null");
+        this.errorHandlers = errorHandlers;
+        return this;
+    }
+
     public JsonApi4jBuilder meta(MetaContext metaContext) {
         this.metaContext = metaContext;
         return this;
@@ -78,10 +95,41 @@ public class JsonApi4jBuilder {
             MetaRuntime metaRuntime = new MetaRuntime(metaContext, properties, pluginRegistry, domainRegistry, operationsRegistry);
             operationsRegistry = OperationsRegistry.copy(pluginRegistry, operationsRegistry).withMeta(metaRuntime).build();
         }
+
         // Materialize the validator against the final (meta-augmented) domain registry, so it never validates
         // requests against a stale, pre-meta view of the registered resources/relationships.
         JsonApiBuildInRequestValidator validator = validatorFactory.create(domainRegistry);
-        return new JsonApi4j(pluginRegistry, domainRegistry, operationsRegistry, executor, validator, metaContext, properties);
+
+        ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry = enrichWithPluginSpecificErrorHandlers(this.errorHandlers);
+        return new JsonApi4j(
+                pluginRegistry,
+                domainRegistry,
+                operationsRegistry,
+                executor,
+                validator,
+                metaContext,
+                properties,
+                errorHandlerFactoriesRegistry
+        );
+    }
+
+    private ErrorHandlerFactoriesRegistry enrichWithPluginSpecificErrorHandlers(
+            ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry
+    ) {
+        ErrorHandlerFactoriesRegistry result;
+        if (errorHandlerFactoriesRegistry == null) {
+            result = new JsonApi4jErrorHandlerFactoriesRegistry();
+            result.registerAll(new DefaultErrorHandlerFactory());
+        } else {
+            result = errorHandlerFactoriesRegistry;
+        }
+        for (JsonApi4jPlugin plugin : pluginRegistry.getActivePlugins()) {
+            ErrorHandlerFactory pluginErrorHandlers = plugin.errorHandlerFactory();
+            if (pluginErrorHandlers != null) {
+                result.registerAllIfAbsent(pluginErrorHandlers);
+            }
+        }
+        return result;
     }
 
     private void validateIntegrity() {

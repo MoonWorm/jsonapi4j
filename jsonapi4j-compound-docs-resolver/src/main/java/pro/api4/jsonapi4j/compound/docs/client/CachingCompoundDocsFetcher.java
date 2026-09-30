@@ -9,15 +9,17 @@ import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.CacheResult;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
-import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -102,9 +104,9 @@ public class CachingCompoundDocsFetcher {
             for (ParsedResource parsed : chunkResult.resources()) {
                 resources.add(parsed.json());
             }
-            aggregator.add(CacheControlParser.parse(chunkResult.cacheControlHeader()));
+            aggregator.add(chunkResult.directives());
         }
-        return new BatchFetchResult(resources, aggregator.getResult());
+        return new BatchFetchResult(resources, aggregator.getResult(), anyFailed(chunkResults));
     }
 
     private BatchFetchResult fetchWithCache(BatchFetch batch, CompoundDocsRequest originalRequest) {
@@ -145,8 +147,7 @@ public class CachingCompoundDocsFetcher {
         // Store fetched resources in cache (per-chunk Cache-Control governs that chunk's resources)
         List<String> httpResultJsons = new ArrayList<>();
         for (HttpFetchResult chunkResult : chunkResults) {
-            CacheControlDirectives chunkDirectives =
-                    CacheControlParser.parse(chunkResult.cacheControlHeader());
+            CacheControlDirectives chunkDirectives = chunkResult.directives();
             for (ParsedResource parsed : chunkResult.resources()) {
                 httpResultJsons.add(parsed.json());
                 if (parsed.idAndType() != null) {
@@ -166,7 +167,7 @@ public class CachingCompoundDocsFetcher {
         merged.addAll(cacheHitJsons);
         merged.addAll(httpResultJsons);
 
-        return new BatchFetchResult(merged, computeDirectives(cacheHits, chunkResults));
+        return new BatchFetchResult(merged, computeDirectives(cacheHits, chunkResults), anyFailed(chunkResults));
     }
 
     /**
@@ -174,17 +175,16 @@ public class CachingCompoundDocsFetcher {
      * downstream HTTP fetch per chunk via the executor. Blocks on
      * {@link CompletableFuture#allOf(CompletableFuture[])} and returns each chunk's result.
      *
-     * <p>If a chunk fetch throws, the exception propagates from {@link CompletableFuture#join()} —
-     * preserving the same failure semantics as the previous single-call behavior. Under
-     * {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE} the HTTP client itself
-     * absorbs non-200 responses and returns an empty result, so other chunks continue.
+     * <p>A failed chunk is ignored under {@link ErrorStrategy#IGNORE} - it contributes no resources and is marked
+     * {@link HttpFetchResult#failed()}, while the other chunks continue. Under {@link ErrorStrategy#FAIL} its exception
+     * propagates as thrown, unwrapped from the {@link CompletionException}.
      */
     private List<HttpFetchResult> fetchChunksInParallel(BatchFetch batch, CompoundDocsRequest originalRequest) {
         int maxBatchSize = batch.domainSettings().maxBatchSize();
         List<Set<String>> chunks = chunk(batch.ids(), maxBatchSize);
         if (chunks.size() == 1) {
             // Fast path: no fan-out needed
-            return Collections.singletonList(httpClient.doBatchFetch(batch.withIds(chunks.get(0)), originalRequest));
+            return Collections.singletonList(fetchChunk(batch.withIds(chunks.get(0)), originalRequest));
         }
 
         log.debug("Chunked fetch for type '{}': {} ids → {} chunks (maxBatchSize={})",
@@ -192,13 +192,41 @@ public class CachingCompoundDocsFetcher {
 
         List<CompletableFuture<HttpFetchResult>> futures = chunks.stream()
                 .map(chunk -> CompletableFuture.supplyAsync(
-                        () -> httpClient.doBatchFetch(batch.withIds(chunk), originalRequest),
+                        () -> fetchChunk(batch.withIds(chunk), originalRequest),
                         executorService))
                 .toList();
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof RuntimeException cause) {
+                throw cause;
+            }
+            throw e;
+        }
 
         return futures.stream().map(CompletableFuture::join).toList();
+    }
+
+    private HttpFetchResult fetchChunk(BatchFetch chunk, CompoundDocsRequest originalRequest) {
+        try {
+            return httpClient.doBatchFetch(chunk, originalRequest);
+        } catch (ErrorJsonApiResponseException e) {
+            if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
+                log.warn(
+                        "Ignoring a failed fetch of '{}' resources {} per error strategy: {}",
+                        chunk.resourceType(),
+                        chunk.ids(),
+                        e.getMessage()
+                );
+                return HttpFetchResult.ignoredFailure();
+            }
+            throw e;
+        }
+    }
+
+    private boolean anyFailed(List<HttpFetchResult> chunkResults) {
+        return chunkResults.stream().anyMatch(HttpFetchResult::failed);
     }
 
     /**
@@ -240,7 +268,7 @@ public class CachingCompoundDocsFetcher {
         }
 
         for (HttpFetchResult httpResult : httpResults) {
-            aggregator.add(CacheControlParser.parse(httpResult.cacheControlHeader()));
+            aggregator.add(httpResult.directives());
         }
 
         return aggregator.getResult();

@@ -1,15 +1,15 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling.impl;
+package pro.api4.jsonapi4j.errorhandling.impl;
 
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.errorhandling.ErrorsDocFactory;
+import pro.api4.jsonapi4j.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocFactory;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 
 import java.util.HashMap;

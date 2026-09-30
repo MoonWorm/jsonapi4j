@@ -12,6 +12,9 @@ import pro.api4.jsonapi4j.compound.docs.cache.CacheKey;
 import pro.api4.jsonapi4j.compound.docs.cache.InMemoryCompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 
@@ -89,8 +92,7 @@ class CachingCompoundDocsFetcherTests {
     void fetch_nullCache_delegatesToHttpClient() {
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(null);
 
@@ -105,8 +107,7 @@ class CachingCompoundDocsFetcherTests {
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON),
-                                parsedResource("countries", "NO", COUNTRY_NO_JSON)),
-                        "max-age=300"));
+                                parsedResource("countries", "NO", COUNTRY_NO_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(null);
 
@@ -156,8 +157,7 @@ class CachingCompoundDocsFetcherTests {
         when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("FI", "NO"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON),
-                                parsedResource("countries", "NO", COUNTRY_NO_JSON)),
-                        "max-age=300"));
+                                parsedResource("countries", "NO", COUNTRY_NO_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -173,8 +173,7 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -190,8 +189,7 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=60"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=60")));
 
         var fetcher = newFetcher(cache);
 
@@ -213,8 +211,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -235,8 +232,7 @@ class CachingCompoundDocsFetcherTests {
         when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO", "SE"))), any()))
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON),
-                                parsedResource("countries", "SE", COUNTRY_SE_JSON)),
-                        "max-age=300"));
+                                parsedResource("countries", "SE", COUNTRY_SE_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -254,8 +250,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -291,8 +286,7 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "no-store"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("no-store")));
 
         var fetcher = newFetcher(cache);
 
@@ -307,8 +301,7 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -327,8 +320,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -348,8 +340,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -368,8 +359,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -386,8 +376,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -410,8 +399,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -430,8 +418,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -439,6 +426,50 @@ class CachingCompoundDocsFetcherTests {
 
         assertThat(cache.get(CacheKey.of(idAndType("countries", "FI")))).isPresent();
         verify(mockRequest, never()).getCustomQueryParams();
+    }
+
+    @Test
+    void fetch_chunkFailsUnderIgnore_skipsItKeepsOtherChunksAndForbidsStoring() {
+        when(mockConfig.getErrorStrategy()).thenReturn(ErrorStrategy.IGNORE);
+        DomainSettings settings = new DomainSettings(DOMAIN_URL, 1);
+        when(httpClient.doBatchFetch(argThat(batch -> batch != null && batch.ids().contains("FI")), any()))
+                .thenReturn(new HttpFetchResult(List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), null));
+        when(httpClient.doBatchFetch(argThat(batch -> batch != null && batch.ids().contains("NO")), any()))
+                .thenThrow(new ErrorJsonApiResponseException("boom"));
+
+        BatchFetchResult result = newFetcher(null).fetch(
+                new BatchFetch(settings, "countries", Set.of("FI", "NO"), Collections.emptySet()),
+                mockRequest
+        );
+
+        assertThat(result.resources()).containsExactly(COUNTRY_FI_JSON);
+        assertThat(result.incomplete()).isTrue();
+        assertThat(result.directives().isNoStore()).isTrue();
+    }
+
+    @Test
+    void fetch_chunkFailsUnderFail_rethrowsItUnwrapped() {
+        when(mockConfig.getErrorStrategy()).thenReturn(ErrorStrategy.FAIL);
+        DomainSettings settings = new DomainSettings(DOMAIN_URL, 1);
+        when(httpClient.doBatchFetch(any(), any())).thenThrow(new DownstreamTimeoutException("slow", null));
+
+        assertThatThrownBy(() -> newFetcher(null).fetch(
+                new BatchFetch(settings, "countries", Set.of("FI", "NO"), Collections.emptySet()),
+                mockRequest
+        )).isInstanceOf(DownstreamTimeoutException.class);
+    }
+
+    @Test
+    void fetch_allChunksSucceed_notIncomplete() {
+        when(httpClient.doBatchFetch(any(), any()))
+                .thenReturn(new HttpFetchResult(List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), null));
+
+        BatchFetchResult result = newFetcher(null).fetch(
+                new BatchFetch(DOMAIN_SETTINGS, "countries", Set.of("FI"), Collections.emptySet()),
+                mockRequest
+        );
+
+        assertThat(result.incomplete()).isFalse();
     }
 
     // --- Edge cases ---
@@ -482,8 +513,7 @@ class CachingCompoundDocsFetcherTests {
         String malformedJson = "{\"attributes\":{\"name\":\"Unknown\"}}";
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource(null, null, malformedJson)),
-                        "max-age=300"));
+                        List.of(parsedResource(null, null, malformedJson)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -519,8 +549,7 @@ class CachingCompoundDocsFetcherTests {
     void fetch_nullCache_returnsParsedDirectives() {
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=300"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(null);
 
@@ -556,8 +585,7 @@ class CachingCompoundDocsFetcherTests {
         stubConfigNoPropagation();
         when(httpClient.doBatchFetch(any(), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)),
-                        "max-age=120, no-cache"));
+                        List.of(parsedResource("countries", "FI", COUNTRY_FI_JSON)), CacheControlParser.parse("max-age=120, no-cache")));
 
         var fetcher = newFetcher(cache);
 
@@ -578,8 +606,7 @@ class CachingCompoundDocsFetcherTests {
 
         when(httpClient.doBatchFetch(argThat(batch -> batchOf(batch, Set.of("NO"))), any()))
                 .thenReturn(new HttpFetchResult(
-                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)),
-                        "max-age=60"));
+                        List.of(parsedResource("countries", "NO", COUNTRY_NO_JSON)), CacheControlParser.parse("max-age=60")));
 
         var fetcher = newFetcher(cache);
 
@@ -622,8 +649,7 @@ class CachingCompoundDocsFetcherTests {
                 .thenReturn(new HttpFetchResult(
                         List.of(parsedResource("countries", "A", "{\"id\":\"A\"}"),
                                 parsedResource("countries", "B", "{\"id\":\"B\"}"),
-                                parsedResource("countries", "C", "{\"id\":\"C\"}")),
-                        "max-age=300"));
+                                parsedResource("countries", "C", "{\"id\":\"C\"}")), CacheControlParser.parse("max-age=300")));
 
         var fetcher = newFetcher(cache);
 
@@ -647,7 +673,7 @@ class CachingCompoundDocsFetcherTests {
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "{\"id\":\"" + id + "\"}"))
                             .toList();
-                    return new HttpFetchResult(resources, "max-age=300");
+                    return new HttpFetchResult(resources, CacheControlParser.parse("max-age=300"));
                 });
 
         var fetcher = newFetcher(cache);
@@ -671,7 +697,7 @@ class CachingCompoundDocsFetcherTests {
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
                             .toList();
-                    return new HttpFetchResult(resources, "max-age=300");
+                    return new HttpFetchResult(resources, CacheControlParser.parse("max-age=300"));
                 });
 
         var fetcher = newFetcher(null);
@@ -696,7 +722,7 @@ class CachingCompoundDocsFetcherTests {
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "fetched-" + id))
                             .toList();
-                    return new HttpFetchResult(resources, "max-age=300");
+                    return new HttpFetchResult(resources, CacheControlParser.parse("max-age=300"));
                 });
 
         var fetcher = newFetcher(cache);
@@ -723,7 +749,7 @@ class CachingCompoundDocsFetcherTests {
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
                             .toList();
-                    return new HttpFetchResult(resources, header);
+                    return new HttpFetchResult(resources, CacheControlParser.parse(header));
                 });
 
         var fetcher = newFetcher(null);
@@ -747,7 +773,7 @@ class CachingCompoundDocsFetcherTests {
                     List<ParsedResource> resources = chunkIds.stream()
                             .map(id -> parsedResource("countries", id, "json-" + id))
                             .toList();
-                    return new HttpFetchResult(resources, "max-age=300");
+                    return new HttpFetchResult(resources, CacheControlParser.parse("max-age=300"));
                 });
 
         var fetcher = newFetcher(cache);

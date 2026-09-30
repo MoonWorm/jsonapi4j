@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling;
+package pro.api4.jsonapi4j.errorhandling;
 
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
@@ -52,6 +52,18 @@ public interface ErrorHandlerFactoriesRegistry {
 
     default void registerAll(ErrorHandlerFactory errorHandlerFactory) {
         registerAll(errorHandlerFactory.getErrorResponseMappers());
+    }
+
+    /**
+     * Registers the factory's mappings for exceptions this registry does not map yet, leaving every existing mapping
+     * in place - for contributions that must not override what is already registered, such as a plugin's.
+     */
+    default void registerAllIfAbsent(ErrorHandlerFactory errorHandlerFactory) {
+        errorHandlerFactory.getErrorResponseMappers().forEach((exceptionClass, errorsDocSupplier) -> {
+            if (!getErrorResponseMappers().containsKey(exceptionClass)) {
+                register(exceptionClass, errorsDocSupplier);
+            }
+        });
     }
 
     default <T extends Throwable> ErrorsDoc resolveErrorsDoc(T throwable) {

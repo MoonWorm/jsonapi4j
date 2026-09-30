@@ -16,10 +16,12 @@ import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
+import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
+import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME;
@@ -30,10 +32,11 @@ public class CompoundDocsFilter implements Filter {
 
     private CompoundDocsRequestSupplier requestSupplier;
     private SelfFallbackRouting routing;
+    private ErrorsDocResponseWriter errorsDocResponseWriter;
     private CompoundDocsResolver resolver;
 
     @Override
-    public void init(FilterConfig filterConfig) {
+    public void init(FilterConfig filterConfig) throws ServletException {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
 
         CompoundDocsProperties cdProperties = (CompoundDocsProperties) filterConfig.getServletContext()
@@ -68,6 +71,10 @@ public class CompoundDocsFilter implements Filter {
 
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
+            this.errorsDocResponseWriter = new ErrorsDocResponseWriter(
+                    initJsonApi4j(filterConfig.getServletContext()).getErrorHandlers(),
+                    objectMapper
+            );
 
             CompoundDocsResourceCache cache = (CompoundDocsResourceCache) filterConfig
                     .getServletContext()
@@ -111,19 +118,30 @@ public class CompoundDocsFilter implements Filter {
 
                     String responseBody = responseWrapper.getCaptureAsString();
                     if (is2xxResponseCode(responseWrapper.getStatus())) {
-                        CompoundDocsResult result = resolver.resolveCompoundDocs(
-                                responseBody,
-                                compoundDocsRequest,
-                                routing.forRequest(httpServletRequest)
-                        );
+                        CompoundDocsResult result;
+                        try {
+                            result = resolver.resolveCompoundDocs(
+                                    responseBody,
+                                    compoundDocsRequest,
+                                    routing.forRequest(httpServletRequest)
+                            );
+                        } catch (RuntimeException e) {
+                            httpServletResponse.setHeader(
+                                    CACHE_CONTROL.getName(),
+                                    CacheControlParser.format(CacheControlDirectives.NO_STORE)
+                            );
+                            errorsDocResponseWriter.write(httpServletResponse, e);
+                            return;
+                        }
                         applyCacheControlHeader(httpServletResponse, responseWrapper, result);
                         servletResponse.getWriter().write(result.responseBody());
                     } else {
                         servletResponse.getWriter().write(responseBody);
                     }
+                } catch (IOException | ServletException | RuntimeException e) {
+                    throw e;
                 } catch (Exception e) {
-                    log.error("Compound Document resolution process failed.", e);
-                    throw new RuntimeException(e);
+                    throw new ServletException(e);
                 }
             } else {
                 chain.doFilter(servletRequest, servletResponse);
@@ -136,7 +154,7 @@ public class CompoundDocsFilter implements Filter {
                                          CompoundDocsResult result) {
         CacheControlAggregator aggregator = new CacheControlAggregator();
 
-        String primaryCacheControl = responseWrapper.getHeader("Cache-Control");
+        String primaryCacheControl = responseWrapper.getHeader(CACHE_CONTROL.getName());
         if (primaryCacheControl != null) {
             aggregator.add(CacheControlParser.parse(primaryCacheControl));
         }
@@ -147,7 +165,7 @@ public class CompoundDocsFilter implements Filter {
         if (aggregated != null) {
             String headerValue = CacheControlParser.format(aggregated);
             if (headerValue != null) {
-                response.setHeader("Cache-Control", headerValue);
+                response.setHeader(CACHE_CONTROL.getName(), headerValue);
             }
         }
     }

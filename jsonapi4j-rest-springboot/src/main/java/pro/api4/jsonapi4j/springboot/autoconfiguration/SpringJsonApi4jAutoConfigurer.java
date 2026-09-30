@@ -17,6 +17,9 @@ import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
@@ -27,9 +30,6 @@ import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.ac.SpringJsonApi4jAcPluginConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.cd.SpringJsonApi4jCompoundDocsConfig;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.oas.SpringJsonApi4jOasPluginConfig;
@@ -128,7 +128,8 @@ public class SpringJsonApi4jAutoConfigurer {
             @Qualifier("jsonApi4jExecutorService") ExecutorService jsonApiExecutorService,
             JsonApiBuildInRequestValidatorFactory validatorFactory,
             ObjectProvider<MetaContext> metaContextProvider,
-            JsonApi4jProperties properties
+            JsonApi4jProperties properties,
+            ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry
     ) {
         return JsonApi4j.builder()
                 .properties(properties)
@@ -137,6 +138,7 @@ public class SpringJsonApi4jAutoConfigurer {
                 .pluginRegistry(pluginRegistry)
                 .executor(jsonApiExecutorService)
                 .validatorFactory(validatorFactory)
+                .errorHandlers(errorHandlerFactoriesRegistry)
                 .meta(metaContextProvider.getIfAvailable())
                 .build();
     }

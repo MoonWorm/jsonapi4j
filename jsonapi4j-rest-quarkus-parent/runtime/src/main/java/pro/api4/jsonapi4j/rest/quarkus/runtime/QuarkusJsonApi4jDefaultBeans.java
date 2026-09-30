@@ -16,6 +16,10 @@ import pro.api4.jsonapi4j.config.MetaConfigComposer;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
@@ -25,10 +29,6 @@ import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactory;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.*;
@@ -179,7 +179,8 @@ public class QuarkusJsonApi4jDefaultBeans {
                         @Named("jsonApi4jExecutorService") ExecutorService executorService,
                         JsonApiBuildInRequestValidatorFactory validatorFactory,
                         Instance<MetaContext> metaContext,
-                        QuarkusJsonApi4jProperties rootProperties) {
+                        QuarkusJsonApi4jProperties rootProperties,
+                        ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry) {
         LOG.info("Composing {}...", JsonApi4j.class.getSimpleName());
         return JsonApi4j.builder()
                 .properties(rootProperties.toJsonApi4jProperties())
@@ -188,6 +189,7 @@ public class QuarkusJsonApi4jDefaultBeans {
                 .operationsRegistry(operationsRegistry)
                 .executor(executorService)
                 .validatorFactory(validatorFactory)
+                .errorHandlers(errorHandlerFactoriesRegistry)
                 .meta(metaContext.isResolvable() ? metaContext.get() : null)
                 .build();
     }

@@ -62,13 +62,21 @@ public class SelfFallbackRouting {
     }
 
     /**
+     * A {@code null} from the configured resolver breaks its contract and is passed on as is, so
+     * {@link DomainSettingsResolver#requireDomainSettings(String)} reports it rather than it being taken for "no route".
+     *
      * @return routing for {@code servletRequest}: the configured route when there is one, otherwise this app - at
      * {@code jsonapi4j.cd.mapping.default} when set, over loopback when not
      */
     public DomainSettingsResolver forRequest(HttpServletRequest servletRequest) {
         URI selfBaseUrl = defaultMapping != null ? defaultMapping : selfBaseUrl(servletRequest);
-        return resourceType -> domainSettingsResolver.resolveDomainSettings(resourceType)
-                .or(() -> Optional.of(new DomainSettings(selfBaseUrl, maxBatchSize(resourceType))));
+        return resourceType -> {
+            Optional<DomainSettings> configured = domainSettingsResolver.resolveDomainSettings(resourceType);
+            if (configured == null) {
+                return null;
+            }
+            return configured.or(() -> Optional.of(new DomainSettings(selfBaseUrl, maxBatchSize(resourceType))));
+        };
     }
 
     private URI selfBaseUrl(HttpServletRequest servletRequest) {

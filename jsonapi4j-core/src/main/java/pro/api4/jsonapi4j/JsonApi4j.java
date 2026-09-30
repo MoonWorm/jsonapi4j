@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.domain.RegisteredRelationship;
 import pro.api4.jsonapi4j.domain.RegisteredResource;
@@ -110,6 +111,7 @@ public class JsonApi4j {
     private final JsonApiBuildInRequestValidator validator;
     private final MetaContext metaContext;
     private final JsonApi4jProperties properties;
+    private final ErrorHandlerFactoriesRegistry errorHandlers;
 
     public static JsonApi4jBuilder builder() {
         return new JsonApi4jBuilder();

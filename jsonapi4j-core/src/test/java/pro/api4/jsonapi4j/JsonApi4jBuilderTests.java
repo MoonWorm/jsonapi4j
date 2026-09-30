@@ -1,14 +1,25 @@
 package pro.api4.jsonapi4j;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
+import pro.api4.jsonapi4j.errorhandling.ErrorsDocFactory;
+import pro.api4.jsonapi4j.errorhandling.ErrorsDocSupplier;
+import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.exception.JsonApi4jException;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.config.exception.RootConfigMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -122,6 +133,95 @@ public class JsonApi4jBuilderTests {
                             "'%s' does not agree with '%s'", propertyPath("path"), rootProperties.rootPath()
                     ))
                     .build();
+        }
+
+    }
+
+    @Nested
+    class ErrorHandlers {
+
+        @Test
+        public void build_noErrorHandlersSet_usesFrameworkDefaults() {
+            ErrorHandlerFactoriesRegistry errorHandlers = sut.build().getErrorHandlers();
+
+            assertThat(errorHandlers.getErrorResponseMappers()).containsKey(JsonApi4jException.class);
+        }
+
+        @Test
+        public void build_errorHandlersSet_usesThem() {
+            ErrorHandlerFactoriesRegistry registry = new JsonApi4jErrorHandlerFactoriesRegistry();
+
+            assertThat(sut.errorHandlers(registry).build().getErrorHandlers()).isSameAs(registry);
+        }
+
+        @Test
+        public void build_activePluginWithErrorHandlers_addsThem() {
+            sut.pluginRegistry(PluginRegistry.builder().register(new ErrorHandlingPlugin(true, PLUGIN_MAPPER)).build());
+
+            ErrorHandlerFactoriesRegistry errorHandlers = sut.build().getErrorHandlers();
+
+            assertThat(errorHandlers.getErrorResponseMapper(PluginException.class)).isSameAs(PLUGIN_MAPPER);
+        }
+
+        @Test
+        public void build_disabledPluginWithErrorHandlers_doesNotAddThem() {
+            sut.pluginRegistry(PluginRegistry.builder().register(new ErrorHandlingPlugin(false, PLUGIN_MAPPER)).build());
+
+            ErrorHandlerFactoriesRegistry errorHandlers = sut.build().getErrorHandlers();
+
+            assertThat(errorHandlers.getErrorResponseMappers()).doesNotContainKey(PluginException.class);
+        }
+
+        @Test
+        public void build_applicationMapsPluginException_applicationMappingWins() {
+            ErrorHandlerFactoriesRegistry registry = new JsonApi4jErrorHandlerFactoriesRegistry();
+            registry.register(PluginException.class, APPLICATION_MAPPER);
+            sut.errorHandlers(registry)
+                    .pluginRegistry(PluginRegistry.builder().register(new ErrorHandlingPlugin(true, PLUGIN_MAPPER)).build());
+
+            ErrorHandlerFactoriesRegistry errorHandlers = sut.build().getErrorHandlers();
+
+            assertThat(errorHandlers.getErrorResponseMapper(PluginException.class)).isSameAs(APPLICATION_MAPPER);
+        }
+
+        @Test
+        public void errorHandlers_null_throwsNullPointerException() {
+            assertThatThrownBy(() -> sut.errorHandlers(null)).isInstanceOf(NullPointerException.class);
+        }
+
+    }
+
+    private static final ErrorsDocSupplier<PluginException> PLUGIN_MAPPER = mapper(502);
+    private static final ErrorsDocSupplier<PluginException> APPLICATION_MAPPER = mapper(409);
+
+    private static ErrorsDocSupplier<PluginException> mapper(int status) {
+        return new ErrorsDocSupplier<>() {
+            @Override
+            public ErrorsDoc getErrorResponse(PluginException ex) {
+                return ErrorsDocFactory.genericErrorsDoc(status, DefaultErrorCodes.GENERIC_REQUEST_ERROR, "detail");
+            }
+
+            @Override
+            public int getHttpStatus(PluginException ex) {
+                return status;
+            }
+        };
+    }
+
+    private static class PluginException extends RuntimeException {
+    }
+
+    private record ErrorHandlingPlugin(boolean enabled,
+                                       ErrorsDocSupplier<PluginException> mapper) implements JsonApi4jPlugin {
+
+        @Override
+        public String pluginName() {
+            return "ErrorHandlingPlugin";
+        }
+
+        @Override
+        public ErrorHandlerFactory errorHandlerFactory() {
+            return () -> Map.of(PluginException.class, mapper);
         }
 
     }

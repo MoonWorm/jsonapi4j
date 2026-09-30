@@ -181,7 +181,7 @@ public enum MyErrorCodes implements ErrorCode {
 
 ## Custom Error Handlers
 
-To handle your own exceptions, implement `ErrorHandlerFactory` and register it as a bean. The framework auto-discovers custom factories and adds them to the registry alongside the built-in ones.
+To handle your own exceptions, implement `ErrorHandlerFactory` and register it as a bean. The framework auto-discovers custom factories and adds them to the registry alongside the built-in ones. The error-handling API — `ErrorHandlerFactory`, `ErrorsDocSupplier`, `ErrorHandlerFactoriesRegistry`, `JsonApi4jErrorHandlerFactoriesRegistry` and the `ErrorsDocFactory` helpers — lives in `pro.api4.jsonapi4j.errorhandling`, with `DefaultErrorHandlerFactory` in `pro.api4.jsonapi4j.errorhandling.impl` (module `jsonapi4j-base`).
 
 ### 1. Define Your Exception
 
@@ -271,7 +271,9 @@ public class MyErrorHandlerFactory implements ErrorHandlerFactory {
   </div>
 </div>
 
-Custom factories are registered **after** the built-in ones. If you register a handler for an exception class that already has a built-in handler, your handler replaces it. When no exact match exists, the registry selects the most specific registered ancestor — so a custom handler for a parent exception class won't shadow a more specific built-in handler (or vice versa).
+Custom factories are registered **after** the built-in ones. If you register a handler for an exception class that already has a built-in handler, your handler replaces it.
+
+Plugins contribute handlers for their own exceptions through `JsonApi4jPlugin#errorHandlerFactory()` — the [Compound Documents plugin](/compound-docs-plugin/#error-handling), for example. They are added when `JsonApi4j` is built and never replace a mapping the registry already has, so the built-in handlers and your own always take precedence: map a plugin's exception yourself to change how it is answered. When no exact match exists, the registry selects the most specific registered ancestor — so a custom handler for a parent exception class won't shadow a more specific built-in handler (or vice versa).
 
 ## Throwing Errors from Operations
 

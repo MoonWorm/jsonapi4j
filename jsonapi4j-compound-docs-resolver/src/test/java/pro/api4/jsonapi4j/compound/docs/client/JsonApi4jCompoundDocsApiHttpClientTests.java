@@ -1,12 +1,131 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpServer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.DomainSettings;
+import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
+import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
+import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class JsonApi4jCompoundDocsApiHttpClientTests {
+
+    private static final CompoundDocsResolverConfig CONFIG = new CompoundDocsResolverConfig(
+            true, 2, 100, ErrorStrategy.IGNORE, List.of(), Deduplication.DATA_AND_INCLUDED, 1000, 300, false, 1
+    );
+    private static final CompoundDocsRequest REQUEST = new CompoundDocsRequest(
+            "GET", List.of("placeOfBirth"), Map.of(), Map.of(), "/users/1", Map.of()
+    );
+
+    private final JsonApi4jCompoundDocsApiHttpClient sut = new JsonApi4jCompoundDocsApiHttpClient(new ObjectMapper(), CONFIG);
+    private HttpServer server;
+
+    @AfterEach
+    public void tearDown() {
+        if (server != null) {
+            server.stop(0);
+        }
+    }
+
+    @Nested
+    class DoBatchFetch {
+
+        @Test
+        public void doBatchFetch_successfulResponse_returnsResourcesAndDisablesCompoundDocsDownstream() throws IOException {
+            AtomicReference<String> disableHeader = new AtomicReference<>();
+            startServer(200, "{\"data\":[{\"type\":\"countries\",\"id\":\"US\"}]}", 0, disableHeader);
+
+            HttpFetchResult result = sut.doBatchFetch(batch(), REQUEST);
+
+            assertThat(result.resources()).extracting(r -> r.idAndType().getId()).containsExactly("US");
+            assertThat(result.failed()).isFalse();
+            assertThat(result.directives().getMaxAge()).isEqualTo(300L);
+            assertThat(disableHeader.get()).isEqualTo("true");
+        }
+
+        @Test
+        public void doBatchFetch_non200Response_throwsErrorJsonApiResponseException() throws IOException {
+            startServer(503, "unavailable", 0, new AtomicReference<>());
+
+            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+                    .isExactlyInstanceOf(ErrorJsonApiResponseException.class)
+                    .hasMessageContaining("503");
+        }
+
+        @Test
+        public void doBatchFetch_responseSlowerThanTotalTimeout_throwsDownstreamTimeoutException() throws IOException {
+            startServer(200, "{\"data\":[]}", 2000, new AtomicReference<>());
+
+            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+                    .isInstanceOf(DownstreamTimeoutException.class);
+        }
+
+        @Test
+        public void doBatchFetch_bodyIsNotJson_throwsErrorJsonApiResponseException() throws IOException {
+            startServer(200, "<html>oops</html>", 0, new AtomicReference<>());
+
+            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+                    .isExactlyInstanceOf(ErrorJsonApiResponseException.class);
+        }
+
+        @Test
+        public void doBatchFetch_connectionRefused_throwsErrorJsonApiResponseException() {
+            BatchFetch unreachable = new BatchFetch(
+                    DomainSettings.of(URI.create("http://127.0.0.1:1/jsonapi")), "countries", Set.of("US"), Set.of()
+            );
+
+            assertThatThrownBy(() -> sut.doBatchFetch(unreachable, REQUEST))
+                    .isExactlyInstanceOf(ErrorJsonApiResponseException.class);
+        }
+
+    }
+
+    private void startServer(int status,
+                             String body,
+                             long delayMs,
+                             AtomicReference<String> disableHeader) throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/jsonapi/countries", exchange -> {
+            disableHeader.set(exchange.getRequestHeaders().getFirst("X-Disable-Compound-Docs"));
+            try {
+                Thread.sleep(delayMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Cache-Control", "max-age=300");
+            exchange.sendResponseHeaders(status, bytes.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(bytes);
+            }
+        });
+        server.start();
+    }
+
+    private BatchFetch batch() {
+        URI baseUrl = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/jsonapi");
+        return new BatchFetch(DomainSettings.of(baseUrl), "countries", Set.of("US"), Set.of());
+    }
 
     @Nested
     class IsPropagatable {

@@ -27,6 +27,13 @@ public class CacheControlDirectives {
             new CacheControlDirectives(null, null, false, false, false);
 
     /**
+     * {@code no-store}: the response must not be stored by any cache - e.g. a compound document whose {@code included}
+     * is incomplete because some includes failed to resolve.
+     */
+    public static final CacheControlDirectives NO_STORE =
+            new CacheControlDirectives(null, null, true, false, false);
+
+    /**
      * Creates directives with only a {@code max-age} value set.
      * Useful for synthesizing directives from cache hit remaining TTLs.
      *

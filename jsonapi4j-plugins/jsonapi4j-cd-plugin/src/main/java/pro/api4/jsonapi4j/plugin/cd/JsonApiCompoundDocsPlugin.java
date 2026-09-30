@@ -3,14 +3,16 @@ package pro.api4.jsonapi4j.plugin.cd;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiResource;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactory;
 import pro.api4.jsonapi4j.plugin.JsonApi4jPlugin;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.exception.PluginMisconfigurationException;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
 /**
- * Marker plugin class - request processing is controlled via a Servlet Filter. It carries the effective
- * {@link CompoundDocsProperties} so the plugin can expose its configuration via {@link #configProperties()}.
+ * The Compound Documents plugin. Request processing is done by {@link CompoundDocsFilter}; the plugin itself carries
+ * the effective {@link CompoundDocsProperties} (exposed via {@link #configProperties()}), contributes the error handlers
+ * for include resolution failures, and rejects a resource type named after the reserved {@code mapping.default} key.
  */
 @Slf4j
 public class JsonApiCompoundDocsPlugin implements JsonApi4jPlugin {
@@ -36,6 +38,14 @@ public class JsonApiCompoundDocsPlugin implements JsonApi4jPlugin {
     @Override
     public CompoundDocsProperties configProperties() {
         return compoundDocsProperties;
+    }
+
+    /**
+     * Answers include resolution failing under {@code errorStrategy: FAIL} with JSON:API error documents.
+     */
+    @Override
+    public ErrorHandlerFactory errorHandlerFactory() {
+        return new CompoundDocsErrorHandlerFactory();
     }
 
     /**

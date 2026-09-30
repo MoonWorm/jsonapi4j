@@ -7,14 +7,18 @@ import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
+import pro.api4.jsonapi4j.http.cache.CacheControlParser;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +27,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 @Slf4j
@@ -69,8 +74,16 @@ public class JsonApi4jCompoundDocsApiHttpClient {
     /**
      * Fetches one batch. The request always carries {@code X-Disable-Compound-Docs: true}, since the resolver assembles
      * {@code included} itself and the downstream must not do it again.
+     *
+     * <p>Every failure is thrown, whatever the {@link ErrorStrategy}:
+     * deciding whether it may be ignored is up to the caller.
+     *
+     * @throws DownstreamTimeoutException    when connecting or waiting for the response times out
+     * @throws ErrorJsonApiResponseException on any other failure - a non-200 response, a connection error, or a body
+     *                                       that is not a JSON:API document
      */
     public HttpFetchResult doBatchFetch(BatchFetch batch, CompoundDocsRequest originalRequest) {
+        String uri = null;
         try {
             JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(batch.domainSettings().url())
                     .resourceType(batch.resourceType())
@@ -84,7 +97,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
                 urlBuilder.queryParams(originalRequest.getCustomQueryParams());
             }
 
-            String uri = urlBuilder.build();
+            uri = urlBuilder.build();
             log.debug("Compound docs HTTP request: GET {}", uri);
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
@@ -105,21 +118,24 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
-                    log.warn("Non-200 response ({}) from GET {}, ignoring per error strategy", response.statusCode(), uri);
-                    return new HttpFetchResult(Collections.emptyList(), null);
-                } else {
-                    throw new ErrorJsonApiResponseException("Got error response from a downstream service on GET " + uri + " url");
-                }
+                throw new ErrorJsonApiResponseException(String.format(
+                        "Got %d from a downstream service on GET %s", response.statusCode(), uri
+                ));
             }
             List<ParsedResource> resources = parseResponse(response);
             log.debug("Compound docs HTTP response: status={}, resources={}", response.statusCode(), resources.size());
-            String cacheControlHeader = response.headers()
-                    .firstValue("Cache-Control").orElse(null);
-            return new HttpFetchResult(resources, cacheControlHeader);
+            CacheControlDirectives directives = CacheControlParser.parse(response.headers()
+                    .firstValue(CACHE_CONTROL.getName()).orElse(null));
+            return new HttpFetchResult(resources, directives);
+        } catch (ErrorJsonApiResponseException e) {
+            throw e;
+        } catch (HttpTimeoutException e) {
+            throw new DownstreamTimeoutException(String.format("Timed out on GET %s", uri), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ErrorJsonApiResponseException(String.format("Interrupted on GET %s", uri), e);
         } catch (Exception e) {
-            log.error("HTTP request failed for compound docs resolution: {}", e.getMessage());
-            throw new ErrorJsonApiResponseException("Error during sending HTTP request to resolve JSON:API Compound Docs", e);
+            throw new ErrorJsonApiResponseException(String.format("Failed on GET %s: %s", uri, e.getMessage()), e);
         }
     }
 

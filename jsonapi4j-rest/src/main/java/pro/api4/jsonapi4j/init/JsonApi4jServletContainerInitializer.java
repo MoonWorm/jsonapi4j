@@ -19,6 +19,9 @@ import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.JsonApiBuildInRequestValidatorFactory;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
+import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
@@ -28,9 +31,6 @@ import pro.api4.jsonapi4j.principal.DefaultPrincipalResolver;
 import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.servlet.JsonApi4jDispatcherServlet;
 import pro.api4.jsonapi4j.servlet.request.body.RequestBodyCachingFilter;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.servlet.response.errorhandling.impl.DefaultErrorHandlerFactory;
 import pro.api4.jsonapi4j.validation.DefaultJsonApiBuildInRequestValidator;
 
 import java.util.Collection;
@@ -204,20 +204,23 @@ public class JsonApi4jServletContainerInitializer implements ServletContainerIni
         JsonApi4j jsonApi4j = (JsonApi4j) servletContext.getAttribute(JSONAPI4J_ATT_NAME);
         if (jsonApi4j == null) {
             log.warn("JsonApi4j not found in servlet context. Trying to compose an instance.");
+            JsonApi4jProperties properties = initJsonApi4jProperties(servletContext);
             DomainRegistry domainRegistry = initDomainRegistry(servletContext);
             OperationsRegistry operationsRegistry = initOperationRegistry(servletContext);
             PluginRegistry plugins = initPluginRegistry(servletContext);
             ExecutorService executorService = initExecutorService(servletContext);
             JsonApiBuildInRequestValidatorFactory validatorFactory = initValidatorFactory(servletContext);
+            ErrorHandlerFactoriesRegistry errorHandlerFactoriesRegistry = initErrorHandlerFactory(servletContext);
             // if meta context is null = meta feature is disabled
             MetaContext metaContext = (MetaContext) servletContext.getAttribute(META_CONTEXT_ATT_NAME);
             jsonApi4j = JsonApi4j.builder()
-                    .properties(initJsonApi4jProperties(servletContext))
+                    .properties(properties)
                     .domainRegistry(domainRegistry)
                     .operationsRegistry(operationsRegistry)
                     .pluginRegistry(plugins)
                     .executor(executorService)
                     .validatorFactory(validatorFactory)
+                    .errorHandlers(errorHandlerFactoriesRegistry)
                     .meta(metaContext)
                     .build();
             servletContext.setAttribute(JSONAPI4J_ATT_NAME, jsonApi4j);

@@ -11,7 +11,8 @@ jsonapi4j:
     enabled: true
     maxHops: 3                  # caps ?include=a.b.c depth
     maxIncludedResources: 100   # caps total resolved resources per response
-    errorStrategy: IGNORE       # IGNORE -> a failed include leaves `included` empty rather than erroring
+    errorStrategy: IGNORE       # IGNORE -> failed includes are left out of `included` (response marked no-store);
+                                # FAIL -> JSON:API error: 504 timeout, 502 other downstream failure, 500 no route
     propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]   # what to forward to downstream self-HTTP calls
     deduplication: DATA_AND_INCLUDED   # or INCLUDED_ONLY (repeat reached primary resources in included) | NONE
     defaultMaxBatchSize: 20

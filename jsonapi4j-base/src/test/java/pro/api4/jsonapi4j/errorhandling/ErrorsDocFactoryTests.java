@@ -1,4 +1,4 @@
-package pro.api4.jsonapi4j.servlet.response.errorhandling;
+package pro.api4.jsonapi4j.errorhandling;
 
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
