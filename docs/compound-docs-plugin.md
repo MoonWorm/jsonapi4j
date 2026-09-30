@@ -42,7 +42,7 @@ jsonapi4j:
 |---------------------------------------|--------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `jsonapi4j.cd.enabled`                | `false`                              | Enables/disables Compound Documents post-processing.                                                                                                                              |
 | `jsonapi4j.cd.maxHops`                | `2`                                  | The deepest include path supported, in relationships: `a.b` is 2. A deeper one is handled per `unsupportedIncludes`. |
-| `jsonapi4j.cd.unsupportedIncludes`    | `FAIL`                               | What a request with an include path deeper than `maxHops` gets. `FAIL`: `400 Bad Request` naming the path, as the JSON:API spec requires. `IGNORE`: the path is resolved only as deep as supported and listed in `meta.includedIncomplete` as `UNSUPPORTED_INCLUDE`. |
+| `jsonapi4j.cd.unsupportedIncludes`    | `FAIL`                               | What a request with an unsupported include path gets — one deeper than `maxHops`, or naming a relationship its resource type doesn't have, see [Unsupported include paths](#unsupported-include-paths). `FAIL`: `400 Bad Request` naming the path, as the JSON:API spec requires. `IGNORE`: the path is resolved only as far as supported and listed in `meta.includedIncomplete` as `UNSUPPORTED_INCLUDE`. |
 | `jsonapi4j.cd.maxIncludedResources`   | `100`                                | When `included` reaches this many resources, resolution fetches nothing further, and the include paths left unresolved are listed in `meta.includedIncomplete` as `MAX_INCLUDED_RESOURCES`. Checked between hops, so the last hop can take `included` past it. |
 | `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included`, listed in `meta.includedIncomplete`, and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
 | `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`. `Forwarded`, `X-Forwarded-For` and `X-Real-IP` are never propagated. |
@@ -110,23 +110,41 @@ Error details never name downstream URLs. The documents are rendered through the
 other error the API returns, so they share its format — and an application that maps these exceptions itself
 (`DownstreamTimeoutException`, `ErrorJsonApiResponseException`, `DomainResolutionException`) keeps its own mapping.
 
-### Limits
+### Unsupported include paths
 
-**`maxHops`** is the deepest include path supported. The depth of every path is known from the request alone, so a
-deeper one is handled before the primary data is even fetched. Under `unsupportedIncludes: FAIL` (default) the request
-is answered with `400 Bad Request`, as the JSON:API spec requires for include paths a server doesn't support:
+The JSON:API spec requires `400 Bad Request` for an include path a server can't identify or doesn't support. A path is
+unsupported when it is deeper than `maxHops`, or when it names a relationship its resource type doesn't have — at any
+position in the path. Under `unsupportedIncludes: FAIL` (default) the request is answered with one error per path,
+naming it in `meta.path`:
 
 ```json
 { "errors": [ {
   "status": "400",
   "code": "UNSUPPORTED_INCLUDE",
-  "detail": "Include path 'relatives.relatives.relatives' spans 3 relationships, more than the supported 2",
-  "source": { "parameter": "include" }
+  "detail": "Resource type 'countries' has no relationship 'economy'",
+  "source": { "parameter": "include" },
+  "meta": { "path": "placeOfBirth.economy" }
 } ] }
 ```
 
-Under `IGNORE` the path is resolved as deep as supported — `relatives.relatives` here — and listed as
-`UNSUPPORTED_INCLUDE`.
+Who finds out:
+
+- **Depth** is known from the request alone, so a path deeper than `maxHops` is rejected before the primary data is
+  even fetched.
+- **An unknown relationship** is rejected by the server of its resource type. The framework checks every request —
+  with or without this plugin — against the relationships of the requested type, so the first relationship of a path
+  is checked by the app serving the primary data. The following ones are checked by the services the plugin fetches
+  them from, over the same `include` parameter: their `400 UNSUPPORTED_INCLUDE` is mapped back to the full path of
+  the original request, `placeOfBirth.economy` above. A downstream service that isn't built on JsonApi4j is recognized
+  only if it answers the same way — an unknown relationship it ignores goes unnoticed.
+
+Under `IGNORE` an unsupported path is resolved only as far as supported and listed as `UNSUPPORTED_INCLUDE` — up to
+`maxHops`, or up to the unknown relationship. The request is then served again without the rejected path (by this app,
+or by the downstream service that rejected it), so one mistyped include doesn't cost the rest of the document.
+
+### Limits
+
+**`maxHops`** is the deepest include path supported — see [Unsupported include paths](#unsupported-include-paths).
 
 **`maxIncludedResources`** bounds the size of `included`, which depends on the data, not the request. Once `included`
 has reached it, nothing further is fetched and the include paths left unresolved are listed as
@@ -154,7 +172,7 @@ each gap — merged into the document's own `meta`, and present only when `inclu
 | `FETCH_FAILED`           | a type   | Retry — likely transient. The response is marked `no-store`.                |
 | `NO_ROUTE`               | a type   | Nothing — a server configuration issue. The response is marked `no-store`.  |
 | `MAX_INCLUDED_RESOURCES` | a path   | Ask for less: fewer or shallower includes, smaller pages. Everything below the path is missing too. |
-| `UNSUPPORTED_INCLUDE`    | a path   | Ask for a shallower path. The part beyond `maxHops` is missing.             |
+| `UNSUPPORTED_INCLUDE`    | a path   | Fix the path: it is deeper than `maxHops`, or names an unknown relationship. The unsupported part is missing. |
 
 A type-level gap comes from a failed fetch, which is batched per type across paths; a path-level gap comes from a
 limit, which cuts the include tree at a depth. Which resources exactly are missing follows from the document: those

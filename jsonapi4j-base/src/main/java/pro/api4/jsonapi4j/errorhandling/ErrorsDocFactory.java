@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.errorhandling;
 
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.exception.ValidationError;
 import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
@@ -10,6 +11,7 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Collections.singletonList;
@@ -54,6 +56,24 @@ public final class ErrorsDocFactory {
                         ve.detail(),
                         ve.source()
                 ))
+                .toList();
+        return new ErrorsDoc(errors);
+    }
+
+    /**
+     * @return one error object per unsupported include, naming its path in
+     * {@code meta.}{@value UnsupportedIncludeException#PATH_META_FIELD}
+     */
+    public static ErrorsDoc unsupportedIncludeErrorsDoc(List<UnsupportedIncludeException.UnsupportedInclude> includes) {
+        List<ErrorObject> errors = includes.stream()
+                .map(include -> ErrorObject.builder()
+                        .id(UUID.randomUUID().toString())
+                        .status(String.valueOf(HttpStatusCodes.SC_400_BAD_REQUEST.getCode()))
+                        .code(DefaultErrorCodes.UNSUPPORTED_INCLUDE.toCode())
+                        .detail(include.detail())
+                        .source(toErrorSourceObject(ErrorSources.parameter().include()))
+                        .meta(Map.of(UnsupportedIncludeException.PATH_META_FIELD, include.path()))
+                        .build())
                 .toList();
         return new ErrorsDoc(errors);
     }

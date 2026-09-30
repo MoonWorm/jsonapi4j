@@ -338,6 +338,7 @@ RuntimeException
 │   │   ├── InvalidCursorException                            — 400 INVALID_CURSOR
 │   │   ├── InvalidLimitException                             — 400 INVALID_LIMIT
 │   │   └── InvalidPayloadException                           — 400 INVALID_PAYLOAD
+│   ├── UnsupportedIncludeException                           — 400 UNSUPPORTED_INCLUDE (one error per path, meta.path)
 │   ├── ResourceNotFoundException                             — 404 NOT_FOUND
 │   ├── MethodNotSupportedException                           — 405 METHOD_NOT_SUPPORTED
 │   ├── NotAcceptableException                                — 406 NOT_ACCEPTABLE

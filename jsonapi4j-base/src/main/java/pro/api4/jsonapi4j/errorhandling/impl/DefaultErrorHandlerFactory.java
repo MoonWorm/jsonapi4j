@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.http.HttpStatusCodes;
 import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,17 @@ public class DefaultErrorHandlerFactory implements ErrorHandlerFactory {
             @Override
             public int getHttpStatus(CompositeJsonApiRequestValidationException e) {
                 return HttpStatusCodes.SC_400_BAD_REQUEST.getCode();
+            }
+        });
+        this.errorResponseMappers.put(UnsupportedIncludeException.class, new ErrorsDocSupplier<UnsupportedIncludeException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(UnsupportedIncludeException e) {
+                return ErrorsDocFactory.unsupportedIncludeErrorsDoc(e.getUnsupportedIncludes());
+            }
+
+            @Override
+            public int getHttpStatus(UnsupportedIncludeException e) {
+                return e.getHttpStatus();
             }
         });
         this.errorResponseMappers.put(JsonApi4jException.class, new ErrorsDocSupplier<JsonApi4jException>() {

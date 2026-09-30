@@ -10,8 +10,9 @@ jsonapi4j:
   cd:                           # Compound Documents (?include=)
     enabled: true
     maxHops: 3                  # deepest ?include path supported (a.b.c = 3)
-    unsupportedIncludes: FAIL   # deeper path: FAIL -> 400 UNSUPPORTED_INCLUDE (spec);
-                                #   IGNORE -> resolved to maxHops, listed in meta.includedIncomplete
+    unsupportedIncludes: FAIL   # path deeper than maxHops or naming an unknown relationship:
+                                #   FAIL -> 400 UNSUPPORTED_INCLUDE with meta.path (spec);
+                                #   IGNORE -> resolved as far as supported, listed in meta.includedIncomplete
     maxIncludedResources: 100   # no further hops once reached (last hop may overshoot);
                                 #   unresolved paths listed as MAX_INCLUDED_RESOURCES
     errorStrategy: IGNORE       # IGNORE -> failed includes are left out of `included` (response marked no-store,

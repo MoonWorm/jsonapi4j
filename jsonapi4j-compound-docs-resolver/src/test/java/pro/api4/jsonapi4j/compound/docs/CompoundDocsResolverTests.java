@@ -20,7 +20,8 @@ import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
-import pro.api4.jsonapi4j.compound.docs.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
@@ -437,6 +438,62 @@ public class CompoundDocsResolverTests {
     }
 
     @Nested
+    class RejectedByDownstream {
+
+        @Test
+        public void resolveCompoundDocs_unknownRelationshipUnderFail_throwsNamingTheFullPath() {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.FAIL, 100);
+            stubDownstreamRejecting("countries", "economy");
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.economy"),
+                    ROUTE_ALL
+            )).isInstanceOfSatisfying(UnsupportedIncludeException.class, e -> assertThat(e.getUnsupportedIncludes())
+                    .containsExactly(new UnsupportedIncludeException.UnsupportedInclude(
+                            "placeOfBirth.economy", "Resource type 'countries' has no relationship 'economy'"
+                    )));
+        }
+
+        @Test
+        public void resolveCompoundDocs_unknownRelationshipUnderIgnore_refetchesWithoutItAndListsTheFullPath() throws Exception {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.IGNORE, 100);
+            stubDownstreamRejecting("countries", "economy");
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.economy", "placeOfBirth.currencies"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USA, USD);
+            assertThat(fetchCalls).containsExactly(
+                    new FetchCall("countries", Set.of("US"), Set.of("currencies", "economy")),
+                    new FetchCall("countries", Set.of("US"), Set.of("currencies")),
+                    new FetchCall("currencies", Set.of("USD"), Set.of())
+            );
+            assertThat(gaps(result)).containsExactly(
+                    IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, "placeOfBirth.economy")
+            );
+        }
+
+        @Test
+        public void resolveCompoundDocs_includesRejectedByPrimaryServer_listsThemWithoutFetching() throws Exception {
+            CompoundDocsResolver sut = resolver(3, UnsupportedIncludeStrategy.IGNORE, 100);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of()),
+                    new CompoundDocsRequest("GET", null, List.of("foo"), Map.of(), Map.of(), "/users/1", Map.of()),
+                    ROUTE_ALL
+            );
+
+            assertThat(fetchCalls).isEmpty();
+            assertThat(gaps(result)).containsExactly(IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, "foo"));
+        }
+
+    }
+
+    @Nested
     class MaxIncludedResources {
 
         @Test
@@ -537,19 +594,31 @@ public class CompoundDocsResolverTests {
     }
 
     @SuppressWarnings("unchecked")
-    private void stubDownstream() {
+    private void stubDownstreamRejecting(String rejectingType, String unknownRelationship) {
         when(fetcher.fetch(any(), any())).thenAnswer(invocation -> {
             BatchFetch batch = invocation.getArgument(0);
-            String type = batch.resourceType();
-            Set<String> ids = batch.ids();
-            Set<String> includes = batch.includes();
-            fetchCalls.add(new FetchCall(type, Set.copyOf(ids), Set.copyOf(includes)));
-            List<String> resources = new ArrayList<>();
-            for (String id : ids) {
-                resources.add(MAPPER.writeValueAsString(resourceNode(idAndType(type, id), includes)));
+            if (batch.resourceType().equals(rejectingType) && batch.includes().contains(unknownRelationship)) {
+                fetchCalls.add(new FetchCall(batch.resourceType(), Set.copyOf(batch.ids()), Set.copyOf(batch.includes())));
+                throw new RejectedIncludesException(rejectingType, Set.of(unknownRelationship));
             }
-            return new BatchFetchResult(resources, null);
+            return respond(batch);
         });
+    }
+
+    private void stubDownstream() {
+        when(fetcher.fetch(any(), any())).thenAnswer(invocation -> respond(invocation.getArgument(0)));
+    }
+
+    private BatchFetchResult respond(BatchFetch batch) throws JsonProcessingException {
+        String type = batch.resourceType();
+        Set<String> ids = batch.ids();
+        Set<String> includes = batch.includes();
+        fetchCalls.add(new FetchCall(type, Set.copyOf(ids), Set.copyOf(includes)));
+        List<String> resources = new ArrayList<>();
+        for (String id : ids) {
+            resources.add(MAPPER.writeValueAsString(resourceNode(idAndType(type, id), includes)));
+        }
+        return new BatchFetchResult(resources, null);
     }
 
     private static CompoundDocsRequest request(String relativePath, String... includes) {

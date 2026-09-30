@@ -5,10 +5,8 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
-import pro.api4.jsonapi4j.compound.docs.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
-import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,18 +18,6 @@ public class CompoundDocsErrorHandlerFactoryTests {
 
     @Nested
     class Mappings {
-
-        @Test
-        public void getErrorResponseMappers_unsupportedInclude_maps400NamingThePath() {
-            registry.registerAll(sut);
-            UnsupportedIncludeException e = new UnsupportedIncludeException("Include path 'a.b' spans 2 relationships");
-
-            assertThat(registry.resolveStatusCode(e)).isEqualTo(400);
-            ErrorObject error = registry.resolveErrorsDoc(e).getErrors().get(0);
-            assertThat(error.getCode()).isEqualTo("UNSUPPORTED_INCLUDE");
-            assertThat(error.getDetail()).isEqualTo("Include path 'a.b' spans 2 relationships");
-            assertThat(error.getSource().getParameter()).isEqualTo("include");
-        }
 
         @Test
         public void getErrorResponseMappers_downstreamTimeout_maps504GatewayTimeout() {

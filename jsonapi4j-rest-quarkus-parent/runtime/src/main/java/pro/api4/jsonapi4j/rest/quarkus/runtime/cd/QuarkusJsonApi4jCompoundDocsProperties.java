@@ -84,8 +84,9 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     Deduplication deduplication();
 
     /**
-     * What a request with an 'include' path deeper than 'maxHops' gets: FAIL answers 400 Bad Request, IGNORE resolves
-     * it only as deep as supported and lists it in 'meta.includedIncomplete'.
+     * What a request with an unsupported 'include' path - deeper than 'maxHops', or naming a relationship its resource
+     * type doesn't have - gets: FAIL answers 400 Bad Request, IGNORE resolves it only as far as supported and lists it
+     * in 'meta.includedIncomplete'.
      */
     @WithDefault(DEFAULT_UNSUPPORTED_INCLUDES)
     UnsupportedIncludeStrategy unsupportedIncludes();

@@ -141,6 +141,77 @@ public abstract class CompoundDocsOperationsTests {
     }
 
     @Test
+    public void test_readById_maxHopsExceeded_namesThePathInMeta() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives.relatives.relatives.relatives")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(400)
+                .body("errors[0].meta.path", equalTo("relatives.relatives.relatives.relatives"));
+    }
+
+    @Test
+    public void test_readById_unknownRelationshipFirstInPath_respondsBadRequestNamingThePath() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "relatives,pets.owner")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(400)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("errors", hasSize(1))
+                .body("errors[0].code", equalTo("UNSUPPORTED_INCLUDE"))
+                .body("errors[0].source.parameter", equalTo("include"))
+                .body("errors[0].detail", equalTo("Resource type 'users' has no relationship 'pets'"))
+                .body("errors[0].meta.path", equalTo("pets.owner"));
+    }
+
+    @Test
+    public void test_readById_unknownRelationshipInTheMiddleOfPath_respondsBadRequestNamingTheFullPath() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "placeOfBirth.economy.currencies")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(400)
+                .contentType(JsonApiMediaType.MEDIA_TYPE)
+                .body("errors", hasSize(1))
+                .body("errors[0].code", equalTo("UNSUPPORTED_INCLUDE"))
+                .body("errors[0].detail", equalTo("Resource type 'countries' has no relationship 'economy'"))
+                .body("errors[0].meta.path", equalTo("placeOfBirth.economy"));
+    }
+
+    @Test
+    public void test_readMultiple_unknownRelationship_respondsBadRequest() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "pets")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users")
+                .then()
+                .statusCode(400)
+                .body("errors[0].code", equalTo("UNSUPPORTED_INCLUDE"))
+                .body("errors[0].meta.path", equalTo("pets"));
+    }
+
+    @Test
+    public void test_readById_unknownRelationshipWithCompoundDocsDisabled_respondsBadRequest() {
+        given()
+                .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                .header("X-Disable-Compound-Docs", "true")
+                .queryParam(IncludeAwareRequest.INCLUDE_PARAM, "pets")
+                .pathParam("userId", "1")
+                .get("http://localhost:" + serverPort + jsonApiRootPath + "/users/{userId}")
+                .then()
+                .statusCode(400)
+                .body("errors[0].code", equalTo("UNSUPPORTED_INCLUDE"))
+                .body("errors[0].meta.path", equalTo("pets"));
+    }
+
+    @Test
     public void test_readById_customQueryParamsPropagated() {
         // custom query params should be propagated to internal CD HTTP calls
         // and appear in self-links of included resources

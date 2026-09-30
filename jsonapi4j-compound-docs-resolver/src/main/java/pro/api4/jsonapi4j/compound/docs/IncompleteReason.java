@@ -25,7 +25,8 @@ public enum IncompleteReason {
     MAX_INCLUDED_RESOURCES,
 
     /**
-     * An include path is deeper than supported and was resolved only as deep as supported, under
+     * An include path is not supported - deeper than {@code maxHops}, or naming a relationship its resource type
+     * doesn't have - and was resolved only as far as supported, under
      * {@link pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy#IGNORE}.
      */
     UNSUPPORTED_INCLUDE

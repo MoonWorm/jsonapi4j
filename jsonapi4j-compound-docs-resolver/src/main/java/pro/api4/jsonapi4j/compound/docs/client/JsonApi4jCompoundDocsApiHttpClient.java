@@ -9,6 +9,7 @@ import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
@@ -22,6 +23,7 @@ import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,6 +55,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
     );
 
     private final ObjectMapper objectMapper;
+    private final JsonApiResponseParser responseParser;
     private final CompoundDocsResolverConfig config;
     private final HttpClient client;
 
@@ -65,6 +68,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
     public JsonApi4jCompoundDocsApiHttpClient(ObjectMapper objectMapper,
                                               CompoundDocsResolverConfig config) {
         this.objectMapper = objectMapper;
+        this.responseParser = new JsonApiResponseParser(objectMapper);
         this.config = config;
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
@@ -117,6 +121,9 @@ public class JsonApi4jCompoundDocsApiHttpClient {
 
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 400) {
+                checkRejectedIncludes(batch, response.body());
+            }
             if (response.statusCode() != 200) {
                 throw new ErrorJsonApiResponseException(String.format(
                         "Got %d from a downstream service on GET %s", response.statusCode(), uri
@@ -127,7 +134,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             CacheControlDirectives directives = CacheControlParser.parse(response.headers()
                     .firstValue(CACHE_CONTROL.getName()).orElse(null));
             return new HttpFetchResult(resources, directives);
-        } catch (ErrorJsonApiResponseException e) {
+        } catch (ErrorJsonApiResponseException | RejectedIncludesException e) {
             throw e;
         } catch (HttpTimeoutException e) {
             throw new DownstreamTimeoutException(String.format("Timed out on GET %s", uri), e);
@@ -136,6 +143,18 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             throw new ErrorJsonApiResponseException(String.format("Interrupted on GET %s", uri), e);
         } catch (Exception e) {
             throw new ErrorJsonApiResponseException(String.format("Failed on GET %s: %s", uri, e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Throws when a {@code 400} rejects some of the includes this fetch asked for - so the resolver can drop them
+     * rather than treat the whole fetch as failed. Any other {@code 400} is left to fail the fetch.
+     */
+    private void checkRejectedIncludes(BatchFetch batch, String errorsDoc) {
+        Set<String> rejected = new HashSet<>(responseParser.parseUnsupportedIncludes(errorsDoc));
+        rejected.retainAll(batch.includes());
+        if (!rejected.isEmpty()) {
+            throw new RejectedIncludesException(batch.resourceType(), rejected);
         }
     }
 

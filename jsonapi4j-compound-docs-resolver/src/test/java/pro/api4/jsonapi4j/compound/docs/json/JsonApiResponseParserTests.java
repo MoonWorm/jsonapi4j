@@ -137,4 +137,46 @@ public class JsonApiResponseParserTests {
 
     }
 
+    @Nested
+    class ParseUnsupportedIncludes {
+
+        @Test
+        public void parseUnsupportedIncludes_onlyUnsupportedIncludeErrors_returnsTheirPaths() {
+            String errorsDoc = "{\"errors\":["
+                    + "{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"foo\"}},"
+                    + "{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"bar.baz\"}}"
+                    + "]}";
+
+            assertThat(sut.parseUnsupportedIncludes(errorsDoc)).containsExactly("foo", "bar.baz");
+        }
+
+        @Test
+        public void parseUnsupportedIncludes_anotherErrorAsWell_returnsNothing() {
+            String errorsDoc = "{\"errors\":["
+                    + "{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"foo\"}},"
+                    + "{\"code\":\"VALUE_TOO_HIGH\",\"source\":{\"parameter\":\"page[limit]\"}}"
+                    + "]}";
+
+            assertThat(sut.parseUnsupportedIncludes(errorsDoc)).isEmpty();
+        }
+
+        @Test
+        public void parseUnsupportedIncludes_unsupportedIncludeWithoutPath_returnsNothing() {
+            String errorsDoc = "{\"errors\":["
+                    + "{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"foo\"}},"
+                    + "{\"code\":\"UNSUPPORTED_INCLUDE\"}"
+                    + "]}";
+
+            assertThat(sut.parseUnsupportedIncludes(errorsDoc)).isEmpty();
+        }
+
+        @Test
+        public void parseUnsupportedIncludes_notAnErrorsDocument_returnsNothing() {
+            assertThat(sut.parseUnsupportedIncludes("<html>oops</html>")).isEmpty();
+            assertThat(sut.parseUnsupportedIncludes("{\"data\":[]}")).isEmpty();
+            assertThat(sut.parseUnsupportedIncludes(null)).isEmpty();
+        }
+
+    }
+
 }

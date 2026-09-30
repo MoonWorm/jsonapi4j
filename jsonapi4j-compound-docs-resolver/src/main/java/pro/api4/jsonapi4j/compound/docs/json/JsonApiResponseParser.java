@@ -7,6 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
+import pro.api4.jsonapi4j.model.document.error.ErrorObject;
+import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.ArrayList;
@@ -79,6 +83,33 @@ public class JsonApiResponseParser {
             LOG.error("Failed to parse Json:Api resource: {}", jsonApiResource, e);
             throw new InvalidJsonApiResponseException("Failed to parse Json:Api resource: " + jsonApiResource);
         }
+    }
+
+    /**
+     * @return the include paths an errors document rejects - named in {@code meta.path} of its
+     * {@code UNSUPPORTED_INCLUDE} errors - when those are all its errors. None when it holds any other error too, as
+     * the request would fail without those paths as well, or is not an errors document at all
+     */
+    public Set<String> parseUnsupportedIncludes(String errorsDoc) {
+        JsonNode rootNode;
+        try {
+            rootNode = errorsDoc == null ? null : objectMapper.readTree(errorsDoc);
+        } catch (JsonProcessingException e) {
+            return Collections.emptySet();
+        }
+        if (rootNode == null || !rootNode.path(ErrorsDoc.ERRORS_FIELD).isArray()) {
+            return Collections.emptySet();
+        }
+        Set<String> paths = new LinkedHashSet<>();
+        for (JsonNode error : rootNode.path(ErrorsDoc.ERRORS_FIELD)) {
+            JsonNode path = error.path(ErrorObject.META_FIELD).path(UnsupportedIncludeException.PATH_META_FIELD);
+            if (!DefaultErrorCodes.UNSUPPORTED_INCLUDE.toCode().equals(error.path(ErrorObject.CODE_FIELD).asText())
+                    || !path.isTextual()) {
+                return Collections.emptySet();
+            }
+            paths.add(path.asText());
+        }
+        return Collections.unmodifiableSet(paths);
     }
 
     private String writeJson(JsonNode node) {

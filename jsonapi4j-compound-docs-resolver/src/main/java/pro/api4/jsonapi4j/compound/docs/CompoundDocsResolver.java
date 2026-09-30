@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.compound.docs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
@@ -13,14 +14,18 @@ import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClien
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
 import pro.api4.jsonapi4j.compound.docs.json.PrimaryResource;
 import pro.api4.jsonapi4j.compound.docs.json.ResourceLinkage;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException.UnsupportedInclude;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.*;
@@ -194,14 +199,26 @@ public class CompoundDocsResolver {
 
             for (Map.Entry<String, CompletableFuture<BatchFetchResult>> e : futures.entrySet()) {
                 String resourceType = e.getKey();
-                BatchFetchResult fetchResult = join(e.getValue());
+                TypeFetch typeFetch = awaitFetch(
+                        resourceType,
+                        idsByType.get(resourceType),
+                        includesByType.get(resourceType),
+                        e.getValue(),
+                        frontier,
+                        domainSettingsResolver,
+                        request
+                );
+                BatchFetchResult fetchResult = typeFetch.result();
                 aggregator.add(fetchResult.directives());
                 if (fetchResult.incompleteReason() != null) {
                     gaps.add(IncludedGap.forType(fetchResult.incompleteReason(), resourceType));
                 }
+                typeFetch.rejected().forEach(rejected -> gaps.add(
+                        IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, rejected.path())
+                ));
                 idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
                         new IdAndType(id, new ResourceType(resourceType)),
-                        includesByType.get(resourceType)
+                        typeFetch.includes()
                 ));
                 for (String resourceJson : fetchResult.resources()) {
                     ResourceLinkage linkage = jsonApiResponseParser.parseResource(resourceJson);
@@ -231,6 +248,64 @@ public class CompoundDocsResolver {
         }
 
         return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
+    }
+
+    /**
+     * Waits for the fetch of {@code ids} of {@code resourceType}. When the downstream service rejects some of
+     * {@code includes} as unknown relationships, they are mapped back to the include paths of the request: under
+     * {@link UnsupportedIncludeStrategy#FAIL} the request fails naming them, under
+     * {@link UnsupportedIncludeStrategy#IGNORE} the resources are fetched again without them.
+     *
+     * @return the fetch result, the includes it was fetched with, and the include paths rejected on the way
+     */
+    private TypeFetch awaitFetch(String resourceType,
+                                 Set<String> ids,
+                                 Set<String> includes,
+                                 CompletableFuture<BatchFetchResult> fetch,
+                                 IncludeFrontier frontier,
+                                 DomainSettingsResolver domainSettingsResolver,
+                                 CompoundDocsRequest request) {
+        try {
+            return new TypeFetch(join(fetch), includes, List.of());
+        } catch (RejectedIncludesException e) {
+            List<UnsupportedInclude> rejected = e.getRelationshipNames()
+                    .stream()
+                    .flatMap(relationshipName -> ids.stream()
+                            .flatMap(id -> frontier.pathsThrough(new IdAndType(id, new ResourceType(resourceType)), relationshipName).stream())
+                            .distinct()
+                            .map(path -> new UnsupportedInclude(path, String.format(
+                                    "Resource type '%s' has no relationship '%s'", resourceType, relationshipName
+                            ))))
+                    .toList();
+            if (config.getUnsupportedIncludes() == UnsupportedIncludeStrategy.FAIL) {
+                throw new UnsupportedIncludeException(rejected);
+            }
+            log.warn("Resolving '{}' resources without unsupported includes {} per strategy", resourceType, e.getRelationshipNames());
+            Set<String> accepted = includes.stream()
+                    .filter(include -> !e.getRelationshipNames().contains(include))
+                    .collect(Collectors.toSet());
+            TypeFetch retried = awaitFetch(
+                    resourceType,
+                    ids,
+                    accepted,
+                    fetchAsync(resourceType, ids, accepted, domainSettingsResolver, request),
+                    frontier,
+                    domainSettingsResolver,
+                    request
+            );
+            return new TypeFetch(
+                    retried.result(),
+                    retried.includes(),
+                    ListUtils.union(rejected, retried.rejected())
+            );
+        }
+    }
+
+    /**
+     * @param includes the includes the resources were fetched with
+     * @param rejected the include paths the downstream service rejected on the way
+     */
+    private record TypeFetch(BatchFetchResult result, Set<String> includes, List<UnsupportedInclude> rejected) {
     }
 
     /**

@@ -17,6 +17,7 @@ import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.InvalidPayloadException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
@@ -65,6 +66,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withFiltersValidator(this::validateFilterParams)
                         .withSortValidator(this::validateSortByCount))
                 .validate();
+        validateKnownIncludes(request);
     }
 
     @Override
@@ -78,6 +80,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withLimitValidator(this::validateLimitValue)
                         .withSortValidator(this::validateSortByCount))
                 .validate();
+        validateKnownIncludes(request);
     }
 
     @Override
@@ -152,6 +155,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withFiltersValidator(this::validateFilterParams)
                         .withSortValidator(this::validateSortByCount))
                 .validate();
+        validateKnownIncludes(request);
     }
 
     @Override
@@ -180,6 +184,7 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
                         .withLimitValidator(this::validateLimitValue)
                         .withSortValidator(this::validateSortByCount))
                 .validate();
+        validateKnownIncludes(request);
     }
 
     @Override
@@ -233,6 +238,34 @@ public class DefaultJsonApiBuildInRequestValidator implements JsonApiBuildInRequ
 
     private void validateResourceIdValue(StringValidationAssert id) {
         id.isNotBlank().satisfies(raw -> validateResourceId(raw));
+    }
+
+    /**
+     * Every include path has to start with a relationship of the requested resource type - the only segment this
+     * server can check for sure, as the rest may continue through resource types served elsewhere. Whoever resolves
+     * the rest checks it with the server of the type it reaches.
+     */
+    private void validateKnownIncludes(JsonApiRequest request) {
+        List<String> includes = request.getOriginalIncludes();
+        if (includes == null || includes.isEmpty()) {
+            return;
+        }
+        ResourceType resourceType = request.getTargetResourceType();
+        Set<String> relationshipNames = domainRegistry.getRelationshipNames(resourceType)
+                .stream()
+                .map(RelationshipName::getName)
+                .collect(Collectors.toSet());
+        List<UnsupportedIncludeException.UnsupportedInclude> unsupportedIncludes = includes.stream()
+                .filter(include -> !relationshipNames.contains(StringUtils.substringBefore(include, ".")))
+                .map(include -> new UnsupportedIncludeException.UnsupportedInclude(include, String.format(
+                        "Resource type '%s' has no relationship '%s'",
+                        resourceType.getType(),
+                        StringUtils.substringBefore(include, ".")
+                )))
+                .toList();
+        if (!unsupportedIncludes.isEmpty()) {
+            throw new UnsupportedIncludeException(unsupportedIncludes);
+        }
     }
 
     private void validateIncludesCount(CollectionValidationAssert<String> includes) {

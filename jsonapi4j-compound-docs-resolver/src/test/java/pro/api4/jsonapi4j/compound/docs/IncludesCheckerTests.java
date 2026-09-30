@@ -6,10 +6,11 @@ import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
-import pro.api4.jsonapi4j.compound.docs.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -54,6 +55,36 @@ class IncludesCheckerTests {
 
             assertThat(result.paths()).isEmpty();
             assertThat(result.gaps()).isEmpty();
+        }
+
+    }
+
+    @Nested
+    class RejectedIncludes {
+
+        @Test
+        void check_includesRejectedByPrimaryServer_reportsThemAsGaps() {
+            CheckedIncludes result = checker(UnsupportedIncludeStrategy.IGNORE).check(new CompoundDocsRequest(
+                    "GET", List.of("relatives"), List.of("foo"), Map.of(), Map.of(), "/users/1", Map.of()
+            ));
+
+            assertThat(result.paths()).containsExactly("relatives");
+            assertThat(result.gaps()).containsExactly(IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, "foo"));
+        }
+
+        @Test
+        void includesToDrop_underIgnore_returnsRejectedIncludesTheRequestAskedFor() {
+            IncludesChecker sut = checker(UnsupportedIncludeStrategy.IGNORE);
+
+            assertThat(sut.includesToDrop(request("/users/1", "relatives", "foo"), Set.of("foo", "bar")))
+                    .containsExactly("foo");
+        }
+
+        @Test
+        void includesToDrop_underFail_returnsNothing() {
+            IncludesChecker sut = checker(UnsupportedIncludeStrategy.FAIL);
+
+            assertThat(sut.includesToDrop(request("/users/1", "relatives", "foo"), Set.of("foo"))).isEmpty();
         }
 
     }

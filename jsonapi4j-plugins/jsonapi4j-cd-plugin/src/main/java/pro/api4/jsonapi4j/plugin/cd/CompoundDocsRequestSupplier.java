@@ -13,11 +13,19 @@ import static java.util.stream.Collectors.toMap;
 public class CompoundDocsRequestSupplier {
 
     public CompoundDocsRequest toCompoundDocsRequest(HttpServletRequest servletRequest) {
+        return toCompoundDocsRequest(servletRequest, Set.of());
+    }
+
+    /**
+     * @param rejectedIncludes include paths the app already rejected, so the request was served without them
+     */
+    public CompoundDocsRequest toCompoundDocsRequest(HttpServletRequest servletRequest, Set<String> rejectedIncludes) {
         Map<String, List<String>> allParams = getParams(servletRequest);
 
         return new CompoundDocsRequest(
                 servletRequest.getMethod(),
                 getIncludesQueryParam(servletRequest),
+                rejectedIncludes.stream().sorted().toList(),
                 JsonApiRequestParsingUtil.parseFieldSets(allParams),
                 getOriginalRequestHeaders(servletRequest),
                 servletRequest.getRequestURI(),

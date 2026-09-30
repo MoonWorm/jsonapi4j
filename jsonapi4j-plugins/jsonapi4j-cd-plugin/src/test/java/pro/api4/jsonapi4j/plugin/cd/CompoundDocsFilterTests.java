@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.cd;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
@@ -13,13 +14,16 @@ import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
-import pro.api4.jsonapi4j.compound.docs.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +50,7 @@ class CompoundDocsFilterTests {
     private final ByteArrayOutputStream sent = new ByteArrayOutputStream();
 
     private final CompoundDocsFilter sut = new CompoundDocsFilter(
-            requestSupplier, routing, errorsDocResponseWriter, includesChecker, resolver
+            requestSupplier, routing, errorsDocResponseWriter, includesChecker, new JsonApiResponseParser(new ObjectMapper()), resolver
     );
 
     @BeforeEach
@@ -138,11 +142,54 @@ class CompoundDocsFilterTests {
     }
 
     @Nested
+    class IncludesRejectedByApp {
+
+        private static final String REJECTED_FOO =
+                "{\"errors\":[{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"foo\"}}]}";
+
+        @Test
+        void doFilter_rejectedIncludesToDrop_servesAgainWithoutThemAndReportsThem() throws Exception {
+            when(response.getStatus()).thenReturn(400, 200);
+            when(request.getParameterMap()).thenReturn(Map.of("include", new String[]{"placeOfBirth,foo"}));
+            when(includesChecker.includesToDrop(any(), eq(Set.of("foo")))).thenReturn(Set.of("foo"));
+            CompoundDocsRequest retriedRequest = new CompoundDocsRequest(
+                    "GET", List.of("placeOfBirth"), List.of("foo"), Map.of(), Map.of(), "/users/1", Map.of()
+            );
+            when(requestSupplier.toCompoundDocsRequest(any(IncludesRemovedRequest.class), eq(Set.of("foo"))))
+                    .thenReturn(retriedRequest);
+            when(resolver.resolveCompoundDocs(eq(PRIMARY_DOC), eq(retriedRequest), any()))
+                    .thenReturn(new CompoundDocsResult(COMPOUND_DOC, null));
+            List<String> servedIncludes = new ArrayList<>();
+
+            sut.doFilter(request, response, (req, res) -> {
+                servedIncludes.add(((HttpServletRequest) req).getParameter("include"));
+                String body = servedIncludes.size() == 1 ? REJECTED_FOO : PRIMARY_DOC;
+                res.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+            });
+
+            assertThat(servedIncludes).containsExactly(null, "placeOfBirth");
+            assertThat(sent.toString(StandardCharsets.UTF_8)).isEqualTo(COMPOUND_DOC);
+        }
+
+        @Test
+        void doFilter_rejectedIncludesNotToDrop_sendsTheRejection() throws Exception {
+            when(response.getStatus()).thenReturn(400);
+            when(includesChecker.includesToDrop(any(), any())).thenReturn(Set.of());
+
+            sut.doFilter(request, response, writing(REJECTED_FOO));
+
+            assertThat(sent.toString(StandardCharsets.UTF_8)).isEqualTo(REJECTED_FOO);
+            verifyNoInteractions(resolver);
+        }
+
+    }
+
+    @Nested
     class UnsupportedIncludes {
 
         @Test
         void doFilter_unsupportedInclude_writesErrorWithoutRunningChain() throws Exception {
-            UnsupportedIncludeException failure = new UnsupportedIncludeException("too deep");
+            UnsupportedIncludeException failure = new UnsupportedIncludeException("a.b.c", "too deep");
             doThrow(failure).when(includesChecker).check(any());
             FilterChain chain = mock(FilterChain.class);
 

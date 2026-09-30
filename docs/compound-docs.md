@@ -148,7 +148,7 @@ backend at all, run the same check before proxying it, with a checker built from
 IncludesChecker.from(config).check(request);
 ```
 
-Each backend must serve `GET /{type}?filter[id]=a,b,c` and emit relationship linkage for the relationships named in `include`. It doesn't resolve includes itself: the resolver's calls carry `X-Disable-Compound-Docs: true` and the gateway assembles `included`.
+Each backend must serve `GET /{type}?filter[id]=a,b,c` and emit relationship linkage for the relationships named in `include`. A backend that answers an unknown relationship name with `400 UNSUPPORTED_INCLUDE`, naming it in `meta.path` — as every JsonApi4j app does — lets the resolver report the full include path back to the client, or leave it out under `UnsupportedIncludeStrategy.IGNORE`. It doesn't resolve includes itself: the resolver's calls carry `X-Disable-Compound-Docs: true` and the gateway assembles `included`.
 
 ### Caching
 

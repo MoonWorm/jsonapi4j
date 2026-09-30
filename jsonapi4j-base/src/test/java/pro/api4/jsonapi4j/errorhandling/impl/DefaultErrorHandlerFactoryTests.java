@@ -6,6 +6,7 @@ import pro.api4.jsonapi4j.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApi4jException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.model.document.error.AuthErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
 import pro.api4.jsonapi4j.model.document.error.ErrorObject;
@@ -14,6 +15,9 @@ import pro.api4.jsonapi4j.operation.exception.OperationNotFoundException;
 import pro.api4.jsonapi4j.operation.validation.ErrorSources;
 import pro.api4.jsonapi4j.processor.exception.DataRetrievalException;
 import pro.api4.jsonapi4j.processor.exception.MappingException;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,7 +33,7 @@ class DefaultErrorHandlerFactoryTests {
     // --- Registered exception classes ---
 
     @Test
-    void registersHandlersForSixExceptionClasses() {
+    void registersHandlersForSevenExceptionClasses() {
         // given/when
         var mappers = factory.getErrorResponseMappers();
 
@@ -40,8 +44,31 @@ class DefaultErrorHandlerFactoryTests {
                 OperationNotFoundException.class,
                 JsonApiRequestValidationException.class,
                 CompositeJsonApiRequestValidationException.class,
+                UnsupportedIncludeException.class,
                 JsonApi4jException.class
         );
+    }
+
+    // --- UnsupportedIncludeException ---
+
+    @Test
+    void unsupportedIncludeException_returns400WithOneErrorPerPathNamingIt() {
+        var exception = new UnsupportedIncludeException(List.of(
+                new UnsupportedIncludeException.UnsupportedInclude("foo", "Resource type 'users' has no relationship 'foo'"),
+                new UnsupportedIncludeException.UnsupportedInclude("bar.baz", "Resource type 'users' has no relationship 'bar'")
+        ));
+        ErrorsDocSupplier<UnsupportedIncludeException> supplier = getSupplier(UnsupportedIncludeException.class);
+
+        ErrorsDoc doc = supplier.getErrorResponse(exception);
+
+        assertThat(supplier.getHttpStatus(exception)).isEqualTo(400);
+        assertThat(doc.getErrors()).hasSize(2);
+        ErrorObject first = doc.getErrors().get(0);
+        assertThat(first.getCode()).isEqualTo("UNSUPPORTED_INCLUDE");
+        assertThat(first.getDetail()).isEqualTo("Resource type 'users' has no relationship 'foo'");
+        assertThat(first.getSource().getParameter()).isEqualTo("include");
+        assertThat(first.getMeta()).isEqualTo(Map.of("path", "foo"));
+        assertThat(doc.getErrors().get(1).getMeta()).isEqualTo(Map.of("path", "bar.baz"));
     }
 
     // --- DataRetrievalException ---

@@ -1,0 +1,16 @@
+server:
+  port: 9393
+
+jsonapi4j:
+  rootPath: /jsonapi
+
+  cd:
+    enabled: true
+    maxHops: 2
+    unsupportedIncludes: IGNORE
+  ac:
+    enabled: false
+  oas:
+    enabled: false
+  sf:
+    enabled: false

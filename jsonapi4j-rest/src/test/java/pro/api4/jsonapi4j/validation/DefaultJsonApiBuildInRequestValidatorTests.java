@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.domain.RelationshipName;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.CompositeJsonApiRequestValidationException;
 import pro.api4.jsonapi4j.exception.JsonApiRequestValidationException;
+import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
 import pro.api4.jsonapi4j.model.document.data.ResourceObject;
@@ -200,6 +201,56 @@ class DefaultJsonApiBuildInRequestValidatorTests {
                     .isInstanceOf(JsonApiRequestValidationException.class)
                     .satisfies(e -> assertThat(e.getMessage()).contains("less than or equal to"));
         }
+    }
+
+    @Nested
+    class KnownIncludes {
+
+        @Test
+        void validateReadResourceById_includesStartingWithKnownRelationships_doesNotThrow() {
+            stubReadByIdWithIncludes(List.of("citizenships", "citizenships.currencies"));
+
+            assertThatCode(() -> validator.validateReadResourceById(request))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        void validateReadResourceById_includesStartingWithUnknownRelationships_throwsNamingEachPath() {
+            stubReadByIdWithIncludes(List.of("citizenships", "foo", "bar.baz"));
+
+            assertThatThrownBy(() -> validator.validateReadResourceById(request))
+                    .isInstanceOfSatisfying(UnsupportedIncludeException.class, e -> assertThat(e.getUnsupportedIncludes())
+                            .containsExactly(
+                                    new UnsupportedIncludeException.UnsupportedInclude(
+                                            "foo", "Resource type 'users' has no relationship 'foo'"),
+                                    new UnsupportedIncludeException.UnsupportedInclude(
+                                            "bar.baz", "Resource type 'users' has no relationship 'bar'")
+                            ));
+        }
+
+        @Test
+        void validateReadMultipleResources_includeStartingWithUnknownRelationship_throws() {
+            setupKnownResourceType();
+            setupKnownRelationships();
+            when(request.getTargetResourceType()).thenReturn(USERS);
+            when(request.getOriginalIncludes()).thenReturn(List.of("foo"));
+            when(request.getFilters()).thenReturn(Map.of());
+            when(request.getLimit()).thenReturn(null);
+            when(request.getSortBy()).thenReturn(Map.of());
+
+            assertThatThrownBy(() -> validator.validateReadMultipleResources(request))
+                    .isInstanceOf(UnsupportedIncludeException.class);
+        }
+
+        private void stubReadByIdWithIncludes(List<String> includes) {
+            setupKnownResourceType();
+            setupKnownRelationships();
+            setupBasicPathRequest();
+            when(request.getOriginalIncludes()).thenReturn(includes);
+            when(request.getFilters()).thenReturn(Map.of());
+            when(request.getSortBy()).thenReturn(Map.of());
+        }
+
     }
 
     // --- validateCreateResource ---

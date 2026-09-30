@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
+import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,6 +38,9 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
     private static final CompoundDocsRequest REQUEST = new CompoundDocsRequest(
             "GET", List.of("placeOfBirth"), Map.of(), Map.of(), "/users/1", Map.of()
     );
+
+    private static final String UNSUPPORTED_CURRENCIES =
+            "{\"errors\":[{\"code\":\"UNSUPPORTED_INCLUDE\",\"meta\":{\"path\":\"currencies\"}}]}";
 
     private final JsonApi4jCompoundDocsApiHttpClient sut = new JsonApi4jCompoundDocsApiHttpClient(new ObjectMapper(), CONFIG);
     private HttpServer server;
@@ -71,6 +75,30 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
             assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
                     .isExactlyInstanceOf(ErrorJsonApiResponseException.class)
                     .hasMessageContaining("503");
+        }
+
+        @Test
+        public void doBatchFetch_badRequestRejectingRequestedIncludes_throwsRejectedIncludesException() throws IOException {
+            startServer(400, UNSUPPORTED_CURRENCIES, 0, new AtomicReference<>());
+
+            BatchFetch withIncludes = new BatchFetch(
+                    batch().domainSettings(), "countries", Set.of("US"), Set.of("currencies", "economy")
+            );
+
+            assertThatThrownBy(() -> sut.doBatchFetch(withIncludes, REQUEST))
+                    .isInstanceOfSatisfying(RejectedIncludesException.class, e -> {
+                        assertThat(e.getResourceType()).isEqualTo("countries");
+                        assertThat(e.getRelationshipNames()).containsExactly("currencies");
+                    });
+        }
+
+        @Test
+        public void doBatchFetch_badRequestRejectingIncludesNotRequested_throwsErrorJsonApiResponseException() throws IOException {
+            startServer(400, UNSUPPORTED_CURRENCIES, 0, new AtomicReference<>());
+
+            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+                    .isExactlyInstanceOf(ErrorJsonApiResponseException.class)
+                    .hasMessageContaining("400");
         }
 
         @Test

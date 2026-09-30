@@ -24,6 +24,7 @@ public final class CompoundDocsRequest {
     private static final Pattern RELATIONSHIP_OPERATION_URL_PATTERN = Pattern.compile("/[^/]+/[^/]+/relationships/([^/]+)");
 
     private final List<String> includes;
+    private final List<String> rejectedIncludes;
     private final Map<String, List<String>> fieldSets;
     private final Map<String, String> headers;
     private final Map<String, List<String>> customQueryParams;
@@ -38,23 +39,42 @@ public final class CompoundDocsRequest {
                                Map<String, String> headers,
                                String relativePath,
                                Map<String, List<String>> customQueryParams) {
+        this(method, includes, List.of(), fieldSets, headers, relativePath, customQueryParams);
+    }
+
+    /**
+     * @param rejectedIncludes include paths the server of the primary data already rejected as unsupported, so the
+     *                         request was served without them - reported as gaps of the compound document
+     */
+    public CompoundDocsRequest(String method,
+                               List<String> includes,
+                               List<String> rejectedIncludes,
+                               Map<String, List<String>> fieldSets,
+                               Map<String, String> headers,
+                               String relativePath,
+                               Map<String, List<String>> customQueryParams) {
+        Validate.notNull(rejectedIncludes, "rejectedIncludes must not be null");
         Validate.notBlank(method, "method must not be blank");
         Validate.notNull(fieldSets, "fieldSets must not be null");
         Validate.notNull(headers, "headers must not be null");
         Validate.notBlank(relativePath, "relativePath must not be blank");
         Validate.notNull(customQueryParams, "customQueryParams must not be null");
         this.includes = includes;
+        this.rejectedIncludes = List.copyOf(rejectedIncludes);
         this.fieldSets = fieldSets;
         this.headers = headers;
         this.customQueryParams = customQueryParams;
         this.relationshipNameFromRequestUri = getRelationshipNameFromRequestUri(relativePath);
-        this.processable = calculateProcessable(method, headers, includes);
+        this.processable = calculateProcessable(method, headers, includes, rejectedIncludes);
     }
 
-    private boolean calculateProcessable(String method, Map<String, String> headers, List<String> includes) {
+    private boolean calculateProcessable(String method,
+                                         Map<String, String> headers,
+                                         List<String> includes,
+                                         List<String> rejectedIncludes) {
         return "GET".equals(method)
                 && !Boolean.parseBoolean(headers.get(X_DISABLE_COMPOUND_DOCS.getName()))
-                && includes != null && !includes.isEmpty();
+                && (includes != null && !includes.isEmpty() || !rejectedIncludes.isEmpty());
     }
 
     private String getRelationshipNameFromRequestUri(String relativePath) {

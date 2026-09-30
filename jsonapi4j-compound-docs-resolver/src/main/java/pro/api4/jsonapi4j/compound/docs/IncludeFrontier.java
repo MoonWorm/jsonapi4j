@@ -72,6 +72,17 @@ final class IncludeFrontier {
     }
 
     /**
+     * @return the include paths that continue from {@code resource} through {@code relationshipName}
+     */
+    Set<String> pathsThrough(IdAndType resource, String relationshipName) {
+        return paths(resource)
+                .stream()
+                .filter(path -> includeTree.children(path).contains(relationshipName))
+                .map(path -> IncludeTree.childPath(path, relationshipName))
+                .collect(toSet());
+    }
+
+    /**
      * @return relationship names to request for {@code resource} so that each of its paths can continue
      */
     Set<String> requiredIncludes(IdAndType resource) {

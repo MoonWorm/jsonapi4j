@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.compound.docs.CompoundDocsResolver;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
@@ -21,9 +22,11 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
+import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_400_BAD_REQUEST;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME;
@@ -36,6 +39,7 @@ public class CompoundDocsFilter implements Filter {
     private SelfFallbackRouting routing;
     private ErrorsDocResponseWriter errorsDocResponseWriter;
     private IncludesChecker includesChecker;
+    private JsonApiResponseParser responseParser;
     private CompoundDocsResolver resolver;
 
     public CompoundDocsFilter() {
@@ -45,11 +49,13 @@ public class CompoundDocsFilter implements Filter {
                        SelfFallbackRouting routing,
                        ErrorsDocResponseWriter errorsDocResponseWriter,
                        IncludesChecker includesChecker,
+                       JsonApiResponseParser responseParser,
                        CompoundDocsResolver resolver) {
         this.requestSupplier = requestSupplier;
         this.routing = routing;
         this.errorsDocResponseWriter = errorsDocResponseWriter;
         this.includesChecker = includesChecker;
+        this.responseParser = responseParser;
         this.resolver = resolver;
     }
 
@@ -90,6 +96,7 @@ public class CompoundDocsFilter implements Filter {
             this.includesChecker = IncludesChecker.from(config);
 
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
+            this.responseParser = new JsonApiResponseParser(objectMapper);
             ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
             this.errorsDocResponseWriter = new ErrorsDocResponseWriter(
                     initJsonApi4j(filterConfig.getServletContext()).getErrorHandlers(),
@@ -123,7 +130,7 @@ public class CompoundDocsFilter implements Filter {
                          ServletResponse servletResponse,
                          FilterChain chain) throws IOException, ServletException {
 
-        if (this.resolver == null || this.includesChecker == null || this.requestSupplier == null || this.routing == null) {
+        if (this.resolver == null) {
             log.debug("{} has not been initialized, CD plugin initialization failer or plugin is disabled", CompoundDocsFilter.class.getSimpleName());
             chain.doFilter(servletRequest, servletResponse);
         } else {
@@ -139,8 +146,8 @@ public class CompoundDocsFilter implements Filter {
                     errorsDocResponseWriter.write(httpServletResponse, e);
                     return;
                 }
-                BufferedResponseWrapper responseWrapper = new BufferedResponseWrapper(httpServletResponse);
-                chain.doFilter(servletRequest, responseWrapper);
+                Served served = serve(httpServletRequest, httpServletResponse, compoundDocsRequest, chain);
+                BufferedResponseWrapper responseWrapper = served.response();
 
                 if (!is2xxResponseCode(responseWrapper.getStatus())) {
                     writeBody(httpServletResponse, responseWrapper.getCapturedBody());
@@ -150,8 +157,8 @@ public class CompoundDocsFilter implements Filter {
                 try {
                     result = resolver.resolveCompoundDocs(
                             responseWrapper.getCapturedBodyAsString(),
-                            compoundDocsRequest,
-                            routing.forRequest(httpServletRequest)
+                            served.compoundDocsRequest(),
+                            routing.forRequest(served.request())
                     );
                 } catch (RuntimeException e) {
                     httpServletResponse.setHeader(
@@ -167,6 +174,39 @@ public class CompoundDocsFilter implements Filter {
                 chain.doFilter(servletRequest, servletResponse);
             }
         }
+    }
+
+    /**
+     * Serves the request with its body captured. When the app rejects some of its include paths as unsupported and
+     * the strategy is to ignore them, serves it once more without those - the same way include paths rejected by a
+     * downstream service are dropped - and records them on the compound docs request, so they are reported as gaps.
+     */
+    private Served serve(HttpServletRequest request,
+                         HttpServletResponse response,
+                         CompoundDocsRequest compoundDocsRequest,
+                         FilterChain chain) throws IOException, ServletException {
+        BufferedResponseWrapper captured = new BufferedResponseWrapper(response);
+        chain.doFilter(request, captured);
+        if (captured.getStatus() != SC_400_BAD_REQUEST.getCode()) {
+            return new Served(request, compoundDocsRequest, captured);
+        }
+        Set<String> dropped = includesChecker.includesToDrop(
+                compoundDocsRequest,
+                responseParser.parseUnsupportedIncludes(captured.getCapturedBodyAsString())
+        );
+        if (dropped.isEmpty()) {
+            return new Served(request, compoundDocsRequest, captured);
+        }
+        log.warn("Serving the request again without unsupported includes {} per strategy", dropped);
+        HttpServletRequest retried = new IncludesRemovedRequest(request, dropped);
+        BufferedResponseWrapper retriedCaptured = new BufferedResponseWrapper(response);
+        chain.doFilter(retried, retriedCaptured);
+        return new Served(retried, requestSupplier.toCompoundDocsRequest(retried, dropped), retriedCaptured);
+    }
+
+    private record Served(HttpServletRequest request,
+                          CompoundDocsRequest compoundDocsRequest,
+                          BufferedResponseWrapper response) {
     }
 
     private void applyCacheControlHeader(HttpServletResponse response,
