@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.plugin.cd.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,15 +24,41 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private int maxHops = Integer.parseInt(DEFAULT_MAX_HOPS);
     private int maxIncludedResources = Integer.parseInt(DEFAULT_MAX_INCLUDED_RESOURCES);
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
-    private Map<String, String> mapping = Collections.emptyMap();
-    private Map<String, Integer> batchSizeMapping = Collections.emptyMap();
+    private Map<String, DefaultMapping> mapping = Collections.emptyMap();
     private int defaultMaxBatchSize = Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
     private Deduplication deduplication = Deduplication.valueOf(DEFAULT_DEDUPLICATION);
     private UnsupportedIncludeStrategy unsupportedIncludes = UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
+    private List<String> credentialHeaders = CompoundDocsProperties.parseCommaSeparated(DEFAULT_CREDENTIAL_HEADERS);
     private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     private long httpTotalTimeoutMs = Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
     private DefaultCache cache;
+
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    public static class DefaultMapping implements Mapping {
+
+        private String url;
+        private Integer maxBatchSize;
+        private boolean propagateCredentials = Boolean.parseBoolean(DEFAULT_PROPAGATE_CREDENTIALS);
+
+        @Override
+        public String url() {
+            return url;
+        }
+
+        @Override
+        public Integer maxBatchSize() {
+            return maxBatchSize;
+        }
+
+        @Override
+        public boolean propagateCredentials() {
+            return propagateCredentials;
+        }
+    }
 
     @Getter
     @Setter
@@ -81,13 +108,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     }
 
     @Override
-    public Map<String, String> mapping() {
+    public Map<String, DefaultMapping> mapping() {
         return mapping;
-    }
-
-    @Override
-    public Map<String, Integer> batchSizeMapping() {
-        return batchSizeMapping;
     }
 
     @Override
@@ -108,6 +130,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public UnsupportedIncludeStrategy unsupportedIncludes() {
         return unsupportedIncludes;
+    }
+
+    @Override
+    public List<String> credentialHeaders() {
+        return credentialHeaders;
     }
 
     @Override

@@ -58,23 +58,23 @@ Configure the fallback batch size and per-resource-type overrides via plugin pro
 jsonapi4j:
   cd:
     defaultMaxBatchSize: 20              # global fallback (default: 20)
-    batchSizeMapping:                    # per-resource overrides
-      users: 50
-      countries: 20
+    mapping:
+      users:
+        maxBatchSize: 50                 # per-resource override
+      countries:
+        maxBatchSize: 20
 ```
 
 When using the standalone resolver, the same setting lives on `DomainSettings`:
 
 ```java
-DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-    Map.of("users",     "https://users.example.com",
-           "countries", "https://countries.example.com"),
-    Map.of("users", 50),  // per-type batch size override; countries falls back to the default
-    20                    // global default
-);
+DomainSettingsResolver resolver = new DefaultDomainSettingsResolver(Map.of(
+    "users",     new DomainSettings(URI.create("https://users.example.com"), 50),  // per-type batch size
+    "countries", DomainSettings.of(URI.create("https://countries.example.com"))    // the default batch size
+));
 ```
 
-`DomainSettingsResolver` is a strict functional interface — `Optional<DomainSettings> resolveDomainSettings(String resourceType)` — so any custom implementation has full control over both the URL and the per-type batch size. An empty result means there is no route for the type: used standalone (e.g. in an API gateway), resolution then fails with `Resource type '<type>' has no mapping`, so every type your API can include must be mapped. The [Compound Documents Plugin](/compound-docs-plugin/) instead treats such a type as served by the app itself.
+`DomainSettingsResolver` is a strict functional interface — `Optional<DomainSettings> resolveDomainSettings(String resourceType)` — so any custom implementation has full control over the URL, the per-type batch size, and whether the domain is trusted with the client's credentials (`DomainSettings.propagateCredentials()`; credential headers such as `Authorization` and `Cookie` are sent only to trusted domains). An empty result means there is no route for the type: used standalone (e.g. in an API gateway), resolution then fails with `Resource type '<type>' has no mapping`, so every type your API can include must be mapped. The [Compound Documents Plugin](/compound-docs-plugin/) instead treats such a type as served by the app itself.
 
 ### Standalone Resolver
 
@@ -93,13 +93,13 @@ It handles multi-hop traversal, parallel batch fetching, resource deduplication,
 Build the resolver and its routing once at startup. Every resource type your API can include must be mapped:
 
 ```java
-DomainSettingsResolver routing = DefaultDomainSettingsResolver.from(
-    Map.of("users",      "http://users-service/jsonapi",
-           "countries",  "http://geo-service/jsonapi",
-           "currencies", "http://geo-service/jsonapi"),
-    Map.of("users", 50),                      // per-type filter[id] batch size overrides
-    DomainSettings.DEFAULT_MAX_BATCH_SIZE
-);
+URI geoService = URI.create("http://geo-service/jsonapi");
+DomainSettingsResolver routing = new DefaultDomainSettingsResolver(Map.of(
+    // url, filter[id] batch size, whether it gets the client's credentials
+    "users",      new DomainSettings(URI.create("http://users-service/jsonapi"), 50, true),
+    "countries",  new DomainSettings(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true),
+    "currencies", new DomainSettings(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true)
+));
 
 CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
     true,                                     // enabled
@@ -108,6 +108,7 @@ CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
     100,                                      // maxIncludedResources
     ErrorStrategy.IGNORE,
     List.of(Propagation.FIELDS, Propagation.HEADERS),
+    Set.of("Authorization", "Cookie"),        // credentialHeaders: sent only to trusted domains
     Deduplication.DATA_AND_INCLUDED,
     5000,                                     // httpConnectTimeoutMs
     10000,                                    // httpTotalTimeoutMs
@@ -130,7 +131,7 @@ CompoundDocsRequest request = new CompoundDocsRequest(
     "GET",
     List.of("relatives", "placeOfBirth.currencies"), // the split `include` parameter
     Map.of("users", List.of("fullName")),            // fields[type], or Map.of()
-    headers,                                         // incoming headers, propagated per `propagation`
+    headers,                                         // incoming headers with all their values, propagated per `propagation`
     "/users/1",                                      // request path, e.g. /users/1/relationships/relatives
     Map.of()                                         // custom query params
 );

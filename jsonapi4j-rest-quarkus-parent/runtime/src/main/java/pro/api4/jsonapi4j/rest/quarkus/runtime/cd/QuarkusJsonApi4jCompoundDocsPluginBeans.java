@@ -41,11 +41,7 @@ public class QuarkusJsonApi4jCompoundDocsPluginBeans {
                 JsonApiCompoundDocsPlugin.class.getSimpleName(),
                 DomainSettingsResolver.class.getSimpleName()
         );
-        return DefaultDomainSettingsResolver.from(
-                cdProperties.toCdProperties().typeMappings(),
-                cdProperties.batchSizeMapping(),
-                cdProperties.defaultMaxBatchSize()
-        );
+        return new DefaultDomainSettingsResolver(cdProperties.toCdProperties().domainSettings());
     }
 
     @Produces

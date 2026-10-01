@@ -45,14 +45,32 @@ jsonapi4j:
 | `jsonapi4j.cd.unsupportedIncludes`    | `FAIL`                               | What a request with an unsupported include path gets — one deeper than `maxHops`, or naming a relationship its resource type doesn't have, see [Unsupported include paths](#unsupported-include-paths). `FAIL`: `400 Bad Request` naming the path, as the JSON:API spec requires. `IGNORE`: the path is resolved only as far as supported and listed in `meta.includedIncomplete` as `UNSUPPORTED_INCLUDE`. |
 | `jsonapi4j.cd.maxIncludedResources`   | `100`                                | When `included` reaches this many resources, resolution fetches nothing further, and the include paths left unresolved are listed in `meta.includedIncomplete` as `MAX_INCLUDED_RESOURCES`. Checked between hops, so the last hop can take `included` past it. |
 | `jsonapi4j.cd.errorStrategy`          | `IGNORE`                             | What a failed include does — see [Error handling](#error-handling). `IGNORE`: the failed resources are left out of `included`, listed in `meta.includedIncomplete`, and the response is marked `no-store`. `FAIL`: the request is answered with a JSON:API error document instead. |
-| `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | List of request parts that must be propagated during Compound Docs resolution loop. Available options: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS`. `Forwarded`, `X-Forwarded-For` and `X-Real-IP` are never propagated. |
+| `jsonapi4j.cd.propagation`            | `FIELDS,CUSTOM_QUERY_PARAMS,HEADERS` | Request parts propagated to the include calls: `FIELDS`, `CUSTOM_QUERY_PARAMS`, `HEADERS` — see [Header propagation](#header-propagation) for which headers go where. |
+| `jsonapi4j.cd.credentialHeaders`      | `Authorization,Cookie,Proxy-Authorization,X-Authenticated-User-Id,X-Authenticated-User-Granted-Scopes,X-Authenticated-Client-Entitlements` | Headers carrying the client's identity, sent only to same-app types and to mappings with `propagateCredentials: true`. Add your own, e.g. `X-Api-Key`, or the header names of a custom `PrincipalResolver`. |
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
 | `jsonapi4j.cd.httpTotalTimeoutMs`     | `10000`                              | Controls total request timeout (in millisecond). Applied to each generated HTTP request.                                                                                          |
-| `jsonapi4j.cd.mapping.<resourceType>` | empty map                            | Base URL for a resource type **served by a different service**. Same-app types (including the built-in meta types) need no entry — see [Resolving base URLs](#resolving-base-urls). |
-| `jsonapi4j.cd.mapping.default`       | not set                              | Base URL for every same-app type without an entry of its own, used instead of loopback — see [Limitations](#limitations). `default` is therefore a reserved key: a resource type named `default` fails startup. |
-| `jsonapi4j.cd.batchSizeMapping.<resourceType>` | empty map                   | Per-resource override for the max `filter[id]=...` batch size. Use when a downstream service enforces a stricter cap than the global default.                                     |
+| `jsonapi4j.cd.mapping.<resourceType>.url` | not set                     | Base URL of the service serving the resource type. Set it **only** for a type served by a different service; same-app types (including the built-in meta types) need none — see [Resolving base URLs](#resolving-base-urls). |
+| `jsonapi4j.cd.mapping.<resourceType>.maxBatchSize` | `defaultMaxBatchSize` | Max `filter[id]=...` batch size for the type, e.g. when its service enforces a stricter cap. Also applies to a same-app type, with no `url`. |
+| `jsonapi4j.cd.mapping.<resourceType>.propagateCredentials` | `false` | Whether the client's credentials (`credentialHeaders`) are sent to the service at `url` — see [Header propagation](#header-propagation). Same-app types always get them, so it's rejected without a `url`. |
+| `jsonapi4j.cd.mapping.default.url` | not set                             | Base URL of this app for every same-app type, used instead of loopback — see [Limitations](#limitations). `default` is a reserved key that takes only `url`: a resource type named `default` fails startup. |
 | `jsonapi4j.cd.defaultMaxBatchSize`    | `20`                                 | Fallback max number of resource IDs per downstream `filter[id]=...` request. Larger ID sets are split into parallel chunks of this size.                                          |
+
+Each resource type has one `mapping` entry holding all its settings:
+
+```yaml
+jsonapi4j:
+  cd:
+    mapping:
+      orders:                                    # served by another service
+        url: https://orders.internal/jsonapi
+        maxBatchSize: 50
+        propagateCredentials: true               # the orders service gets the client's Authorization and cookies
+      rates:
+        url: https://partner.example.com/jsonapi # no credentials for a partner API
+      users:
+        maxBatchSize: 100                        # served by this app: only the batch size is set
+```
 
 **Cache properties**
 
@@ -66,9 +84,10 @@ jsonapi4j:
 To assemble the `included` array, the resolver fetches each included resource type over HTTP, so it needs a base URL
 per type. That base URL is resolved as follows:
 
-1. **An explicit `jsonapi4j.cd.mapping.<type>` entry wins.** Use this **only** for resource types served by a
-   *different* service (a distributed / microservice setup), e.g. `jsonapi4j.cd.mapping.orders=https://orders.internal/jsonapi`.
-2. **Otherwise the type is treated as same-app.** If `jsonapi4j.cd.mapping.default` is set, it is fetched from there.
+1. **A `jsonapi4j.cd.mapping.<type>.url` wins.** Set it **only** for resource types served by a *different* service
+   (a distributed / microservice setup), e.g. `jsonapi4j.cd.mapping.orders.url=https://orders.internal/jsonapi`.
+2. **Otherwise the type is treated as same-app.** If `jsonapi4j.cd.mapping.default.url` is set, it is fetched from
+   there.
 3. **If not, the app calls itself on loopback** — `127.0.0.1`, or `[::1]` when
    the request arrived over IPv6, at the local port the request arrived on, `https` when that connection is TLS, plus
    the servlet context path and the configured `jsonapi4j.rootPath`. For example `http://127.0.0.1:8080/jsonapi`.
@@ -190,30 +209,31 @@ Same-app includes are ordinary HTTP calls from the app to itself over loopback, 
 - the server is bound to one specific non-loopback address (e.g. `server.address=10.0.0.5`);
 - the connector requires the PROXY protocol, client certificates (mTLS), or listens on a Unix domain socket.
 
-Point same-app types at an address that works instead with `jsonapi4j.cd.mapping.default`, e.g. a name the
+Point same-app types at an address that works instead with `jsonapi4j.cd.mapping.default.url`, e.g. a name the
 certificate covers or a plain-HTTP internal port. It is meant for exactly this deployment-specific override, so set it
 where the deployment is configured — in Spring Boot and Quarkus through an environment variable:
 
 ```bash
-JSONAPI4J_CD_MAPPING_DEFAULT=https://api.internal:8443/jsonapi
+JSONAPI4J_CD_MAPPING_DEFAULT_URL=https://api.internal:8443/jsonapi
 ```
 
 A plain servlet deployment reads its settings from the config file only, so point `JSONAPI4J_CONFIG` at a
-per-environment file that sets `mapping.default`.
+per-environment file that sets `mapping.default.url`.
 
 `default` is a reserved key: with the plugin enabled, a resource type named `default` fails startup with a message
 naming the clashing resource — whether or not the key is set, so the clash surfaces in development rather than in the
 first deployment that sets it.
 
-For finer control, map types individually with `jsonapi4j.cd.mapping.<type>`, or replace the routing entirely with a
-custom `DomainSettingsResolver` bean. Whatever it returns `Optional.empty()` for falls back to `mapping.default`, or to
+For finer control, map types individually with `jsonapi4j.cd.mapping.<type>.url`, or replace the routing entirely with
+a custom `DomainSettingsResolver` bean. Whatever it returns `Optional.empty()` for falls back to `mapping.default.url`, or to
 loopback when that isn't set:
 
 ```java
 @Bean
 public DomainSettingsResolver domainSettingsResolver() {
     URI internal = URI.create("http://api.internal:8081/jsonapi");
-    return resourceType -> Optional.of(DomainSettings.of(internal));
+    // this app's own internal address, so it may get the client's credentials
+    return resourceType -> Optional.of(new DomainSettings(internal, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true));
 }
 ```
 
@@ -234,8 +254,39 @@ public DomainSettingsResolver domainSettingsResolver() {
 - Any rule that grants trust by source address to loopback (e.g. `hasIpAddress("127.0.0.1")` or `::1`) also matches include
   calls, which carry the original caller's credentials. Don't grant extra privileges to loopback on JSON:API paths.
 
-> The sample apps keep same-app `mapping` entries (e.g. `users`, `countries`) purely as an illustrative example; they
-> are equivalent to the automatic default and can be removed.
+> The sample apps keep `mapping` entries for their same-app types (`users`, `countries`, `currencies`) only to set a
+> batch size; they have no `url`, so those types are still fetched from the app itself.
+
+### Header propagation
+
+With `HEADERS` in `jsonapi4j.cd.propagation` (default), the client's headers are sent along with every include call,
+with every value a repeated header has. A few never are, whatever the configuration:
+
+- headers that would change the response away from a complete JSON:API document the resolver can read —
+  `Accept-Encoding` (the response would come back compressed), the conditional `If-None-Match`, `If-Modified-Since`,
+  `If-Match`, `If-Unmodified-Since`, `If-Range` and `Range` (a `304` or a `206`), and `Accept` and `Content-Type`.
+  Each include call asks for `application/vnd.api+json` itself;
+- hop-by-hop headers, which describe the client's own connection: `Keep-Alive`, `Proxy-Connection`, `TE`, `Trailer`,
+  `Transfer-Encoding`;
+- `Forwarded`, `X-Forwarded-For` and `X-Real-IP` — see [Limitations](#limitations).
+
+**Credentials go only where they are trusted.** The headers in `jsonapi4j.cd.credentialHeaders` — `Authorization`,
+cookies and the principal headers by default — reach a resource type served by this app itself, which is the same
+trust boundary, and a type mapped to another service only with `propagateCredentials: true`. Any other service is
+called without the client's identity, so a mapping to a partner or third-party API doesn't leak it:
+
+```yaml
+jsonapi4j:
+  cd:
+    mapping:
+      users:
+        url: http://users-service/jsonapi
+        propagateCredentials: true            # users-service gets Authorization and cookies
+      rates:
+        url: https://partner.example.com/jsonapi   # the partner API doesn't
+```
+
+Cookies are sent as one `Cookie` header, as HTTP/1.1 requires, even when an HTTP/2 client split them across several.
 
 ### Further Reading
 

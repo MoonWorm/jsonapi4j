@@ -587,7 +587,7 @@ public class CompoundDocsResolverTests {
                                           Deduplication deduplication,
                                           ErrorStrategy errorStrategy) {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
-                true, maxHops, unsupportedIncludes, maxIncludedResources, errorStrategy, List.of(), deduplication,
+                true, maxHops, unsupportedIncludes, maxIncludedResources, errorStrategy, List.of(), Set.of(), deduplication,
                 1000, 1000, false, 1
         );
         return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);

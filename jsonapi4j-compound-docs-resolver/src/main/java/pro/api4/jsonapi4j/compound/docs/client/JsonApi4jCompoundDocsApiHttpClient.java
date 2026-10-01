@@ -12,6 +12,7 @@ import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
+import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 
 import java.io.IOException;
@@ -26,21 +27,54 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.http.HttpHeaders.ACCEPT;
 import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 @Slf4j
 public class JsonApi4jCompoundDocsApiHttpClient {
 
+    /**
+     * Headers the JDK client refuses, as it sets them itself.
+     */
     private static final Set<String> DISALLOWED_HEADERS = Set.of(
             "connection",
             "content-length",
             "expect",
             "host",
             "upgrade"
+    );
+
+    /**
+     * Hop-by-hop headers describe the client's connection to this server, not the next one.
+     */
+    private static final Set<String> HOP_BY_HOP_HEADERS = Set.of(
+            "keep-alive",
+            "proxy-connection",
+            "te",
+            "trailer",
+            "transfer-encoding"
+    );
+
+    /**
+     * Headers that would change the response away from a complete, plain JSON:API document: a compressed body the JDK
+     * client does not decompress, a {@code 304} or a {@code 206}, or another media type. The resolver asks for what it
+     * needs itself, and so it does with {@code X-Disable-Compound-Docs}.
+     */
+    private static final Set<String> RESPONSE_SHAPING_HEADERS = Set.of(
+            "accept",
+            "accept-encoding",
+            "content-type",
+            "if-match",
+            "if-modified-since",
+            "if-none-match",
+            "if-range",
+            "if-unmodified-since",
+            "range",
+            X_DISABLE_COMPOUND_DOCS.getName().toLowerCase(Locale.ROOT)
     );
 
     /**
@@ -54,9 +88,12 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             "x-real-ip"
     );
 
+    private static final String COOKIE_HEADER = "Cookie";
+
     private final ObjectMapper objectMapper;
     private final JsonApiResponseParser responseParser;
     private final CompoundDocsResolverConfig config;
+    private final Set<String> credentialHeaders;
     private final HttpClient client;
 
     /**
@@ -70,6 +107,10 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         this.objectMapper = objectMapper;
         this.responseParser = new JsonApiResponseParser(objectMapper);
         this.config = config;
+        this.credentialHeaders = config.getCredentialHeaders()
+                .stream()
+                .map(header -> header.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toUnmodifiableSet());
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
                 .build();
@@ -107,16 +148,14 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
             requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
             if (config.getPropagation().contains(Propagation.HEADERS)) {
-                Map<String, String> headers = originalRequest.getHeaders();
-                if (headers != null) {
-                    headers.forEach((header, value) -> {
-                        if (isPropagatable(header)) {
-                            requestBuilder.header(header, value);
-                        }
-                    });
-                }
+                originalRequest.getHeaders().forEach((header, values) -> {
+                    if (isPropagatable(header) && (batch.domainSettings().propagateCredentials() || !isCredential(header))) {
+                        propagate(requestBuilder, header, values);
+                    }
+                });
             }
 
+            requestBuilder.header(ACCEPT.getName(), JsonApiMediaType.MEDIA_TYPE);
             requestBuilder.header(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true));
 
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
@@ -158,9 +197,31 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         }
     }
 
+    /**
+     * @return whether {@code header} may be propagated at all - to a domain trusted with credentials, that is
+     */
     static boolean isPropagatable(String header) {
         String name = header.toLowerCase(Locale.ROOT);
-        return !DISALLOWED_HEADERS.contains(name) && !CLIENT_ADDRESS_HEADERS.contains(name);
+        return !DISALLOWED_HEADERS.contains(name)
+                && !HOP_BY_HOP_HEADERS.contains(name)
+                && !RESPONSE_SHAPING_HEADERS.contains(name)
+                && !CLIENT_ADDRESS_HEADERS.contains(name);
+    }
+
+    private boolean isCredential(String header) {
+        return credentialHeaders.contains(header.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Sends every value of {@code header}. Cookies are joined into one {@code Cookie} header, as HTTP/1.1 allows only
+     * one - an HTTP/2 client may have split them into several.
+     */
+    private static void propagate(HttpRequest.Builder requestBuilder, String header, List<String> values) {
+        if (COOKIE_HEADER.equalsIgnoreCase(header)) {
+            requestBuilder.header(header, String.join("; ", values));
+        } else {
+            values.forEach(value -> requestBuilder.header(header, value));
+        }
     }
 
     private List<ParsedResource> parseResponse(HttpResponse<String> response) {

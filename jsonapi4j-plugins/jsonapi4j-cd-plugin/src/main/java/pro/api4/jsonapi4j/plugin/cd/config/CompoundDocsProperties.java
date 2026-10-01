@@ -10,6 +10,7 @@ import pro.api4.jsonapi4j.config.PluginProperties;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult;
 import pro.api4.jsonapi4j.config.PropertiesValidationResult.PropertiesValidationResultBuilder;
 
+import java.net.URI;
 import java.util.*;
 
 public interface CompoundDocsProperties extends PluginProperties {
@@ -22,15 +23,15 @@ public interface CompoundDocsProperties extends PluginProperties {
     String ERROR_STRATEGY_PROPERTY = "errorStrategy";
     String MAPPING_PROPERTY = "mapping";
     /**
-     * Reserved {@code mapping} key: the base URL for every resource type without an entry of its own, used instead of
-     * calling this app over loopback. A resource type can therefore not be named {@code default}.
+     * Reserved {@code mapping} key: its {@code url} is the base URL for every resource type served by this app itself,
+     * used instead of calling the app over loopback. A resource type can therefore not be named {@code default}.
      */
     String DEFAULT_MAPPING_KEY = "default";
-    String BATCH_SIZE_MAPPING_PROPERTY = "batchSizeMapping";
     String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
     String PROPAGATION_PROPERTY = "propagation";
     String DEDUPLICATION_PROPERTY = "deduplication";
     String UNSUPPORTED_INCLUDES_PROPERTY = "unsupportedIncludes";
+    String CREDENTIAL_HEADERS_PROPERTY = "credentialHeaders";
     String HTTP_CONNECT_TIMEOUT_MS_PROPERTY = "httpConnectTimeoutMs";
     String HTTP_TOTAL_TIMEOUT_MS_PROPERTY = "httpTotalTimeoutMs";
     String CACHE_PROPERTY = "cache";
@@ -47,6 +48,12 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_PROPAGATION = "FIELDS,CUSTOM_QUERY_PARAMS,HEADERS";
     String DEFAULT_DEDUPLICATION = "DATA_AND_INCLUDED";
     String DEFAULT_UNSUPPORTED_INCLUDES = "FAIL";
+    /**
+     * The headers carrying the client's identity: HTTP authentication, cookies, and those the framework's
+     * {@code DefaultPrincipalResolver} reads by default.
+     */
+    String DEFAULT_CREDENTIAL_HEADERS = "Authorization,Cookie,Proxy-Authorization,X-Authenticated-User-Id,"
+            + "X-Authenticated-User-Granted-Scopes,X-Authenticated-Client-Entitlements";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
     /**
@@ -72,31 +79,51 @@ public interface CompoundDocsProperties extends PluginProperties {
         return ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
     }
 
-    default Map<String, String> mapping() {
+    /**
+     * @return the settings of each resource type, by resource type - see {@link Mapping}
+     */
+    default Map<String, ? extends Mapping> mapping() {
         return Collections.emptyMap();
     }
 
     /**
-     * @return {@code mapping.default}, the base URL for resource types without an entry of their own, if set
+     * @return {@code mapping.default.url}, the base URL of this app for resource types it serves itself, if set
      */
     default Optional<String> defaultMapping() {
-        return mapping() == null ? Optional.empty() : Optional.ofNullable(mapping().get(DEFAULT_MAPPING_KEY));
+        return Optional.ofNullable(mapping())
+                .map(mapping -> mapping.get(DEFAULT_MAPPING_KEY))
+                .map(Mapping::url);
     }
 
     /**
-     * @return the per-resource-type entries of {@code mapping}, without the reserved {@code default} key
+     * @return the settings of each resource type mapped to a {@code url} - one served by another service - by
+     * resource type
      */
-    default Map<String, String> typeMappings() {
+    default Map<String, DomainSettings> domainSettings() {
         if (mapping() == null) {
             return Collections.emptyMap();
         }
-        Map<String, String> typeMappings = new HashMap<>(mapping());
-        typeMappings.remove(DEFAULT_MAPPING_KEY);
-        return Collections.unmodifiableMap(typeMappings);
+        Map<String, DomainSettings> domainSettings = new HashMap<>();
+        mapping().forEach((resourceType, mapping) -> {
+            if (!DEFAULT_MAPPING_KEY.equals(resourceType) && mapping != null && mapping.url() != null) {
+                domainSettings.put(resourceType, new DomainSettings(
+                        URI.create(mapping.url()),
+                        maxBatchSize(resourceType),
+                        mapping.propagateCredentials()
+                ));
+            }
+        });
+        return Collections.unmodifiableMap(domainSettings);
     }
 
-    default Map<String, Integer> batchSizeMapping() {
-        return Collections.emptyMap();
+    /**
+     * @return the {@code maxBatchSize} of the mapping of {@code resourceType}, or {@link #defaultMaxBatchSize()}
+     */
+    default int maxBatchSize(String resourceType) {
+        return Optional.ofNullable(mapping())
+                .map(mapping -> mapping.get(resourceType))
+                .map(Mapping::maxBatchSize)
+                .orElse(defaultMaxBatchSize());
     }
 
     default int defaultMaxBatchSize() {
@@ -108,8 +135,8 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     default List<Propagation> parsePropagationString(String propagationString) {
-        return Arrays.stream(propagationString.split(","))
-                .map(String::trim)
+        return parseCommaSeparated(propagationString)
+                .stream()
                 .map(Propagation::valueOf)
                 .toList();
     }
@@ -120,6 +147,21 @@ public interface CompoundDocsProperties extends PluginProperties {
 
     default UnsupportedIncludeStrategy unsupportedIncludes() {
         return UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
+    }
+
+    /**
+     * @return the headers carrying the client's identity, sent only where {@link Mapping#propagateCredentials()}
+     * allows - and always to resource types served by this app itself
+     */
+    default List<String> credentialHeaders() {
+        return parseCommaSeparated(DEFAULT_CREDENTIAL_HEADERS);
+    }
+
+    static List<String> parseCommaSeparated(String value) {
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(StringUtils::isNotBlank)
+                .toList();
     }
 
     default long httpConnectTimeoutMs() {
@@ -144,44 +186,74 @@ public interface CompoundDocsProperties extends PluginProperties {
                 .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
                 .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation())
                 .requireNotNull(propertyPath(DEDUPLICATION_PROPERTY), deduplication())
-                .requireNotNull(propertyPath(UNSUPPORTED_INCLUDES_PROPERTY), unsupportedIncludes());
+                .requireNotNull(propertyPath(UNSUPPORTED_INCLUDES_PROPERTY), unsupportedIncludes())
+                .requireNotNull(propertyPath(CREDENTIAL_HEADERS_PROPERTY), credentialHeaders());
         validateMapping(builder);
-        validateBatchSizeMapping(builder);
         validateCache(builder);
         validateTimeoutsBudget(builder);
         return builder.build();
     }
 
     /**
-     * Every mapped resource type is fetched over HTTP from another service, so its base URL has to be absolute -
-     * a relative one has nothing to resolve against once the include leaves this app.
+     * A resource type mapped to a {@code url} is fetched over HTTP from another service, so the URL has to be absolute -
+     * a relative one has nothing to resolve against once the include leaves this app. A type without one is served by
+     * this app itself and always gets the client's credentials, so {@code propagateCredentials} is meaningless there.
      */
     private void validateMapping(PropertiesValidationResultBuilder builder) {
         if (mapping() == null) {
             builder.requireNotNull(propertyPath(MAPPING_PROPERTY), null);
             return;
         }
-        mapping().forEach((resourceType, baseUrl) -> {
+        mapping().forEach((resourceType, mapping) -> {
             if (StringUtils.isBlank(resourceType)) {
                 builder.addPropertyError(propertyPath(MAPPING_PROPERTY), "resource type must not be blank");
                 return;
             }
-            builder.requireHttpUrl(propertyPath(MAPPING_PROPERTY, resourceType), baseUrl);
+            String mappingPath = propertyPath(MAPPING_PROPERTY, resourceType);
+            if (mapping == null || mapping.url() == null && mapping.maxBatchSize() == null) {
+                builder.addPropertyError(mappingPath, String.format(
+                        "must set '%s' or '%s'", Mapping.URL_PROPERTY, Mapping.MAX_BATCH_SIZE_PROPERTY
+                ));
+                return;
+            }
+            if (DEFAULT_MAPPING_KEY.equals(resourceType)) {
+                validateDefaultMapping(builder, mapping);
+                return;
+            }
+            if (mapping.url() != null) {
+                builder.requireHttpUrl(propertyPath(MAPPING_PROPERTY, resourceType, Mapping.URL_PROPERTY), mapping.url());
+            }
+            if (mapping.maxBatchSize() != null) {
+                builder.requirePositive(
+                        propertyPath(MAPPING_PROPERTY, resourceType, Mapping.MAX_BATCH_SIZE_PROPERTY),
+                        mapping.maxBatchSize()
+                );
+            }
+            if (mapping.url() == null && mapping.propagateCredentials()) {
+                builder.addPropertyError(
+                        propertyPath(MAPPING_PROPERTY, resourceType, Mapping.PROPAGATE_CREDENTIALS_PROPERTY),
+                        String.format("applies only to a resource type mapped to a '%s' - one served by this app itself "
+                                + "always gets the client's credentials", Mapping.URL_PROPERTY)
+                );
+            }
         });
     }
 
-    private void validateBatchSizeMapping(PropertiesValidationResultBuilder builder) {
-        if (batchSizeMapping() == null) {
-            builder.requireNotNull(propertyPath(BATCH_SIZE_MAPPING_PROPERTY), null);
-            return;
+    /**
+     * The reserved {@code default} entry only says where this app is reached: batch sizes of its resource types come
+     * from their own entries or {@code defaultMaxBatchSize}, and they always get the client's credentials.
+     */
+    private void validateDefaultMapping(PropertiesValidationResultBuilder builder, Mapping mapping) {
+        builder.requireHttpUrl(
+                propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY),
+                mapping.url()
+        );
+        if (mapping.maxBatchSize() != null || mapping.propagateCredentials()) {
+            builder.addPropertyError(
+                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY),
+                    String.format("the reserved '%s' entry takes only '%s'", DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY)
+            );
         }
-        batchSizeMapping().forEach((resourceType, batchSize) -> {
-            if (StringUtils.isBlank(resourceType)) {
-                builder.addPropertyError(propertyPath(BATCH_SIZE_MAPPING_PROPERTY), "resource type must not be blank");
-                return;
-            }
-            builder.requirePositive(propertyPath(BATCH_SIZE_MAPPING_PROPERTY, resourceType), batchSize);
-        });
     }
 
     /**
@@ -221,6 +293,37 @@ public interface CompoundDocsProperties extends PluginProperties {
      */
     default int cacheMaxSize() {
         return cache() == null ? Integer.parseInt(Cache.DEFAULT_CACHE_MAX_SIZE) : cache().maxSize();
+    }
+
+    /**
+     * The settings of one resource type under {@code mapping}. With a {@code url} the type is served by another service
+     * and fetched from there; without one it is served by this app itself, and only its batch size is set.
+     */
+    interface Mapping {
+
+        String URL_PROPERTY = "url";
+        String MAX_BATCH_SIZE_PROPERTY = "maxBatchSize";
+        String PROPAGATE_CREDENTIALS_PROPERTY = "propagateCredentials";
+
+        String DEFAULT_PROPAGATE_CREDENTIALS = "false";
+
+        /**
+         * @return the base URL of the service serving the resource type, or {@code null} when this app serves it
+         */
+        String url();
+
+        /**
+         * @return the maximum number of resource IDs per {@code filter[id]=...} fetch, or {@code null} for
+         * {@code defaultMaxBatchSize}
+         */
+        Integer maxBatchSize();
+
+        /**
+         * @return whether the client's credentials - see {@code credentialHeaders} - are sent to the service at
+         * {@link #url()}. Off by default, so a service doesn't get the client's identity unless trusted with it
+         */
+        boolean propagateCredentials();
+
     }
 
     interface Cache {

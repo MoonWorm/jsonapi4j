@@ -71,7 +71,7 @@ public class UserResource implements Resource<UserDbEntity> {
 4. **Security**: add your web framework's URL-prefix rule if the resource is public; layer the AC plugin
    for field-level/ownership gating.
 5. **Compound docs**: if the type is includable, support `filter[id]` on its `readPage` (+ a
-   `jsonapi4j.cd.batchSizeMapping.<type>` entry). A `cd.mapping` entry is only for types another
+   `jsonapi4j.cd.mapping.<type>.maxBatchSize`). A `cd.mapping.<type>.url` is only for types another
    service serves — same-app types resolve against loopback at the local port.
 6. **OpenAPI** (if the OAS plugin is on): `@OasResourceInfo(attributes = XAttributes.class)` on the
    `Resource` — without it the published schema is empty. Declare `sortableFields` / `filters` on the

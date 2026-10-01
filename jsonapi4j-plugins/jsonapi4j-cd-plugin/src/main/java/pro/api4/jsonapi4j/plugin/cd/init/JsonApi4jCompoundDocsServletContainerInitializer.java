@@ -79,10 +79,8 @@ public class JsonApi4jCompoundDocsServletContainerInitializer implements Servlet
                     DomainSettingsResolver.class.getSimpleName(),
                     DefaultDomainSettingsResolver.class.getSimpleName()
             );
-            DomainSettingsResolver domainSettingsResolver = DefaultDomainSettingsResolver.from(
-                    cdProperties.typeMappings(),
-                    cdProperties.batchSizeMapping(),
-                    cdProperties.defaultMaxBatchSize()
+            DomainSettingsResolver domainSettingsResolver = new DefaultDomainSettingsResolver(
+                    cdProperties.domainSettings()
             );
             servletContext.setAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME, domainSettingsResolver);
         }

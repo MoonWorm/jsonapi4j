@@ -6,7 +6,7 @@ In rough order of impact:
    compound-doc optimization*. The CD resolver batches included fetches into one
    `GET /type?filter[id]=a,b,c`; without it, it falls back to N sequential read-by-id calls (20
    resources = 20 HTTP requests). Cap the batch with `cd.defaultMaxBatchSize` / per-type
-   `cd.batchSizeMapping` (e.g. 20) so you never exceed a downstream's limit.
+   `cd.mapping.<type>.maxBatchSize` (e.g. 20) so you never exceed a downstream's limit.
 2. **Resolve linkage in-house** via `readOneForResource` / `readManyForResource` (off the parent DTO's
    FK) and **batch ops** (`readBatches`) — eliminate downstream calls entirely when the linkage is
    already in the parent (see `relationships.md`).

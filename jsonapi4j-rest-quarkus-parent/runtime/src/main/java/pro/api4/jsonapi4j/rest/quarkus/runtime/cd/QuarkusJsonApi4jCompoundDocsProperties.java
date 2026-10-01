@@ -15,6 +15,7 @@ import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.smallrye.config.ConfigMapping.NamingStrategy.VERBATIM;
 import static pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties.*;
@@ -51,21 +52,15 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     ErrorStrategy errorStrategy();
 
     /**
-     * Per-resource mapping for downstream URLs. The reserved {@code default} key sets the base URL for every same-app
-     * type without an entry of its own, used instead of loopback.
+     * Settings per resource type: 'url' of the service serving it (none when this app serves it), 'maxBatchSize' and
+     * 'propagateCredentials'. The reserved 'default' entry's 'url' is where this app is reached for the resource types
+     * it serves, used instead of loopback.
      */
-    Map<String, String> mapping();
-
-    /**
-     * Per-resource override for the maximum number of resource IDs that can be requested in a single
-     * downstream {@code filter[id]=...} batch. Resource types not listed here use
-     * {@link #defaultMaxBatchSize()}.
-     */
-    Map<String, Integer> batchSizeMapping();
+    Map<String, Mapping> mapping();
 
     /**
      * Fallback maximum number of resource IDs per downstream {@code filter[id]=...} batch when no
-     * per-resource override is configured in {@link #batchSizeMapping()}. The Compound Documents
+     * per-resource override is configured under {@link #mapping()}. The Compound Documents
      * Resolver splits larger ID sets into parallel chunks of this size.
      */
     @WithDefault(DEFAULT_MAX_BATCH_SIZE)
@@ -90,6 +85,13 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
      */
     @WithDefault(DEFAULT_UNSUPPORTED_INCLUDES)
     UnsupportedIncludeStrategy unsupportedIncludes();
+
+    /**
+     * Headers carrying the client's identity, sent only to a mapping with 'propagateCredentials' - and always to
+     * resource types served by this app itself.
+     */
+    @WithDefault(DEFAULT_CREDENTIAL_HEADERS)
+    List<String> credentialHeaders();
 
     /**
      * Controls how long to wait when establishing TCP connection (in millisecond).
@@ -143,18 +145,45 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         int maxSize();
     }
 
+    interface Mapping {
+
+        /**
+         * Base URL of the service serving the resource type - none when this app serves it.
+         */
+        Optional<String> url();
+
+        /**
+         * Maximum number of resource IDs per downstream {@code filter[id]=...} batch, overriding
+         * 'defaultMaxBatchSize'.
+         */
+        Optional<Integer> maxBatchSize();
+
+        /**
+         * Whether the client's credentials are sent to the service at 'url'.
+         */
+        @WithDefault(CompoundDocsProperties.Mapping.DEFAULT_PROPAGATE_CREDENTIALS)
+        boolean propagateCredentials();
+    }
+
     default CompoundDocsProperties toCdProperties() {
         DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
         cdProperties.setEnabled(enabled());
         cdProperties.setMaxHops(maxHops());
         cdProperties.setMaxIncludedResources(maxIncludedResources());
         cdProperties.setErrorStrategy(errorStrategy());
-        cdProperties.setMapping(mapping());
-        cdProperties.setBatchSizeMapping(batchSizeMapping());
+        cdProperties.setMapping(mapping().entrySet().stream().collect(Collectors.toMap(
+                Map.Entry::getKey,
+                e -> new DefaultCompoundDocsProperties.DefaultMapping(
+                        e.getValue().url().orElse(null),
+                        e.getValue().maxBatchSize().orElse(null),
+                        e.getValue().propagateCredentials()
+                )
+        )));
         cdProperties.setDefaultMaxBatchSize(defaultMaxBatchSize());
         cdProperties.setPropagation(propagation());
         cdProperties.setDeduplication(deduplication());
         cdProperties.setUnsupportedIncludes(unsupportedIncludes());
+        cdProperties.setCredentialHeaders(credentialHeaders());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
         cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
         cdProperties.setCache(cache().map(c -> {

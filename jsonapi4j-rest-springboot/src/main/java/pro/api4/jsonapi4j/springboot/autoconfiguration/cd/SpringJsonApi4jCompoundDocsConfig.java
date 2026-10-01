@@ -41,11 +41,7 @@ public class SpringJsonApi4jCompoundDocsConfig {
     @ConditionalOnMissingBean(DomainSettingsResolver.class)
     @Bean
     public DomainSettingsResolver jsonApi4jCdDomainSettingsResolver(CompoundDocsProperties cdProperties) {
-        return DefaultDomainSettingsResolver.from(
-                cdProperties.typeMappings(),
-                cdProperties.batchSizeMapping(),
-                cdProperties.defaultMaxBatchSize()
-        );
+        return new DefaultDomainSettingsResolver(cdProperties.domainSettings());
     }
 
     @Bean

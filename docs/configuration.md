@@ -79,8 +79,8 @@ JsonApi4j is configured differently depending on your web framework. All three i
 <span class="py">jsonapi4j.cd.enabled</span>=<span class="s">true</span>
 <span class="py">jsonapi4j.cd.maxHops</span>=<span class="s">3</span>
 <span class="py">jsonapi4j.cd.maxIncludedResources</span>=<span class="s">100</span>
-<span class="py">jsonapi4j.cd.mapping.users</span>=<span class="s">http://localhost:8080/jsonapi</span>
-<span class="py">jsonapi4j.cd.mapping.countries</span>=<span class="s">http://localhost:8080/jsonapi</span>
+<span class="py">jsonapi4j.cd.mapping.orders.url</span>=<span class="s">https://orders.internal/jsonapi</span>
+<span class="py">jsonapi4j.cd.mapping.orders.propagateCredentials</span>=<span class="s">true</span>
 
 <span class="py">jsonapi4j.oas.enabled</span>=<span class="s">true</span>
 <span class="py">jsonapi4j.oas.info.title</span>=<span class="s">My API</span>
@@ -195,7 +195,7 @@ Registered plugins are misconfigured. Fix the configuration and restart:
 JsonApiCompoundDocsPlugin ('jsonapi4j.cd'):
 Property errors:
   - 'jsonapi4j.cd.maxHops': must be greater than 0, but was 0
-  - 'jsonapi4j.cd.mapping.users': must be an absolute http(s) URL with a host, but was '/jsonapi'
+  - 'jsonapi4j.cd.mapping.users.url': must be an absolute http(s) URL with a host, but was '/jsonapi'
 Cross-properties errors:
   - 'jsonapi4j.cd.httpTotalTimeoutMs' (1000) must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs' (5000): the total budget of an include call has to cover connecting to the remote service
 ```

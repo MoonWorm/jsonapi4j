@@ -26,6 +26,9 @@ import java.util.Optional;
  * trusting them would let a caller point the server's include requests - and what ends up in the shared resource cache
  * - at any host it likes. Setups where the app is not reachable on loopback map their types explicitly via
  * {@code jsonapi4j.cd.mapping}.
+ *
+ * <p>Fetching from this app itself stays within the same trust boundary, so those fetches carry the client's
+ * credentials; a configured route carries them only when the configured resolver says so.
  */
 public class SelfFallbackRouting {
 
@@ -75,7 +78,7 @@ public class SelfFallbackRouting {
             if (configured == null) {
                 return null;
             }
-            return configured.or(() -> Optional.of(new DomainSettings(selfBaseUrl, maxBatchSize(resourceType))));
+            return configured.or(() -> Optional.of(new DomainSettings(selfBaseUrl, maxBatchSize(resourceType), true)));
         };
     }
 
@@ -90,7 +93,7 @@ public class SelfFallbackRouting {
     }
 
     private int maxBatchSize(String resourceType) {
-        return cdProperties.batchSizeMapping().getOrDefault(resourceType, cdProperties.defaultMaxBatchSize());
+        return cdProperties.maxBatchSize(resourceType);
     }
 
     private String localScheme(HttpServletRequest servletRequest) {

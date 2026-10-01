@@ -1,7 +1,6 @@
 package pro.api4.jsonapi4j.plugin.cd;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.commons.collections4.MapUtils;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
@@ -41,13 +40,13 @@ public class CompoundDocsRequestSupplier {
         return JsonApiRequestParsingUtil.parseOriginalIncludes(Arrays.asList(value));
     }
 
-    private Map<String, String> getOriginalRequestHeaders(HttpServletRequest httpRequest) {
-        Map<String, String> originalRequestHeaders = new HashMap<>();
+    private Map<String, List<String>> getOriginalRequestHeaders(HttpServletRequest httpRequest) {
+        Map<String, List<String>> originalRequestHeaders = new HashMap<>();
         for (Iterator<String> it = httpRequest.getHeaderNames().asIterator(); it.hasNext(); ) {
             String headerName = it.next();
-            originalRequestHeaders.put(headerName, httpRequest.getHeader(headerName));
+            originalRequestHeaders.put(headerName, Collections.list(httpRequest.getHeaders(headerName)));
         }
-        return MapUtils.unmodifiableMap(originalRequestHeaders);
+        return originalRequestHeaders;
     }
 
     private Map<String, List<String>> getParams(HttpServletRequest request) {

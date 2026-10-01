@@ -52,4 +52,10 @@ class DomainSettingsTests {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("maxBatchSize must be positive");
     }
+
+    @Test
+    void constructor_withoutCredentialsFlag_isNotTrustedWithCredentials() {
+        assertThat(new DomainSettings(URL, 10).propagateCredentials()).isFalse();
+        assertThat(DomainSettings.of(URL).propagateCredentials()).isFalse();
+    }
 }

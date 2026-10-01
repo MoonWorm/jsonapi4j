@@ -108,7 +108,7 @@ class IncludesCheckerTests {
 
     private static IncludesChecker checker(UnsupportedIncludeStrategy unsupportedIncludes) {
         return IncludesChecker.from(new CompoundDocsResolverConfig(
-                true, 1, unsupportedIncludes, 100, ErrorStrategy.FAIL, List.of(), Deduplication.DATA_AND_INCLUDED,
+                true, 1, unsupportedIncludes, 100, ErrorStrategy.FAIL, List.of(), Set.of(), Deduplication.DATA_AND_INCLUDED,
                 1000, 1000, false, 1
         ));
     }

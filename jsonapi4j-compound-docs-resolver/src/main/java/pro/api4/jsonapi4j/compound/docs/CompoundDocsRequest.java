@@ -1,10 +1,13 @@
 package pro.api4.jsonapi4j.compound.docs;
 
 import lombok.Data;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +29,10 @@ public final class CompoundDocsRequest {
     private final List<String> includes;
     private final List<String> rejectedIncludes;
     private final Map<String, List<String>> fieldSets;
-    private final Map<String, String> headers;
+    /**
+     * The client's headers with all their values, looked up ignoring case.
+     */
+    private final Map<String, List<String>> headers;
     private final Map<String, List<String>> customQueryParams;
     private final String relationshipNameFromRequestUri;
 
@@ -36,7 +42,7 @@ public final class CompoundDocsRequest {
     public CompoundDocsRequest(String method,
                                List<String> includes,
                                Map<String, List<String>> fieldSets,
-                               Map<String, String> headers,
+                               Map<String, List<String>> headers,
                                String relativePath,
                                Map<String, List<String>> customQueryParams) {
         this(method, includes, List.of(), fieldSets, headers, relativePath, customQueryParams);
@@ -50,7 +56,7 @@ public final class CompoundDocsRequest {
                                List<String> includes,
                                List<String> rejectedIncludes,
                                Map<String, List<String>> fieldSets,
-                               Map<String, String> headers,
+                               Map<String, List<String>> headers,
                                String relativePath,
                                Map<String, List<String>> customQueryParams) {
         Validate.notNull(rejectedIncludes, "rejectedIncludes must not be null");
@@ -62,19 +68,25 @@ public final class CompoundDocsRequest {
         this.includes = includes;
         this.rejectedIncludes = List.copyOf(rejectedIncludes);
         this.fieldSets = fieldSets;
-        this.headers = headers;
+        this.headers = caseInsensitive(headers);
         this.customQueryParams = customQueryParams;
         this.relationshipNameFromRequestUri = getRelationshipNameFromRequestUri(relativePath);
-        this.processable = calculateProcessable(method, headers, includes, rejectedIncludes);
+        this.processable = calculateProcessable(method, this.headers, includes, rejectedIncludes);
     }
 
     private boolean calculateProcessable(String method,
-                                         Map<String, String> headers,
+                                         Map<String, List<String>> headers,
                                          List<String> includes,
                                          List<String> rejectedIncludes) {
         return "GET".equals(method)
-                && !Boolean.parseBoolean(headers.get(X_DISABLE_COMPOUND_DOCS.getName()))
+                && headers.getOrDefault(X_DISABLE_COMPOUND_DOCS.getName(), List.of()).stream().noneMatch(Boolean::parseBoolean)
                 && (includes != null && !includes.isEmpty() || !rejectedIncludes.isEmpty());
+    }
+
+    private static Map<String, List<String>> caseInsensitive(Map<String, List<String>> headers) {
+        Map<String, List<String>> result = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.forEach((name, values) -> result.merge(name, List.copyOf(values), ListUtils::union));
+        return Collections.unmodifiableMap(result);
     }
 
     private String getRelationshipNameFromRequestUri(String relativePath) {

@@ -86,6 +86,7 @@ public class CompoundDocsFilter implements Filter {
                     cdProperties.maxIncludedResources(),
                     cdProperties.errorStrategy(),
                     cdProperties.propagation(),
+                    Set.copyOf(cdProperties.credentialHeaders()),
                     cdProperties.deduplication(),
                     cdProperties.httpConnectTimeoutMs(),
                     cdProperties.httpTotalTimeoutMs(),

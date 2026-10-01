@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -9,81 +10,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class DefaultDomainSettingsResolverTests {
 
-    private static final URI USERS_URL = URI.create("http://users.example.com");
-    private static final URI COUNTRIES_URL = URI.create("http://countries.example.com");
+    private static final DomainSettings USERS = new DomainSettings(URI.create("http://users.example.com"), 50, true);
+    private static final DomainSettings COUNTRIES = DomainSettings.of(URI.create("http://countries.example.com"));
 
-    @Test
-    void resolveDomainSettings_mappedType_returnsMappedUrl() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString(),
-                        "countries", COUNTRIES_URL.toString()),
-                Map.of(),
-                DomainSettings.DEFAULT_MAX_BATCH_SIZE
-        );
+    private final DefaultDomainSettingsResolver sut = new DefaultDomainSettingsResolver(Map.of(
+            "users", USERS,
+            "countries", COUNTRIES
+    ));
 
-        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::url).isEqualTo(USERS_URL);
-        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::url).isEqualTo(COUNTRIES_URL);
-    }
+    @Nested
+    class ResolveDomainSettings {
 
-    @Test
-    void resolveDomainSettings_unmappedType_returnsEmpty() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString()),
-                Map.of("state", 50),
-                DomainSettings.DEFAULT_MAX_BATCH_SIZE
-        );
+        @Test
+        void resolveDomainSettings_mappedType_returnsItsSettings() {
+            assertThat(sut.resolveDomainSettings("users")).contains(USERS);
+            assertThat(sut.resolveDomainSettings("countries")).contains(COUNTRIES);
+        }
 
-        assertThat(resolver.resolveDomainSettings("state")).isEmpty();
-    }
+        @Test
+        void resolveDomainSettings_unmappedType_returnsEmpty() {
+            assertThat(sut.resolveDomainSettings("currencies")).isEmpty();
+        }
 
-    @Test
-    void resolveDomainSettings_noOverride_usesGlobalDefaultBatchSize() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString()),
-                Map.of(),
-                DomainSettings.DEFAULT_MAX_BATCH_SIZE
-        );
-
-        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize)
-                .isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
-    }
-
-    @Test
-    void resolveDomainSettings_perTypeOverride_usesOverride() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString(),
-                        "countries", COUNTRIES_URL.toString()),
-                Map.of("users", 50),
-                DomainSettings.DEFAULT_MAX_BATCH_SIZE
-        );
-
-        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(50);
-        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::maxBatchSize)
-                .isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
-    }
-
-    @Test
-    void resolveDomainSettings_customGlobalDefault_appliedWhenNoOverride() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString()),
-                Map.of(),
-                100
-        );
-
-        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(100);
-    }
-
-    @Test
-    void resolveDomainSettings_overrideTakesPrecedenceOverGlobalDefault() {
-        DomainSettingsResolver resolver = DefaultDomainSettingsResolver.from(
-                Map.of("users", USERS_URL.toString(),
-                        "countries", COUNTRIES_URL.toString()),
-                Map.of("countries", 5),
-                100
-        );
-
-        assertThat(resolver.resolveDomainSettings("users")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(100);
-        assertThat(resolver.resolveDomainSettings("countries")).get().extracting(DomainSettings::maxBatchSize).isEqualTo(5);
     }
 
 }

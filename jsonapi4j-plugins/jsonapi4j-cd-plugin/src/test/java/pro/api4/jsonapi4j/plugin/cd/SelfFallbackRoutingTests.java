@@ -22,11 +22,14 @@ import static org.mockito.Mockito.mock;
 public class SelfFallbackRoutingTests {
 
     private static final URI COUNTRIES_URL = URI.create("http://geo.internal/jsonapi");
+    private static final DefaultDomainSettingsResolver COUNTRIES_ONLY = new DefaultDomainSettingsResolver(
+            Map.of("countries", DomainSettings.of(COUNTRIES_URL))
+    );
 
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final DefaultCompoundDocsProperties cdProperties = new DefaultCompoundDocsProperties();
     private final SelfFallbackRouting sut = new SelfFallbackRouting(
-            DefaultDomainSettingsResolver.from(Map.of("countries", COUNTRIES_URL.toString()), Map.of(), 20),
+            COUNTRIES_ONLY,
             cdProperties,
             "/jsonapi"
     );
@@ -83,9 +86,9 @@ public class SelfFallbackRoutingTests {
 
         @Test
         public void forRequest_defaultMappingSet_usesItInsteadOfLoopback() {
-            cdProperties.setMapping(Map.of("default", "https://api.internal:8443/jsonapi"));
+            cdProperties.setMapping(Map.of("default", mapping("https://api.internal:8443/jsonapi", null)));
             SelfFallbackRouting routing = new SelfFallbackRouting(
-                    DefaultDomainSettingsResolver.from(Map.of("countries", COUNTRIES_URL.toString()), Map.of(), 20),
+                    COUNTRIES_ONLY,
                     cdProperties,
                     "/jsonapi"
             );
@@ -95,9 +98,9 @@ public class SelfFallbackRoutingTests {
 
         @Test
         public void forRequest_defaultMappingSet_mappedTypeKeepsItsRoute() {
-            cdProperties.setMapping(Map.of("default", "https://api.internal:8443/jsonapi"));
+            cdProperties.setMapping(Map.of("default", mapping("https://api.internal:8443/jsonapi", null)));
             SelfFallbackRouting routing = new SelfFallbackRouting(
-                    DefaultDomainSettingsResolver.from(Map.of("countries", COUNTRIES_URL.toString()), Map.of(), 20),
+                    COUNTRIES_ONLY,
                     cdProperties,
                     "/jsonapi"
             );
@@ -119,8 +122,14 @@ public class SelfFallbackRoutingTests {
         }
 
         @Test
+        public void forRequest_credentials_trustsThisAppButNotAnUntrustedMapping() {
+            assertThat(domainSettings("users").propagateCredentials()).isTrue();
+            assertThat(domainSettings("countries").propagateCredentials()).isFalse();
+        }
+
+        @Test
         public void forRequest_unmappedType_usesConfiguredBatchSize() {
-            cdProperties.setBatchSizeMapping(Map.of("users", 50));
+            cdProperties.setMapping(Map.of("users", mapping(null, 50)));
 
             assertThat(domainSettings("users").maxBatchSize()).isEqualTo(50);
             assertThat(domainSettings("state").maxBatchSize()).isEqualTo(cdProperties.defaultMaxBatchSize());
@@ -148,6 +157,10 @@ public class SelfFallbackRoutingTests {
         return sut.forRequest(request)
                 .resolveDomainSettings(resourceType)
                 .orElseThrow();
+    }
+
+    private static DefaultCompoundDocsProperties.DefaultMapping mapping(String url, Integer maxBatchSize) {
+        return new DefaultCompoundDocsProperties.DefaultMapping(url, maxBatchSize, false);
     }
 
 }
