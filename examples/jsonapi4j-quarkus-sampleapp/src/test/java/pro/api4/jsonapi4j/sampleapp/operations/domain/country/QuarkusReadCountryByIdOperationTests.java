@@ -12,7 +12,7 @@ public class QuarkusReadCountryByIdOperationTests extends ReadCountryByIdOperati
 
 
     public QuarkusReadCountryByIdOperationTests(@ConfigProperty(name = "jsonapi4j.rootPath") String jsonApiRootPath,
-                                                @ConfigProperty(name = "quarkus.http.port") int appPort) {
+                                                @ConfigProperty(name = "quarkus.http.test-port") int appPort) {
         super(jsonApiRootPath, appPort);
     }
 

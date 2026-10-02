@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -217,6 +219,24 @@ public class QuarkusNativeSmokeIT {
                     .body("included", hasSize(1))
                     .body("included[0].type", equalTo("currencies"))
                     .body("included[0].attributes.name", equalTo("West African CFA franc"));
+        }
+
+        /**
+         * Resource linkage {@code meta} is a domain class the framework only ever sees as an {@code Object}, so it is
+         * registered from the narrowed return type of {@code resolveResourceIdentifierMeta}. The linkage - and with it
+         * the meta - is serialized only when the relationship is included.
+         */
+        @Test
+        public void get_userWithRelativesIncluded_serializesLinkageMeta() {
+            given()
+                    .header("Content-Type", JsonApiMediaType.MEDIA_TYPE)
+                    .header(DEFAULT_USER_ID_HEADER_NAME, "1")
+                    .get(url("/users/1?include=relatives"))
+                    .then()
+                    .statusCode(200)
+                    .body("data.relationships.relatives.data", not(empty()))
+                    .body("data.relationships.relatives.data.meta.relationshipType", everyItem(notNullValue()))
+                    .body("included.type", everyItem(equalTo("users")));
         }
 
         @Test

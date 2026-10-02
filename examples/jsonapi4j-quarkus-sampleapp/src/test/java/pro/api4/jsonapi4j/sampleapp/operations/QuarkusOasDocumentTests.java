@@ -11,7 +11,7 @@ import pro.api4.jsonapi4j.sampleapp.testsuite.OasDocumentTests;
 public class QuarkusOasDocumentTests extends OasDocumentTests {
 
     public QuarkusOasDocumentTests(@ConfigProperty(name = "jsonapi4j.oas.oasRootPath") String oasRootPath,
-                                   @ConfigProperty(name = "quarkus.http.port") int appPort) {
+                                   @ConfigProperty(name = "quarkus.http.test-port") int appPort) {
         super(oasRootPath, appPort);
     }
 

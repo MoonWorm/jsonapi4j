@@ -13,7 +13,7 @@ import static io.restassured.RestAssured.given;
 public class QuarkusReadCountryCurrenciesOperationTests extends ReadCountryCurrenciesOperationTests {
 
     public QuarkusReadCountryCurrenciesOperationTests(@ConfigProperty(name = "jsonapi4j.rootPath") String jsonApiRootPath,
-                                                      @ConfigProperty(name = "quarkus.http.port") int appPort) {
+                                                      @ConfigProperty(name = "quarkus.http.test-port") int appPort) {
         super(jsonApiRootPath, appPort);
     }
 

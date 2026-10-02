@@ -168,6 +168,27 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
     }
 
     @Nested
+    class SharedClient {
+
+        @Test
+        public void constructor_newInstance_buildsNoHttpClientYet() {
+            assertThat(sut).extracting("client").isNull();
+        }
+
+        @Test
+        public void fetch_severalFetches_reuseOneHttpClient() throws IOException {
+            startServer(200, "{\"data\":[]}", 0, new AtomicReference<>());
+
+            sut.fetch(batch(), REQUEST);
+            Object afterFirstFetch = assertThat(sut).extracting("client").isNotNull().actual();
+            sut.fetch(batch(), REQUEST);
+
+            assertThat(sut).extracting("client").isSameAs(afterFirstFetch);
+        }
+
+    }
+
+    @Nested
     class HeaderPropagation {
 
         @Test

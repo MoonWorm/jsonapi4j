@@ -22,6 +22,7 @@ import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.filter.principal.PrincipalResolvingFilter;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
@@ -58,6 +59,15 @@ class QuarkusJsonApi4jProcessor {
             = DotName.createSimple("pro.api4.jsonapi4j.plugin.ac.annotation.AccessControl");
 
     private static final DotName RESOURCE_INTERFACE = DotName.createSimple(Resource.class.getName());
+    private static final DotName RELATIONSHIP_INTERFACE = DotName.createSimple(Relationship.class.getName());
+    private static final Set<String> RESOURCE_PAYLOAD_METHOD_NAMES = Set.of(
+            Resource.RESOLVE_ATTRIBUTES_METHOD_NAME,
+            Resource.RESOLVE_RESOURCE_META_METHOD_NAME
+    );
+    private static final Set<String> RELATIONSHIP_PAYLOAD_METHOD_NAMES = Set.of(
+            Relationship.RESOLVE_RESOURCE_IDENTIFIER_META_METHOD_NAME,
+            Relationship.RESOLVE_RELATIONSHIP_META_METHOD_NAME
+    );
     private static final DotName OBJECT_CLASS = DotName.createSimple(Object.class.getName());
 
     private static final String OAS_PLUGIN_CLASSNAME = "pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer";
@@ -266,35 +276,25 @@ class QuarkusJsonApi4jProcessor {
     /**
      * Registers the attributes objects resources expose, so that Jackson can serialize them in a native image.
      *
-     * <p>An attributes object never appears as a declared endpoint return type — the framework hands it to its
-     * own mapper as an {@code Object} — so the native-image analysis has no reason to keep its members. Without
-     * registration the class builds fine and then serializes to {@code No serializer found for class ...} on the
-     * first request that returns it.
+     * <p>Neither an attributes object nor a {@code meta} object ever appears as a declared endpoint return type —
+     * the framework hands it to its own mapper as an {@code Object} — so the native-image analysis has no reason to
+     * keep its members. Without registration the class builds fine and then serializes to
+     * {@code No serializer found for class ...} on the first request that returns it.
      *
      * <p>{@code Resource<RESOURCE_DTO>} is parameterized by the downstream DTO, not by the attributes type, so
-     * the type argument is the wrong thing to read. The attributes type is whatever
-     * {@link pro.api4.jsonapi4j.domain.Resource#resolveAttributes} is narrowed to by the override — an
+     * the type argument is the wrong thing to read. What gets serialized is whatever the resolver methods are
+     * narrowed to by their overrides: {@link Resource#resolveAttributes} and {@link Resource#resolveResourceMeta}
+     * of a resource, {@code resolveResourceIdentifierMeta} and {@code resolveRelationshipMeta} of a relationship. An
      * implementor that leaves the declared {@code Object} return type in place is telling us nothing, and is
      * skipped.
      */
     @BuildStep
-    void registerResourceAttributesForSerialization(CombinedIndexBuildItem combinedIndex,
-                                                    BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
+    void registerResourcePayloadsForSerialization(CombinedIndexBuildItem combinedIndex,
+                                                  BuildProducer<ReflectiveClassBuildItem> reflectiveClasses) {
         IndexView index = combinedIndex.getIndex();
         Set<DotName> serializable = new LinkedHashSet<>();
-        for (ClassInfo resource : index.getAllKnownImplementors(RESOURCE_INTERFACE)) {
-            for (MethodInfo method : resource.methods()) {
-                if (method.isSynthetic()
-                        || !Resource.RESOLVE_ATTRIBUTES_METHOD_NAME.equals(method.name())
-                        || method.parametersCount() != 1) {
-                    continue;
-                }
-                Type returnType = method.returnType();
-                if (returnType.kind() != Type.Kind.VOID && !OBJECT_CLASS.equals(returnType.name())) {
-                    collectClassNames(returnType, serializable);
-                }
-            }
-        }
+        collectNarrowedReturnTypes(index, RESOURCE_INTERFACE, RESOURCE_PAYLOAD_METHOD_NAMES, serializable);
+        collectNarrowedReturnTypes(index, RELATIONSHIP_INTERFACE, RELATIONSHIP_PAYLOAD_METHOD_NAMES, serializable);
         serializable.removeIf(name -> index.getClassByName(name) == null);
         if (serializable.isEmpty()) {
             return;
@@ -302,13 +302,30 @@ class QuarkusJsonApi4jProcessor {
         addReferencedClasses(index, serializable);
 
         String[] classNames = serializable.stream().map(DotName::toString).toArray(String[]::new);
-        LOG.info("Registering {} resource attributes classes for native-image serialization", classNames.length);
+        LOG.info("Registering {} attributes and meta classes for native-image serialization", classNames.length);
         reflectiveClasses.produce(ReflectiveClassBuildItem.builder(classNames)
                 .constructors(true)
                 .methods(true)
                 .fields(true)
                 .serialization(true)
                 .build());
+    }
+
+    private static void collectNarrowedReturnTypes(IndexView index,
+                                                   DotName domainInterface,
+                                                   Set<String> methodNames,
+                                                   Set<DotName> out) {
+        for (ClassInfo implementor : index.getAllKnownImplementors(domainInterface)) {
+            for (MethodInfo method : implementor.methods()) {
+                if (method.isSynthetic() || !methodNames.contains(method.name())) {
+                    continue;
+                }
+                Type returnType = method.returnType();
+                if (returnType.kind() != Type.Kind.VOID && !OBJECT_CLASS.equals(returnType.name())) {
+                    collectClassNames(returnType, out);
+                }
+            }
+        }
     }
 
     /**

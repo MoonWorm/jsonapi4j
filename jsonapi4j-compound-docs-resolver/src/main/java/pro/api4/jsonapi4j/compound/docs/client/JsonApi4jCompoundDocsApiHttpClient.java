@@ -94,14 +94,18 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
     private final JsonApiResponseParser responseParser;
     private final CompoundDocsResolverConfig config;
     private final Set<String> credentialHeaders;
-    private final HttpClient client;
-
     /**
      * One {@code HttpClient} is shared by every fetch, deliberately not built per fetch: it owns a connection pool and a
      * selector thread, so a per-fetch instance gives up connection reuse across the chunks a single request fans out
      * into, and only becomes reclaimable once the garbage collector notices it. It also cannot be closed here - the
      * framework targets Java 17, where {@code HttpClient} is not {@link AutoCloseable}.
+     *
+     * <p>It is built on the first fetch, not in the constructor: Quarkus creates the compound docs filter - and with it
+     * this client - while building a native image, and a live {@code HttpClient} must not end up in the image heap.
+     * See {@link #client()}.
      */
+    private volatile HttpClient client;
+
     public JsonApi4jCompoundDocsApiHttpClient(ObjectMapper objectMapper,
                                               CompoundDocsResolverConfig config) {
         this.objectMapper = objectMapper;
@@ -111,9 +115,26 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
                 .stream()
                 .map(header -> header.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toUnmodifiableSet());
-        this.client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
-                .build();
+    }
+
+    /**
+     * Builds the shared client on first use. Concurrent first fetches must not each build one - every instance owns a
+     * selector thread that lives until it is garbage collected - so the check is repeated under a lock.
+     */
+        private HttpClient client() {
+        HttpClient result = client;
+        if (result == null) {
+            synchronized (this) {
+                result = client;
+                if (result == null) {
+                    result = HttpClient.newBuilder()
+                            .connectTimeout(Duration.ofMillis(config.getHttpConnectTimeoutMs()))
+                            .build();
+                    client = result;
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -161,7 +182,7 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
             requestBuilder.header(X_DISABLE_COMPOUND_DOCS.getName(), String.valueOf(true));
 
             HttpRequest request = requestBuilder.uri(URI.create(uri)).GET().build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client().send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 400) {
                 checkRejectedIncludes(batch, response.body());
             }

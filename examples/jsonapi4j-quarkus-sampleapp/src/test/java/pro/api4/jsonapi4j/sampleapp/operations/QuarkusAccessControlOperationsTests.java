@@ -15,7 +15,7 @@ import static pro.api4.jsonapi4j.principal.DefaultPrincipalResolver.DEFAULT_USER
 public class QuarkusAccessControlOperationsTests extends AccessControlOperationsTests {
 
     public QuarkusAccessControlOperationsTests(@ConfigProperty(name = "jsonapi4j.rootPath") String jsonApiRootPath,
-                                               @ConfigProperty(name = "quarkus.http.port") int appPort) {
+                                               @ConfigProperty(name = "quarkus.http.test-port") int appPort) {
         super(
                 jsonApiRootPath,
                 appPort,

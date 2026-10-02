@@ -144,13 +144,6 @@
                         <native.image.path>${project.build.directory}/${project.build.finalName}-runner</native.image.path>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
-                        <!--
-                            The integration test launches the packaged artifact on this port. It used to have to
-                            match the compound-docs mappings, which pointed at localhost:8080; same-app includes now
-                            go to the port the request arrived on, so the pin is kept only until the native test is
-                            confirmed on the default 8081.
-                        -->
-                        <quarkus.http.test-port>8080</quarkus.http.test-port>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -25,7 +25,7 @@ public class QuarkusCacheCompoundDocsTests extends CacheCompoundDocsTests {
     private final CompoundDocsResourceCache cache;
 
     public QuarkusCacheCompoundDocsTests(@ConfigProperty(name = "jsonapi4j.rootPath") String jsonApiRootPath,
-                                         @ConfigProperty(name = "quarkus.http.port") int appPort,
+                                         @ConfigProperty(name = "quarkus.http.test-port") int appPort,
                                          QuarkusInvocationTracker invocationTracker,
                                          CompoundDocsResourceCache cache) {
         super(jsonApiRootPath, appPort, invocationTracker);

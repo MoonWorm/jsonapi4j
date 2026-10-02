@@ -29,7 +29,7 @@ public class UserRelativesRelationship implements ToManyRelationship<RelativeRef
     }
 
     @Override
-    public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, RelativeRef userRelationshipInfo) {
+    public RelativeLinkageMeta resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest, RelativeRef userRelationshipInfo) {
         return new RelativeLinkageMeta(userRelationshipInfo.getRelationshipType());
     }
 
