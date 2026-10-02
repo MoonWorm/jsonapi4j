@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -239,6 +240,30 @@ public class CompoundDocsResolverTests {
 
             assertThat(included(result)).containsExactly(USER_3);
             assertThat(fetchCalls).containsExactly(new FetchCall("users", Set.of("3"), Set.of()));
+        }
+
+        @Test
+        public void resolveCompoundDocs_includedOnlyPathContinuesThroughPrimaryResource_repeatsItOnceWithFetchedLinkage() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.INCLUDED_ONLY);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_5, Set.of("relatives")),
+                    request("/users/5", "relatives.relatives.placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_4, USER_5, USA);
+            assertThat(fetchCalls).containsExactly(
+                    new FetchCall("users", Set.of("4"), Set.of("relatives")),
+                    new FetchCall("users", Set.of("5"), Set.of("relatives", "placeOfBirth")),
+                    new FetchCall("countries", Set.of("US"), Set.of())
+            );
+            JsonNode repeatedPrimary = StreamSupport.stream(MAPPER.readTree(result.responseBody()).path("included").spliterator(), false)
+                    .filter(node -> "5".equals(node.path("id").asText()))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(repeatedPrimary.path("relationships").has("placeOfBirth")).isTrue();
         }
 
         @Test

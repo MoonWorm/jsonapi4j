@@ -145,10 +145,10 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <maven.home>${maven.home}</maven.home>
                         <!--
-                            The integration test launches the packaged artifact on this port. It has to be the
-                            port the compound-docs mappings were resolved against at build time, because those
-                            are BUILD_AND_RUN_TIME_FIXED: on the default 8081 the plugin's self-call goes to
-                            localhost:8080, finds nothing listening, and every ?include=... returns 500.
+                            The integration test launches the packaged artifact on this port. It used to have to
+                            match the compound-docs mappings, which pointed at localhost:8080; same-app includes now
+                            go to the port the request arrived on, so the pin is kept only until the native test is
+                            confirmed on the default 8081.
                         -->
                         <quarkus.http.test-port>8080</quarkus.http.test-port>
                     </systemPropertyVariables>

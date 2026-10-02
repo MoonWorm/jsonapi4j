@@ -14,6 +14,7 @@ import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.http.HttpHeaders;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.plugin.oas.config.DiagnosticsMode;
 import pro.api4.jsonapi4j.plugin.oas.config.OasProperties;
 import pro.api4.jsonapi4j.plugin.oas.customizer.*;
@@ -21,8 +22,6 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
-import static pro.api4.jsonapi4j.plugin.oas.init.JsonApiOasServletContainerInitializer.OAS_PLUGIN_PROPERTIES_ATT_NAME;
 
 @Slf4j
 public class OasServlet extends HttpServlet {
@@ -63,20 +62,28 @@ public class OasServlet extends HttpServlet {
 
         super.init(config);
 
-        oasProperties = (OasProperties) config.getServletContext().getAttribute(OAS_PLUGIN_PROPERTIES_ATT_NAME);
+        jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
+        oasProperties = jsonApi4j.getPluginRegistry().configOf(OasProperties.class).orElse(null);
 
-        if (oasProperties == null || !oasProperties.enabled()) {
+        if (oasProperties == null) {
+            log.warn(
+                    "{} has not been initialized: {} is not registered in the {}, so no OpenAPI document is served",
+                    OasServlet.class.getSimpleName(),
+                    JsonApiOasPlugin.class.getSimpleName(),
+                    PluginRegistry.class.getSimpleName()
+            );
+            return;
+        }
+        if (!oasProperties.enabled()) {
             log.info(
-                    "{} has not been initialized, oasProperties is null or {} is disabled",
+                    "{} has not been initialized, {} is disabled",
                     OasServlet.class.getSimpleName(),
                     JsonApiOasPlugin.class.getSimpleName()
             );
             return;
         }
 
-        jsonApi4j = JsonApi4jServletContainerInitializer.initJsonApi4j(config.getServletContext());
-        objectMapper = (ObjectMapper) config.getServletContext()
-                .getAttribute(JsonApi4jServletContainerInitializer.OBJECT_MAPPER_ATT_NAME);
+        objectMapper = JsonApi4jServletContainerInitializer.initObjectMapper(config.getServletContext());
         errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
 
         if (oasProperties.diagnostics().generatesAtStartup()) {

@@ -11,7 +11,8 @@ import pro.api4.jsonapi4j.compound.docs.CompoundDocsResult;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
-import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.JsonApi4j;
+import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
@@ -23,14 +24,12 @@ import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.http.HttpStatusCodes.SC_400_BAD_REQUEST;
 import static pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer.*;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_CACHE_ATT_NAME;
 import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME;
-import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletContainerInitializer.COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME;
 
 @Slf4j
 public class CompoundDocsFilter implements Filter {
@@ -63,12 +62,19 @@ public class CompoundDocsFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         log.info("Initializing {} ...", CompoundDocsFilter.class.getSimpleName());
 
-        CompoundDocsProperties cdProperties = (CompoundDocsProperties) filterConfig.getServletContext()
-                .getAttribute(COMPOUND_DOCS_PLUGIN_PROPERTIES_ATT_NAME);
+        JsonApi4j jsonApi4j = initJsonApi4j(filterConfig.getServletContext());
+        CompoundDocsProperties cdProperties = jsonApi4j.getPluginRegistry()
+                .configOf(CompoundDocsProperties.class)
+                .orElse(null);
 
-        if (cdProperties != null && cdProperties.enabled()) {
-            JsonApi4jProperties jsonApi4jProperties = (JsonApi4jProperties) filterConfig.getServletContext().getAttribute(JSONAPI4J_PROPERTIES_ATT_NAME);
-
+        if (cdProperties == null) {
+            log.warn(
+                    "{} has not been initialized: {} is not registered in the {}, so includes are not resolved",
+                    CompoundDocsFilter.class.getSimpleName(),
+                    JsonApiCompoundDocsPlugin.class.getSimpleName(),
+                    PluginRegistry.class.getSimpleName()
+            );
+        } else if (cdProperties.enabled()) {
             DomainSettingsResolver domainSettingsResolver = (DomainSettingsResolver) filterConfig.getServletContext()
                     .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME);
 
@@ -76,7 +82,7 @@ public class CompoundDocsFilter implements Filter {
             this.routing = new SelfFallbackRouting(
                     domainSettingsResolver,
                     cdProperties,
-                    jsonApi4jProperties.rootPath()
+                    jsonApi4j.getProperties().rootPath()
             );
 
             CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
@@ -98,11 +104,7 @@ public class CompoundDocsFilter implements Filter {
 
             ObjectMapper objectMapper = initObjectMapper(filterConfig.getServletContext());
             this.responseParser = new JsonApiResponseParser(objectMapper);
-            ExecutorService executorService = initExecutorService(filterConfig.getServletContext());
-            this.errorsDocResponseWriter = new ErrorsDocResponseWriter(
-                    initJsonApi4j(filterConfig.getServletContext()).getErrorHandlers(),
-                    objectMapper
-            );
+            this.errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
 
             CompoundDocsResourceCache cache = (CompoundDocsResourceCache) filterConfig
                     .getServletContext()
@@ -111,7 +113,7 @@ public class CompoundDocsFilter implements Filter {
             resolver = new CompoundDocsResolver(
                     config,
                     objectMapper,
-                    executorService,
+                    jsonApi4j.getExecutor(),
                     cache
             );
             log.debug("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
@@ -132,7 +134,7 @@ public class CompoundDocsFilter implements Filter {
                          FilterChain chain) throws IOException, ServletException {
 
         if (this.resolver == null) {
-            log.debug("{} has not been initialized, CD plugin initialization failer or plugin is disabled", CompoundDocsFilter.class.getSimpleName());
+            log.debug("{} has not been initialized, CD plugin initialization failed or plugin is disabled", CompoundDocsFilter.class.getSimpleName());
             chain.doFilter(servletRequest, servletResponse);
         } else {
             HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;

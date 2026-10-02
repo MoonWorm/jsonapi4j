@@ -541,7 +541,7 @@ class CachingCompoundDocsFetcherTests {
     void constructor_nullExecutor_throwsNullPointerException() {
         assertThatThrownBy(() -> new CachingCompoundDocsFetcher(httpClient, cache, null, mockConfig))
                 .isInstanceOf(NullPointerException.class)
-                .hasMessage("executorService must not be null");
+                .hasMessage("executor must not be null");
     }
 
     // --- Directives — no cache ---

@@ -9,7 +9,12 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import pro.api4.jsonapi4j.springboot.autoconfiguration.SpringJsonApi4jAutoConfigurer;
 import pro.api4.jsonapi4j.plugin.cd.JsonApiCompoundDocsPlugin;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
+import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
+import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
+import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
+
+import java.net.URI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,4 +66,30 @@ class SpringJsonApi4jCompoundDocsConfigTests {
         sut.withBean("userDomainSettingsResolver", DomainSettingsResolver.class, () -> userResolver)
                 .run(context -> assertThat(context.getBean(DomainSettingsResolver.class)).isSameAs(userResolver));
     }
+
+    @Test
+    void jsonApi4jCdProperties_deduplicationSet_isBound() {
+        sut.withPropertyValues("jsonapi4j.cd.deduplication=INCLUDED_ONLY")
+                .run(context -> assertThat(context.getBean(CompoundDocsProperties.class).deduplication())
+                        .isEqualTo(Deduplication.INCLUDED_ONLY));
+    }
+
+    @Test
+    void jsonApi4jCdDomainSettingsResolver_nestedMapping_isBound() {
+        sut.withPropertyValues(
+                        "jsonapi4j.cd.mapping.orders.url=https://orders.internal/jsonapi",
+                        "jsonapi4j.cd.mapping.orders.maxBatchSize=50",
+                        "jsonapi4j.cd.mapping.orders.propagateCredentials=true",
+                        "jsonapi4j.cd.mapping.countries.maxBatchSize=100"
+                )
+                .run(context -> {
+                    assertThat(context.getBean(DomainSettingsResolver.class).resolveDomainSettings("orders"))
+                            .contains(new DomainSettings(URI.create("https://orders.internal/jsonapi"), 50, true));
+                    assertThat(context.getBean(DomainSettingsResolver.class).resolveDomainSettings("countries"))
+                            .isEmpty();
+                    assertThat(context.getBean(CompoundDocsProperties.class).maxBatchSize("countries"))
+                            .isEqualTo(100);
+                });
+    }
+
 }

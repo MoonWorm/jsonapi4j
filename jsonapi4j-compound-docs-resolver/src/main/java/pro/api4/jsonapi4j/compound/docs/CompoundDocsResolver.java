@@ -31,7 +31,7 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -54,12 +54,12 @@ public class CompoundDocsResolver {
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
 
-    private final ExecutorService executorService;
+    private final Executor executor;
 
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
                                 ObjectMapper objectMapper,
-                                ExecutorService executorService) {
-        this(config, objectMapper, executorService, (CompoundDocsResourceCache) null);
+                                Executor executor) {
+        this(config, objectMapper, executor, (CompoundDocsResourceCache) null);
     }
 
     /**
@@ -69,19 +69,19 @@ public class CompoundDocsResolver {
      */
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
                                 ObjectMapper objectMapper,
-                                ExecutorService executorService,
+                                Executor executor,
                                 CompoundDocsResourceCache cache) {
         this(
                 config,
                 objectMapper,
-                executorService,
+                executor,
                 new CachingCompoundDocsFetcher(
                         new JsonApi4jCompoundDocsApiHttpClient(
                                 Validate.notNull(objectMapper, "ObjectMapper is not configured"),
                                 Validate.notNull(config, "CompoundDocsResolverConfig is not configured")
                         ),
                         cache,
-                        Validate.notNull(executorService, "ExecutorService is not configured"),
+                        Validate.notNull(executor, "Executor is not configured"),
                         config
                 )
         );
@@ -89,12 +89,12 @@ public class CompoundDocsResolver {
 
     CompoundDocsResolver(CompoundDocsResolverConfig config,
                          ObjectMapper objectMapper,
-                         ExecutorService executorService,
+                         Executor executor,
                          CachingCompoundDocsFetcher fetcher) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
 
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
-        Validate.notNull(executorService, "ExecutorService is not configured");
+        Validate.notNull(executor, "Executor is not configured");
         Validate.notNull(fetcher, "CachingCompoundDocsFetcher is not configured");
 
         this.config = config;
@@ -104,7 +104,7 @@ public class CompoundDocsResolver {
         this.jsonApiResponseParser = new JsonApiResponseParser(objectMapper);
         this.jsonApiResponseWriter = new JsonApiResponseWriter(objectMapper);
 
-        this.executorService = executorService;
+        this.executor = executor;
     }
 
     /**
@@ -350,7 +350,7 @@ public class CompoundDocsResolver {
         }
         BatchFetch batch = new BatchFetch(domainSettings.get(), resourceType, ids, includes);
         log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
-        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executorService);
+        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executor);
     }
 
     /**

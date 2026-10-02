@@ -21,7 +21,7 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *
  * <p>When the number of cache-miss IDs for a single resource type exceeds
  * {@link DomainSettings#maxBatchSize()}, the misses are split into parallel chunks fetched
- * concurrently via the supplied {@link ExecutorService}. Results and {@code Cache-Control}
+ * concurrently via the supplied {@link Executor}. Results and {@code Cache-Control}
  * directives are merged across all chunks.
  *
  * <p>When no cache is configured ({@code null}), acts as a pass-through to the HTTP client
@@ -44,23 +44,23 @@ public class CachingCompoundDocsFetcher {
 
     private final JsonApi4jCompoundDocsApiHttpClient httpClient;
     private final CompoundDocsResourceCache cache;
-    private final ExecutorService executorService;
+    private final Executor executor;
     private final CompoundDocsResolverConfig config;
 
     /**
      * @param httpClient      the HTTP client for downstream fetches, must not be null
      * @param cache           the resource cache, or {@code null} to disable caching
      *                        (fetcher acts as a pass-through to the HTTP client)
-     * @param executorService executor used to fan-out chunked HTTP fetches in parallel,
+     * @param executor executor used to fan-out chunked HTTP fetches in parallel,
      *                        must not be null
      * @param config          resolver configuration, must not be null
      */
     public CachingCompoundDocsFetcher(JsonApi4jCompoundDocsApiHttpClient httpClient,
                                       CompoundDocsResourceCache cache,
-                                      ExecutorService executorService,
+                                      Executor executor,
                                       CompoundDocsResolverConfig config) {
         this.httpClient = Validate.notNull(httpClient, "httpClient must not be null");
-        this.executorService = Validate.notNull(executorService, "executorService must not be null");
+        this.executor = Validate.notNull(executor, "executor must not be null");
         this.config = Validate.notNull(config, "config must not be null");
         this.cache = cache;
     }
@@ -194,7 +194,7 @@ public class CachingCompoundDocsFetcher {
         List<CompletableFuture<HttpFetchResult>> futures = chunks.stream()
                 .map(chunk -> CompletableFuture.supplyAsync(
                         () -> fetchChunk(batch.withIds(chunk), originalRequest),
-                        executorService))
+                        executor))
                 .toList();
 
         try {
