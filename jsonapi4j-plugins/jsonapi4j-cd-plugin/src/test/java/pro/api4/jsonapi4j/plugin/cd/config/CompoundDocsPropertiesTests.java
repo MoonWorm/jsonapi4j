@@ -142,6 +142,56 @@ public class CompoundDocsPropertiesTests {
             assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.default");
         }
 
+        @Test
+        public void validate_defaultMappingWithUrlAndTransport_returnsNoErrors() {
+            sut.setMapping(Map.of("default", transportMapping(APP_URL, Transport.HTTP)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
+        }
+
+        @Test
+        public void validate_defaultMappingInProcessWithoutUrl_returnsNoErrors() {
+            sut.setMapping(Map.of("default", transportMapping(null, Transport.IN_PROCESS)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
+        }
+
+        @Test
+        public void validate_defaultMappingOverHttpWithoutUrl_reportsError() {
+            sut.setMapping(Map.of("default", transportMapping(null, Transport.HTTP)));
+
+            assertThat(sut.validate().getPropertyErrors())
+                    .containsOnlyKeys("jsonapi4j.cd.mapping.default.transport");
+        }
+
+    }
+
+    @Nested
+    class TransportOf {
+
+        @Test
+        public void transportOf_nothingSet_isInProcess() {
+            assertThat(sut.transportOf("users")).isEqualTo(Transport.IN_PROCESS);
+        }
+
+        @Test
+        public void transportOf_defaultSet_followsIt() {
+            sut.setMapping(Map.of("default", transportMapping(APP_URL, Transport.HTTP)));
+
+            assertThat(sut.transportOf("users")).isEqualTo(Transport.HTTP);
+        }
+
+        @Test
+        public void transportOf_typeSet_overridesDefault() {
+            sut.setMapping(Map.of(
+                    "default", transportMapping(APP_URL, Transport.HTTP),
+                    "users", transportMapping(null, Transport.IN_PROCESS)
+            ));
+
+            assertThat(sut.transportOf("users")).isEqualTo(Transport.IN_PROCESS);
+            assertThat(sut.transportOf("countries")).isEqualTo(Transport.HTTP);
+        }
+
     }
 
     @Nested
@@ -155,8 +205,8 @@ public class CompoundDocsPropertiesTests {
             ));
 
             assertThat(sut.domainSettings()).isEqualTo(Map.of(
-                    "users", new DomainSettings(URI.create(USERS_URL), 50, true),
-                    "rates", new DomainSettings(URI.create("https://partner.example.com/jsonapi"), sut.defaultMaxBatchSize(), false)
+                    "users", DomainSettings.overHttp(URI.create(USERS_URL), 50, true),
+                    "rates", DomainSettings.overHttp(URI.create("https://partner.example.com/jsonapi"), sut.defaultMaxBatchSize(), false)
             ));
         }
 
@@ -204,6 +254,41 @@ public class CompoundDocsPropertiesTests {
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.cd.mapping.users.propagateCredentials");
+        }
+
+        @Test
+        public void validate_transportOnly_returnsNoErrors() {
+            sut.setMapping(Map.of("users", transportMapping(null, Transport.IN_PROCESS)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
+        }
+
+        @Test
+        public void validate_overHttpWithDefaultUrl_returnsNoErrors() {
+            sut.setMapping(Map.of("users", transportMapping(null, Transport.HTTP), "default", transportMapping(APP_URL, null)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
+        }
+
+        @Test
+        public void validate_overHttpWithoutDefaultUrl_reportsError() {
+            sut.setMapping(Map.of("users", transportMapping(null, Transport.HTTP)));
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.users.transport");
+        }
+
+        @Test
+        public void validate_inProcessWithUrl_reportsError() {
+            sut.setMapping(Map.of("users", transportMapping(USERS_URL, Transport.IN_PROCESS)));
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.users.transport");
+        }
+
+        @Test
+        public void validate_overHttpWithUrl_returnsNoErrors() {
+            sut.setMapping(Map.of("users", transportMapping(USERS_URL, Transport.HTTP)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
         }
 
     }
@@ -336,6 +421,10 @@ public class CompoundDocsPropertiesTests {
                                                                         Integer maxBatchSize,
                                                                         boolean propagateCredentials) {
         return new DefaultCompoundDocsProperties.DefaultMapping(url, maxBatchSize, propagateCredentials);
+    }
+
+    private static DefaultCompoundDocsProperties.DefaultMapping transportMapping(String url, Transport transport) {
+        return new DefaultCompoundDocsProperties.DefaultMapping(url, null, false, transport);
     }
 
     private static final Pattern INDEXED_SEGMENT = Pattern.compile("(.+)\\[(\\d+)]");

@@ -1,15 +1,16 @@
 # Compound documents (`?include=`)
 
-The Compound-Docs (CD) plugin resolves includes by calling the API **back over HTTP**, per resource
-type. Consequences:
+The Compound-Docs (CD) plugin resolves includes hop by hop, per resource type: types the app serves itself
+**in-process** (through the framework directly, no HTTP), types of another service over HTTP. Consequences:
 
-- **Same-app types need no `url` in `cd.mapping`.** Without one, the app calls itself on loopback at the
-  local port the request arrived on (never the `Host` header), so it is always right for the port actually
-  in use. `jsonapi4j.cd.mapping.<type>.url` is for types served by *another* service; such a type gets the
-  client's credentials only with `propagateCredentials: true`. A `maxBatchSize` is still worth setting per
-  type, same-app ones included.
-- **Multi-hop works**: `?include=season.show` (bounded by `cd.maxHops`). Each hop is a fresh HTTP
-  fetch, so each intermediate resource must expose the next relationship's linkage. A multi-hop path
+- **Same-app types need no `url` in `cd.mapping`.** Without one, they're read in-process, as the client's
+  principal — validation and the access-control plugin apply, servlet filters (URL-based security rules,
+  logging, metrics) don't. `jsonapi4j.cd.mapping.<type>.url` is for types served by *another* service;
+  such a type gets the client's credentials only with `propagateCredentials: true`. A `maxBatchSize` is
+  still worth setting per type, same-app ones included. `transport: HTTP` (per type, or on `cd.mapping.default`)
+  fetches same-app types over HTTP from `cd.mapping.default.url` instead, when filters must see include requests.
+- **Multi-hop works**: `?include=season.show` (bounded by `cd.maxHops`). Each hop is a fresh batch
+  read, so each intermediate resource must expose the next relationship's linkage. A multi-hop path
   **implies the intermediate** — `?include=a.b` pulls in both `a` and `b`; no need to write `a,a.b`.
 - **A synthetic / non-persisted primary can't have its relationships included.** If an operation
   fabricates a resource that isn't backed by a real row (e.g. a composed item with a hashed id and no FK
@@ -17,9 +18,9 @@ type. Consequences:
   the linkage breaks. Such a relationship works via include only on the *persisted* read paths. Confirm
   **every** path that produces the resource can resolve the relationship before moving a field behind
   `include` (see `separation-of-concerns.md`).
-- Because it's self-HTTP, **the app must be able to reach itself** on the address the client used — a
-  container or proxy that rewrites host/port can break includes that work locally.
-- `cd.propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]` controls what's forwarded downstream.
+- **Put access rules for includable types in the access-control plugin**, not only in URL-based security
+  rules: in-process includes don't pass through servlet filters.
+- `cd.propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]` controls what's carried over to include reads.
   Credential headers (`Authorization`, cookies, principal headers) go to same-app types always, to another
   service only when its mapping has `propagateCredentials: true`.
 

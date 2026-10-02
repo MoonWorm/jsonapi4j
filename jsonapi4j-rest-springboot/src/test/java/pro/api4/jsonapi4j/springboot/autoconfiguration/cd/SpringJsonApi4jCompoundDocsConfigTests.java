@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.DomainSettingsResolver;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
+import pro.api4.jsonapi4j.plugin.cd.config.Transport;
 
 import java.net.URI;
 
@@ -84,11 +85,25 @@ class SpringJsonApi4jCompoundDocsConfigTests {
                 )
                 .run(context -> {
                     assertThat(context.getBean(DomainSettingsResolver.class).resolveDomainSettings("orders"))
-                            .contains(new DomainSettings(URI.create("https://orders.internal/jsonapi"), 50, true));
+                            .contains(DomainSettings.overHttp(URI.create("https://orders.internal/jsonapi"), 50, true));
                     assertThat(context.getBean(DomainSettingsResolver.class).resolveDomainSettings("countries"))
                             .isEmpty();
                     assertThat(context.getBean(CompoundDocsProperties.class).maxBatchSize("countries"))
                             .isEqualTo(100);
+                });
+    }
+
+    @Test
+    void jsonApi4jCdProperties_transportSet_isBound() {
+        sut.withPropertyValues(
+                        "jsonapi4j.cd.mapping.default.url=http://127.0.0.1:8080/jsonapi",
+                        "jsonapi4j.cd.mapping.default.transport=HTTP",
+                        "jsonapi4j.cd.mapping.users.transport=IN_PROCESS"
+                )
+                .run(context -> {
+                    CompoundDocsProperties cdProperties = context.getBean(CompoundDocsProperties.class);
+                    assertThat(cdProperties.transportOf("countries")).isEqualTo(Transport.HTTP);
+                    assertThat(cdProperties.transportOf("users")).isEqualTo(Transport.IN_PROCESS);
                 });
     }
 

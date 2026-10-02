@@ -43,6 +43,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
         private String url;
         private Integer maxBatchSize;
         private boolean propagateCredentials = Boolean.parseBoolean(DEFAULT_PROPAGATE_CREDENTIALS);
+        private Transport transport;
+
+        public DefaultMapping(String url, Integer maxBatchSize, boolean propagateCredentials) {
+            this(url, maxBatchSize, propagateCredentials, null);
+        }
 
         @Override
         public String url() {
@@ -57,6 +62,11 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
         @Override
         public boolean propagateCredentials() {
             return propagateCredentials;
+        }
+
+        @Override
+        public Transport transport() {
+            return transport;
         }
     }
 

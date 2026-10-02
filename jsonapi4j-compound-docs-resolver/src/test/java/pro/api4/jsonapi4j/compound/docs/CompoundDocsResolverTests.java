@@ -12,8 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
-import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
-import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
+import pro.api4.jsonapi4j.compound.docs.client.FetchResult;
+import pro.api4.jsonapi4j.compound.docs.client.RoutingBatchFetcher;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
@@ -22,7 +22,9 @@ import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
+import pro.api4.jsonapi4j.compound.docs.json.ParsedResource;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
@@ -47,8 +49,9 @@ import static pro.api4.jsonapi4j.compound.docs.IdAndTypeFixtures.idAndType;
 public class CompoundDocsResolverTests {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final JsonApiResponseParser PARSER = new JsonApiResponseParser(MAPPER);
     private static final URI BASE_URL = URI.create("http://localhost/jsonapi");
-    private static final DomainSettingsResolver ROUTE_ALL = resourceType -> Optional.of(DomainSettings.of(BASE_URL));
+    private static final DomainSettingsResolver ROUTE_ALL = resourceType -> Optional.of(DomainSettings.overHttp(BASE_URL));
 
     private static final IdAndType USER_1 = idAndType("users", "1");
     private static final IdAndType USER_2 = idAndType("users", "2");
@@ -93,7 +96,7 @@ public class CompoundDocsResolverTests {
     }
 
     @Mock
-    private CachingCompoundDocsFetcher fetcher;
+    private RoutingBatchFetcher fetcher;
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(4);
     private final List<FetchCall> fetchCalls = Collections.synchronizedList(new ArrayList<>());
@@ -305,7 +308,7 @@ public class CompoundDocsResolverTests {
     class ErrorStrategies {
 
         private static final DomainSettingsResolver COUNTRIES_ONLY = resourceType -> "countries".equals(resourceType)
-                ? Optional.of(DomainSettings.of(BASE_URL))
+                ? Optional.of(DomainSettings.overHttp(BASE_URL))
                 : Optional.empty();
 
         @Test
@@ -326,7 +329,7 @@ public class CompoundDocsResolverTests {
         @Test
         public void resolveCompoundDocs_fetchForbiddingStorage_forbidsStoringTheDocument() throws Exception {
             CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
-            when(fetcher.fetch(any(), any())).thenReturn(new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED));
+            when(fetcher.fetch(any(), any())).thenReturn(new FetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED));
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
                     primaryDoc(USER_1, Set.of("placeOfBirth")),
@@ -348,7 +351,7 @@ public class CompoundDocsResolverTests {
                     ROUTE_ALL
             );
 
-            assertThat(result.cacheControlDirectives()).isNull();
+            assertThat(result.cacheControlDirectives().isNoStore()).isFalse();
         }
 
         @Test
@@ -369,7 +372,7 @@ public class CompoundDocsResolverTests {
         public void resolveCompoundDocs_nothingResolvedUnderIgnore_listsFetchFailedGapWithoutIncluded() throws Exception {
             CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
             when(fetcher.fetch(any(), any())).thenReturn(
-                    new BatchFetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED)
+                    new FetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.FETCH_FAILED)
             );
 
             CompoundDocsResult result = sut.resolveCompoundDocs(
@@ -575,6 +578,34 @@ public class CompoundDocsResolverTests {
     class Routing {
 
         @Test
+        public void resolveCompoundDocs_inProcessRouteWithoutInProcessFetcher_throwsDomainResolutionException() {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    resourceType -> Optional.of(DomainSettings.inProcess(20))
+            ))
+                    .isInstanceOf(DomainResolutionException.class)
+                    .hasMessage("Resource type 'countries' is routed in-process, but no in-process fetcher is configured");
+        }
+
+        @Test
+        public void resolveCompoundDocs_inProcessRouteWithInProcessFetcher_fetchesThroughIt() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+            when(fetcher.isInProcessFetcherConfigured()).thenReturn(true);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth"),
+                    resourceType -> Optional.of(DomainSettings.inProcess(20))
+            );
+
+            assertThat(included(result)).containsExactly(USA);
+        }
+
+        @Test
         public void resolveCompoundDocs_includedTypeWithoutRoute_throwsDomainResolutionException() {
             CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
             stubDownstream();
@@ -583,7 +614,7 @@ public class CompoundDocsResolverTests {
                     primaryDoc(USER_1, Set.of("placeOfBirth")),
                     request("/users/1", "placeOfBirth.currencies"),
                     resourceType -> "countries".equals(resourceType)
-                            ? Optional.of(DomainSettings.of(BASE_URL))
+                            ? Optional.of(DomainSettings.overHttp(BASE_URL))
                             : Optional.empty()
             ))
                     .isInstanceOf(DomainResolutionException.class)
@@ -621,7 +652,7 @@ public class CompoundDocsResolverTests {
     @SuppressWarnings("unchecked")
     private void stubDownstreamRejecting(String rejectingType, String unknownRelationship) {
         when(fetcher.fetch(any(), any())).thenAnswer(invocation -> {
-            BatchFetch batch = invocation.getArgument(0);
+            BatchFetch<DomainSettings> batch = invocation.getArgument(0);
             if (batch.resourceType().equals(rejectingType) && batch.includes().contains(unknownRelationship)) {
                 fetchCalls.add(new FetchCall(batch.resourceType(), Set.copyOf(batch.ids()), Set.copyOf(batch.includes())));
                 throw new RejectedIncludesException(rejectingType, Set.of(unknownRelationship));
@@ -634,16 +665,16 @@ public class CompoundDocsResolverTests {
         when(fetcher.fetch(any(), any())).thenAnswer(invocation -> respond(invocation.getArgument(0)));
     }
 
-    private BatchFetchResult respond(BatchFetch batch) throws JsonProcessingException {
+    private FetchResult respond(BatchFetch<DomainSettings> batch) throws JsonProcessingException {
         String type = batch.resourceType();
         Set<String> ids = batch.ids();
         Set<String> includes = batch.includes();
         fetchCalls.add(new FetchCall(type, Set.copyOf(ids), Set.copyOf(includes)));
-        List<String> resources = new ArrayList<>();
+        List<ParsedResource> resources = new ArrayList<>();
         for (String id : ids) {
-            resources.add(MAPPER.writeValueAsString(resourceNode(idAndType(type, id), includes)));
+            resources.add(PARSER.parseResource(MAPPER.writeValueAsString(resourceNode(idAndType(type, id), includes))));
         }
-        return new BatchFetchResult(resources, null);
+        return new FetchResult(resources, null);
     }
 
     private static CompoundDocsRequest request(String relativePath, String... includes) {

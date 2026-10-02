@@ -8,9 +8,10 @@ import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
-import pro.api4.jsonapi4j.compound.docs.client.BatchFetchResult;
-import pro.api4.jsonapi4j.compound.docs.client.CachingCompoundDocsFetcher;
+import pro.api4.jsonapi4j.compound.docs.client.BatchFetcher;
+import pro.api4.jsonapi4j.compound.docs.client.FetchResult;
 import pro.api4.jsonapi4j.compound.docs.client.JsonApi4jCompoundDocsApiHttpClient;
+import pro.api4.jsonapi4j.compound.docs.client.RoutingBatchFetcher;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
@@ -21,7 +22,7 @@ import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseWriter;
 import pro.api4.jsonapi4j.compound.docs.json.ParseResult;
-import pro.api4.jsonapi4j.compound.docs.json.PrimaryResource;
+import pro.api4.jsonapi4j.compound.docs.json.ParsedResource;
 import pro.api4.jsonapi4j.compound.docs.json.ResourceLinkage;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
@@ -49,38 +50,37 @@ public class CompoundDocsResolver {
     private final CompoundDocsResolverConfig config;
     private final IncludesChecker includesChecker;
 
-    private final CachingCompoundDocsFetcher fetcher;
+    private final RoutingBatchFetcher fetcher;
 
     private final JsonApiResponseParser jsonApiResponseParser;
     private final JsonApiResponseWriter jsonApiResponseWriter;
 
     private final Executor executor;
 
-    public CompoundDocsResolver(CompoundDocsResolverConfig config,
-                                ObjectMapper objectMapper,
-                                Executor executor) {
-        this(config, objectMapper, executor, (CompoundDocsResourceCache) null);
-    }
-
     /**
-     * Creates a resolver with caching support.
+     * Creates a resolver that also fetches resource types served in-process - those routed with
+     * {@link DomainSettings#inProcess(int)}.
      *
-     * @param cache the resource cache, or {@code null} to disable caching
+     * @param cache            the resource cache for resources fetched over HTTP, or {@code null} to disable caching
+     * @param inProcessFetcher fetches the resources the app serves itself, or {@code null} when there are none
      */
     public CompoundDocsResolver(CompoundDocsResolverConfig config,
                                 ObjectMapper objectMapper,
                                 Executor executor,
-                                CompoundDocsResourceCache cache) {
+                                CompoundDocsResourceCache cache,
+                                BatchFetcher<DomainSettings.InProcess> inProcessFetcher) {
         this(
                 config,
                 objectMapper,
                 executor,
-                new CachingCompoundDocsFetcher(
+                RoutingBatchFetcher.compose(
                         new JsonApi4jCompoundDocsApiHttpClient(
                                 Validate.notNull(objectMapper, "ObjectMapper is not configured"),
                                 Validate.notNull(config, "CompoundDocsResolverConfig is not configured")
                         ),
+                        inProcessFetcher,
                         cache,
+                        new JsonApiResponseParser(objectMapper),
                         Validate.notNull(executor, "Executor is not configured"),
                         config
                 )
@@ -90,12 +90,12 @@ public class CompoundDocsResolver {
     CompoundDocsResolver(CompoundDocsResolverConfig config,
                          ObjectMapper objectMapper,
                          Executor executor,
-                         CachingCompoundDocsFetcher fetcher) {
+                         RoutingBatchFetcher fetcher) {
         Validate.notNull(config, "CompoundDocsResolverConfig is not configured");
 
         Validate.notNull(objectMapper, "ObjectMapper is not configured");
         Validate.notNull(executor, "Executor is not configured");
-        Validate.notNull(fetcher, "CachingCompoundDocsFetcher is not configured");
+        Validate.notNull(fetcher, "RoutingBatchFetcher is not configured");
 
         this.config = config;
         this.includesChecker = IncludesChecker.from(config);
@@ -147,7 +147,7 @@ public class CompoundDocsResolver {
         Map<IdAndType, Set<String>> requestedIncludes = new HashMap<>();
         Map<IdAndType, ResourceLinkage> linkages = new HashMap<>();
         Map<IdAndType, String> primaryResourceJsons = new HashMap<>();
-        for (PrimaryResource primaryResource : originalParseResult.primaryResources()) {
+        for (ParsedResource primaryResource : originalParseResult.primaryResources()) {
             ResourceLinkage resourceLinkage = primaryResource.linkage();
             IdAndType idAndType = resourceLinkage.idAndType();
             linkages.put(idAndType, resourceLinkage);
@@ -185,7 +185,7 @@ public class CompoundDocsResolver {
                 }
             }
 
-            Map<String, CompletableFuture<BatchFetchResult>> futures = idsByType.keySet().stream()
+            Map<String, CompletableFuture<FetchResult>> futures = idsByType.keySet().stream()
                     .collect(Collectors.toMap(
                             Function.identity(),
                             resourceType -> fetchAsync(
@@ -197,7 +197,7 @@ public class CompoundDocsResolver {
                             )
                     ));
 
-            for (Map.Entry<String, CompletableFuture<BatchFetchResult>> e : futures.entrySet()) {
+            for (Map.Entry<String, CompletableFuture<FetchResult>> e : futures.entrySet()) {
                 String resourceType = e.getKey();
                 TypeFetch typeFetch = awaitFetch(
                         resourceType,
@@ -208,7 +208,7 @@ public class CompoundDocsResolver {
                         domainSettingsResolver,
                         request
                 );
-                BatchFetchResult fetchResult = typeFetch.result();
+                FetchResult fetchResult = typeFetch.result();
                 aggregator.add(fetchResult.directives());
                 if (fetchResult.incompleteReason() != null) {
                     gaps.add(IncludedGap.forType(fetchResult.incompleteReason(), resourceType));
@@ -220,14 +220,13 @@ public class CompoundDocsResolver {
                         new IdAndType(id, new ResourceType(resourceType)),
                         typeFetch.includes()
                 ));
-                for (String resourceJson : fetchResult.resources()) {
-                    ResourceLinkage linkage = jsonApiResponseParser.parseResource(resourceJson);
-                    if (linkage.idAndType() == null) {
-                        log.warn("Skipping a resource of type '{}' without a textual 'type' and 'id': {}", resourceType, resourceJson);
+                for (ParsedResource resource : fetchResult.resources()) {
+                    if (resource.idAndType() == null) {
+                        log.warn("Skipping a resource of type '{}' without a textual 'type' and 'id': {}", resourceType, resource.json());
                         continue;
                     }
-                    linkages.put(linkage.idAndType(), linkage);
-                    included.add(linkage.idAndType(), resourceJson);
+                    linkages.put(resource.idAndType(), resource.linkage());
+                    included.add(resource.idAndType(), resource.json());
                 }
             }
 
@@ -261,7 +260,7 @@ public class CompoundDocsResolver {
     private TypeFetch awaitFetch(String resourceType,
                                  Set<String> ids,
                                  Set<String> includes,
-                                 CompletableFuture<BatchFetchResult> fetch,
+                                 CompletableFuture<FetchResult> fetch,
                                  IncludeFrontier frontier,
                                  DomainSettingsResolver domainSettingsResolver,
                                  CompoundDocsRequest request) {
@@ -305,7 +304,7 @@ public class CompoundDocsResolver {
      * @param includes the includes the resources were fetched with
      * @param rejected the include paths the downstream service rejected on the way
      */
-    private record TypeFetch(BatchFetchResult result, Set<String> includes, List<UnsupportedInclude> rejected) {
+    private record TypeFetch(FetchResult result, Set<String> includes, List<UnsupportedInclude> rejected) {
     }
 
     /**
@@ -336,19 +335,19 @@ public class CompoundDocsResolver {
     }
 
     /**
-     * @return the fetch of {@code ids} of {@code resourceType}, or an already {@link BatchFetchResult#skipped() skipped}
+     * @return the fetch of {@code ids} of {@code resourceType}, or an already {@link FetchResult#skipped() skipped}
      * one when there is no route to the type and {@link ErrorStrategy#IGNORE} lets its resources be skipped
      */
-    private CompletableFuture<BatchFetchResult> fetchAsync(String resourceType,
+    private CompletableFuture<FetchResult> fetchAsync(String resourceType,
                                                            Set<String> ids,
                                                            Set<String> includes,
                                                            DomainSettingsResolver domainSettingsResolver,
                                                            CompoundDocsRequest originalRequest) {
         Optional<DomainSettings> domainSettings = routeFor(domainSettingsResolver, resourceType);
         if (domainSettings.isEmpty()) {
-            return CompletableFuture.completedFuture(BatchFetchResult.skipped());
+            return CompletableFuture.completedFuture(FetchResult.skipped());
         }
-        BatchFetch batch = new BatchFetch(domainSettings.get(), resourceType, ids, includes);
+        BatchFetch<DomainSettings> batch = new BatchFetch<>(domainSettings.get(), resourceType, ids, includes);
         log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
         return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executor);
     }
@@ -359,7 +358,7 @@ public class CompoundDocsResolver {
      */
     private Optional<DomainSettings> routeFor(DomainSettingsResolver domainSettingsResolver, String resourceType) {
         try {
-            return Optional.of(domainSettingsResolver.requireDomainSettings(resourceType));
+            return Optional.of(fetchable(domainSettingsResolver.requireDomainSettings(resourceType), resourceType));
         } catch (DomainResolutionException e) {
             if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
                 log.error(
@@ -374,9 +373,22 @@ public class CompoundDocsResolver {
     }
 
     /**
+     * A route in-process is usable only when this resolver can fetch in-process - it is created with an in-process
+     * {@link BatchFetcher}.
+     */
+    private DomainSettings fetchable(DomainSettings domainSettings, String resourceType) {
+        if (domainSettings instanceof DomainSettings.InProcess && !fetcher.isInProcessFetcherConfigured()) {
+            throw new DomainResolutionException(String.format(
+                    "Resource type '%s' is routed in-process, but no in-process fetcher is configured", resourceType
+            ));
+        }
+        return domainSettings;
+    }
+
+    /**
      * Waits for a fetch, rethrowing its failure as thrown rather than wrapped in a {@link CompletionException}.
      */
-    private BatchFetchResult join(CompletableFuture<BatchFetchResult> future) {
+    private FetchResult join(CompletableFuture<FetchResult> future) {
         try {
             return future.join();
         } catch (CompletionException e) {

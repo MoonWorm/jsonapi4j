@@ -18,4 +18,11 @@ public class ResponseStatus {
         return overriddenStatus;
     }
 
+    /**
+     * Discards an overridden status, without applying it - for work that ran outside a request of its own.
+     */
+    public static void clear() {
+        RESPONSE_STATUS.remove();
+    }
+
 }

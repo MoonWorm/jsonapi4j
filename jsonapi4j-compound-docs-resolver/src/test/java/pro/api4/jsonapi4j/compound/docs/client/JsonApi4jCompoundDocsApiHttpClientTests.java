@@ -53,39 +53,39 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
     }
 
     @Nested
-    class DoBatchFetch {
+    class Fetch {
 
         @Test
-        public void doBatchFetch_successfulResponse_returnsResourcesAndDisablesCompoundDocsDownstream() throws IOException {
+        public void fetch_successfulResponse_returnsResourcesAndDisablesCompoundDocsDownstream() throws IOException {
             AtomicReference<Headers> requestHeaders = new AtomicReference<>();
             startServer(200, "{\"data\":[{\"type\":\"countries\",\"id\":\"US\"}]}", 0, requestHeaders);
 
-            HttpFetchResult result = sut.doBatchFetch(batch(), REQUEST);
+            FetchResult result = sut.fetch(batch(), REQUEST);
 
             assertThat(result.resources()).extracting(r -> r.idAndType().getId()).containsExactly("US");
-            assertThat(result.failed()).isFalse();
+            assertThat(result.incompleteReason()).isNull();
             assertThat(result.directives().getMaxAge()).isEqualTo(300L);
             assertThat(requestHeaders.get().getFirst("X-Disable-Compound-Docs")).isEqualTo("true");
         }
 
         @Test
-        public void doBatchFetch_non200Response_throwsErrorJsonApiResponseException() throws IOException {
+        public void fetch_non200Response_throwsErrorJsonApiResponseException() throws IOException {
             startServer(503, "unavailable", 0, new AtomicReference<>());
 
-            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+            assertThatThrownBy(() -> sut.fetch(batch(), REQUEST))
                     .isExactlyInstanceOf(ErrorJsonApiResponseException.class)
                     .hasMessageContaining("503");
         }
 
         @Test
-        public void doBatchFetch_badRequestRejectingRequestedIncludes_throwsRejectedIncludesException() throws IOException {
+        public void fetch_badRequestRejectingRequestedIncludes_throwsRejectedIncludesException() throws IOException {
             startServer(400, UNSUPPORTED_CURRENCIES, 0, new AtomicReference<>());
 
-            BatchFetch withIncludes = new BatchFetch(
+            BatchFetch<DomainSettings.OverHttp> withIncludes = new BatchFetch<>(
                     batch().domainSettings(), "countries", Set.of("US"), Set.of("currencies", "economy")
             );
 
-            assertThatThrownBy(() -> sut.doBatchFetch(withIncludes, REQUEST))
+            assertThatThrownBy(() -> sut.fetch(withIncludes, REQUEST))
                     .isInstanceOfSatisfying(RejectedIncludesException.class, e -> {
                         assertThat(e.getResourceType()).isEqualTo("countries");
                         assertThat(e.getRelationshipNames()).containsExactly("currencies");
@@ -93,38 +93,38 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         }
 
         @Test
-        public void doBatchFetch_badRequestRejectingIncludesNotRequested_throwsErrorJsonApiResponseException() throws IOException {
+        public void fetch_badRequestRejectingIncludesNotRequested_throwsErrorJsonApiResponseException() throws IOException {
             startServer(400, UNSUPPORTED_CURRENCIES, 0, new AtomicReference<>());
 
-            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+            assertThatThrownBy(() -> sut.fetch(batch(), REQUEST))
                     .isExactlyInstanceOf(ErrorJsonApiResponseException.class)
                     .hasMessageContaining("400");
         }
 
         @Test
-        public void doBatchFetch_responseSlowerThanTotalTimeout_throwsDownstreamTimeoutException() throws IOException {
+        public void fetch_responseSlowerThanTotalTimeout_throwsDownstreamTimeoutException() throws IOException {
             JsonApi4jCompoundDocsApiHttpClient impatient = new JsonApi4jCompoundDocsApiHttpClient(new ObjectMapper(), config(300));
             startServer(200, "{\"data\":[]}", 2000, new AtomicReference<>());
 
-            assertThatThrownBy(() -> impatient.doBatchFetch(batch(), REQUEST))
+            assertThatThrownBy(() -> impatient.fetch(batch(), REQUEST))
                     .isInstanceOf(DownstreamTimeoutException.class);
         }
 
         @Test
-        public void doBatchFetch_bodyIsNotJson_throwsErrorJsonApiResponseException() throws IOException {
+        public void fetch_bodyIsNotJson_throwsErrorJsonApiResponseException() throws IOException {
             startServer(200, "<html>oops</html>", 0, new AtomicReference<>());
 
-            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+            assertThatThrownBy(() -> sut.fetch(batch(), REQUEST))
                     .isExactlyInstanceOf(ErrorJsonApiResponseException.class);
         }
 
         @Test
-        public void doBatchFetch_connectionRefused_throwsErrorJsonApiResponseException() {
-            BatchFetch unreachable = new BatchFetch(
-                    DomainSettings.of(URI.create("http://127.0.0.1:1/jsonapi")), "countries", Set.of("US"), Set.of()
+        public void fetch_connectionRefused_throwsErrorJsonApiResponseException() {
+            BatchFetch<DomainSettings.OverHttp> unreachable = new BatchFetch<>(
+                    DomainSettings.overHttp(URI.create("http://127.0.0.1:1/jsonapi")), "countries", Set.of("US"), Set.of()
             );
 
-            assertThatThrownBy(() -> sut.doBatchFetch(unreachable, REQUEST))
+            assertThatThrownBy(() -> sut.fetch(unreachable, REQUEST))
                     .isExactlyInstanceOf(ErrorJsonApiResponseException.class);
         }
 
@@ -159,20 +159,23 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         );
     }
 
-    private BatchFetch batch() {
-        URI baseUrl = URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/jsonapi");
-        return new BatchFetch(DomainSettings.of(baseUrl), "countries", Set.of("US"), Set.of());
+    private BatchFetch<DomainSettings.OverHttp> batch() {
+        return new BatchFetch<>(DomainSettings.overHttp(baseUrl()), "countries", Set.of("US"), Set.of());
+    }
+
+    private URI baseUrl() {
+        return URI.create("http://127.0.0.1:" + server.getAddress().getPort() + "/jsonapi");
     }
 
     @Nested
     class HeaderPropagation {
 
         @Test
-        public void doBatchFetch_headersShapingTheResponse_areReplacedByJsonApiDefaults() throws IOException {
+        public void fetch_headersShapingTheResponse_areReplacedByJsonApiDefaults() throws IOException {
             AtomicReference<Headers> requestHeaders = new AtomicReference<>();
             startServer(200, "{\"data\":[]}", 0, requestHeaders);
 
-            sut.doBatchFetch(batch(), requestWithHeaders(Map.of(
+            sut.fetch(batch(), requestWithHeaders(Map.of(
                     "Accept", List.of("text/html"),
                     "Accept-Encoding", List.of("gzip, br"),
                     "If-None-Match", List.of("\"v1\""),
@@ -187,11 +190,11 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         }
 
         @Test
-        public void doBatchFetch_domainNotTrustedWithCredentials_leavesThemOut() throws IOException {
+        public void fetch_domainNotTrustedWithCredentials_leavesThemOut() throws IOException {
             AtomicReference<Headers> requestHeaders = new AtomicReference<>();
             startServer(200, "{\"data\":[]}", 0, requestHeaders);
 
-            sut.doBatchFetch(batch(), requestWithHeaders(Map.of(
+            sut.fetch(batch(), requestWithHeaders(Map.of(
                     "authorization", List.of("Bearer token"),
                     "Cookie", List.of("session=1"),
                     "X-Tenant", List.of("acme")
@@ -202,14 +205,14 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         }
 
         @Test
-        public void doBatchFetch_domainTrustedWithCredentials_sendsThemWithCookiesJoined() throws IOException {
+        public void fetch_domainTrustedWithCredentials_sendsThemWithCookiesJoined() throws IOException {
             AtomicReference<Headers> requestHeaders = new AtomicReference<>();
             startServer(200, "{\"data\":[]}", 0, requestHeaders);
-            BatchFetch trusted = new BatchFetch(
-                    new DomainSettings(batch().domainSettings().url(), 20, true), "countries", Set.of("US"), Set.of()
+            BatchFetch<DomainSettings.OverHttp> trusted = new BatchFetch<>(
+                    DomainSettings.overHttp(baseUrl(), 20, true), "countries", Set.of("US"), Set.of()
             );
 
-            sut.doBatchFetch(trusted, requestWithHeaders(Map.of(
+            sut.fetch(trusted, requestWithHeaders(Map.of(
                     "Authorization", List.of("Bearer token"),
                     "Cookie", List.of("session=1", "theme=dark")
             )));
@@ -219,11 +222,11 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         }
 
         @Test
-        public void doBatchFetch_headerWithSeveralValues_sendsEachOfThem() throws IOException {
+        public void fetch_headerWithSeveralValues_sendsEachOfThem() throws IOException {
             AtomicReference<Headers> requestHeaders = new AtomicReference<>();
             startServer(200, "{\"data\":[]}", 0, requestHeaders);
 
-            sut.doBatchFetch(batch(), requestWithHeaders(Map.of("X-Feature", List.of("a", "b"))));
+            sut.fetch(batch(), requestWithHeaders(Map.of("X-Feature", List.of("a", "b"))));
 
             assertThat(requestHeaders.get().get("X-Feature")).containsExactly("a", "b");
         }

@@ -72,7 +72,7 @@ public class UserResource implements Resource<UserDbEntity> {
    for field-level/ownership gating.
 5. **Compound docs**: if the type is includable, support `filter[id]` on its `readPage` (+ a
    `jsonapi4j.cd.mapping.<type>.maxBatchSize`). A `cd.mapping.<type>.url` is only for types another
-   service serves — same-app types resolve against loopback at the local port.
+   service serves — same-app types are read in-process.
 6. **OpenAPI** (if the OAS plugin is on): `@OasResourceInfo(attributes = XAttributes.class)` on the
    `Resource` — without it the published schema is empty. Declare `sortableFields` / `filters` on the
    operation, or they go undocumented even though they work.
@@ -85,8 +85,8 @@ public class UserResource implements Resource<UserDbEntity> {
   data-layer rule.
 - **`reference/relationships.md`** — to-one/to-many, lightweight refs vs full DTOs,
   `readOneForResource`/`readManyForResource` and batch ops (N+1 avoidance), edge data in identifier meta.
-- **`reference/compound-documents.md`** — `?include=`, self-HTTP resolution (auto for same-app types,
-  `cd.mapping` for cross-service), multi-hop, synthetic-primary caveat, header/param propagation.
+- **`reference/compound-documents.md`** — `?include=`, resolution (in-process for same-app types,
+  `cd.mapping` over HTTP for cross-service), multi-hop, synthetic-primary caveat, header/param propagation.
 - **`reference/performance.md`** — `filter[id]` batching, in-house resolution, parallel `ExecutorService`,
   hop/size caps, the compound-docs cache + `Cache-Control`.
 - **`reference/validation-and-security.md`** — `validateXxx` hooks, the fluent `JsonApiRequestValidator`,

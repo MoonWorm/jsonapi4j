@@ -40,7 +40,8 @@ For example, `/users/{id}?include=relatives,placeOfBirth.currencies,placeOfBirth
 * **Stage 1**: resolve list of `relatives` and a country that is a `placeOfBirth` for the requested user
 * **Stage 2**: resolve `currencies` and `economy` for a country resolved in Stage 1
 
-Within each stage, resources are grouped by type and their IDs; then, parallel batch requests (e.g. using `filter[id]=1,2,3,4,5`) are made for each resource type.
+Within each stage, resources are grouped by type and their IDs; then, parallel batch reads (e.g. using `filter[id]=1,2,3,4,5`) are made for each resource type.
+A type served by another service is read over HTTP; within a JsonApi4j app, a type the app serves itself is read in-process, through the framework directly — see [How includes are fetched](/compound-docs-plugin/#how-includes-are-fetched).
 If a bulk operation isn't implemented, the framework falls back to sequential "read-by-id" calls.
 That's why it's important to implement either "filter[id]" or "read-by-id" operations giving the priority to the first one.
 
@@ -69,12 +70,12 @@ When using the standalone resolver, the same setting lives on `DomainSettings`:
 
 ```java
 DomainSettingsResolver resolver = new DefaultDomainSettingsResolver(Map.of(
-    "users",     new DomainSettings(URI.create("https://users.example.com"), 50),  // per-type batch size
-    "countries", DomainSettings.of(URI.create("https://countries.example.com"))    // the default batch size
+    "users",     DomainSettings.overHttp(URI.create("https://users.example.com"), 50),  // per-type batch size
+    "countries", DomainSettings.overHttp(URI.create("https://countries.example.com"))    // the default batch size
 ));
 ```
 
-`DomainSettingsResolver` is a strict functional interface — `Optional<DomainSettings> resolveDomainSettings(String resourceType)` — so any custom implementation has full control over the URL, the per-type batch size, and whether the domain is trusted with the client's credentials (`DomainSettings.propagateCredentials()`; credential headers such as `Authorization` and `Cookie` are sent only to trusted domains). An empty result means there is no route for the type: used standalone (e.g. in an API gateway), resolution then fails with `Resource type '<type>' has no mapping`, so every type your API can include must be mapped. The [Compound Documents Plugin](/compound-docs-plugin/) instead treats such a type as served by the app itself.
+`DomainSettingsResolver` is a strict functional interface — `Optional<DomainSettings> resolveDomainSettings(String resourceType)` — so any custom implementation has full control over the URL, the per-type batch size, and whether the domain is trusted with the client's credentials (`propagateCredentials` of `DomainSettings.overHttp(...)`; credential headers such as `Authorization` and `Cookie` are sent only to trusted domains). An empty result means there is no route for the type: used standalone (e.g. in an API gateway), resolution then fails with `Resource type '<type>' has no mapping`, so every type your API can include must be mapped. The [Compound Documents Plugin](/compound-docs-plugin/) instead treats such a type as served by the app itself.
 
 ### Standalone Resolver
 
@@ -96,9 +97,9 @@ Build the resolver and its routing once at startup. Every resource type your API
 URI geoService = URI.create("http://geo-service/jsonapi");
 DomainSettingsResolver routing = new DefaultDomainSettingsResolver(Map.of(
     // url, filter[id] batch size, whether it gets the client's credentials
-    "users",      new DomainSettings(URI.create("http://users-service/jsonapi"), 50, true),
-    "countries",  new DomainSettings(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true),
-    "currencies", new DomainSettings(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true)
+    "users",      DomainSettings.overHttp(URI.create("http://users-service/jsonapi"), 50, true),
+    "countries",  DomainSettings.overHttp(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true),
+    "currencies", DomainSettings.overHttp(geoService, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true)
 ));
 
 CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
@@ -148,6 +149,8 @@ backend at all, run the same check before proxying it, with a checker built from
 ```java
 IncludesChecker.from(config).check(request);
 ```
+
+How each type is fetched is up to `DomainSettings`, which is one of two kinds: `DomainSettings.overHttp(...)` is fetched over HTTP from its `url`; `DomainSettings.inProcess(...)` is fetched by the in-process `BatchFetcher<DomainSettings.InProcess>` passed to the resolver's constructor — the JsonApi4j plugin uses it for the types an app serves itself, and an embedding with in-process data sources of its own can implement it the same way. Each fetcher is typed by the kind of route it serves, so the two can't be mixed up. Resources fetched in-process are never cached.
 
 Each backend must serve `GET /{type}?filter[id]=a,b,c` and emit relationship linkage for the relationships named in `include`. A backend that answers an unknown relationship name with `400 UNSUPPORTED_INCLUDE`, naming it in `meta.path` — as every JsonApi4j app does — lets the resolver report the full include path back to the client, or leave it out under `UnsupportedIncludeStrategy.IGNORE`. It doesn't resolve includes itself: the resolver's calls carry `X-Disable-Compound-Docs: true` and the gateway assembles `included`.
 

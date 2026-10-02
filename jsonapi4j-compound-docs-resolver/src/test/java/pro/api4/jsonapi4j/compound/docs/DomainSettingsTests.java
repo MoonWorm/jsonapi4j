@@ -1,6 +1,9 @@
 package pro.api4.jsonapi4j.compound.docs;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.URI;
 
@@ -11,20 +14,63 @@ class DomainSettingsTests {
 
     private static final URI URL = URI.create("http://example.com");
 
-    @Test
-    void constructor_validInputs_setsFields() {
-        DomainSettings settings = new DomainSettings(URL, 50);
+    @Nested
+    class OverHttp {
 
-        assertThat(settings.url()).isEqualTo(URL);
-        assertThat(settings.maxBatchSize()).isEqualTo(50);
+        @Test
+        void overHttp_allSettings_setsThem() {
+            DomainSettings.OverHttp settings = DomainSettings.overHttp(URL, 50, true);
+
+            assertThat(settings.url()).isEqualTo(URL);
+            assertThat(settings.maxBatchSize()).isEqualTo(50);
+            assertThat(settings.propagateCredentials()).isTrue();
+        }
+
+        @Test
+        void overHttp_urlOnly_usesDefaultBatchSizeWithoutCredentials() {
+            DomainSettings.OverHttp settings = DomainSettings.overHttp(URL);
+
+            assertThat(settings.maxBatchSize()).isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
+            assertThat(settings.propagateCredentials()).isFalse();
+        }
+
+        @Test
+        void overHttp_urlAndBatchSize_isNotTrustedWithCredentials() {
+            assertThat(DomainSettings.overHttp(URL, 10).propagateCredentials()).isFalse();
+        }
+
+        @Test
+        void overHttp_nullUrl_throwsNpe() {
+            assertThatThrownBy(() -> DomainSettings.overHttp(null, 10))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("url must not be null");
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = {0, -1})
+        void overHttp_nonPositiveBatchSize_throwsIllegalArgument(int maxBatchSize) {
+            assertThatThrownBy(() -> DomainSettings.overHttp(URL, maxBatchSize))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("maxBatchSize must be positive");
+        }
+
     }
 
-    @Test
-    void of_usesDefaultMaxBatchSize() {
-        DomainSettings settings = DomainSettings.of(URL);
+    @Nested
+    class InProcess {
 
-        assertThat(settings.url()).isEqualTo(URL);
-        assertThat(settings.maxBatchSize()).isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
+        @Test
+        void inProcess_batchSize_setsIt() {
+            assertThat(DomainSettings.inProcess(30).maxBatchSize()).isEqualTo(30);
+        }
+
+        @Test
+        void inProcess_nonPositiveBatchSize_throwsIllegalArgument() {
+            assertThatThrownBy(() -> DomainSettings.inProcess(0))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("maxBatchSize must be positive");
+        }
+
     }
 
     @Test
@@ -32,30 +78,4 @@ class DomainSettingsTests {
         assertThat(DomainSettings.DEFAULT_MAX_BATCH_SIZE).isEqualTo(20);
     }
 
-    @Test
-    void constructor_nullUrl_throwsNpe() {
-        assertThatThrownBy(() -> new DomainSettings(null, 10))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("url must not be null");
-    }
-
-    @Test
-    void constructor_zeroBatchSize_throwsIllegalArgument() {
-        assertThatThrownBy(() -> new DomainSettings(URL, 0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("maxBatchSize must be positive");
-    }
-
-    @Test
-    void constructor_negativeBatchSize_throwsIllegalArgument() {
-        assertThatThrownBy(() -> new DomainSettings(URL, -1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("maxBatchSize must be positive");
-    }
-
-    @Test
-    void constructor_withoutCredentialsFlag_isNotTrustedWithCredentials() {
-        assertThat(new DomainSettings(URL, 10).propagateCredentials()).isFalse();
-        assertThat(DomainSettings.of(URL).propagateCredentials()).isFalse();
-    }
 }

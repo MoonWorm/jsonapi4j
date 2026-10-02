@@ -10,8 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class DefaultDomainSettingsResolverTests {
 
-    private static final DomainSettings USERS = new DomainSettings(URI.create("http://users.example.com"), 50, true);
-    private static final DomainSettings COUNTRIES = DomainSettings.of(URI.create("http://countries.example.com"));
+    private static final DomainSettings USERS = DomainSettings.overHttp(URI.create("http://users.example.com"), 50, true);
+    private static final DomainSettings COUNTRIES = DomainSettings.overHttp(URI.create("http://countries.example.com"));
 
     private final DefaultDomainSettingsResolver sut = new DefaultDomainSettingsResolver(Map.of(
             "users", USERS,

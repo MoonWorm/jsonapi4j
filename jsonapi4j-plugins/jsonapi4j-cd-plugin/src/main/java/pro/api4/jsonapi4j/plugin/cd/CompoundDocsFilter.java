@@ -13,6 +13,7 @@ import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
@@ -78,12 +79,9 @@ public class CompoundDocsFilter implements Filter {
             DomainSettingsResolver domainSettingsResolver = (DomainSettingsResolver) filterConfig.getServletContext()
                     .getAttribute(COMPOUND_DOCS_PLUGIN_DOMAIN_SETTINGS_RESOLVER_ATT_NAME);
 
-            this.requestSupplier = new CompoundDocsRequestSupplier();
-            this.routing = new SelfFallbackRouting(
-                    domainSettingsResolver,
-                    cdProperties,
-                    jsonApi4j.getProperties().rootPath()
-            );
+            this.requestSupplier = new CompoundDocsRequestSupplier((PrincipalResolver) filterConfig.getServletContext()
+                    .getAttribute(PRINCIPAL_RESOLVER_ATT_NAME));
+            this.routing = new SelfFallbackRouting(domainSettingsResolver, cdProperties);
 
             CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                     cdProperties.enabled(),
@@ -114,7 +112,8 @@ public class CompoundDocsFilter implements Filter {
                     config,
                     objectMapper,
                     jsonApi4j.getExecutor(),
-                    cache
+                    cache,
+                    new InProcessBatchFetcher(jsonApi4j, objectMapper, config.getPropagation())
             );
             log.debug("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
 
@@ -161,7 +160,7 @@ public class CompoundDocsFilter implements Filter {
                     result = resolver.resolveCompoundDocs(
                             responseWrapper.getCapturedBodyAsString(),
                             served.compoundDocsRequest(),
-                            routing.forRequest(served.request())
+                            routing
                     );
                 } catch (RuntimeException e) {
                     httpServletResponse.setHeader(
@@ -191,25 +190,23 @@ public class CompoundDocsFilter implements Filter {
         BufferedResponseWrapper captured = new BufferedResponseWrapper(response);
         chain.doFilter(request, captured);
         if (captured.getStatus() != SC_400_BAD_REQUEST.getCode()) {
-            return new Served(request, compoundDocsRequest, captured);
+            return new Served(compoundDocsRequest, captured);
         }
         Set<String> dropped = includesChecker.includesToDrop(
                 compoundDocsRequest,
                 responseParser.parseUnsupportedIncludes(captured.getCapturedBodyAsString())
         );
         if (dropped.isEmpty()) {
-            return new Served(request, compoundDocsRequest, captured);
+            return new Served(compoundDocsRequest, captured);
         }
         log.warn("Serving the request again without unsupported includes {} per strategy", dropped);
         HttpServletRequest retried = new IncludesRemovedRequest(request, dropped);
         BufferedResponseWrapper retriedCaptured = new BufferedResponseWrapper(response);
         chain.doFilter(retried, retriedCaptured);
-        return new Served(retried, requestSupplier.toCompoundDocsRequest(retried, dropped), retriedCaptured);
+        return new Served(requestSupplier.toCompoundDocsRequest(retried, dropped), retriedCaptured);
     }
 
-    private record Served(HttpServletRequest request,
-                          CompoundDocsRequest compoundDocsRequest,
-                          BufferedResponseWrapper response) {
+    private record Served(CompoundDocsRequest compoundDocsRequest, BufferedResponseWrapper response) {
     }
 
     private void applyCacheControlHeader(HttpServletResponse response,

@@ -3,6 +3,7 @@ package pro.api4.jsonapi4j.compound.docs;
 import lombok.Data;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
+import pro.api4.jsonapi4j.principal.Principal;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +36,11 @@ public final class CompoundDocsRequest {
     private final Map<String, List<String>> headers;
     private final Map<String, List<String>> customQueryParams;
     private final String relationshipNameFromRequestUri;
+    /**
+     * The authenticated principal of the original request, or {@code null}. Resources fetched in-process are fetched
+     * as this principal; over HTTP the principal travels in the propagated credential headers instead.
+     */
+    private final Principal principal;
 
     private String relativePath;
     private boolean processable;
@@ -59,6 +65,20 @@ public final class CompoundDocsRequest {
                                Map<String, List<String>> headers,
                                String relativePath,
                                Map<String, List<String>> customQueryParams) {
+        this(method, includes, rejectedIncludes, fieldSets, headers, relativePath, customQueryParams, null);
+    }
+
+    /**
+     * @param principal the authenticated principal of the original request, or {@code null}
+     */
+    public CompoundDocsRequest(String method,
+                               List<String> includes,
+                               List<String> rejectedIncludes,
+                               Map<String, List<String>> fieldSets,
+                               Map<String, List<String>> headers,
+                               String relativePath,
+                               Map<String, List<String>> customQueryParams,
+                               Principal principal) {
         Validate.notNull(rejectedIncludes, "rejectedIncludes must not be null");
         Validate.notBlank(method, "method must not be blank");
         Validate.notNull(fieldSets, "fieldSets must not be null");
@@ -70,6 +90,7 @@ public final class CompoundDocsRequest {
         this.fieldSets = fieldSets;
         this.headers = caseInsensitive(headers);
         this.customQueryParams = customQueryParams;
+        this.principal = principal;
         this.relationshipNameFromRequestUri = getRelationshipNameFromRequestUri(relativePath);
         this.processable = calculateProcessable(method, this.headers, includes, rejectedIncludes);
     }

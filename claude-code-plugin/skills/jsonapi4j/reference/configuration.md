@@ -18,7 +18,7 @@ jsonapi4j:
     errorStrategy: IGNORE       # IGNORE -> failed includes are left out of `included` (response marked no-store,
                                 #   gaps listed in meta.includedIncomplete: FETCH_FAILED | NO_ROUTE per type);
                                 # FAIL -> JSON:API error: 504 timeout, 502 other downstream failure, 500 no route
-    propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]   # what to forward to downstream self-HTTP calls
+    propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]   # what include reads carry over from the request
                                 # (never: Accept-Encoding, conditional/Range, hop-by-hop, X-Forwarded-For & co.)
     credentialHeaders: [Authorization, Cookie, Proxy-Authorization, X-Authenticated-User-Id, ...]   # the default
     deduplication: DATA_AND_INCLUDED   # or INCLUDED_ONLY (repeat reached primary resources in included) | NONE
@@ -29,9 +29,11 @@ jsonapi4j:
         maxBatchSize: 50                       # optional filter[id] batch size (else defaultMaxBatchSize)
         propagateCredentials: true             # send credentialHeaders there (default false)
       countries:
-        maxBatchSize: 20                       # same-app type: no url, batch size only
+        maxBatchSize: 20                       # same-app type: no url
+        transport: HTTP                        # optional: over HTTP from default.url (else default.transport)
       default:
-        url: https://api.internal:8443/jsonapi # optional: same-app types when loopback isn't reachable
+        url: https://api.internal:8443/jsonapi # this app's own address, for same-app types over HTTP
+        transport: IN_PROCESS                  # default transport of same-app types (IN_PROCESS | HTTP)
     httpConnectTimeoutMs: 1000
     httpTotalTimeoutMs: 5000
     cache:
@@ -65,12 +67,12 @@ jsonapi4j:
 ```
 
 Notes:
-- `cd.mapping.<type>.url` is for cross-service types only. Same-app includes (and the built-in meta types) resolve
-  against loopback (`127.0.0.1`, or `[::1]` over IPv6) at the local port the request arrived on (never the
-  `Host` header), so there is no base URL or port to keep in sync. When the app isn't reachable on loopback
-  as-is (TLS terminated in the app, a server bound to one specific non-loopback address), set
-  `cd.mapping.default.url`, e.g. via `JSONAPI4J_CD_MAPPING_DEFAULT_URL`. `default` is reserved: a resource
-  type named `default` fails startup.
+- `cd.mapping.<type>.url` is for cross-service types only. Same-app includes (and the built-in meta types) are
+  read in-process, so there is no base URL or port to keep in sync. To fetch them over HTTP instead — when
+  servlet filters such as URL-based security rules must see include requests — set `cd.mapping.default.url`
+  plus `transport: HTTP` per type or on `default` (e.g. `JSONAPI4J_CD_MAPPING_DEFAULT_URL` and
+  `JSONAPI4J_CD_MAPPING_DEFAULT_TRANSPORT=HTTP`). Startup fails on `HTTP` without `default.url`, and on
+  `IN_PROCESS` with a `url`. `default` is reserved: a resource type named `default` fails startup.
 - The client's credentials (`cd.credentialHeaders`) always reach same-app types, but a cross-service type
   only with `propagateCredentials: true`.
 - The exact set of keys can grow between versions — confirm against your version's property classes /

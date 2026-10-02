@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.compound.docs.config.Propagation;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
 import pro.api4.jsonapi4j.plugin.cd.config.DefaultCompoundDocsProperties;
+import pro.api4.jsonapi4j.plugin.cd.config.Transport;
 
 import java.util.List;
 import java.util.Map;
@@ -52,9 +53,9 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     ErrorStrategy errorStrategy();
 
     /**
-     * Settings per resource type: 'url' of the service serving it (none when this app serves it), 'maxBatchSize' and
-     * 'propagateCredentials'. The reserved 'default' entry's 'url' is where this app is reached for the resource types
-     * it serves, used instead of loopback.
+     * Settings per resource type: 'url' of the service serving it (none when this app serves it), 'maxBatchSize',
+     * 'propagateCredentials' and 'transport'. The reserved 'default' entry takes this app's own base URL as 'url', and
+     * the 'transport' of the resource types it serves that set none.
      */
     Map<String, Mapping> mapping();
 
@@ -163,6 +164,11 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
          */
         @WithDefault(CompoundDocsProperties.Mapping.DEFAULT_PROPAGATE_CREDENTIALS)
         boolean propagateCredentials();
+
+        /**
+         * How the resource type is fetched when this app serves it: IN_PROCESS, or HTTP from 'mapping.default.url'.
+         */
+        Optional<Transport> transport();
     }
 
     default CompoundDocsProperties toCdProperties() {
@@ -176,7 +182,8 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
                 e -> new DefaultCompoundDocsProperties.DefaultMapping(
                         e.getValue().url().orElse(null),
                         e.getValue().maxBatchSize().orElse(null),
-                        e.getValue().propagateCredentials()
+                        e.getValue().propagateCredentials(),
+                        e.getValue().transport().orElse(null)
                 )
         )));
         cdProperties.setDefaultMaxBatchSize(defaultMaxBatchSize());

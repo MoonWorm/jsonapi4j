@@ -143,4 +143,22 @@ public class ResponseHeaders {
 
     }
 
+    /**
+     * Removes the propagated {@code Cache-Control} directives, for a caller that serves the response itself rather than
+     * through {@link #flush(HttpServletResponse)} - e.g. an in-process fetch of included resources.
+     *
+     * @return the propagated directives, or {@code null} when none were propagated
+     */
+    public static CacheControlDirectives takeCacheControl() {
+        List<String> values = HEADERS.get().remove(HttpHeaders.CACHE_CONTROL.getName());
+        return values == null || values.size() != 1 ? null : CacheControlParser.parse(values.get(0));
+    }
+
+    /**
+     * Discards every collected header, without applying them - for work that ran outside a request of its own.
+     */
+    public static void clear() {
+        HEADERS.remove();
+    }
+
 }

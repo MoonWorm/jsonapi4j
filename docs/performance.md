@@ -184,6 +184,29 @@ Common strategies:
 
 Parallelism helps most when a resource has multiple relationships that each trigger downstream calls. If relationships are resolved in-house (see above), the overhead of thread scheduling may outweigh the benefit.
 
+## Fetch Same-App Includes In-Process
+
+Resource types the app serves itself are fetched for `included` either **in-process** — the read runs through the
+framework directly — or **over HTTP**, with the app calling its own address (see
+[How includes are fetched](/compound-docs-plugin/#how-includes-are-fetched)). Prefer `IN_PROCESS`, the default,
+wherever it applies. Over HTTP every include fetch pays a full round trip: a socket, every servlet filter, the JSON
+written and parsed again — and it holds a second worker thread while the original request waits, which under load can
+exhaust a bounded thread pool.
+
+```yaml
+jsonapi4j:
+  cd:
+    mapping:
+      default:
+        url: http://127.0.0.1:8080/jsonapi
+      countries:
+        transport: HTTP     # only where servlet filters must see the include requests
+```
+
+In a rough local benchmark with in-memory data, a 3-level include was ~1.8× faster per request in-process, at ~1.6×
+the throughput; requests without includes performed the same. Switch a type to `HTTP` only when something that runs
+as a servlet filter — URL-based security rules, logging, metrics — has to see its include requests.
+
 ## Limit Compound Document Depth
 
 The `?include` parameter supports multi-level traversal (e.g., `?include=orders.lineItems.product`). Each level multiplies the number of downstream requests. Set limits to prevent unbounded resolution:
@@ -213,6 +236,8 @@ jsonapi4j:
       enabled: true
       maxSize: 1000    # Maximum number of cached resource entries
 ```
+
+Only resources fetched over HTTP are cached — same-app types fetched in-process are cheap to read and always fresh.
 
 Cache keys include the resource type, ID, downstream includes, and sparse fieldsets — so `GET /users/1?include=orders` and `GET /users/1?include=orders&fields[orders]=total` are cached separately.
 
@@ -258,6 +283,7 @@ Register the custom cache as a bean, and it replaces the built-in implementation
 | Bulk reads (`filter[id]`) | High | Always — required for efficient compound docs |
 | Batch relationship operations | High | APIs serving list endpoints with relationships |
 | In-house relationship resolution | Medium | When parent DTOs contain relationship data |
+| In-process includes (`transport: IN_PROCESS`) | High | Always for same-app types, unless servlet filters must see includes |
 | Executor tuning | Medium | Resources with multiple relationships and I/O-bound resolution |
 | Compound doc limits | Safety | Always — prevents runaway resolution |
 | Compound doc caching | Medium | Repeated requests for the same included resources |

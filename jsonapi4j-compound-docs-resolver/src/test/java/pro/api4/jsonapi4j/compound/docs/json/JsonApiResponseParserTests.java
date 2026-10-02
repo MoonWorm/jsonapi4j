@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.compound.docs.json;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ public class JsonApiResponseParserTests {
                       {"type":"users","id":"1","relationships":{"relatives":{"data":[{"type":"users","id":"2"}]}}},
                       {"type":"users","id":"2"}]}""";
 
-            List<PrimaryResource> actualResult = sut.parsePrimaryResourceDoc(response).primaryResources();
+            List<ParsedResource> actualResult = sut.parsePrimaryResourceDoc(response).primaryResources();
 
             assertThat(actualResult).extracting(r -> r.linkage().idAndType())
                     .containsExactly(idAndType("users", "1"), idAndType("users", "2"));
@@ -122,12 +123,13 @@ public class JsonApiResponseParserTests {
                       "relatives":{"data":[]},
                       "citizenships":{"links":{"self":"/users/1/relationships/citizenships"}}}}""";
 
-            ResourceLinkage actualResult = sut.parseResource(resource);
+            ParsedResource actualResult = sut.parseResource(resource);
 
             assertThat(actualResult.idAndType()).isEqualTo(idAndType("users", "1"));
-            assertThat(actualResult.relationships()).isEqualTo(Map.of(
+            assertThat(actualResult.linkage().relationships()).isEqualTo(Map.of(
                     "placeOfBirth", Set.of(idAndType("countries", "US"))
             ));
+            assertThat(actualResult.json()).isEqualTo(resource);
         }
 
         @Test
@@ -175,6 +177,28 @@ public class JsonApiResponseParserTests {
             assertThat(sut.parseUnsupportedIncludes("<html>oops</html>")).isEmpty();
             assertThat(sut.parseUnsupportedIncludes("{\"data\":[]}")).isEmpty();
             assertThat(sut.parseUnsupportedIncludes(null)).isEmpty();
+        }
+
+    }
+
+    @Nested
+    class ParseResourceObjects {
+
+        @Test
+        public void parseResourceObjects_listDocument_returnsEachResourceWithItsIdentity() throws Exception {
+            JsonNode document = new ObjectMapper().readTree(
+                    "{\"data\":[{\"type\":\"countries\",\"id\":\"US\"},{\"type\":\"countries\",\"id\":\"NO\"}]}"
+            );
+
+            assertThat(sut.parseResourceObjects(document))
+                    .extracting(ParsedResource::idAndType)
+                    .containsExactly(idAndType("countries", "US"), idAndType("countries", "NO"));
+        }
+
+        @Test
+        public void parseResourceObjects_noPrimaryData_returnsNothing() throws Exception {
+            assertThat(sut.parseResourceObjects(new ObjectMapper().readTree("{\"data\":null}"))).isEmpty();
+            assertThat(sut.parseResourceObjects(null)).isEmpty();
         }
 
     }

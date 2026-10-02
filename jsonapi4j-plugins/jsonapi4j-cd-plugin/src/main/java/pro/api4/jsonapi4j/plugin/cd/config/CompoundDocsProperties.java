@@ -23,8 +23,8 @@ public interface CompoundDocsProperties extends PluginProperties {
     String ERROR_STRATEGY_PROPERTY = "errorStrategy";
     String MAPPING_PROPERTY = "mapping";
     /**
-     * Reserved {@code mapping} key: its {@code url} is the base URL for every resource type served by this app itself,
-     * used instead of calling the app over loopback. A resource type can therefore not be named {@code default}.
+     * Reserved {@code mapping} key: its {@code url} is this app's own base URL, to fetch the resource types it serves
+     * over HTTP from rather than in-process. A resource type can therefore not be named {@code default}.
      */
     String DEFAULT_MAPPING_KEY = "default";
     String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
@@ -87,7 +87,8 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     /**
-     * @return {@code mapping.default.url}, the base URL of this app for resource types it serves itself, if set
+     * @return {@code mapping.default.url}, this app's own base URL - where resource types it serves are fetched from
+     * over HTTP, see {@link #transportOf(String)} - if set
      */
     default Optional<String> defaultMapping() {
         return Optional.ofNullable(mapping())
@@ -106,7 +107,7 @@ public interface CompoundDocsProperties extends PluginProperties {
         Map<String, DomainSettings> domainSettings = new HashMap<>();
         mapping().forEach((resourceType, mapping) -> {
             if (!DEFAULT_MAPPING_KEY.equals(resourceType) && mapping != null && mapping.url() != null) {
-                domainSettings.put(resourceType, new DomainSettings(
+                domainSettings.put(resourceType, DomainSettings.overHttp(
                         URI.create(mapping.url()),
                         maxBatchSize(resourceType),
                         mapping.propagateCredentials()
@@ -114,6 +115,24 @@ public interface CompoundDocsProperties extends PluginProperties {
             }
         });
         return Collections.unmodifiableMap(domainSettings);
+    }
+
+    /**
+     * @return how resources of {@code resourceType}, one this app serves itself, are fetched: the {@code transport} of
+     * its mapping, otherwise the one of {@code mapping.default}, otherwise {@link Transport#IN_PROCESS}
+     */
+    default Transport transportOf(String resourceType) {
+        return transportOf(mappingOf(resourceType))
+                .or(() -> transportOf(mappingOf(DEFAULT_MAPPING_KEY)))
+                .orElse(Transport.IN_PROCESS);
+    }
+
+    private Mapping mappingOf(String resourceType) {
+        return mapping() == null ? null : mapping().get(resourceType);
+    }
+
+    private static Optional<Transport> transportOf(Mapping mapping) {
+        return Optional.ofNullable(mapping).map(Mapping::transport);
     }
 
     /**
@@ -196,8 +215,10 @@ public interface CompoundDocsProperties extends PluginProperties {
 
     /**
      * A resource type mapped to a {@code url} is fetched over HTTP from another service, so the URL has to be absolute -
-     * a relative one has nothing to resolve against once the include leaves this app. A type without one is served by
-     * this app itself and always gets the client's credentials, so {@code propagateCredentials} is meaningless there.
+     * a relative one has nothing to resolve against once the include leaves this app - and a {@code transport} of its
+     * own is meaningless. A type without one is served by this app itself: fetched over HTTP only from
+     * {@code mapping.default.url}, which has to be set then, and always with the client's credentials, so
+     * {@code propagateCredentials} is meaningless there.
      */
     private void validateMapping(PropertiesValidationResultBuilder builder) {
         if (mapping() == null) {
@@ -210,9 +231,10 @@ public interface CompoundDocsProperties extends PluginProperties {
                 return;
             }
             String mappingPath = propertyPath(MAPPING_PROPERTY, resourceType);
-            if (mapping == null || mapping.url() == null && mapping.maxBatchSize() == null) {
+            if (mapping == null || mapping.url() == null && mapping.maxBatchSize() == null && mapping.transport() == null) {
                 builder.addPropertyError(mappingPath, String.format(
-                        "must set '%s' or '%s'", Mapping.URL_PROPERTY, Mapping.MAX_BATCH_SIZE_PROPERTY
+                        "must set '%s', '%s' or '%s'",
+                        Mapping.URL_PROPERTY, Mapping.MAX_BATCH_SIZE_PROPERTY, Mapping.TRANSPORT_PROPERTY
                 ));
                 return;
             }
@@ -229,6 +251,7 @@ public interface CompoundDocsProperties extends PluginProperties {
                         mapping.maxBatchSize()
                 );
             }
+            validateTransport(builder, resourceType, mapping);
             if (mapping.url() == null && mapping.propagateCredentials()) {
                 builder.addPropertyError(
                         propertyPath(MAPPING_PROPERTY, resourceType, Mapping.PROPAGATE_CREDENTIALS_PROPERTY),
@@ -239,19 +262,47 @@ public interface CompoundDocsProperties extends PluginProperties {
         });
     }
 
+    private void validateTransport(PropertiesValidationResultBuilder builder, String resourceType, Mapping mapping) {
+        String transportPath = propertyPath(MAPPING_PROPERTY, resourceType, Mapping.TRANSPORT_PROPERTY);
+        if (mapping.url() != null && mapping.transport() == Transport.IN_PROCESS) {
+            builder.addPropertyError(transportPath, String.format(
+                    "a resource type mapped to a '%s' is served by another service, so it is fetched over HTTP",
+                    Mapping.URL_PROPERTY
+            ));
+        }
+        if (mapping.url() == null && mapping.transport() == Transport.HTTP && defaultMapping().isEmpty()) {
+            builder.addPropertyError(transportPath, String.format(
+                    "needs '%s' - this app's own address - to fetch the resource type over HTTP from",
+                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY)
+            ));
+        }
+    }
+
     /**
-     * The reserved {@code default} entry only says where this app is reached: batch sizes of its resource types come
-     * from their own entries or {@code defaultMaxBatchSize}, and they always get the client's credentials.
+     * The reserved {@code default} entry says where this app is reached, and how the resource types it serves are
+     * fetched by default. Batch sizes of those types come from their own entries or {@code defaultMaxBatchSize}, and
+     * they always get the client's credentials.
      */
     private void validateDefaultMapping(PropertiesValidationResultBuilder builder, Mapping mapping) {
-        builder.requireHttpUrl(
-                propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY),
-                mapping.url()
-        );
+        if (mapping.url() != null) {
+            builder.requireHttpUrl(
+                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY),
+                    mapping.url()
+            );
+        }
+        if (mapping.transport() == Transport.HTTP && mapping.url() == null) {
+            builder.addPropertyError(
+                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.TRANSPORT_PROPERTY),
+                    String.format("needs '%s' - this app's own address - to fetch over HTTP from", Mapping.URL_PROPERTY)
+            );
+        }
         if (mapping.maxBatchSize() != null || mapping.propagateCredentials()) {
             builder.addPropertyError(
                     propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY),
-                    String.format("the reserved '%s' entry takes only '%s'", DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY)
+                    String.format(
+                            "the reserved '%s' entry takes only '%s' and '%s'",
+                            DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY, Mapping.TRANSPORT_PROPERTY
+                    )
             );
         }
     }
@@ -297,13 +348,14 @@ public interface CompoundDocsProperties extends PluginProperties {
 
     /**
      * The settings of one resource type under {@code mapping}. With a {@code url} the type is served by another service
-     * and fetched from there; without one it is served by this app itself, and only its batch size is set.
+     * and fetched from there; without one it is served by this app itself, fetched per its {@code transport}.
      */
     interface Mapping {
 
         String URL_PROPERTY = "url";
         String MAX_BATCH_SIZE_PROPERTY = "maxBatchSize";
         String PROPAGATE_CREDENTIALS_PROPERTY = "propagateCredentials";
+        String TRANSPORT_PROPERTY = "transport";
 
         String DEFAULT_PROPAGATE_CREDENTIALS = "false";
 
@@ -323,6 +375,13 @@ public interface CompoundDocsProperties extends PluginProperties {
          * {@link #url()}. Off by default, so a service doesn't get the client's identity unless trusted with it
          */
         boolean propagateCredentials();
+
+        /**
+         * @return how the resource type is fetched when this app serves it, or {@code null} to follow
+         * {@code mapping.default} - see {@link CompoundDocsProperties#transportOf(String)}. On {@code mapping.default}
+         * itself: how every resource type the app serves is fetched unless it says otherwise
+         */
+        Transport transport();
 
     }
 

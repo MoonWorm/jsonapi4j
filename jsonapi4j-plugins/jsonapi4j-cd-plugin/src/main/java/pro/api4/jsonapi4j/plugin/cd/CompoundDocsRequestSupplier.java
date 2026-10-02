@@ -2,6 +2,7 @@ package pro.api4.jsonapi4j.plugin.cd;
 
 import jakarta.servlet.http.HttpServletRequest;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.principal.PrincipalResolver;
 import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.util.JsonApiRequestParsingUtil;
 
@@ -10,6 +11,16 @@ import java.util.*;
 import static java.util.stream.Collectors.toMap;
 
 public class CompoundDocsRequestSupplier {
+
+    private final PrincipalResolver principalResolver;
+
+    /**
+     * @param principalResolver resolves the principal the request runs as, which in-process fetches of its includes
+     *                          run as too - resolved here, on the request thread, whatever the order of the filters
+     */
+    public CompoundDocsRequestSupplier(PrincipalResolver principalResolver) {
+        this.principalResolver = principalResolver;
+    }
 
     public CompoundDocsRequest toCompoundDocsRequest(HttpServletRequest servletRequest) {
         return toCompoundDocsRequest(servletRequest, Set.of());
@@ -28,7 +39,8 @@ public class CompoundDocsRequestSupplier {
                 JsonApiRequestParsingUtil.parseFieldSets(allParams),
                 getOriginalRequestHeaders(servletRequest),
                 servletRequest.getRequestURI(),
-                JsonApiRequestParsingUtil.parseCustomQueryParams(allParams)
+                JsonApiRequestParsingUtil.parseCustomQueryParams(allParams),
+                principalResolver == null ? null : principalResolver.resolvePrincipal(servletRequest)
         );
     }
 

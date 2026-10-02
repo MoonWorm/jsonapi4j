@@ -50,10 +50,12 @@ jsonapi4j:
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
 | `jsonapi4j.cd.httpTotalTimeoutMs`     | `10000`                              | Controls total request timeout (in millisecond). Applied to each generated HTTP request.                                                                                          |
-| `jsonapi4j.cd.mapping.<resourceType>.url` | not set                     | Base URL of the service serving the resource type. Set it **only** for a type served by a different service; same-app types (including the built-in meta types) need none — see [Resolving base URLs](#resolving-base-urls). |
+| `jsonapi4j.cd.mapping.<resourceType>.url` | not set                     | Base URL of the service serving the resource type. Set it **only** for a type served by a different service; same-app types (including the built-in meta types) need none — see [Resolving base URLs](#how-includes-are-fetched). |
 | `jsonapi4j.cd.mapping.<resourceType>.maxBatchSize` | `defaultMaxBatchSize` | Max `filter[id]=...` batch size for the type, e.g. when its service enforces a stricter cap. Also applies to a same-app type, with no `url`. |
 | `jsonapi4j.cd.mapping.<resourceType>.propagateCredentials` | `false` | Whether the client's credentials (`credentialHeaders`) are sent to the service at `url` — see [Header propagation](#header-propagation). Same-app types always get them, so it's rejected without a `url`. |
-| `jsonapi4j.cd.mapping.default.url` | not set                             | Base URL of this app for every same-app type, used instead of loopback — see [Limitations](#limitations). `default` is a reserved key that takes only `url`: a resource type named `default` fails startup. |
+| `jsonapi4j.cd.mapping.<resourceType>.transport` | `mapping.default.transport` | How a same-app type is fetched: `IN_PROCESS`, or `HTTP` from `mapping.default.url` — see [Fetching same-app types over HTTP](#fetching-same-app-types-over-http). A type with a `url` is always fetched over HTTP, so `IN_PROCESS` is rejected there, and `HTTP` without a `url` needs `mapping.default.url`. |
+| `jsonapi4j.cd.mapping.default.url` | not set                             | This app's own base URL, where same-app types with transport `HTTP` are fetched from. |
+| `jsonapi4j.cd.mapping.default.transport` | `IN_PROCESS`                  | How same-app types without a `transport` of their own are fetched. `HTTP` needs `mapping.default.url`. `default` is a reserved key that takes only `url` and `transport`: a resource type named `default` fails startup. |
 | `jsonapi4j.cd.defaultMaxBatchSize`    | `20`                                 | Fallback max number of resource IDs per downstream `filter[id]=...` request. Larger ID sets are split into parallel chunks of this size.                                          |
 
 Each resource type has one `mapping` entry holding all its settings:
@@ -69,7 +71,7 @@ jsonapi4j:
       rates:
         url: https://partner.example.com/jsonapi # no credentials for a partner API
       users:
-        maxBatchSize: 100                        # served by this app: only the batch size is set
+        maxBatchSize: 100                        # served by this app, fetched in-process
 ```
 
 **Cache properties**
@@ -79,28 +81,31 @@ jsonapi4j:
 | `jsonapi4j.cd.cache.enabled` | `true`        | Enables/disables the built-in resource cache for compound docs resolution.  |
 | `jsonapi4j.cd.cache.maxSize` | `1000`        | Soft maximum number of cached entries. Eviction uses LRU + TTL expiration.  |
 
-### Resolving base URLs
+### How includes are fetched
 
-To assemble the `included` array, the resolver fetches each included resource type over HTTP, so it needs a base URL
-per type. That base URL is resolved as follows:
+To assemble the `included` array, the resolver fetches each included resource type, hop by hop, in batches of
+`filter[id]`. Where each type is fetched from:
 
-1. **A `jsonapi4j.cd.mapping.<type>.url` wins.** Set it **only** for resource types served by a *different* service
-   (a distributed / microservice setup), e.g. `jsonapi4j.cd.mapping.orders.url=https://orders.internal/jsonapi`.
-2. **Otherwise the type is treated as same-app.** If `jsonapi4j.cd.mapping.default.url` is set, it is fetched from
-   there.
-3. **If not, the app calls itself on loopback** — `127.0.0.1`, or `[::1]` when
-   the request arrived over IPv6, at the local port the request arrived on, `https` when that connection is TLS, plus
-   the servlet context path and the configured `jsonapi4j.rootPath`. For example `http://127.0.0.1:8080/jsonapi`.
+1. **A `jsonapi4j.cd.mapping.<type>.url`: over HTTP from that service.** Set it **only** for resource types served by
+   a *different* service (a distributed / microservice setup), e.g.
+   `jsonapi4j.cd.mapping.orders.url=https://orders.internal/jsonapi`.
+2. **Otherwise the type is served by this app, and is fetched in-process** — the read runs through the framework
+   directly, as an HTTP request to the app would, but without one: no socket, no servlet filters, no JSON sent and
+   parsed again, and no second worker thread held while the original request waits.
+3. **Unless its transport is `HTTP`:** then it's fetched over HTTP from `jsonapi4j.cd.mapping.default.url`, this
+   app's own address — see [Fetching same-app types over HTTP](#fetching-same-app-types-over-http).
 
 This means **same-app includes need no mapping and no base URL anywhere in config** — including the built-in meta
-types (`state`, `plugins`, `resources`, `relationships`, `operations`, `config`), which always resolve automatically
-once `jsonapi4j.cd.enabled=true`. Because the port comes from the live connection, it is always correct for the actual
-port in use (random ports, test ports, a context path), with nothing to keep in sync. The call never leaves the
-machine, and the loopback address always matches a family the server is already accepting connections on.
+types (`state`, `plugins`, `resources`, `relationships`, `operations`, `config`), which always resolve once
+`jsonapi4j.cd.enabled=true`. A same-app `mapping` entry without a `url` sets only the type's `maxBatchSize` and
+`transport`; the app
+validates the size of `filter[id]` of in-process reads the same way as of any other request.
 
-The base URL is deliberately **never taken from the `Host` or `X-Forwarded-*` headers**. The client controls those,
-so trusting them would let any caller point the server's include requests — and the shared resource cache — at a
-host of its choosing.
+An in-process read goes through what an HTTP request to the app goes through inside the framework: request
+validation, plugins such as [access control](/access-control-plugin/), the operation itself. It runs as the client's
+principal — resolved by the app's `PrincipalResolver` — so access control decides exactly as for the client, and
+`fields[...]`, custom query parameters and headers are carried over per `jsonapi4j.cd.propagation`. Resources read
+in-process are never stored in the resource cache: reading them is cheap, and they are always fresh.
 
 ### Error handling
 
@@ -200,67 +205,82 @@ the limits give the same result on every request, so it may be cached like any o
 
 ### Limitations
 
-Same-app includes are ordinary HTTP calls from the app to itself over loopback, so a few setups need attention.
+**Servlet filters don't see same-app includes.** An in-process read never passes through the servlet container, so
+URL-based security rules (e.g. Spring Security restricting `/jsonapi/countries`), and logging, metrics or rate limiting
+done in filters don't apply to it — only the framework itself does, including the
+[access control plugin](/access-control-plugin/). Put access rules for resource types that can be included there; or,
+when filters have to see include requests, fetch same-app types over HTTP as below.
 
-**The loopback call can't connect** when:
+**The executor is used re-entrantly.** Included resources are fetched on the framework's executor, and an in-process
+read resolves relationships on that same executor. The default — a cached thread pool — handles that; a **bounded**
+executor you provide has to be sized for both, or a burst of includes can wait on the very threads it occupies.
 
-- TLS is terminated by the app itself — `https://127.0.0.1:8443` fails certificate validation unless the certificate
-  covers that address;
-- the server is bound to one specific non-loopback address (e.g. `server.address=10.0.0.5`);
-- the connector requires the PROXY protocol, client certificates (mTLS), or listens on a Unix domain socket.
+#### Fetching same-app types over HTTP
 
-Point same-app types at an address that works instead with `jsonapi4j.cd.mapping.default.url`, e.g. a name the
-certificate covers or a plain-HTTP internal port. It is meant for exactly this deployment-specific override, so set it
-where the deployment is configured — in Spring Boot and Quarkus through an environment variable:
+A same-app type with transport `HTTP` is fetched over HTTP from `jsonapi4j.cd.mapping.default.url` — this app's own
+address — like any other service: through every servlet filter, and with the client's credentials. The transport is
+set per type, or for all of them on the reserved `default` entry:
+
+```yaml
+jsonapi4j:
+  cd:
+    mapping:
+      default:
+        url: http://127.0.0.1:8080/jsonapi
+        transport: HTTP           # same-app types over HTTP...
+      users:
+        transport: IN_PROCESS     # ...except users
+```
+
+or the other way round: `HTTP` only on the types whose includes servlet filters must see. Set the address where the
+deployment is configured — in Spring Boot and Quarkus e.g. through environment variables:
 
 ```bash
-JSONAPI4J_CD_MAPPING_DEFAULT_URL=https://api.internal:8443/jsonapi
+JSONAPI4J_CD_MAPPING_DEFAULT_URL=http://127.0.0.1:8080/jsonapi
+JSONAPI4J_CD_MAPPING_DEFAULT_TRANSPORT=HTTP
 ```
 
 A plain servlet deployment reads its settings from the config file only, so point `JSONAPI4J_CONFIG` at a
 per-environment file that sets `mapping.default.url`.
+
+Startup fails on a transport that can't work: `HTTP` without `mapping.default.url`, or `IN_PROCESS` on a type mapped
+to another service's `url`.
+
+Over HTTP every include is a request of its own, so it brings what an HTTP call costs:
+
+- each include holds a worker thread of its own while the original request waits, so under heavy load a bounded
+  thread pool can run out and includes time out after `jsonapi4j.cd.httpTotalTimeoutMs`;
+- the URL has to be reachable from the app itself — e.g. one its TLS certificate covers;
+- during graceful shutdown the connector stops accepting connections, so includes of in-flight requests fail;
+- rate limiters keyed by client address see include calls as coming from the app itself, and so does any rule that
+  grants trust by source address — which then also matches include calls carrying the original caller's credentials.
+  The client's `Forwarded`, `X-Forwarded-For` and `X-Real-IP` headers are never propagated, so a caller can't choose
+  the address the app sees on an include call.
 
 `default` is a reserved key: with the plugin enabled, a resource type named `default` fails startup with a message
 naming the clashing resource — whether or not the key is set, so the clash surfaces in development rather than in the
 first deployment that sets it.
 
 For finer control, map types individually with `jsonapi4j.cd.mapping.<type>.url`, or replace the routing entirely with
-a custom `DomainSettingsResolver` bean. Whatever it returns `Optional.empty()` for falls back to `mapping.default.url`, or to
-loopback when that isn't set:
+a custom `DomainSettingsResolver` bean. Whatever it returns `Optional.empty()` for is fetched per its `transport`. A route of its own can be in-process too, with `DomainSettings.inProcess(...)`:
 
 ```java
 @Bean
 public DomainSettingsResolver domainSettingsResolver() {
-    URI internal = URI.create("http://api.internal:8081/jsonapi");
-    // this app's own internal address, so it may get the client's credentials
-    return resourceType -> Optional.of(new DomainSettings(internal, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true));
+    URI orders = URI.create("https://orders.internal/jsonapi");
+    return resourceType -> "orders".equals(resourceType)
+            ? Optional.of(DomainSettings.overHttp(orders, 50, true))   // another service, trusted with credentials
+            : Optional.of(DomainSettings.inProcess(DomainSettings.DEFAULT_MAX_BATCH_SIZE));
 }
 ```
 
-**Operational effects** of calling the app over HTTP:
-
-- each include is a separate request that needs its own worker thread while the original one waits, so under heavy load
-  a bounded thread pool can run out and includes time out after `jsonapi4j.cd.httpTotalTimeoutMs`;
-- rate limiters keyed by client address see include calls as coming from loopback;
-- during graceful shutdown the connector stops accepting connections, so includes of in-flight requests fail;
-- tests without a real server (e.g. MockMvc) can't resolve includes.
-
-**Because include calls arrive from loopback:**
-
-- The client's `Forwarded`, `X-Forwarded-For` and `X-Real-IP` headers are never propagated, even with `HEADERS`
-  propagation on. Containers commonly trust loopback as a proxy (e.g. Tomcat's `RemoteIpValve`), so forwarding them
-  would let a caller choose the remote address the app sees on the include call. Other headers, including
-  `X-Forwarded-Proto` and identity headers such as `X-Forwarded-User`, are propagated as usual.
-- Any rule that grants trust by source address to loopback (e.g. `hasIpAddress("127.0.0.1")` or `::1`) also matches include
-  calls, which carry the original caller's credentials. Don't grant extra privileges to loopback on JSON:API paths.
-
 > The sample apps keep `mapping` entries for their same-app types (`users`, `countries`, `currencies`) only to set a
-> batch size; they have no `url`, so those types are still fetched from the app itself.
+> batch size; they have no `url`, so those types are fetched in-process.
 
 ### Header propagation
 
-With `HEADERS` in `jsonapi4j.cd.propagation` (default), the client's headers are sent along with every include call,
-with every value a repeated header has. A few never are, whatever the configuration:
+With `HEADERS` in `jsonapi4j.cd.propagation` (default), the client's headers are sent along with every include call
+over HTTP, with every value a repeated header has. A few never are, whatever the configuration:
 
 - headers that would change the response away from a complete JSON:API document the resolver can read —
   `Accept-Encoding` (the response would come back compressed), the conditional `If-None-Match`, `If-Modified-Since`,
@@ -268,11 +288,12 @@ with every value a repeated header has. A few never are, whatever the configurat
   Each include call asks for `application/vnd.api+json` itself;
 - hop-by-hop headers, which describe the client's own connection: `Keep-Alive`, `Proxy-Connection`, `TE`, `Trailer`,
   `Transfer-Encoding`;
-- `Forwarded`, `X-Forwarded-For` and `X-Real-IP` — see [Limitations](#limitations).
+- `Forwarded`, `X-Forwarded-For` and `X-Real-IP` — see [Fetching same-app types over HTTP](#fetching-same-app-types-over-http).
 
 **Credentials go only where they are trusted.** The headers in `jsonapi4j.cd.credentialHeaders` — `Authorization`,
 cookies and the principal headers by default — reach a resource type served by this app itself, which is the same
-trust boundary, and a type mapped to another service only with `propagateCredentials: true`. Any other service is
+trust boundary (an in-process read runs as the client's principal directly), and a type mapped to another service only
+with `propagateCredentials: true`. Any other service is
 called without the client's identity, so a mapping to a partner or third-party API doesn't leak it:
 
 ```yaml

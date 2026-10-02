@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class DomainSettingsResolverTests {
 
-    private static final DomainSettings SETTINGS = DomainSettings.of(URI.create("http://example.com"));
+    private static final DomainSettings SETTINGS = DomainSettings.overHttp(URI.create("http://example.com"));
 
     @Nested
     class RequireDomainSettings {

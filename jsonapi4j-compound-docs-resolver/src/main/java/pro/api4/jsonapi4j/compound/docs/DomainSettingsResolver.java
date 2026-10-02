@@ -20,7 +20,7 @@ public interface DomainSettingsResolver {
      *
      * <p>An empty result means there is no route for the type. Used standalone (e.g. in an API gateway) that fails
      * resolution with an error naming the type. The CD plugin instead treats such a type as served by the app itself
-     * and fetches it over loopback.
+     * and fetches it in-process.
      *
      * @param resourceType the JSON:API resource type to resolve
      * @return the settings for {@code resourceType}, or empty when there is no route for it

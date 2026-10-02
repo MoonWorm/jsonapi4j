@@ -15,6 +15,6 @@ import java.util.Set;
  * @param rootNode      the parsed top-level document
  */
 public record ParseResult(Map<String, Set<IdAndType>> relationships,
-                          List<PrimaryResource> primaryResources,
+                          List<ParsedResource> primaryResources,
                           JsonNode rootNode) {
 }

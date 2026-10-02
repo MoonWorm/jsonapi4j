@@ -1,9 +1,9 @@
 package pro.api4.jsonapi4j.compound.docs.client;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.Propagation;
@@ -11,6 +11,7 @@ import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
+import pro.api4.jsonapi4j.compound.docs.json.ParsedResource;
 import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
@@ -22,8 +23,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +34,7 @@ import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
 
 @Slf4j
-public class JsonApi4jCompoundDocsApiHttpClient {
+public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSettings.OverHttp> {
 
     /**
      * Headers the JDK client refuses, as it sets them itself.
@@ -79,8 +78,8 @@ public class JsonApi4jCompoundDocsApiHttpClient {
 
     /**
      * Headers that claim a client address are never propagated. An include call is the app calling a service directly -
-     * on loopback for same-app types - and a container that trusts loopback as a proxy (e.g. Tomcat's
-     * {@code RemoteIpValve}) would otherwise take the caller's own, unverified claim as the remote address.
+     * possibly itself, at {@code mapping.default.url} - and a service that trusts the app as a proxy (e.g. through
+     * Tomcat's {@code RemoteIpValve}) would otherwise take the caller's own, unverified claim as the remote address.
      */
     private static final Set<String> CLIENT_ADDRESS_HEADERS = Set.of(
             "forwarded",
@@ -127,10 +126,12 @@ public class JsonApi4jCompoundDocsApiHttpClient {
      * @throws ErrorJsonApiResponseException on any other failure - a non-200 response, a connection error, or a body
      *                                       that is not a JSON:API document
      */
-    public HttpFetchResult doBatchFetch(BatchFetch batch, CompoundDocsRequest originalRequest) {
+    @Override
+    public FetchResult fetch(BatchFetch<DomainSettings.OverHttp> batch, CompoundDocsRequest originalRequest) {
+        DomainSettings.OverHttp route = batch.domainSettings();
         String uri = null;
         try {
-            JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(batch.domainSettings().url())
+            JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(route.url())
                     .resourceType(batch.resourceType())
                     .filterParam("id", batch.ids().stream().sorted().toList())
                     .includeParam(batch.includes());
@@ -149,7 +150,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
             if (config.getPropagation().contains(Propagation.HEADERS)) {
                 originalRequest.getHeaders().forEach((header, values) -> {
-                    if (isPropagatable(header) && (batch.domainSettings().propagateCredentials() || !isCredential(header))) {
+                    if (isPropagatable(header) && (route.propagateCredentials() || !isCredential(header))) {
                         propagate(requestBuilder, header, values);
                     }
                 });
@@ -172,7 +173,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
             log.debug("Compound docs HTTP response: status={}, resources={}", response.statusCode(), resources.size());
             CacheControlDirectives directives = CacheControlParser.parse(response.headers()
                     .firstValue(CACHE_CONTROL.getName()).orElse(null));
-            return new HttpFetchResult(resources, directives);
+            return new FetchResult(resources, directives);
         } catch (ErrorJsonApiResponseException | RejectedIncludesException e) {
             throw e;
         } catch (HttpTimeoutException e) {
@@ -189,7 +190,7 @@ public class JsonApi4jCompoundDocsApiHttpClient {
      * Throws when a {@code 400} rejects some of the includes this fetch asked for - so the resolver can drop them
      * rather than treat the whole fetch as failed. Any other {@code 400} is left to fail the fetch.
      */
-    private void checkRejectedIncludes(BatchFetch batch, String errorsDoc) {
+    private void checkRejectedIncludes(BatchFetch<DomainSettings.OverHttp> batch, String errorsDoc) {
         Set<String> rejected = new HashSet<>(responseParser.parseUnsupportedIncludes(errorsDoc));
         rejected.retainAll(batch.includes());
         if (!rejected.isEmpty()) {
@@ -224,33 +225,8 @@ public class JsonApi4jCompoundDocsApiHttpClient {
         }
     }
 
-    private List<ParsedResource> parseResponse(HttpResponse<String> response) {
-        try {
-            JsonNode rootNode = objectMapper.readTree(response.body());
-            if (rootNode == null || rootNode.isNull() || !rootNode.isObject()) {
-                return Collections.emptyList();
-            }
-            JsonNode dataNode = rootNode.get("data");
-            if (dataNode == null || dataNode.isNull()) {
-                return Collections.emptyList();
-            }
-            if (dataNode.isArray()) {
-                List<ParsedResource> result = new ArrayList<>();
-                for (JsonNode node : dataNode) {
-                    result.add(toParsedResource(node));
-                }
-                return result;
-            } else if (dataNode.isObject()) {
-                return Collections.singletonList(toParsedResource(dataNode));
-            }
-            return Collections.emptyList();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private ParsedResource toParsedResource(JsonNode node) throws IOException {
-        return new ParsedResource(JsonApiResponseParser.readIdAndType(node), objectMapper.writeValueAsString(node));
+    private List<ParsedResource> parseResponse(HttpResponse<String> response) throws IOException {
+        return responseParser.parseResourceObjects(objectMapper.readTree(response.body()));
     }
 
 }
