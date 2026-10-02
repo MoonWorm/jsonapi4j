@@ -7,10 +7,19 @@ import pro.api4.jsonapi4j.request.IncludeAwareRequest;
 import pro.api4.jsonapi4j.request.LimitOffsetAwareRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest;
 import pro.api4.jsonapi4j.request.SparseFieldsetsAwareRequest;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
+import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
+import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
 
 /**
  * Factory for building JSON:API error source objects that identify the origin of a validation error.
@@ -151,21 +160,21 @@ public class ErrorSources {
         /** Navigates into the {@code /data} member. */
         public DataJsonPointerBuilder data() {
             List<String> source = new ArrayList<>(getSource());
-            source.add("data");
+            source.add(BaseDoc.DATA_FIELD);
             return new DataJsonPointerBuilder(source);
         }
 
         /** Creates a JSON Pointer to the {@code /links} member. */
         public JsonPointer links() {
             List<String> source = new ArrayList<>(getSource());
-            source.add("links");
+            source.add(BaseDoc.LINKS_FIELD);
             return toPointer(source);
         }
 
         /** Creates a JSON Pointer to the {@code /meta} member. */
         public JsonPointer meta() {
             List<String> source = new ArrayList<>(getSource());
-            source.add("meta");
+            source.add(BaseDoc.META_FIELD);
             return toPointer(source);
         }
 
@@ -186,28 +195,28 @@ public class ErrorSources {
             /** Creates a JSON Pointer to the {@code id} field. */
             public JsonPointer id() {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("id");
+                source.add(ID_FIELD);
                 return toPointer(source);
             }
 
             /** Creates a JSON Pointer to the {@code type} field. */
             public JsonPointer type() {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("type");
+                source.add(TYPE_FIELD);
                 return toPointer(source);
             }
 
             /** Creates a JSON Pointer to the {@code attributes} object. */
             public JsonPointer attributes() {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("attributes");
+                source.add(ATTRIBUTES_FIELD);
                 return toPointer(source);
             }
 
             /** Creates a JSON Pointer to a specific attribute by path. */
             public JsonPointer attributes(String path) {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("attributes");
+                source.add(ATTRIBUTES_FIELD);
                 source.add(path);
                 return toPointer(source);
             }
@@ -220,23 +229,23 @@ public class ErrorSources {
             /** Navigates into a relationship's data by name. */
             public DataJsonPointerBuilder relationship(String relationshipName) {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("relationships");
+                source.add(RELATIONSHIPS_FIELD);
                 source.add(relationshipName);
-                source.add("data");
+                source.add(RelationshipObject.DATA_FIELD);
                 return new DataJsonPointerBuilder(source);
             }
 
             /** Creates a JSON Pointer to the {@code links} member within data. */
             public JsonPointer links() {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("links");
+                source.add(ResourceObject.LINKS_FIELD);
                 return toPointer(source);
             }
 
             /** Creates a JSON Pointer to the {@code meta} member within data. */
             public JsonPointer meta() {
                 List<String> source = new ArrayList<>(getSource());
-                source.add("meta");
+                source.add(ResourceIdentifierObject.META_FIELD);
                 return toPointer(source);
             }
 

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
+
 @Slf4j
 public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
 
@@ -234,7 +236,7 @@ public class SingleResourceTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES> {
         );
 
         // set relationships
-        ReflectionUtils.setFieldValueThrowing(doc.getData(), ResourceObject.RELATIONSHIPS_FIELD, relationships);
+        ReflectionUtils.setFieldValueThrowing(doc.getData(), RELATIONSHIPS_FIELD, relationships);
 
         // PHASE: onRelationshipsPostRetrieval
         for (PluginSettings plugin : plugins) {

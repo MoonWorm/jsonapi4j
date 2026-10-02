@@ -20,6 +20,7 @@ import pro.api4.jsonapi4j.util.ReflectionUtils;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getOutboundAccessControlModel;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.DATA_FIELD;
 
 @Slf4j
 @Data
@@ -128,13 +129,13 @@ public class AccessControlSingleResourceVisitors implements SingleResourceVisito
         reportOnDocument(doc, anonymizationResult);
 
         if (anonymizationResult.isFullyAnonymized()) {
-            ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, null);
+            ReflectionUtils.setFieldValueThrowing(doc, DATA_FIELD, null);
             return RelationshipsPreRetrievalPhase.returnDoc(doc);
         }
 
         ResourceObject<?, ?> anonymized = anonymizationResult.targetObject();
         reportOnResource(anonymized, anonymizationResult);
-        ReflectionUtils.setFieldValueThrowing(doc, SingleResourceDoc.DATA_FIELD, anonymized);
+        ReflectionUtils.setFieldValueThrowing(doc, DATA_FIELD, anonymized);
         return RelationshipsPreRetrievalPhase.mutatedDoc(doc);
     }
 

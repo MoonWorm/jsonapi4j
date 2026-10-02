@@ -9,16 +9,17 @@ import pro.api4.jsonapi4j.compound.docs.IncludedGap;
 import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pro.api4.jsonapi4j.model.document.BaseDoc;
 
 import java.util.Collection;
+
+import static pro.api4.jsonapi4j.model.document.BaseDoc.INCLUDED_FIELD;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.META_FIELD;
 
 public class JsonApiResponseWriter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonApiResponseWriter.class);
 
     public static final String INCLUDED_INCOMPLETE_META_FIELD = "includedIncomplete";
-    private static final String INCLUDED_FIELD = "included";
     private static final String GAP_REASON_FIELD = "reason";
     private static final String GAP_TYPE_FIELD = "type";
     private static final String GAP_PATH_FIELD = "path";
@@ -61,12 +62,12 @@ public class JsonApiResponseWriter {
     }
 
     private void addGaps(ObjectNode rootNode, Collection<IncludedGap> gaps) {
-        JsonNode metaNode = rootNode.get(BaseDoc.META_FIELD);
+        JsonNode metaNode = rootNode.get(META_FIELD);
         if (metaNode != null && !metaNode.isObject()) {
             LOGGER.warn("Can't list incomplete included resources: the document's 'meta' is not an object");
             return;
         }
-        ObjectNode meta = metaNode == null ? rootNode.putObject(BaseDoc.META_FIELD) : (ObjectNode) metaNode;
+        ObjectNode meta = metaNode == null ? rootNode.putObject(META_FIELD) : (ObjectNode) metaNode;
         ArrayNode gapsNode = meta.putArray(INCLUDED_INCOMPLETE_META_FIELD);
         gaps.stream().sorted().forEach(gap -> {
             ObjectNode gapNode = gapsNode.addObject().put(GAP_REASON_FIELD, gap.reason().name());

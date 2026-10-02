@@ -2,6 +2,8 @@ package pro.api4.jsonapi4j.operation.validation;
 
 import pro.api4.jsonapi4j.domain.ResourceType;
 
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
+
 /**
  * Fluent assertion class for validating {@link ResourceType} values in JSON:API requests.
  *
@@ -26,7 +28,7 @@ public class ResourceTypeValidationAssert extends ObjectValidationAssert<Resourc
 
     /** Navigates into the resource type's string value for further string-level validation. */
     public StringValidationAssert type() {
-        return field("type", ResourceType::getType).asString();
+        return field(TYPE_FIELD, ResourceType::getType).asString();
     }
 
 }

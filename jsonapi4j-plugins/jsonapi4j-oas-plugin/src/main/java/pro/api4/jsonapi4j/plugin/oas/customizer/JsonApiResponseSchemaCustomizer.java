@@ -32,10 +32,19 @@ import static org.apache.commons.collections4.MapUtils.emptyIfNull;
 import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_NEXT_CURSOR_KEY_META;
 import static pro.api4.jsonapi4j.processor.resolvers.links.toplevel.MultiResourcesDocMetaDefaultResolvers.PAGINATION_TOTAL_ITEMS_KEY_META;
 import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
-import static pro.api4.jsonapi4j.model.document.data.SingleResourceDoc.INCLUDED_FIELD;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.INCLUDED_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.OasSchemaNamesUtil.*;
 import static pro.api4.jsonapi4j.plugin.oas.customizer.util.SchemaGeneratorUtil.*;
+import static pro.api4.jsonapi4j.model.document.LinksObject.SELF_FIELD;
+import static pro.api4.jsonapi4j.model.document.LinksObject.FIRST_FIELD;
+import static pro.api4.jsonapi4j.model.document.LinksObject.PREV_FIELD;
+import static pro.api4.jsonapi4j.model.document.LinksObject.NEXT_FIELD;
+import static pro.api4.jsonapi4j.model.document.LinksObject.LAST_FIELD;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.LINKS_FIELD;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.META_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @Getter
@@ -95,19 +104,19 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         paginationLinks.setDescription("Links for paging through the collection, alongside any custom links. Every "
                 + "member is optional: which ones a response carries depends on what the operation can work out.");
         paginationLinks.setAdditionalProperties(linkValueSchema());
-        paginationLinks.addProperty(LinksObject.SELF_FIELD,
+        paginationLinks.addProperty(SELF_FIELD,
                 paginationLink("This page, exactly as it was requested."));
-        paginationLinks.addProperty(LinksObject.FIRST_FIELD,
+        paginationLinks.addProperty(FIRST_FIELD,
                 paginationLink("The first page of the collection."));
-        paginationLinks.addProperty(LinksObject.PREV_FIELD,
+        paginationLinks.addProperty(PREV_FIELD,
                 paginationLink("The previous page. Absent on the first page, and whenever the operation cannot "
                         + "address a page backwards."));
-        paginationLinks.addProperty(LinksObject.NEXT_FIELD,
+        paginationLinks.addProperty(NEXT_FIELD,
                 paginationLink(String.format(
                         "The next page, ready to follow. Absent once there are no further pages. Equivalent to "
                                 + "sending '%s' back as '%s'.",
                         PAGINATION_NEXT_CURSOR_KEY_META, CursorAwareRequest.CURSOR_PARAM)));
-        paginationLinks.addProperty(LinksObject.LAST_FIELD,
+        paginationLinks.addProperty(LAST_FIELD,
                 paginationLink("The last page. Absent unless the operation knows how many there are."));
         registerSchemaIfNotExists(paginationLinks, openApi);
 
@@ -146,12 +155,12 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         if (doc.getProperties() == null) {
             return schemas;
         }
-        if (doc.getProperties().containsKey(BaseDoc.LINKS_FIELD)) {
-            doc.getProperties().put(BaseDoc.LINKS_FIELD,
+        if (doc.getProperties().containsKey(LINKS_FIELD)) {
+            doc.getProperties().put(LINKS_FIELD,
                     new Schema<>().$ref(OasSchemaNamesUtil.paginationLinksObjectSchemaName()));
         }
-        if (doc.getProperties().containsKey(BaseDoc.META_FIELD)) {
-            doc.getProperties().put(BaseDoc.META_FIELD,
+        if (doc.getProperties().containsKey(META_FIELD)) {
+            doc.getProperties().put(META_FIELD,
                     new Schema<>().$ref(OasSchemaNamesUtil.paginationMetaObjectSchemaName()));
         }
         return schemas;
@@ -404,7 +413,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
                 dataItemMetaClass
         );
 
-        ArraySchema dataSchema = (ArraySchema) customToManyRelationshipsDocSchema.getProperties().get("data");
+        ArraySchema dataSchema = (ArraySchema) customToManyRelationshipsDocSchema.getProperties().get(RelationshipObject.DATA_FIELD);
         dataSchema.setItems(new Schema<>().$ref(identifierSchemas.getPrimarySchema().getName()));
 
         PrimaryAndNestedSchemas result = new PrimaryAndNestedSchemas(customToManyRelationshipsDocSchema, List.of());
@@ -427,7 +436,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
                 dataItemMetaClass
         );
 
-        customToOneRelationshipDocSchema.getProperties().put("data", new Schema<>().$ref(identifierSchemas.getPrimarySchema().getName()));
+        customToOneRelationshipDocSchema.getProperties().put(RelationshipObject.DATA_FIELD, new Schema<>().$ref(identifierSchemas.getPrimarySchema().getName()));
 
         PrimaryAndNestedSchemas result = new PrimaryAndNestedSchemas(customToOneRelationshipDocSchema, List.of());
         result.addToNested(identifierSchemas);
@@ -451,10 +460,10 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
         resourceSchema.getPrimarySchema().setRequired(List.of(ID_FIELD, TYPE_FIELD));
 
         resourceSchema.getPrimarySchema().setName(resourceSchemaName(registeredResource.getResourceType()));
-        resourceSchema.getPrimarySchema().getProperties().put("attributes", new Schema<>().$ref(attributesSchema.getName()));
+        resourceSchema.getPrimarySchema().getProperties().put(ATTRIBUTES_FIELD, new Schema<>().$ref(attributesSchema.getName()));
         relationshipsSchema.ifPresentOrElse(rs -> {
-            resourceSchema.getPrimarySchema().getProperties().put("relationships", new Schema<>().$ref(rs.getName()));
-        }, () -> resourceSchema.getPrimarySchema().getProperties().remove("relationships"));
+            resourceSchema.getPrimarySchema().getProperties().put(RELATIONSHIPS_FIELD, new Schema<>().$ref(rs.getName()));
+        }, () -> resourceSchema.getPrimarySchema().getProperties().remove(RELATIONSHIPS_FIELD));
         return resourceSchema;
     }
 
@@ -463,7 +472,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
             Schema<?> resourceSchema
     ) {
         PrimaryAndNestedSchemas singleResourceDocSchema = withLinksObjectRef(generateAllSchemasFromType(SingleResourceDoc.class));
-        singleResourceDocSchema.getPrimarySchema().getProperties().put("data", new Schema<>().$ref(resourceSchema.getName()));
+        singleResourceDocSchema.getPrimarySchema().getProperties().put(BaseDoc.DATA_FIELD, new Schema<>().$ref(resourceSchema.getName()));
         applyIncludedSchema(singleResourceDocSchema, generateIncludedSchema(registeredResource.getResourceType(), false));
         singleResourceDocSchema.getPrimarySchema().setName(singleResourceDocSchemaName(registeredResource.getResourceType()));
         return singleResourceDocSchema;
@@ -475,7 +484,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
     ) {
         PrimaryAndNestedSchemas multipleResourceSchema = withPaginationRefs(
                 withLinksObjectRef(generateAllSchemasFromType(MultipleResourcesDoc.class)));
-        multipleResourceSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceSchema.getName())));
+        multipleResourceSchema.getPrimarySchema().getProperties().put(BaseDoc.DATA_FIELD, new ArraySchema().items(new Schema<>().$ref(resourceSchema.getName())));
         applyIncludedSchema(multipleResourceSchema, generateIncludedSchema(registeredResource.getResourceType(), false));
         multipleResourceSchema.getPrimarySchema().setName(multipleResourcesDocSchemaName(registeredResource.getResourceType()));
         return multipleResourceSchema;
@@ -487,7 +496,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
     ) {
         PrimaryAndNestedSchemas toManyRelationshipsDocSchema = withPaginationRefs(
                 withLinksObjectRef(generateAllSchemasFromType(ToManyRelationshipsDoc.class)));
-        toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put("data", new ArraySchema().items(new Schema<>().$ref(resourceIdentifierSchemaName)));
+        toManyRelationshipsDocSchema.getPrimarySchema().getProperties().put(RelationshipObject.DATA_FIELD, new ArraySchema().items(new Schema<>().$ref(resourceIdentifierSchemaName)));
         applyIncludedSchema(toManyRelationshipsDocSchema, generateIncludedSchema(registeredResource.getResourceType(), true));
         toManyRelationshipsDocSchema.getPrimarySchema().setName(toManyRelationshipsDocSchemaName(registeredResource.getResourceType()));
         return toManyRelationshipsDocSchema;
@@ -498,7 +507,7 @@ public class JsonApiResponseSchemaCustomizer implements OasCustomizer {
             String resourceIdentifierSchemaName
     ) {
         PrimaryAndNestedSchemas toOneRelationshipSchema = withLinksObjectRef(generateAllSchemasFromType(ToOneRelationshipDoc.class));
-        toOneRelationshipSchema.getPrimarySchema().getProperties().put("data", new Schema<>().$ref(resourceIdentifierSchemaName));
+        toOneRelationshipSchema.getPrimarySchema().getProperties().put(RelationshipObject.DATA_FIELD, new Schema<>().$ref(resourceIdentifierSchemaName));
         applyIncludedSchema(
                 toOneRelationshipSchema,
                 generateIncludedSchema(registeredResource.getResourceType(), true)

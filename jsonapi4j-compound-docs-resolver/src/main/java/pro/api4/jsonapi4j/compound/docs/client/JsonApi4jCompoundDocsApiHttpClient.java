@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import static pro.api4.jsonapi4j.http.HttpHeaders.ACCEPT;
 import static pro.api4.jsonapi4j.http.HttpHeaders.CACHE_CONTROL;
 import static pro.api4.jsonapi4j.http.HttpHeaders.X_DISABLE_COMPOUND_DOCS;
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 @Slf4j
 public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSettings.OverHttp> {
@@ -133,7 +134,7 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
         try {
             JsonApiUrlBuilder urlBuilder = JsonApiUrlBuilder.from(route.url())
                     .resourceType(batch.resourceType())
-                    .filterParam("id", batch.ids().stream().sorted().toList())
+                    .filterParam(ID_FILTER_NAME, batch.ids().stream().sorted().toList())
                     .includeParam(batch.includes());
 
             if (config.getPropagation().contains(Propagation.FIELDS)) {

@@ -36,7 +36,7 @@ import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TY
 import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.ResourceObject.LINKS_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
-import static pro.api4.jsonapi4j.model.document.data.SingleResourceDoc.DATA_FIELD;
+import static pro.api4.jsonapi4j.model.document.BaseDoc.DATA_FIELD;
 import static pro.api4.jsonapi4j.operation.OperationType.ADD_TO_MANY_RELATIONSHIP;
 import static pro.api4.jsonapi4j.operation.OperationType.CREATE_RESOURCE;
 import static pro.api4.jsonapi4j.operation.OperationType.DELETE_TO_MANY_RELATIONSHIP;

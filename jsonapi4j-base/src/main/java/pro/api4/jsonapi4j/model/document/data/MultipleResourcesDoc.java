@@ -69,9 +69,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class MultipleResourcesDoc<PRIMARY_RESOURCE extends ResourceObject<?, ?>> extends BaseDoc {
 
-    public static final String DATA_FIELD = "data";
-    public static final String INCLUDED_FIELD = "included";
-
     private final List<PRIMARY_RESOURCE> data;
     private final List<? extends ResourceObject<?, ?>> included;
 

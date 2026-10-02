@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
 
 
 @Slf4j
@@ -248,7 +249,7 @@ public class MultipleResourcesTerminalStage<REQUEST, DATA_SOURCE_DTO, ATTRIBUTES
             if (relatedResource != null) {
                 ReflectionUtils.setFieldValueThrowing(
                         relatedResource,
-                        ResourceObject.RELATIONSHIPS_FIELD,
+                        RELATIONSHIPS_FIELD,
                         relationships
                 );
             }

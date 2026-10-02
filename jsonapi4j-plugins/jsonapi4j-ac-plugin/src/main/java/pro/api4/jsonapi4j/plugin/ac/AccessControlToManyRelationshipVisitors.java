@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
+import static pro.api4.jsonapi4j.model.document.data.RelationshipObject.DATA_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.RelationshipObject.LINKS_FIELD;
 
 @Slf4j
 @Data
@@ -133,7 +135,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
         }
 
         // data
-        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.DATA_FIELD, anonymizedData);
+        ReflectionUtils.setFieldValueThrowing(doc, DATA_FIELD, anonymizedData);
 
         // top-level links
         LinksObject docLinks = ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(
@@ -141,7 +143,7 @@ public class AccessControlToManyRelationshipVisitors implements ToManyRelationsh
                 nonAnonymizedDtos,
                 ctx.getPaginationAwareResponse().getPaginationContext()
         );
-        ReflectionUtils.setFieldValueThrowing(doc, ToManyRelationshipsDoc.LINKS_FIELD, docLinks);
+        ReflectionUtils.setFieldValueThrowing(doc, LINKS_FIELD, docLinks);
 
         // top-level meta
         Object docMeta = ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(

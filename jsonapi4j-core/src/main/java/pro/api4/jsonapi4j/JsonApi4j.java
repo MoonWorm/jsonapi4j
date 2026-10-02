@@ -82,6 +82,7 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toMap;
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
 
 /**
  * <p>
@@ -556,7 +557,7 @@ public class JsonApi4j {
                         pluginSettings
                 );
             } else if (request.getFilters().size() == 1
-                    && request.getFilters().containsKey(ReadMultipleResourcesOperation.ID_FILTER_NAME)) {
+                    && request.getFilters().containsKey(ID_FILTER_NAME)) {
                 RegisteredOperation<ReadResourceByIdOperation<?>> registeredReadByIdOperation
                         = operationsRegistry.getRegisteredReadResourceByIdOperation(resourceType, false);
 
@@ -584,7 +585,7 @@ public class JsonApi4j {
                 ReadResourceByIdOperation<RESOURCE_DTO> readByIdExecutable
         ) {
             return request -> {
-                List<RESOURCE_DTO> result = request.getFilters().get(ReadMultipleResourcesOperation.ID_FILTER_NAME).stream().map(id -> {
+                List<RESOURCE_DTO> result = request.getFilters().get(ID_FILTER_NAME).stream().map(id -> {
                     JsonApiRequest readByIdRequest = new JsonApiRequestBuilder(request)
                             .resourceId(id)
                             .operationType(OperationType.READ_RESOURCE_BY_ID)

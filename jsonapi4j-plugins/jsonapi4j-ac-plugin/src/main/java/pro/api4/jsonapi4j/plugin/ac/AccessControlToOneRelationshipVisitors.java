@@ -22,6 +22,9 @@ import java.util.Optional;
 
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlEvaluator.anonymizeObjectIfNeeded;
 import static pro.api4.jsonapi4j.plugin.ac.AccessControlVisitorsUtils.getInboundAccessControlModel;
+import static pro.api4.jsonapi4j.model.document.data.RelationshipObject.LINKS_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.RelationshipObject.META_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.RelationshipObject.DATA_FIELD;
 
 @Slf4j
 @Data
@@ -94,19 +97,19 @@ public class AccessControlToOneRelationshipVisitors implements ToOneRelationship
         if (anonymizationResult.isFullyAnonymized()) {
             // top-level links
             LinksObject docLinks = ctx.getJsonApiContext().getTopLevelLinksResolver().resolve(ctx.getRequest(), null);
-            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.LINKS_FIELD, docLinks);
+            ReflectionUtils.setFieldValueThrowing(doc, LINKS_FIELD, docLinks);
 
             // top-level meta
             Object docMeta = ctx.getJsonApiContext().getTopLevelMetaResolver().resolve(ctx.getRequest(), null);
-            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD, docMeta);
+            ReflectionUtils.setFieldValueThrowing(doc, META_FIELD, docMeta);
         }
 
         Map<String, Object> report = AnonymizationReport.of(anonymizationResult, reportLevel);
         if (report != null) {
-            ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.META_FIELD,
+            ReflectionUtils.setFieldValueThrowing(doc, META_FIELD,
                     AnonymizationReport.mergeInto(doc.getMeta(), report));
         }
-        ReflectionUtils.setFieldValueThrowing(doc, ToOneRelationshipDoc.DATA_FIELD, anonymizationResult.targetObject());
+        ReflectionUtils.setFieldValueThrowing(doc, DATA_FIELD, anonymizationResult.targetObject());
 
         return DataPostRetrievalPhase.mutatedDoc(doc);
     }

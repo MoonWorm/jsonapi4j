@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
+
 @Slf4j
 class SparseFieldsetsHelper {
 
@@ -57,7 +59,7 @@ class SparseFieldsetsHelper {
 
     private void sparseAllFields(ResourceObject<?, ?> resourceObject) {
         log.debug("Sparse fieldsets: removing all attributes for resource type '{}'", resourceObject.getType());
-        ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, null);
+        ReflectionUtils.setFieldPathValueSilent(resourceObject, ATTRIBUTES_FIELD, null);
     }
 
     private void nonEmptyFieldsParamRequested(ResourceObject<?, ?> resourceObject,
@@ -101,7 +103,7 @@ class SparseFieldsetsHelper {
         try {
             Object sparsed = sparse(attributes, allPaths, pathsToExclude, "");
             if (sparsed != attributes) {
-                ReflectionUtils.setFieldPathValueSilent(resourceObject, ResourceObject.ATTRIBUTES_FIELD, sparsed);
+                ReflectionUtils.setFieldPathValueSilent(resourceObject, ATTRIBUTES_FIELD, sparsed);
             }
         } catch (RuntimeException e) {
             // A class that cannot be copied returns all of its fields; sparse fieldsets is a convenience

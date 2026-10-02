@@ -34,9 +34,6 @@ import java.util.List;
 @ToString(callSuper = true)
 public class ToOneRelationshipDoc extends ToOneRelationshipObject {
 
-    public static final String INCLUDED_FIELD = "included";
-    public static final String JSONAPI_FIELD = "jsonapi";
-
     private final List<? extends ResourceObject<?, ?>> included;
     private final JsonApiObject jsonapi;
 

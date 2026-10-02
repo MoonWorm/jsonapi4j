@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static pro.api4.jsonapi4j.operation.ReadMultipleResourcesOperation.ID_FILTER_NAME;
+
 public final class ToManyRelationshipLinksDefaultResolvers {
 
     private ToManyRelationshipLinksDefaultResolvers() {
@@ -69,7 +71,7 @@ public final class ToManyRelationshipLinksDefaultResolvers {
                                             String href = String.format(
                                                     "%s?%s",
                                                     LinksGenerator.resourcesBasePath(e.getKey()),
-                                                    FiltersAwareRequest.getFilterParamWithValue("id", ids)
+                                                    FiltersAwareRequest.getFilterParamWithValue(ID_FILTER_NAME, ids)
                                             );
                                             return LinkObject.builder()
                                                     .href(href)

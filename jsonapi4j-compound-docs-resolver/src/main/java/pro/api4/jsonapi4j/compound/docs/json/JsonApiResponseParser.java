@@ -8,13 +8,9 @@ import org.slf4j.LoggerFactory;
 import pro.api4.jsonapi4j.compound.docs.exception.InvalidJsonApiResponseException;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
-import pro.api4.jsonapi4j.model.document.data.MultipleResourcesDoc;
+import pro.api4.jsonapi4j.model.document.BaseDoc;
 import pro.api4.jsonapi4j.model.document.data.RelationshipObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject;
-import pro.api4.jsonapi4j.model.document.data.ResourceObject;
 import pro.api4.jsonapi4j.model.document.error.DefaultErrorCodes;
-import pro.api4.jsonapi4j.model.document.error.ErrorObject;
-import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.util.ArrayList;
@@ -26,6 +22,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+
+import static pro.api4.jsonapi4j.model.document.error.ErrorsDoc.ERRORS_FIELD;
+import static pro.api4.jsonapi4j.model.document.error.ErrorObject.META_FIELD;
+import static pro.api4.jsonapi4j.model.document.error.ErrorObject.CODE_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceObject.RELATIONSHIPS_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.TYPE_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.ID_FIELD;
 
 public class JsonApiResponseParser {
 
@@ -65,7 +68,7 @@ public class JsonApiResponseParser {
      */
     public ParseResult parseRelationshipDoc(String jsonApiResponse, String relationshipName) {
         JsonNode rootNode = readDocument(jsonApiResponse);
-        Set<IdAndType> linkage = readLinkage(rootNode.get("data"));
+        Set<IdAndType> linkage = readLinkage(rootNode.get(RelationshipObject.DATA_FIELD));
         Map<String, Set<IdAndType>> relationships = linkage.isEmpty()
                 ? Collections.emptyMap()
                 : Map.of(relationshipName, linkage);
@@ -103,13 +106,13 @@ public class JsonApiResponseParser {
         } catch (JsonProcessingException e) {
             return Collections.emptySet();
         }
-        if (rootNode == null || !rootNode.path(ErrorsDoc.ERRORS_FIELD).isArray()) {
+        if (rootNode == null || !rootNode.path(ERRORS_FIELD).isArray()) {
             return Collections.emptySet();
         }
         Set<String> paths = new LinkedHashSet<>();
-        for (JsonNode error : rootNode.path(ErrorsDoc.ERRORS_FIELD)) {
-            JsonNode path = error.path(ErrorObject.META_FIELD).path(UnsupportedIncludeException.PATH_META_FIELD);
-            if (!DefaultErrorCodes.UNSUPPORTED_INCLUDE.toCode().equals(error.path(ErrorObject.CODE_FIELD).asText())
+        for (JsonNode error : rootNode.path(ERRORS_FIELD)) {
+            JsonNode path = error.path(META_FIELD).path(UnsupportedIncludeException.PATH_META_FIELD);
+            if (!DefaultErrorCodes.UNSUPPORTED_INCLUDE.toCode().equals(error.path(CODE_FIELD).asText())
                     || !path.isTextual()) {
                 return Collections.emptySet();
             }
@@ -128,7 +131,7 @@ public class JsonApiResponseParser {
         }
         List<ParsedResource> resources = new ArrayList<>();
         forEachObject(
-                rootNode.get(MultipleResourcesDoc.DATA_FIELD),
+                rootNode.get(BaseDoc.DATA_FIELD),
                 node -> resources.add(new ParsedResource(
                         new ResourceLinkage(readIdAndType(node), readRelationships(node)),
                         writeJson(node)
@@ -163,7 +166,7 @@ public class JsonApiResponseParser {
     }
 
     private Map<String, Set<IdAndType>> readRelationships(JsonNode resourceNode) {
-        JsonNode relationshipsNode = resourceNode.get(ResourceObject.RELATIONSHIPS_FIELD);
+        JsonNode relationshipsNode = resourceNode.get(RELATIONSHIPS_FIELD);
         if (relationshipsNode == null || !relationshipsNode.isObject()) {
             return Collections.emptyMap();
         }
@@ -196,8 +199,8 @@ public class JsonApiResponseParser {
      * is missing or not textual
      */
     public static IdAndType readIdAndType(JsonNode node) {
-        String type = readStringValue(node, ResourceIdentifierObject.TYPE_FIELD);
-        String id = readStringValue(node, ResourceIdentifierObject.ID_FIELD);
+        String type = readStringValue(node, TYPE_FIELD);
+        String id = readStringValue(node, ID_FIELD);
         return type == null || id == null ? null : new IdAndType(id, new ResourceType(type));
     }
 

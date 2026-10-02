@@ -28,6 +28,10 @@ public abstract class BaseDoc {
     public static final String META_FIELD = "meta";
     /** The JSON:API {@code "jsonapi"} member name. */
     public static final String JSONAPI_FIELD = "jsonapi";
+    /** The JSON:API {@code "data"} member name - the primary data of a resource document. */
+    public static final String DATA_FIELD = "data";
+    /** The JSON:API {@code "included"} member name - the included resources of a compound document. */
+    public static final String INCLUDED_FIELD = "included";
 
     /** Top-level document links (e.g. {@code "self"}, {@code "related"}, pagination links). */
     private final LinksObject links;

@@ -16,7 +16,7 @@ import java.util.Optional;
 
 import static pro.api4.jsonapi4j.model.document.data.ResourceObject.ATTRIBUTES_FIELD;
 import static pro.api4.jsonapi4j.model.document.data.ResourceObject.LINKS_FIELD;
-import static pro.api4.jsonapi4j.model.document.data.ResourceObject.META_FIELD;
+import static pro.api4.jsonapi4j.model.document.data.ResourceIdentifierObject.META_FIELD;
 
 @EqualsAndHashCode
 @ToString
