@@ -34,9 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class JsonApi4jCompoundDocsApiHttpClientTests {
 
-    private static final CompoundDocsResolverConfig CONFIG = new CompoundDocsResolverConfig(
-            true, 2, UnsupportedIncludeStrategy.FAIL, 100, ErrorStrategy.IGNORE, List.of(Propagation.HEADERS), Set.of("Authorization", "Cookie"), Deduplication.DATA_AND_INCLUDED, 1000, 300, false, 1
-    );
+    private static final CompoundDocsResolverConfig CONFIG = config(10_000);
     private static final CompoundDocsRequest REQUEST = new CompoundDocsRequest(
             "GET", List.of("placeOfBirth"), Map.of(), Map.of(), "/users/1", Map.of()
     );
@@ -105,9 +103,10 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
 
         @Test
         public void doBatchFetch_responseSlowerThanTotalTimeout_throwsDownstreamTimeoutException() throws IOException {
+            JsonApi4jCompoundDocsApiHttpClient impatient = new JsonApi4jCompoundDocsApiHttpClient(new ObjectMapper(), config(300));
             startServer(200, "{\"data\":[]}", 2000, new AtomicReference<>());
 
-            assertThatThrownBy(() -> sut.doBatchFetch(batch(), REQUEST))
+            assertThatThrownBy(() -> impatient.doBatchFetch(batch(), REQUEST))
                     .isInstanceOf(DownstreamTimeoutException.class);
         }
 
@@ -151,6 +150,13 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
             }
         });
         server.start();
+    }
+
+    private static CompoundDocsResolverConfig config(long httpTotalTimeoutMs) {
+        return new CompoundDocsResolverConfig(
+                true, 2, UnsupportedIncludeStrategy.FAIL, 100, ErrorStrategy.IGNORE, List.of(Propagation.HEADERS),
+                Set.of("Authorization", "Cookie"), Deduplication.DATA_AND_INCLUDED, 1000, httpTotalTimeoutMs, false, 1
+        );
     }
 
     private BatchFetch batch() {
