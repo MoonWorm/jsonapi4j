@@ -25,7 +25,6 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private int maxIncludedResources = Integer.parseInt(DEFAULT_MAX_INCLUDED_RESOURCES);
     private ErrorStrategy errorStrategy = ErrorStrategy.valueOf(DEFAULT_ERROR_STRATEGY);
     private Map<String, DefaultMapping> mapping = Collections.emptyMap();
-    private int defaultMaxBatchSize = Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
     private List<Propagation> propagation = parsePropagationString(DEFAULT_PROPAGATION);
     private Deduplication deduplication = Deduplication.valueOf(DEFAULT_DEDUPLICATION);
     private UnsupportedIncludeStrategy unsupportedIncludes = UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
@@ -120,11 +119,6 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     @Override
     public Map<String, DefaultMapping> mapping() {
         return mapping;
-    }
-
-    @Override
-    public int defaultMaxBatchSize() {
-        return defaultMaxBatchSize;
     }
 
     @Override

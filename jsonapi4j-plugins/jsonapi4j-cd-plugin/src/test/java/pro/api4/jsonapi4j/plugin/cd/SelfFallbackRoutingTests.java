@@ -32,7 +32,7 @@ class SelfFallbackRoutingTests {
             SelfFallbackRouting sut = new SelfFallbackRouting(COUNTRIES_ONLY, cdProperties);
 
             assertThat(sut.resolveDomainSettings("users"))
-                    .contains(DomainSettings.inProcess(cdProperties.defaultMaxBatchSize()));
+                    .contains(DomainSettings.inProcess(DomainSettings.DEFAULT_MAX_BATCH_SIZE));
         }
 
         @Test
@@ -44,12 +44,20 @@ class SelfFallbackRoutingTests {
         }
 
         @Test
+        void resolveDomainSettings_unmappedTypeWithDefaultBatchSize_isFetchedInProcessInBatchesOfIt() {
+            cdProperties.setMapping(Map.of("default", mapping(null, 50)));
+            SelfFallbackRouting sut = new SelfFallbackRouting(COUNTRIES_ONLY, cdProperties);
+
+            assertThat(sut.resolveDomainSettings("users")).contains(DomainSettings.inProcess(50));
+        }
+
+        @Test
         void resolveDomainSettings_defaultUrlWithoutTransport_isFetchedInProcess() {
             cdProperties.setMapping(Map.of("default", transportMapping(APP_URL.toString(), null)));
             SelfFallbackRouting sut = new SelfFallbackRouting(COUNTRIES_ONLY, cdProperties);
 
             assertThat(sut.resolveDomainSettings("users"))
-                    .contains(DomainSettings.inProcess(cdProperties.defaultMaxBatchSize()));
+                    .contains(DomainSettings.inProcess(DomainSettings.DEFAULT_MAX_BATCH_SIZE));
         }
 
         @Test
@@ -58,7 +66,7 @@ class SelfFallbackRoutingTests {
             SelfFallbackRouting sut = new SelfFallbackRouting(COUNTRIES_ONLY, cdProperties);
 
             assertThat(sut.resolveDomainSettings("users"))
-                    .contains(DomainSettings.overHttp(APP_URL, cdProperties.defaultMaxBatchSize(), true));
+                    .contains(DomainSettings.overHttp(APP_URL, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true));
         }
 
         @Test
@@ -70,9 +78,9 @@ class SelfFallbackRoutingTests {
             SelfFallbackRouting sut = new SelfFallbackRouting(COUNTRIES_ONLY, cdProperties);
 
             assertThat(sut.resolveDomainSettings("users"))
-                    .contains(DomainSettings.inProcess(cdProperties.defaultMaxBatchSize()));
+                    .contains(DomainSettings.inProcess(DomainSettings.DEFAULT_MAX_BATCH_SIZE));
             assertThat(sut.resolveDomainSettings("currencies"))
-                    .contains(DomainSettings.overHttp(APP_URL, cdProperties.defaultMaxBatchSize(), true));
+                    .contains(DomainSettings.overHttp(APP_URL, DomainSettings.DEFAULT_MAX_BATCH_SIZE, true));
         }
 
         @Test

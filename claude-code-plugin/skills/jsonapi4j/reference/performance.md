@@ -5,7 +5,7 @@ In rough order of impact:
 1. **Support `filter[id]` on every includable resource's `readPage`** — *the single most impactful
    compound-doc optimization*. The CD resolver batches included fetches into one
    `GET /type?filter[id]=a,b,c`; without it, it falls back to N sequential read-by-id calls (20
-   resources = 20 HTTP requests). Cap the batch with `cd.defaultMaxBatchSize` / per-type
+   resources = 20 HTTP requests). Cap the batch with `cd.mapping.default.maxBatchSize` / per-type
    `cd.mapping.<type>.maxBatchSize` (e.g. 20) so you never exceed a downstream's limit.
 2. **Keep same-app includes in-process** (`cd.mapping.<type>.transport: IN_PROCESS`, the default) — no
    socket, servlet filters or JSON round trip per include, and no second worker thread held (~1.8× faster

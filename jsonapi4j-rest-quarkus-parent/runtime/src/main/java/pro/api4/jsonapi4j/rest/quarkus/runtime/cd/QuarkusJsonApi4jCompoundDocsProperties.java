@@ -54,18 +54,11 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
 
     /**
      * Settings per resource type: 'url' of the service serving it (none when this app serves it), 'maxBatchSize',
-     * 'propagateCredentials' and 'transport'. The reserved 'default' entry takes this app's own base URL as 'url', and
-     * the 'transport' of the resource types it serves that set none.
+     * 'propagateCredentials' and 'transport'. The reserved 'default' entry takes this app's own base URL as 'url', the
+     * 'transport' of the resource types it serves that set none, and the 'maxBatchSize' of every resource type that
+     * sets none.
      */
     Map<String, Mapping> mapping();
-
-    /**
-     * Fallback maximum number of resource IDs per downstream {@code filter[id]=...} batch when no
-     * per-resource override is configured under {@link #mapping()}. The Compound Documents
-     * Resolver splits larger ID sets into parallel chunks of this size.
-     */
-    @WithDefault(DEFAULT_MAX_BATCH_SIZE)
-    int defaultMaxBatchSize();
 
     /**
      * Defines which JsonApiRequest parts to propagate during Compound Docs resolution loop.
@@ -154,8 +147,8 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         Optional<String> url();
 
         /**
-         * Maximum number of resource IDs per downstream {@code filter[id]=...} batch, overriding
-         * 'defaultMaxBatchSize'.
+         * Maximum number of resource IDs per downstream {@code filter[id]=...} batch, overriding the one of
+         * 'mapping.default'.
          */
         Optional<Integer> maxBatchSize();
 
@@ -186,7 +179,6 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
                         e.getValue().transport().orElse(null)
                 )
         )));
-        cdProperties.setDefaultMaxBatchSize(defaultMaxBatchSize());
         cdProperties.setPropagation(propagation());
         cdProperties.setDeduplication(deduplication());
         cdProperties.setUnsupportedIncludes(unsupportedIncludes());

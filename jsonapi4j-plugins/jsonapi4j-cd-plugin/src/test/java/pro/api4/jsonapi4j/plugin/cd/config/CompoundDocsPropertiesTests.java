@@ -63,13 +63,6 @@ public class CompoundDocsPropertiesTests {
         }
 
         @Test
-        public void validate_nonPositiveDefaultMaxBatchSize_reportsError() {
-            sut.setDefaultMaxBatchSize(0);
-
-            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.defaultMaxBatchSize");
-        }
-
-        @Test
         public void validate_nullDeduplication_reportsError() {
             sut.setDeduplication(null);
 
@@ -136,10 +129,27 @@ public class CompoundDocsPropertiesTests {
         }
 
         @Test
-        public void validate_defaultMappingWithMoreThanUrl_reportsError() {
-            sut.setMapping(Map.of("default", mapping(APP_URL, 50, true)));
+        public void validate_defaultMappingWithCredentials_reportsError() {
+            sut.setMapping(Map.of("default", mapping(APP_URL, null, true)));
 
-            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.mapping.default");
+            assertThat(sut.validate().getPropertyErrors())
+                    .containsOnlyKeys("jsonapi4j.cd.mapping.default.propagateCredentials");
+        }
+
+        @Test
+        public void validate_defaultMappingWithBatchSizeOnly_returnsNoErrors() {
+            sut.setMapping(Map.of("default", mapping(null, 50, false)));
+
+            assertThat(sut.validate().getPropertyErrors()).isEmpty();
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = {0, -1})
+        public void validate_nonPositiveDefaultBatchSize_reportsError(int maxBatchSize) {
+            sut.setMapping(Map.of("default", mapping(null, maxBatchSize, false)));
+
+            assertThat(sut.validate().getPropertyErrors())
+                    .containsOnlyKeys("jsonapi4j.cd.mapping.default.maxBatchSize");
         }
 
         @Test
@@ -162,6 +172,39 @@ public class CompoundDocsPropertiesTests {
 
             assertThat(sut.validate().getPropertyErrors())
                     .containsOnlyKeys("jsonapi4j.cd.mapping.default.transport");
+        }
+
+    }
+
+    @Nested
+    class MaxBatchSize {
+
+        @Test
+        public void maxBatchSize_nothingSet_isDomainSettingsDefault() {
+            assertThat(sut.maxBatchSize("countries")).isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
+        }
+
+        @Test
+        public void maxBatchSize_defaultSet_followsIt() {
+            sut.setMapping(Map.of("default", mapping(null, 50, false)));
+
+            assertThat(sut.maxBatchSize("countries")).isEqualTo(50);
+        }
+
+        @Test
+        public void maxBatchSize_typeSet_overridesDefault() {
+            sut.setMapping(Map.of("default", mapping(null, 50, false), "users", mapping(USERS_URL, 10, false)));
+
+            assertThat(sut.maxBatchSize("users")).isEqualTo(10);
+            assertThat(sut.maxBatchSize("countries")).isEqualTo(50);
+        }
+
+        @Test
+        public void domainSettings_mappedTypeWithoutBatchSize_takesDefaultOne() {
+            sut.setMapping(Map.of("default", mapping(null, 50, false), "users", mapping(USERS_URL, null, false)));
+
+            assertThat(sut.domainSettings())
+                    .containsEntry("users", DomainSettings.overHttp(URI.create(USERS_URL), 50, false));
         }
 
     }
@@ -206,7 +249,7 @@ public class CompoundDocsPropertiesTests {
 
             assertThat(sut.domainSettings()).isEqualTo(Map.of(
                     "users", DomainSettings.overHttp(URI.create(USERS_URL), 50, true),
-                    "rates", DomainSettings.overHttp(URI.create("https://partner.example.com/jsonapi"), sut.defaultMaxBatchSize(), false)
+                    "rates", DomainSettings.overHttp(URI.create("https://partner.example.com/jsonapi"), DomainSettings.DEFAULT_MAX_BATCH_SIZE, false)
             ));
         }
 
@@ -216,7 +259,7 @@ public class CompoundDocsPropertiesTests {
 
             assertThat(sut.domainSettings()).isEmpty();
             assertThat(sut.maxBatchSize("countries")).isEqualTo(100);
-            assertThat(sut.maxBatchSize("currencies")).isEqualTo(sut.defaultMaxBatchSize());
+            assertThat(sut.maxBatchSize("currencies")).isEqualTo(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
         }
 
         @ParameterizedTest
@@ -357,6 +400,7 @@ public class CompoundDocsPropertiesTests {
         @Test
         public void validate_everyReportedPath_pointsAtARealConfigKey() {
             // given
+            sut.setMapping(Map.of("users", mapping(USERS_URL, 20, false), "default", mapping(null, 20, false)));
             Map<String, Object> effectiveConfig = effectiveConfigOf(sut);
             breakEveryValue(sut);
 
@@ -373,7 +417,6 @@ public class CompoundDocsPropertiesTests {
         private void breakEveryValue(DefaultCompoundDocsProperties properties) {
             properties.setMaxHops(0);
             properties.setMaxIncludedResources(0);
-            properties.setDefaultMaxBatchSize(0);
             properties.setHttpConnectTimeoutMs(0);
             properties.setHttpTotalTimeoutMs(0);
             properties.setErrorStrategy(null);
@@ -381,7 +424,7 @@ public class CompoundDocsPropertiesTests {
             properties.setDeduplication(null);
             properties.setUnsupportedIncludes(null);
             properties.setCredentialHeaders(null);
-            properties.setMapping(Map.of("users", mapping("/jsonapi", 0, false)));
+            properties.setMapping(Map.of("users", mapping("/jsonapi", 0, false), "default", mapping(null, 0, true)));
             properties.getCache().setMaxSize(0);
         }
 

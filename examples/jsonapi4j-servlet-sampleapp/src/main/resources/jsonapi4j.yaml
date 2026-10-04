@@ -46,7 +46,9 @@ cd:
     #   url: https://rates-service.internal/jsonapi
     #   maxBatchSize: 50
     #   propagateCredentials: true
-  defaultMaxBatchSize: 20
+    # Fallback max number of resource IDs per downstream filter[id]=... request, for types without their own.
+    default:
+      maxBatchSize: 20
 
 # AC Plugin
 ac:

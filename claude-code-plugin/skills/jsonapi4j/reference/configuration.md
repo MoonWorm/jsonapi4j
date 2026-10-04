@@ -22,17 +22,17 @@ jsonapi4j:
                                 # (never: Accept-Encoding, conditional/Range, hop-by-hop, X-Forwarded-For & co.)
     credentialHeaders: [Authorization, Cookie, Proxy-Authorization, X-Authenticated-User-Id, ...]   # the default
     deduplication: DATA_AND_INCLUDED   # or INCLUDED_ONLY (repeat reached primary resources in included) | NONE
-    defaultMaxBatchSize: 20
     mapping:                    # one entry per resource type
       orders:
         url: https://orders.internal/jsonapi   # ONLY for types another service serves
-        maxBatchSize: 50                       # optional filter[id] batch size (else defaultMaxBatchSize)
+        maxBatchSize: 50                       # optional filter[id] batch size (else default.maxBatchSize)
         propagateCredentials: true             # send credentialHeaders there (default false)
       countries:
         maxBatchSize: 20                       # same-app type: no url
         transport: HTTP                        # optional: over HTTP from default.url (else default.transport)
       default:
         url: https://api.internal:8443/jsonapi # this app's own address, for same-app types over HTTP
+        maxBatchSize: 20                       # fallback for types without their own (default 20)
         transport: IN_PROCESS                  # default transport of same-app types (IN_PROCESS | HTTP)
     httpConnectTimeoutMs: 1000
     httpTotalTimeoutMs: 5000

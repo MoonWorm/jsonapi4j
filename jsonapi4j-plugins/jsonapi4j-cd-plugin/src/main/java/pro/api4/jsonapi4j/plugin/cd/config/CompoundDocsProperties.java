@@ -24,10 +24,10 @@ public interface CompoundDocsProperties extends PluginProperties {
     String MAPPING_PROPERTY = "mapping";
     /**
      * Reserved {@code mapping} key: its {@code url} is this app's own base URL, to fetch the resource types it serves
-     * over HTTP from rather than in-process. A resource type can therefore not be named {@code default}.
+     * over HTTP from rather than in-process, and its {@code transport} and {@code maxBatchSize} apply to every resource
+     * type that sets none. A resource type can therefore not be named {@code default}.
      */
     String DEFAULT_MAPPING_KEY = "default";
-    String DEFAULT_MAX_BATCH_SIZE_PROPERTY = "defaultMaxBatchSize";
     String PROPAGATION_PROPERTY = "propagation";
     String DEDUPLICATION_PROPERTY = "deduplication";
     String UNSUPPORTED_INCLUDES_PROPERTY = "unsupportedIncludes";
@@ -56,12 +56,6 @@ public interface CompoundDocsProperties extends PluginProperties {
             + "X-Authenticated-User-Granted-Scopes,X-Authenticated-Client-Entitlements";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
     String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
-    /**
-     * Derived from {@link DomainSettings#DEFAULT_MAX_BATCH_SIZE} so the resolver and the plugin share one default. Kept
-     * a compile-time constant {@code String}, like the other defaults, so it can be used in annotations such as
-     * Quarkus' {@code @WithDefault}.
-     */
-    String DEFAULT_MAX_BATCH_SIZE = "" + DomainSettings.DEFAULT_MAX_BATCH_SIZE;
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);
@@ -136,17 +130,17 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     /**
-     * @return the {@code maxBatchSize} of the mapping of {@code resourceType}, or {@link #defaultMaxBatchSize()}
+     * @return the {@code maxBatchSize} of the mapping of {@code resourceType}, otherwise the one of
+     * {@code mapping.default}, otherwise {@link DomainSettings#DEFAULT_MAX_BATCH_SIZE}
      */
     default int maxBatchSize(String resourceType) {
-        return Optional.ofNullable(mapping())
-                .map(mapping -> mapping.get(resourceType))
-                .map(Mapping::maxBatchSize)
-                .orElse(defaultMaxBatchSize());
+        return maxBatchSizeOf(mappingOf(resourceType))
+                .or(() -> maxBatchSizeOf(mappingOf(DEFAULT_MAPPING_KEY)))
+                .orElse(DomainSettings.DEFAULT_MAX_BATCH_SIZE);
     }
 
-    default int defaultMaxBatchSize() {
-        return Integer.parseInt(DEFAULT_MAX_BATCH_SIZE);
+    private static Optional<Integer> maxBatchSizeOf(Mapping mapping) {
+        return Optional.ofNullable(mapping).map(Mapping::maxBatchSize);
     }
 
     default List<Propagation> propagation() {
@@ -199,7 +193,6 @@ public interface CompoundDocsProperties extends PluginProperties {
         PropertiesValidationResultBuilder builder = PropertiesValidationResult.builder()
                 .requirePositive(propertyPath(MAX_HOPS_PROPERTY), maxHops())
                 .requirePositive(propertyPath(MAX_INCLUDED_RESOURCES_PROPERTY), maxIncludedResources())
-                .requirePositive(propertyPath(DEFAULT_MAX_BATCH_SIZE_PROPERTY), defaultMaxBatchSize())
                 .requirePositive(propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs())
                 .requirePositive(propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs())
                 .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
@@ -238,18 +231,18 @@ public interface CompoundDocsProperties extends PluginProperties {
                 ));
                 return;
             }
+            if (mapping.maxBatchSize() != null) {
+                builder.requirePositive(
+                        propertyPath(MAPPING_PROPERTY, resourceType, Mapping.MAX_BATCH_SIZE_PROPERTY),
+                        mapping.maxBatchSize()
+                );
+            }
             if (DEFAULT_MAPPING_KEY.equals(resourceType)) {
                 validateDefaultMapping(builder, mapping);
                 return;
             }
             if (mapping.url() != null) {
                 builder.requireHttpUrl(propertyPath(MAPPING_PROPERTY, resourceType, Mapping.URL_PROPERTY), mapping.url());
-            }
-            if (mapping.maxBatchSize() != null) {
-                builder.requirePositive(
-                        propertyPath(MAPPING_PROPERTY, resourceType, Mapping.MAX_BATCH_SIZE_PROPERTY),
-                        mapping.maxBatchSize()
-                );
             }
             validateTransport(builder, resourceType, mapping);
             if (mapping.url() == null && mapping.propagateCredentials()) {
@@ -279,9 +272,9 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     /**
-     * The reserved {@code default} entry says where this app is reached, and how the resource types it serves are
-     * fetched by default. Batch sizes of those types come from their own entries or {@code defaultMaxBatchSize}, and
-     * they always get the client's credentials.
+     * The reserved {@code default} entry says where this app is reached, how the resource types it serves are fetched
+     * by default, and the batch size of every resource type that sets none. Credentials can't be propagated by default:
+     * each service has to be trusted with them on its own entry.
      */
     private void validateDefaultMapping(PropertiesValidationResultBuilder builder, Mapping mapping) {
         if (mapping.url() != null) {
@@ -296,12 +289,12 @@ public interface CompoundDocsProperties extends PluginProperties {
                     String.format("needs '%s' - this app's own address - to fetch over HTTP from", Mapping.URL_PROPERTY)
             );
         }
-        if (mapping.maxBatchSize() != null || mapping.propagateCredentials()) {
+        if (mapping.propagateCredentials()) {
             builder.addPropertyError(
-                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY),
+                    propertyPath(MAPPING_PROPERTY, DEFAULT_MAPPING_KEY, Mapping.PROPAGATE_CREDENTIALS_PROPERTY),
                     String.format(
-                            "the reserved '%s' entry takes only '%s' and '%s'",
-                            DEFAULT_MAPPING_KEY, Mapping.URL_PROPERTY, Mapping.TRANSPORT_PROPERTY
+                            "is set per resource type mapped to a '%s', so a service gets the client's credentials only "
+                                    + "when trusted with them", Mapping.URL_PROPERTY
                     )
             );
         }
@@ -365,8 +358,8 @@ public interface CompoundDocsProperties extends PluginProperties {
         String url();
 
         /**
-         * @return the maximum number of resource IDs per {@code filter[id]=...} fetch, or {@code null} for
-         * {@code defaultMaxBatchSize}
+         * @return the maximum number of resource IDs per {@code filter[id]=...} fetch, or {@code null} to follow
+         * {@code mapping.default} - see {@link CompoundDocsProperties#maxBatchSize(String)}
          */
         Integer maxBatchSize();
 

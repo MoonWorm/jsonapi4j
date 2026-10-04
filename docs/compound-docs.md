@@ -58,8 +58,9 @@ Configure the fallback batch size and per-resource-type overrides via plugin pro
 ```yaml
 jsonapi4j:
   cd:
-    defaultMaxBatchSize: 20              # global fallback (default: 20)
     mapping:
+      default:
+        maxBatchSize: 20                 # fallback for every type (default: 20)
       users:
         maxBatchSize: 50                 # per-resource override
       countries:

@@ -31,9 +31,6 @@ jsonapi4j:
     unsupportedIncludes: FAIL
     httpConnectTimeoutMs: 5000
     httpTotalTimeoutMs: 10000
-    # Fallback max number of resource IDs per downstream filter[id]=... request.
-    # The resolver splits larger ID sets into parallel chunks of this size.
-    defaultMaxBatchSize: 20
     cache:
       enabled: true
       maxSize: 1000
@@ -52,6 +49,9 @@ jsonapi4j:
       #   url: https://rates-service.internal/jsonapi
       #   maxBatchSize: 50
       #   propagateCredentials: true
+      # Fallback max number of resource IDs per downstream filter[id]=... request, for types without their own.
+      default:
+        maxBatchSize: 20
 
   # AC Plugin
   ac:
