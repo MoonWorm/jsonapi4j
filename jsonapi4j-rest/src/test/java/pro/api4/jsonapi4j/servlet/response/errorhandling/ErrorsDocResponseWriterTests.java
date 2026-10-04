@@ -11,10 +11,13 @@ import pro.api4.jsonapi4j.errorhandling.ErrorHandlerFactoriesRegistry;
 import pro.api4.jsonapi4j.errorhandling.ErrorsDocFactory;
 import pro.api4.jsonapi4j.errorhandling.ErrorsDocSupplier;
 import pro.api4.jsonapi4j.errorhandling.JsonApi4jErrorHandlerFactoriesRegistry;
+import pro.api4.jsonapi4j.model.document.error.ErrorObject;
 import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -79,6 +82,54 @@ public class ErrorsDocResponseWriterTests {
 
         verify(response).setStatus(500);
         assertThat(new String(body.toByteArray())).doesNotContain("secret internals");
+    }
+
+    @Test
+    public void errorIds_errorsWithIds_joinsThemInOrder() {
+        ErrorsDoc errorsDoc = new ErrorsDoc(List.of(
+                ErrorObject.builder().id("a").build(),
+                ErrorObject.builder().id("b").build()
+        ));
+
+        assertThat(ErrorsDocResponseWriter.errorIds(errorsDoc)).isEqualTo("a,b");
+    }
+
+    @Test
+    public void errorIds_errorsWithoutIds_skipsThem() {
+        ErrorsDoc errorsDoc = new ErrorsDoc(Arrays.asList(
+                ErrorObject.builder().build(),
+                null,
+                ErrorObject.builder().id("b").build()
+        ));
+
+        assertThat(ErrorsDocResponseWriter.errorIds(errorsDoc)).isEqualTo("b");
+    }
+
+    @Test
+    public void errorIds_nullDocOrErrors_returnsEmpty() {
+        assertThat(ErrorsDocResponseWriter.errorIds(null)).isEmpty();
+        assertThat(ErrorsDocResponseWriter.errorIds(new ErrorsDoc(null))).isEmpty();
+    }
+
+    @Test
+    public void write_supplierWithoutIds_stillWritesErrorDocument() throws IOException {
+        registry.register(IllegalStateException.class, new ErrorsDocSupplier<IllegalStateException>() {
+            @Override
+            public ErrorsDoc getErrorResponse(IllegalStateException ex) {
+                return new ErrorsDoc(List.of(ErrorObject.builder().code("CUSTOM").build()));
+            }
+
+            @Override
+            public int getHttpStatus(IllegalStateException ex) {
+                return 409;
+            }
+        });
+
+        sut.write(response, new IllegalStateException("boom"));
+
+        verify(response).setStatus(409);
+        JsonNode error = MAPPER.readTree(body.toByteArray()).path("errors").get(0);
+        assertThat(error.path("code").asText()).isEqualTo("CUSTOM");
     }
 
 }

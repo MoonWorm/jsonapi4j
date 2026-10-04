@@ -38,6 +38,16 @@ JSON:API error response written to client
 
 4xx errors are logged at `WARN` level (client errors). 5xx errors are logged at `ERROR` level with full stack trace.
 
+Each log line carries the `id` of every error object in the response, and the same ids are put in the logs under
+`jsonapi4j.errorId` while the line is logged. When a client reports an error by its `id`, search the logs for it:
+
+```
+WARN  ErrorsDocResponseWriter - 404 code. Error id(s): a1b2c3d4-e5f6-7890-abcd-ef1234567890. Error message: ...
+```
+
+To get from that line to every other log line of the same request, include your tracing ids (e.g. Micrometer or
+OpenTelemetry `traceId`) in the log pattern. The error line then carries both ids.
+
 ## Error Response Structure
 
 Every error response follows the [JSON:API error format](https://jsonapi.org/format/#error-objects). The response body is an `ErrorsDoc` containing a list of `ErrorObject`s:
