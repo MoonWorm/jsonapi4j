@@ -211,9 +211,12 @@ done in filters don't apply to it — only the framework itself does, including 
 [access control plugin](/access-control-plugin/). Put access rules for resource types that can be included there; or,
 when filters have to see include requests, fetch same-app types over HTTP as below.
 
-**The executor is used re-entrantly.** Included resources are fetched on the framework's executor, and an in-process
-read resolves relationships on that same executor. The default — a cached thread pool — handles that; a **bounded**
-executor you provide has to be sized for both, or a burst of includes can wait on the very threads it occupies.
+**The executor must tolerate nested waits.** Included resources are fetched on the framework's executor, and an
+in-process read resolves relationships on that same executor, then waits for them. The defaults handle that, and so do
+virtual threads, `ForkJoinPool`, and a bounded `ThreadPoolExecutor` with `CallerRunsPolicy`. A **fixed pool with a task
+queue** (`Executors.newFixedThreadPool(n)`) can deadlock under load: every thread waits on work queued behind it, and
+in-process reads have no timeout to break the wait. See [Tune the Executor](/performance/#tune-the-executor) for the
+safe choices.
 
 #### Fetching same-app types over HTTP
 

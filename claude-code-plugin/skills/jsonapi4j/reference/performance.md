@@ -16,8 +16,10 @@ In rough order of impact:
    already in the parent (see `relationships.md`).
 4. **Parallel relationship resolution** — register an `ExecutorService` bean to resolve a resource's
    multiple relationships concurrently. Default is synchronous (`Runnable::run`). Options:
-   `Executors.newFixedThreadPool(N)` (bounded), `newCachedThreadPool()` (dynamic),
-   `newVirtualThreadPerTaskExecutor()` (Java 21+, ideal for I/O-bound downstream calls). Override the
+   `newCachedThreadPool()` (dynamic), `newVirtualThreadPerTaskExecutor()` (Java 21+, ideal for I/O-bound
+   downstream calls), `ForkJoinPool`, or — for a hard thread cap — a `ThreadPoolExecutor` with a `SynchronousQueue`
+   and `CallerRunsPolicy`. **Avoid `newFixedThreadPool(N)` with compound documents**: in-process includes wait on
+   tasks queued on the same pool, so a fixed pool with a queue can deadlock under load (no timeout breaks it). Override the
    default bean (Spring `@ConditionalOnMissingBean`, Quarkus `@DefaultBean`) to supply your own.
 5. **Bound the blast radius** — `cd.maxHops` (default 2) caps `?include=a.b.c` depth;
    `cd.maxIncludedResources` (default 100) caps total resolved resources per response.

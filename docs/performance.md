@@ -175,12 +175,31 @@ the right choice.
 
 Common strategies:
 
-| Executor | Best for |
-|----------|----------|
-| `Runnable::run` (default) | Simple APIs with few relationships |
-| `Executors.newFixedThreadPool(N)` | Predictable concurrency with bounded threads |
-| `Executors.newCachedThreadPool()` | Dynamic scaling for variable workloads |
-| `Executors.newVirtualThreadPerTaskExecutor()` | I/O-bound relationship resolution (Java 21+) |
+| Executor | Best for | With compound documents |
+|----------|----------|-------------------------|
+| `Runnable::run` (default) | Simple APIs with few relationships | safe |
+| `Executors.newCachedThreadPool()` | Dynamic scaling for variable workloads | safe — grows when all threads are busy |
+| `Executors.newVirtualThreadPerTaskExecutor()` | I/O-bound relationship resolution (Java 21+) | safe — a blocked virtual thread costs nothing |
+| `ForkJoinPool` (`commonPool()` or `new ForkJoinPool(n)`) | CPU-bound work | safe — a join on a pool thread adds a temporary compensating thread |
+| `ThreadPoolExecutor` with a `SynchronousQueue` and `CallerRunsPolicy` | Bounded concurrency | safe — when saturated, the submitting thread runs the task itself |
+| `Executors.newFixedThreadPool(N)`, or any bounded pool with a task queue | Bounded concurrency without compound documents | **can deadlock** |
+
+**With compound documents, the executor must tolerate nested waits.** Included resources are fetched on the executor,
+and an in-process read of a same-app type resolves its relationships on the same executor — then waits for them. A
+pool thread fetching an include ends up waiting for tasks queued on its own pool. A pool that can grow, or that runs a
+task on the submitting thread when full, handles that. A fixed pool with a queue doesn't: once every thread waits on
+queued work, nothing runs it, and the request hangs — in-process reads have no timeout to break the wait.
+
+If you need a hard cap on threads, keep it and drop the queue:
+
+```java
+new ThreadPoolExecutor(
+        0, 64,                                   // at most 64 threads
+        60, TimeUnit.SECONDS,
+        new SynchronousQueue<>(),                // no queue: a task needs a free thread...
+        new ThreadPoolExecutor.CallerRunsPolicy() // ...or runs on the thread that submitted it
+);
+```
 
 Parallelism helps most when a resource has multiple relationships that each trigger downstream calls. If relationships are resolved in-house (see above), the overhead of thread scheduling may outweigh the benefit.
 
