@@ -79,14 +79,14 @@
 
 
         <!--json/yaml-->
-        <jackson.version>2.22.2</jackson.version>
+        <jackson.version>2.22.3</jackson.version>
 
         <!--oas-->
         <swagger.version>2.2.55</swagger.version>
 
         <!--utils-->
         <apache.commons-collections4.version>4.6.0</apache.commons-collections4.version>
-        <apache.commons-lang3.version>3.20.0</apache.commons-lang3.version>
+        <apache.commons-lang3.version>3.21.0</apache.commons-lang3.version>
         <apache.commons-io.version>2.22.0</apache.commons-io.version>
 
         <!--logging-->
@@ -100,7 +100,7 @@
 
         <!--test-->
         <junit-jupiter-api.version>6.1.3</junit-jupiter-api.version>
-        <mockito-core.version>5.23.0</mockito-core.version>
+        <mockito-core.version>5.24.0</mockito-core.version>
         <assertj.version>3.27.7</assertj.version>
 
         <!--plugins-->
