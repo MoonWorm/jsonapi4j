@@ -103,8 +103,11 @@ Two things about that profile, both easy to break:
   `slf4j-api`, which nothing guarantees for a servlet user. Lombok is neither: it is compile-time only (nothing
   it generates references the jar at runtime), so it is `provided` to keep it off consumers' classpaths, and
   every module that uses its annotations must declare it, since `provided` does not propagate between modules.
-- **Quarkus** has the same shape: `mvn clean verify -Dquarkus.version=3.20.6` walks the supported range, and
-  `quarkus-compatibility.yml` runs 3.20.6 / 3.27.5 / 3.39.2 weekly. The sample app's
+- **Quarkus** has the same shape: `quarkus-compatibility.yml` runs 3.20.6 / 3.33.3.2 / 3.39.3 weekly by
+  writing the version into the poms (`mvn versions:set-property -Dproperty=quarkus.version -DnewVersion=…
+  -DgenerateBackupPoms=false`, then `mvn clean verify`). Don't use `-Dquarkus.version=…`: on Maven 3.10+ the
+  quarkus-maven-plugin builds the test app model without command-line overrides, so the sample app mixes
+  Quarkus versions and fails with `NoSuchMethodError` in `io.quarkus.bootstrap`. The sample app's
   `quarkus.platform.version` follows `quarkus.version`, so one property flips extension and app together —
   overriding only one silently tests a mismatched pair. Floor is **Quarkus 3.20**; 3.15 fails to augment.
 - The RestAssured family (`rest-assured`, `json-path`, `xml-path`, `rest-assured-common`) is managed as a

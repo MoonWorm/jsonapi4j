@@ -20,7 +20,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <!--Follows examples/pom.xml so a single -Dquarkus.version flips the extension and this app together;
+        <!--Follows examples/pom.xml so a single quarkus.version change flips the extension and this app together;
             they are separate properties otherwise, and overriding one alone silently tests a mixed pair.-->
         <quarkus.platform.version>${quarkus.version}</quarkus.platform.version>
         <!--Surefire and failsafe below use @{argLine} so a JaCoCo agent can inject itself. Nothing configures
