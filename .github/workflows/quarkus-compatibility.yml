@@ -52,6 +52,6 @@ jobs:
       # was augmented against the poms' default Quarkus and then run on the matrix one (NoSuchMethodError /
       # AbstractMethodError in io.quarkus.bootstrap). Editing the poms leaves every reader the same version.
       - name: Set Quarkus ${{ matrix.quarkus }}
-        run: mvn -B -q versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ matrix.quarkus }} -DgenerateBackupPoms=false
+        run: mvn -B versions:set-property -Dproperty=quarkus.version -DnewVersion=${{ matrix.quarkus }} -DgenerateBackupPoms=false
       - name: Verify against Quarkus ${{ matrix.quarkus }}
         run: mvn -B clean verify
