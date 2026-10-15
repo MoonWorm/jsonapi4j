@@ -3,9 +3,11 @@ package pro.api4.jsonapi4j.compound.docs.client;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.Deadline;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.IncompleteReason;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 
@@ -52,6 +54,40 @@ class ErrorStrategyAwareBatchFetcherTests {
             assertThat(result.resources()).isEmpty();
             assertThat(result.incompleteReason()).isEqualTo(IncompleteReason.FETCH_FAILED);
             assertThat(result.directives().isNoStore()).isTrue();
+        }
+
+        @Test
+        void fetch_timesOutPastDeadline_returnsDeadlineExceeded() throws InterruptedException {
+            BatchFetch<DomainSettings.OverHttp> pastDeadline = new BatchFetch<>(
+                    BATCH.domainSettings(), "countries", Set.of("US"), Set.of(), Deadline.after(1)
+            );
+            Thread.sleep(5);
+            ErrorStrategyAwareBatchFetcher<DomainSettings.OverHttp> sut = new ErrorStrategyAwareBatchFetcher<>(
+                    (batch, request) -> {
+                        throw new DownstreamTimeoutException("timed out", null);
+                    },
+                    ErrorStrategy.IGNORE
+            );
+
+            FetchResult result = sut.fetch(pastDeadline, REQUEST);
+
+            assertThat(result.resources()).isEmpty();
+            assertThat(result.incompleteReason()).isEqualTo(IncompleteReason.DEADLINE_EXCEEDED);
+            assertThat(result.directives().isNoStore()).isTrue();
+        }
+
+        @Test
+        void fetch_timesOutWithinDeadline_returnsIgnoredFailure() {
+            ErrorStrategyAwareBatchFetcher<DomainSettings.OverHttp> sut = new ErrorStrategyAwareBatchFetcher<>(
+                    (batch, request) -> {
+                        throw new DownstreamTimeoutException("timed out", null);
+                    },
+                    ErrorStrategy.IGNORE
+            );
+
+            FetchResult result = sut.fetch(BATCH, REQUEST);
+
+            assertThat(result.incompleteReason()).isEqualTo(IncompleteReason.FETCH_FAILED);
         }
 
         @Test

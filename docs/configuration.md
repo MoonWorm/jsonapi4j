@@ -197,7 +197,7 @@ Property errors:
   - 'jsonapi4j.cd.maxHops': must be greater than 0, but was 0
   - 'jsonapi4j.cd.mapping.users.url': must be an absolute http(s) URL with a host, but was '/jsonapi'
 Cross-properties errors:
-  - 'jsonapi4j.cd.httpTotalTimeoutMs' (1000) must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs' (5000): the total budget of an include call has to cover connecting to the remote service
+  - 'jsonapi4j.cd.httpRequestTimeoutMs' (1000) must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs' (5000): the timeout of an include call has to cover connecting to the remote service
 ```
 
 The checks cover mandatory values, ranges, URL and path formats, and combinations that are individually

@@ -27,8 +27,9 @@ In rough order of impact:
    **respects `Cache-Control`** (TTL from `max-age`/`s-maxage`), so set those headers on your operations
    to make the cache effective. For distributed/Redis caching, provide your own
    `CompoundDocsResourceCache` bean (the in-memory default is overridable).
-7. `cd.httpConnectTimeoutMs` / `cd.httpTotalTimeoutMs` bound include calls to other services (same-app
-   types are read in-process);
+7. `cd.httpConnectTimeoutMs` / `cd.httpRequestTimeoutMs` bound each include call to other services (same-app
+   types are read in-process); `cd.includesTimeoutMs` (default 15000) bounds the whole include resolution across
+   hops;
    `cd.deduplication` (default `DATA_AND_INCLUDED`) avoids refetching an already-resolved resource within one response; `NONE` refetches every time.
 
 ---

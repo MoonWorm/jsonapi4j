@@ -105,17 +105,18 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
     long httpConnectTimeoutMs();
 
     /**
-     * Controls total request timeout (in millisecond).
-     * Covers:
-     * <ul>
-     *     <li>connection</li>
-     *     <li>sending request</li>
-     *     <li>waiting for response</li>
-     *     <li>reading response body</li>
-     * </ul>
+     * Timeout of a single include call (in milliseconds), from sending the request until the response arrives -
+     * capped by the time left of {@link #includesTimeoutMs()}.
      */
-    @WithDefault(DEFAULT_HTTP_TOTAL_TIMEOUT_MS)
-    long httpTotalTimeoutMs();
+    @WithDefault(DEFAULT_HTTP_REQUEST_TIMEOUT_MS)
+    long httpRequestTimeoutMs();
+
+    /**
+     * The time budget of the whole include resolution of a request, across all hops (in milliseconds) - {@code 0}
+     * for no limit.
+     */
+    @WithDefault(DEFAULT_INCLUDES_TIMEOUT_MS)
+    long includesTimeoutMs();
 
     /**
      * Cache settings. Optional.
@@ -184,7 +185,8 @@ public interface QuarkusJsonApi4jCompoundDocsProperties {
         cdProperties.setUnsupportedIncludes(unsupportedIncludes());
         cdProperties.setCredentialHeaders(credentialHeaders());
         cdProperties.setHttpConnectTimeoutMs(httpConnectTimeoutMs());
-        cdProperties.setHttpTotalTimeoutMs(httpTotalTimeoutMs());
+        cdProperties.setHttpRequestTimeoutMs(httpRequestTimeoutMs());
+        cdProperties.setIncludesTimeoutMs(includesTimeoutMs());
         cdProperties.setCache(cache().map(c -> {
             DefaultCompoundDocsProperties.DefaultCache dc = new DefaultCompoundDocsProperties.DefaultCache();
             dc.setEnabled(c.enabled());

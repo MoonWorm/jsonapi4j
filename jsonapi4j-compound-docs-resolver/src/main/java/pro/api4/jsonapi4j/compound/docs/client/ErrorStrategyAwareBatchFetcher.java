@@ -5,11 +5,13 @@ import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 
 /**
  * Applies the {@link ErrorStrategy} to a fetch: under {@link ErrorStrategy#IGNORE} a failed fetch contributes no
- * resources and is reported as {@link FetchResult#ignoredFailure()}; under {@link ErrorStrategy#FAIL} its failure
+ * resources and is reported as {@link FetchResult#ignoredFailure()} - or {@link FetchResult#deadlineExceeded()} when
+ * it timed out with the includes deadline passed; under {@link ErrorStrategy#FAIL} its failure
  * propagates. Wraps each single request, so one failed chunk of a batch doesn't take its siblings with it.
  */
 @Slf4j
@@ -28,6 +30,16 @@ public class ErrorStrategyAwareBatchFetcher<R extends DomainSettings> implements
         try {
             return delegate.fetch(batch, originalRequest);
         } catch (ErrorJsonApiResponseException e) {
+            if (errorStrategy == ErrorStrategy.IGNORE && e instanceof DownstreamTimeoutException
+                    && batch.deadline().isExpired()) {
+                log.warn(
+                        "Ignoring a fetch of '{}' resources {} cut off by the includes deadline per error strategy: {}",
+                        batch.resourceType(),
+                        batch.ids(),
+                        e.getMessage()
+                );
+                return FetchResult.deadlineExceeded();
+            }
             if (errorStrategy == ErrorStrategy.IGNORE) {
                 log.warn(
                         "Ignoring a failed fetch of '{}' resources {} per error strategy: {}",

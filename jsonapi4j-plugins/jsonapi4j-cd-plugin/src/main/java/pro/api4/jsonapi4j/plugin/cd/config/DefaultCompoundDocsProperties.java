@@ -30,7 +30,8 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     private UnsupportedIncludeStrategy unsupportedIncludes = UnsupportedIncludeStrategy.valueOf(DEFAULT_UNSUPPORTED_INCLUDES);
     private List<String> credentialHeaders = CompoundDocsProperties.parseCommaSeparated(DEFAULT_CREDENTIAL_HEADERS);
     private long httpConnectTimeoutMs = Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
-    private long httpTotalTimeoutMs = Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
+    private long httpRequestTimeoutMs = Long.parseLong(DEFAULT_HTTP_REQUEST_TIMEOUT_MS);
+    private long includesTimeoutMs = Long.parseLong(DEFAULT_INCLUDES_TIMEOUT_MS);
     private DefaultCache cache;
 
     @NoArgsConstructor
@@ -147,8 +148,13 @@ public class DefaultCompoundDocsProperties implements CompoundDocsProperties {
     }
 
     @Override
-    public long httpTotalTimeoutMs() {
-        return httpTotalTimeoutMs;
+    public long httpRequestTimeoutMs() {
+        return httpRequestTimeoutMs;
+    }
+
+    @Override
+    public long includesTimeoutMs() {
+        return includesTimeoutMs;
     }
 
     @Override

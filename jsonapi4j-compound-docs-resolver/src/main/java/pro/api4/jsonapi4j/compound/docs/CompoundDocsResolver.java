@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.http.cache.CacheControlAggregator;
+import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetch;
 import pro.api4.jsonapi4j.compound.docs.client.BatchFetcher;
@@ -17,6 +18,7 @@ import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
@@ -32,7 +34,10 @@ import pro.api4.jsonapi4j.processor.IdAndType;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -141,6 +146,7 @@ public class CompoundDocsResolver {
                                                            CompoundDocsRequest request,
                                                            DomainSettingsResolver domainSettingsResolver) throws ErrorJsonApiResponseException {
 
+        Deadline deadline = Deadline.after(config.getIncludesTimeoutMs());
         IncludeTree includeTree = IncludeTree.of(includes.paths());
         CacheControlAggregator aggregator = new CacheControlAggregator();
 
@@ -168,7 +174,19 @@ public class CompoundDocsResolver {
             if (!pending.isEmpty() && included.size() >= config.getMaxIncludedResources()) {
                 log.debug("Stopping compound docs resolution at hop {}: {} included resources reach the maximum of {}",
                         currentLevel, included.size(), config.getMaxIncludedResources());
-                gaps.addAll(truncatedPaths(frontier, pending));
+                gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.MAX_INCLUDED_RESOURCES));
+                break;
+            }
+            if (!pending.isEmpty() && deadline.isExpired()) {
+                if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
+                    throw new DownstreamTimeoutException(String.format(
+                            "Includes deadline of %d ms exceeded before hop %d", config.getIncludesTimeoutMs(), currentLevel
+                    ), null);
+                }
+                log.warn("Stopping compound docs resolution at hop {} per error strategy: the includes deadline of {} ms is exceeded",
+                        currentLevel, config.getIncludesTimeoutMs());
+                gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.DEADLINE_EXCEEDED));
+                aggregator.add(CacheControlDirectives.NO_STORE);
                 break;
             }
 
@@ -192,6 +210,7 @@ public class CompoundDocsResolver {
                                     resourceType,
                                     idsByType.get(resourceType),
                                     includesByType.get(resourceType),
+                                    deadline,
                                     domainSettingsResolver,
                                     request
                             )
@@ -205,6 +224,7 @@ public class CompoundDocsResolver {
                         includesByType.get(resourceType),
                         e.getValue(),
                         frontier,
+                        deadline,
                         domainSettingsResolver,
                         request
                 );
@@ -262,10 +282,11 @@ public class CompoundDocsResolver {
                                  Set<String> includes,
                                  CompletableFuture<FetchResult> fetch,
                                  IncludeFrontier frontier,
+                                 Deadline deadline,
                                  DomainSettingsResolver domainSettingsResolver,
                                  CompoundDocsRequest request) {
         try {
-            return new TypeFetch(join(fetch), includes, List.of());
+            return new TypeFetch(join(resourceType, fetch, deadline), includes, List.of());
         } catch (RejectedIncludesException e) {
             List<UnsupportedInclude> rejected = e.getRelationshipNames()
                     .stream()
@@ -287,8 +308,9 @@ public class CompoundDocsResolver {
                     resourceType,
                     ids,
                     accepted,
-                    fetchAsync(resourceType, ids, accepted, domainSettingsResolver, request),
+                    fetchAsync(resourceType, ids, accepted, deadline, domainSettingsResolver, request),
                     frontier,
+                    deadline,
                     domainSettingsResolver,
                     request
             );
@@ -327,10 +349,10 @@ public class CompoundDocsResolver {
      * @return a gap for each include path the {@code pending} resources were reached through - resolution stopped
      * before them, so these paths and everything below them are missing
      */
-    private Set<IncludedGap> truncatedPaths(IncludeFrontier frontier, List<IdAndType> pending) {
+    private Set<IncludedGap> truncatedPaths(IncludeFrontier frontier, List<IdAndType> pending, IncompleteReason reason) {
         return pending.stream()
                 .flatMap(resource -> frontier.paths(resource).stream())
-                .map(path -> IncludedGap.forPath(IncompleteReason.MAX_INCLUDED_RESOURCES, path))
+                .map(path -> IncludedGap.forPath(reason, path))
                 .collect(Collectors.toSet());
     }
 
@@ -341,13 +363,14 @@ public class CompoundDocsResolver {
     private CompletableFuture<FetchResult> fetchAsync(String resourceType,
                                                            Set<String> ids,
                                                            Set<String> includes,
+                                                           Deadline deadline,
                                                            DomainSettingsResolver domainSettingsResolver,
                                                            CompoundDocsRequest originalRequest) {
         Optional<DomainSettings> domainSettings = routeFor(domainSettingsResolver, resourceType);
         if (domainSettings.isEmpty()) {
             return CompletableFuture.completedFuture(FetchResult.skipped());
         }
-        BatchFetch<DomainSettings> batch = new BatchFetch<>(domainSettings.get(), resourceType, ids, includes);
+        BatchFetch<DomainSettings> batch = new BatchFetch<>(domainSettings.get(), resourceType, ids, includes, deadline);
         log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
         return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executor);
     }
@@ -386,16 +409,37 @@ public class CompoundDocsResolver {
     }
 
     /**
-     * Waits for a fetch, rethrowing its failure as thrown rather than wrapped in a {@link CompletionException}.
+     * Waits for a fetch at most until {@code deadline}, rethrowing its failure as thrown rather than wrapped in an
+     * {@link ExecutionException}. A fetch still running at the deadline - one in-process, which can't be cut short like
+     * an HTTP call - is no longer waited for: it is reported as {@link FetchResult#deadlineExceeded()} under
+     * {@link ErrorStrategy#IGNORE}, and fails the request with {@link DownstreamTimeoutException} under
+     * {@link ErrorStrategy#FAIL}. Its result, once it comes, is dropped.
      */
-    private FetchResult join(CompletableFuture<FetchResult> future) {
+    private FetchResult join(String resourceType, CompletableFuture<FetchResult> future, Deadline deadline) {
         try {
-            return future.join();
-        } catch (CompletionException e) {
+            if (deadline.isNone()) {
+                return future.get();
+            }
+            return future.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
+        } catch (TimeoutException e) {
+            if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
+                throw new DownstreamTimeoutException(String.format(
+                        "Includes deadline of %d ms exceeded fetching '%s' resources", config.getIncludesTimeoutMs(), resourceType
+                ), e);
+            }
+            log.warn("Skipping '{}' resources per error strategy: the includes deadline of {} ms is exceeded",
+                    resourceType, config.getIncludesTimeoutMs());
+            return FetchResult.deadlineExceeded();
+        } catch (ExecutionException e) {
             if (e.getCause() instanceof RuntimeException cause) {
                 throw cause;
             }
-            throw e;
+            throw new CompletionException(e.getCause());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ErrorJsonApiResponseException(
+                    String.format("Interrupted while fetching '%s' resources", resourceType), e
+            );
         }
     }
 

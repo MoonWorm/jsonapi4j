@@ -120,7 +120,7 @@ class RoutingBatchFetcherTests {
     private static CompoundDocsResolverConfig config() {
         return new CompoundDocsResolverConfig(
                 true, 3, UnsupportedIncludeStrategy.FAIL, 100, ErrorStrategy.IGNORE, List.of(), Set.of(),
-                Deduplication.DATA_AND_INCLUDED, 1000, 1000, true, 100
+                Deduplication.DATA_AND_INCLUDED, 1000, 1000, 0, true, 100
         );
     }
 

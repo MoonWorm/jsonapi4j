@@ -93,7 +93,8 @@ public class CompoundDocsFilter implements Filter {
                     Set.copyOf(cdProperties.credentialHeaders()),
                     cdProperties.deduplication(),
                     cdProperties.httpConnectTimeoutMs(),
-                    cdProperties.httpTotalTimeoutMs(),
+                    cdProperties.httpRequestTimeoutMs(),
+                    cdProperties.includesTimeoutMs(),
                     cdProperties.cacheEnabled(),
                     cdProperties.cacheMaxSize()
             );

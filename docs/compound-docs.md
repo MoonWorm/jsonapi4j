@@ -113,7 +113,8 @@ CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
     Set.of("Authorization", "Cookie"),        // credentialHeaders: sent only to trusted domains
     Deduplication.DATA_AND_INCLUDED,
     5000,                                     // httpConnectTimeoutMs
-    10000,                                    // httpTotalTimeoutMs
+    10000,                                    // httpRequestTimeoutMs: per include call
+    15000,                                    // includesTimeoutMs: whole include resolution, 0 for no limit
     true,                                     // cacheEnabled
     1000                                      // cacheMaxSize
 );

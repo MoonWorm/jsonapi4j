@@ -49,7 +49,8 @@ jsonapi4j:
 | `jsonapi4j.cd.credentialHeaders`      | `Authorization,Cookie,Proxy-Authorization,X-Authenticated-User-Id,X-Authenticated-User-Granted-Scopes,X-Authenticated-Client-Entitlements` | Headers carrying the client's identity, sent only to same-app types and to mappings with `propagateCredentials: true`. Add your own, e.g. `X-Api-Key`, or the header names of a custom `PrincipalResolver`. |
 | `jsonapi4j.cd.deduplication`         | `DATA_AND_INCLUDED`                  | How resource objects repeat (by `type` / `id`). `DATA_AND_INCLUDED`: each resource appears once across `data` and `included` — spec-compliant. `INCLUDED_ONLY`: once within `included`, and a primary resource an include path reaches is repeated there, so a client can resolve every related resource from `included` alone. `NONE`: no deduplication. The last two go beyond the spec's one-resource-object-per-`type`/`id` rule. |
 | `jsonapi4j.cd.httpConnectTimeoutMs`   | `5000`                               | Controls how long to wait when establishing TCP connection (in millisecond). Applied to each generated HTTP request.                                                              |
-| `jsonapi4j.cd.httpTotalTimeoutMs`     | `10000`                              | Controls total request timeout (in millisecond). Applied to each generated HTTP request.                                                                                          |
+| `jsonapi4j.cd.httpRequestTimeoutMs`   | `10000`                              | Timeout of a single include call (in milliseconds), from sending the request until the response arrives. Applied to each generated HTTP request, and capped by the time left of `includesTimeoutMs`. |
+| `jsonapi4j.cd.includesTimeoutMs`      | `15000`                              | Time budget of the whole include resolution of a request, across all hops (in milliseconds); `0` for no limit. Must not be less than `httpRequestTimeoutMs`. Once it runs out, what is still missing is handled per `errorStrategy` — see [Limits](#limits). |
 | `jsonapi4j.cd.mapping.<resourceType>.url` | not set                     | Base URL of the service serving the resource type. Set it **only** for a type served by a different service; same-app types (including the built-in meta types) need none — see [Resolving base URLs](#how-includes-are-fetched). |
 | `jsonapi4j.cd.mapping.<resourceType>.maxBatchSize` | `mapping.default.maxBatchSize` | Max `filter[id]=...` batch size for the type, e.g. when its service enforces a stricter cap. Also applies to a same-app type, with no `url`. |
 | `jsonapi4j.cd.mapping.<resourceType>.propagateCredentials` | `false` | Whether the client's credentials (`credentialHeaders`) are sent to the service at `url` — see [Header propagation](#header-propagation). Same-app types always get them, so it's rejected without a `url`. |
@@ -175,6 +176,14 @@ has reached it, nothing further is fetched and the include paths left unresolved
 `MAX_INCLUDED_RESOURCES`. A hop that has started always finishes, so the last one can take `included` past the limit —
 nothing requested is dropped for it, and no gap is reported when nothing was left to fetch.
 
+**`includesTimeoutMs`** bounds the time spent on includes. `httpRequestTimeoutMs` applies to each call, and hops run
+one after another, so without it a request could wait `maxHops × httpRequestTimeoutMs` and more. Each include call
+waits at most the time left, and once it runs out:
+
+- under `errorStrategy: IGNORE`, the document keeps what was resolved in time; types whose fetch didn't finish and
+  include paths not resolved any further are listed as `DEADLINE_EXCEEDED`, and the response is marked `no-store`;
+- under `errorStrategy: FAIL`, the request is answered with `504 Gateway Timeout`.
+
 ### Incomplete `included`
 
 Whenever `included` misses something the request asked for, the document says what and why. Its top-level `meta` lists
@@ -186,7 +195,8 @@ each gap — merged into the document's own `meta`, and present only when `inclu
     { "reason": "FETCH_FAILED", "type": "currencies" },
     { "reason": "NO_ROUTE", "type": "regions" },
     { "reason": "MAX_INCLUDED_RESOURCES", "path": "relatives.relatives" },
-    { "reason": "UNSUPPORTED_INCLUDE", "path": "relatives.relatives.relatives" }
+    { "reason": "UNSUPPORTED_INCLUDE", "path": "relatives.relatives.relatives" },
+    { "reason": "DEADLINE_EXCEEDED", "path": "placeOfBirth.currencies" }
   ]
 }
 ```
@@ -197,11 +207,13 @@ each gap — merged into the document's own `meta`, and present only when `inclu
 | `NO_ROUTE`               | a type   | Nothing — a server configuration issue. The response is marked `no-store`.  |
 | `MAX_INCLUDED_RESOURCES` | a path   | Ask for less: fewer or shallower includes, smaller pages. Everything below the path is missing too. |
 | `UNSUPPORTED_INCLUDE`    | a path   | Fix the path: it is deeper than `maxHops`, or names an unknown relationship. The unsupported part is missing. |
+| `DEADLINE_EXCEEDED`      | a type or a path | Retry, or ask for less — `includesTimeoutMs` ran out. The response is marked `no-store`. |
 
 A type-level gap comes from a failed fetch, which is batched per type across paths; a path-level gap comes from a
-limit, which cuts the include tree at a depth. Which resources exactly are missing follows from the document: those
-linked in `relationships` with no matching resource object in `included`. Only failures forbid storing the response —
-the limits give the same result on every request, so it may be cached like any other.
+limit, which cuts the include tree at a depth. `DEADLINE_EXCEEDED` can be either: a fetch still running when time ran
+out, or a hop that never started. Which resources exactly are missing follows from the document: those
+linked in `relationships` with no matching resource object in `included`. Only failures and the deadline forbid
+storing the response — the other limits give the same result on every request, so it may be cached like any other.
 
 ### Limitations
 
@@ -252,7 +264,7 @@ to another service's `url`.
 Over HTTP every include is a request of its own, so it brings what an HTTP call costs:
 
 - each include holds a worker thread of its own while the original request waits, so under heavy load a bounded
-  thread pool can run out and includes time out after `jsonapi4j.cd.httpTotalTimeoutMs`;
+  thread pool can run out and includes time out after `jsonapi4j.cd.httpRequestTimeoutMs`;
 - the URL has to be reachable from the app itself — e.g. one its TLS certificate covers;
 - during graceful shutdown the connector stops accepting connections, so includes of in-flight requests fail;
 - rate limiters keyed by client address see include calls as coming from the app itself, and so does any rule that

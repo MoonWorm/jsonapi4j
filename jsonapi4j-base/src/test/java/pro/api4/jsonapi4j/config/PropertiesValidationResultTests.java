@@ -217,14 +217,14 @@ public class PropertiesValidationResultTests {
         public void toString_propertyAndCrossPropertiesErrors_rendersBothSections() {
             PropertiesValidationResult result = sut
                     .addPropertyError("jsonapi4j.cd.maxHops", "must be greater than 0, but was 0")
-                    .addCrossPropertiesError("'jsonapi4j.cd.httpTotalTimeoutMs' must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs'")
+                    .addCrossPropertiesError("'jsonapi4j.cd.httpRequestTimeoutMs' must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs'")
                     .build();
 
             assertThat(result).hasToString("""
                     Property errors:
                       - 'jsonapi4j.cd.maxHops': must be greater than 0, but was 0
                     Cross-properties errors:
-                      - 'jsonapi4j.cd.httpTotalTimeoutMs' must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs'
+                      - 'jsonapi4j.cd.httpRequestTimeoutMs' must not be less than 'jsonapi4j.cd.httpConnectTimeoutMs'
                     """);
         }
 

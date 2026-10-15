@@ -127,6 +127,17 @@ public class PropertiesValidationResult {
             return this;
         }
 
+        public PropertiesValidationResultBuilder requireNonNegative(String path,
+                                                                         Number value) {
+            if (value == null) {
+                return requireNotNull(path, null);
+            }
+            if (value.longValue() < 0) {
+                addPropertyError(path, String.format("must not be negative, but was %s", value));
+            }
+            return this;
+        }
+
         /**
          * Requires an absolute {@code http(s)} URL, e.g. {@code https://users.foo.bar/jsonapi}.
          */

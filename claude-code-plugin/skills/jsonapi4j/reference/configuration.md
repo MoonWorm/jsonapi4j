@@ -16,7 +16,8 @@ jsonapi4j:
     maxIncludedResources: 100   # no further hops once reached (last hop may overshoot);
                                 #   unresolved paths listed as MAX_INCLUDED_RESOURCES
     errorStrategy: IGNORE       # IGNORE -> failed includes are left out of `included` (response marked no-store,
-                                #   gaps listed in meta.includedIncomplete: FETCH_FAILED | NO_ROUTE per type);
+                                #   gaps listed in meta.includedIncomplete: FETCH_FAILED | NO_ROUTE |
+                                #   DEADLINE_EXCEEDED);
                                 # FAIL -> JSON:API error: 504 timeout, 502 other downstream failure, 500 no route
     propagation: [FIELDS, CUSTOM_QUERY_PARAMS, HEADERS]   # what include reads carry over from the request
                                 # (never: Accept-Encoding, conditional/Range, hop-by-hop, X-Forwarded-For & co.)
@@ -35,7 +36,10 @@ jsonapi4j:
         maxBatchSize: 20                       # fallback for types without their own (default 20)
         transport: IN_PROCESS                  # default transport of same-app types (IN_PROCESS | HTTP)
     httpConnectTimeoutMs: 1000
-    httpTotalTimeoutMs: 5000
+    httpRequestTimeoutMs: 5000  # per include call, capped by the time left of includesTimeoutMs
+    includesTimeoutMs: 15000    # whole include resolution across hops (0 = no limit); when exceeded:
+                                #   IGNORE -> partial `included`, gaps listed as DEADLINE_EXCEEDED (no-store);
+                                #   FAIL -> 504
     cache:
       enabled: true
       maxSize: 1000             # in-memory LRU; respects Cache-Control TTL

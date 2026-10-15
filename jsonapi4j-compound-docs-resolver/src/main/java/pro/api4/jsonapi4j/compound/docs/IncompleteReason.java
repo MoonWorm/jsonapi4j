@@ -29,6 +29,14 @@ public enum IncompleteReason {
      * doesn't have - and was resolved only as far as supported, under
      * {@link pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy#IGNORE}.
      */
-    UNSUPPORTED_INCLUDE
+    UNSUPPORTED_INCLUDE,
+
+    /**
+     * Include resolution ran out of {@code includesTimeoutMs}, under
+     * {@link pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy#IGNORE}: a type whose fetch didn't finish in time,
+     * or an include path not resolved any further - likely transient, so a retry or a shorter {@code include} may
+     * return them.
+     */
+    DEADLINE_EXCEEDED
 
 }

@@ -21,7 +21,12 @@ public class CompoundDocsResolverConfig {
     private final Set<String> credentialHeaders;
     private final Deduplication deduplication;
     private final long httpConnectTimeoutMs;
-    private final long httpTotalTimeoutMs;
+    private final long httpRequestTimeoutMs;
+    /**
+     * The time budget of the whole include resolution of a request, across all hops; {@code 0} means no limit. Every
+     * HTTP call waits at most the time left, even when {@link #httpRequestTimeoutMs} is longer.
+     */
+    private final long includesTimeoutMs;
     private final boolean cacheEnabled;
     private final int cacheMaxSize;
 

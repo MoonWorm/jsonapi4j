@@ -367,9 +367,9 @@ public class CompoundDocsPropertiesTests {
     class Timeouts {
 
         @Test
-        public void validate_totalTimeoutBelowConnectTimeout_reportsCrossPropertiesError() {
+        public void validate_requestTimeoutBelowConnectTimeout_reportsCrossPropertiesError() {
             sut.setHttpConnectTimeoutMs(5000);
-            sut.setHttpTotalTimeoutMs(1000);
+            sut.setHttpRequestTimeoutMs(1000);
 
             PropertiesValidationResult result = sut.validate();
 
@@ -378,9 +378,9 @@ public class CompoundDocsPropertiesTests {
         }
 
         @Test
-        public void validate_totalTimeoutEqualToConnectTimeout_returnsNoErrors() {
+        public void validate_requestTimeoutEqualToConnectTimeout_returnsNoErrors() {
             sut.setHttpConnectTimeoutMs(5000);
-            sut.setHttpTotalTimeoutMs(5000);
+            sut.setHttpRequestTimeoutMs(5000);
 
             assertThat(sut.validate().hasErrors()).isFalse();
         }
@@ -390,6 +390,39 @@ public class CompoundDocsPropertiesTests {
             sut.setHttpConnectTimeoutMs(0);
 
             assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.httpConnectTimeoutMs");
+        }
+
+        @Test
+        public void validate_negativeIncludesTimeout_reportsError() {
+            sut.setIncludesTimeoutMs(-1);
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.cd.includesTimeoutMs");
+        }
+
+        @Test
+        public void validate_includesTimeoutBelowRequestTimeout_reportsCrossPropertiesError() {
+            sut.setHttpRequestTimeoutMs(10000);
+            sut.setIncludesTimeoutMs(5000);
+
+            PropertiesValidationResult result = sut.validate();
+
+            assertThat(result.getPropertyErrors()).isEmpty();
+            assertThat(result.getCrossPropertiesErrors()).hasSize(1);
+        }
+
+        @Test
+        public void validate_includesTimeoutEqualToRequestTimeout_returnsNoErrors() {
+            sut.setHttpRequestTimeoutMs(10000);
+            sut.setIncludesTimeoutMs(10000);
+
+            assertThat(sut.validate().hasErrors()).isFalse();
+        }
+
+        @Test
+        public void validate_zeroIncludesTimeout_returnsNoErrors() {
+            sut.setIncludesTimeoutMs(0);
+
+            assertThat(sut.validate().hasErrors()).isFalse();
         }
 
     }
@@ -418,7 +451,7 @@ public class CompoundDocsPropertiesTests {
             properties.setMaxHops(0);
             properties.setMaxIncludedResources(0);
             properties.setHttpConnectTimeoutMs(0);
-            properties.setHttpTotalTimeoutMs(0);
+            properties.setHttpRequestTimeoutMs(0);
             properties.setErrorStrategy(null);
             properties.setPropagation(null);
             properties.setDeduplication(null);

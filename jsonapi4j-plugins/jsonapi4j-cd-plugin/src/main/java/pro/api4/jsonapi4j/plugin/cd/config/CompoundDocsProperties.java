@@ -33,7 +33,8 @@ public interface CompoundDocsProperties extends PluginProperties {
     String UNSUPPORTED_INCLUDES_PROPERTY = "unsupportedIncludes";
     String CREDENTIAL_HEADERS_PROPERTY = "credentialHeaders";
     String HTTP_CONNECT_TIMEOUT_MS_PROPERTY = "httpConnectTimeoutMs";
-    String HTTP_TOTAL_TIMEOUT_MS_PROPERTY = "httpTotalTimeoutMs";
+    String HTTP_REQUEST_TIMEOUT_MS_PROPERTY = "httpRequestTimeoutMs";
+    String INCLUDES_TIMEOUT_MS_PROPERTY = "includesTimeoutMs";
     String CACHE_PROPERTY = "cache";
 
     @Override
@@ -55,7 +56,8 @@ public interface CompoundDocsProperties extends PluginProperties {
     String DEFAULT_CREDENTIAL_HEADERS = "Authorization,Cookie,Proxy-Authorization,X-Authenticated-User-Id,"
             + "X-Authenticated-User-Granted-Scopes,X-Authenticated-Client-Entitlements";
     String DEFAULT_HTTP_CONNECT_TIMEOUT_MS = "5000";
-    String DEFAULT_HTTP_TOTAL_TIMEOUT_MS = "10000";
+    String DEFAULT_HTTP_REQUEST_TIMEOUT_MS = "10000";
+    String DEFAULT_INCLUDES_TIMEOUT_MS = "15000";
 
     default boolean enabled() {
         return Boolean.parseBoolean(DEFAULT_ENABLED);
@@ -181,8 +183,16 @@ public interface CompoundDocsProperties extends PluginProperties {
         return Long.parseLong(DEFAULT_HTTP_CONNECT_TIMEOUT_MS);
     }
 
-    default long httpTotalTimeoutMs() {
-        return Long.parseLong(DEFAULT_HTTP_TOTAL_TIMEOUT_MS);
+    default long httpRequestTimeoutMs() {
+        return Long.parseLong(DEFAULT_HTTP_REQUEST_TIMEOUT_MS);
+    }
+
+    /**
+     * The time budget of the whole include resolution of a request, across all hops - {@code 0} for no limit. Each
+     * include call waits at most {@link #httpRequestTimeoutMs()}, and never longer than the time left of it.
+     */
+    default long includesTimeoutMs() {
+        return Long.parseLong(DEFAULT_INCLUDES_TIMEOUT_MS);
     }
 
     @Override
@@ -194,7 +204,8 @@ public interface CompoundDocsProperties extends PluginProperties {
                 .requirePositive(propertyPath(MAX_HOPS_PROPERTY), maxHops())
                 .requirePositive(propertyPath(MAX_INCLUDED_RESOURCES_PROPERTY), maxIncludedResources())
                 .requirePositive(propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs())
-                .requirePositive(propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs())
+                .requirePositive(propertyPath(HTTP_REQUEST_TIMEOUT_MS_PROPERTY), httpRequestTimeoutMs())
+                .requireNonNegative(propertyPath(INCLUDES_TIMEOUT_MS_PROPERTY), includesTimeoutMs())
                 .requireNotNull(propertyPath(ERROR_STRATEGY_PROPERTY), errorStrategy())
                 .requireNotNull(propertyPath(PROPAGATION_PROPERTY), propagation())
                 .requireNotNull(propertyPath(DEDUPLICATION_PROPERTY), deduplication())
@@ -311,12 +322,20 @@ public interface CompoundDocsProperties extends PluginProperties {
     }
 
     private void validateTimeoutsBudget(PropertiesValidationResultBuilder builder) {
-        if (httpConnectTimeoutMs() > 0 && httpTotalTimeoutMs() > 0 && httpTotalTimeoutMs() < httpConnectTimeoutMs()) {
+        if (httpConnectTimeoutMs() > 0 && httpRequestTimeoutMs() > 0 && httpRequestTimeoutMs() < httpConnectTimeoutMs()) {
             builder.addCrossPropertiesError(String.format(
-                    "'%s' (%d) must not be less than '%s' (%d): the total budget of an include call has to cover " +
+                    "'%s' (%d) must not be less than '%s' (%d): the timeout of an include call has to cover " +
                             "connecting to the remote service",
-                    propertyPath(HTTP_TOTAL_TIMEOUT_MS_PROPERTY), httpTotalTimeoutMs(),
+                    propertyPath(HTTP_REQUEST_TIMEOUT_MS_PROPERTY), httpRequestTimeoutMs(),
                     propertyPath(HTTP_CONNECT_TIMEOUT_MS_PROPERTY), httpConnectTimeoutMs()
+            ));
+        }
+        if (includesTimeoutMs() > 0 && httpRequestTimeoutMs() > 0 && includesTimeoutMs() < httpRequestTimeoutMs()) {
+            builder.addCrossPropertiesError(String.format(
+                    "'%s' (%d) must not be less than '%s' (%d): the time budget of all includes has to fit a single " +
+                            "include call, or 0 for no limit",
+                    propertyPath(INCLUDES_TIMEOUT_MS_PROPERTY), includesTimeoutMs(),
+                    propertyPath(HTTP_REQUEST_TIMEOUT_MS_PROPERTY), httpRequestTimeoutMs()
             ));
         }
     }

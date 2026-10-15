@@ -139,12 +139,14 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
 
     /**
      * Fetches one batch. The request always carries {@code X-Disable-Compound-Docs: true}, since the resolver assembles
-     * {@code included} itself and the downstream must not do it again.
+     * {@code included} itself and the downstream must not do it again. It waits for the response for
+     * {@code httpRequestTimeoutMs}, or only as long as the batch's {@link BatchFetch#deadline() deadline} leaves.
      *
      * <p>Every failure is thrown, whatever the {@link ErrorStrategy}:
      * deciding whether it may be ignored is up to the caller.
      *
-     * @throws DownstreamTimeoutException    when connecting or waiting for the response times out
+     * @throws DownstreamTimeoutException    when connecting or waiting for the response times out, or the deadline has
+     *                                       already passed - then without sending the request
      * @throws ErrorJsonApiResponseException on any other failure - a non-200 response, a connection error, or a body
      *                                       that is not a JSON:API document
      */
@@ -166,10 +168,13 @@ public class JsonApi4jCompoundDocsApiHttpClient implements BatchFetcher<DomainSe
             }
 
             uri = urlBuilder.build();
+            if (batch.deadline().isExpired()) {
+                throw new DownstreamTimeoutException(String.format("Includes deadline exceeded before GET %s", uri), null);
+            }
             log.debug("Compound docs HTTP request: GET {}", uri);
 
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
-            requestBuilder.timeout(Duration.ofMillis(config.getHttpTotalTimeoutMs()));
+            requestBuilder.timeout(batch.deadline().cap(Duration.ofMillis(config.getHttpRequestTimeoutMs())));
             if (config.getPropagation().contains(Propagation.HEADERS)) {
                 originalRequest.getHeaders().forEach((header, values) -> {
                     if (isPropagatable(header) && (route.propagateCredentials() || !isCredential(header))) {

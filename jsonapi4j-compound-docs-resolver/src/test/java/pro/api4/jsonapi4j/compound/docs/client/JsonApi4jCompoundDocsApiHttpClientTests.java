@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import pro.api4.jsonapi4j.compound.docs.CompoundDocsRequest;
+import pro.api4.jsonapi4j.compound.docs.Deadline;
 import pro.api4.jsonapi4j.compound.docs.DomainSettings;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
@@ -24,6 +25,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -102,12 +104,40 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         }
 
         @Test
-        public void fetch_responseSlowerThanTotalTimeout_throwsDownstreamTimeoutException() throws IOException {
+        public void fetch_responseSlowerThanRequestTimeout_throwsDownstreamTimeoutException() throws IOException {
             JsonApi4jCompoundDocsApiHttpClient impatient = new JsonApi4jCompoundDocsApiHttpClient(new ObjectMapper(), config(300));
             startServer(200, "{\"data\":[]}", 2000, new AtomicReference<>());
 
             assertThatThrownBy(() -> impatient.fetch(batch(), REQUEST))
                     .isInstanceOf(DownstreamTimeoutException.class);
+        }
+
+        @Test
+        public void fetch_responseSlowerThanDeadline_throwsDownstreamTimeoutException() throws IOException {
+            startServer(200, "{\"data\":[]}", 2000, new AtomicReference<>());
+            BatchFetch<DomainSettings.OverHttp> withDeadline = new BatchFetch<>(
+                    batch().domainSettings(), "countries", Set.of("US"), Set.of(), Deadline.after(300)
+            );
+
+            long start = System.nanoTime();
+            assertThatThrownBy(() -> sut.fetch(withDeadline, REQUEST))
+                    .isInstanceOf(DownstreamTimeoutException.class);
+            assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofMillis(1500));
+        }
+
+        @Test
+        public void fetch_deadlineAlreadyExpired_throwsWithoutSendingRequest() throws Exception {
+            AtomicReference<Headers> requestHeaders = new AtomicReference<>();
+            startServer(200, "{\"data\":[]}", 0, requestHeaders);
+            BatchFetch<DomainSettings.OverHttp> expired = new BatchFetch<>(
+                    batch().domainSettings(), "countries", Set.of("US"), Set.of(), Deadline.after(1)
+            );
+            Thread.sleep(5);
+
+            assertThatThrownBy(() -> sut.fetch(expired, REQUEST))
+                    .isInstanceOf(DownstreamTimeoutException.class)
+                    .hasMessageStartingWith("Includes deadline exceeded before GET");
+            assertThat(requestHeaders.get()).isNull();
         }
 
         @Test
@@ -152,10 +182,10 @@ public class JsonApi4jCompoundDocsApiHttpClientTests {
         server.start();
     }
 
-    private static CompoundDocsResolverConfig config(long httpTotalTimeoutMs) {
+    private static CompoundDocsResolverConfig config(long httpRequestTimeoutMs) {
         return new CompoundDocsResolverConfig(
                 true, 2, UnsupportedIncludeStrategy.FAIL, 100, ErrorStrategy.IGNORE, List.of(Propagation.HEADERS),
-                Set.of("Authorization", "Cookie"), Deduplication.DATA_AND_INCLUDED, 1000, httpTotalTimeoutMs, false, 1
+                Set.of("Authorization", "Cookie"), Deduplication.DATA_AND_INCLUDED, 1000, httpRequestTimeoutMs, 0, false, 1
         );
     }
 

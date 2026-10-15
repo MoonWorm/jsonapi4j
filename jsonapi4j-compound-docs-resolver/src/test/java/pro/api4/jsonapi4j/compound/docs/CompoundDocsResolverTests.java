@@ -19,6 +19,7 @@ import pro.api4.jsonapi4j.compound.docs.config.Deduplication;
 import pro.api4.jsonapi4j.compound.docs.config.ErrorStrategy;
 import pro.api4.jsonapi4j.compound.docs.config.UnsupportedIncludeStrategy;
 import pro.api4.jsonapi4j.compound.docs.exception.DomainResolutionException;
+import pro.api4.jsonapi4j.compound.docs.exception.DownstreamTimeoutException;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.exception.RejectedIncludesException;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
@@ -575,6 +576,80 @@ public class CompoundDocsResolverTests {
     }
 
     @Nested
+    class IncludesDeadline {
+
+        @Test
+        public void resolveCompoundDocs_slowTypeWithIgnoreStrategy_returnsTheRestWithDeadlineGaps() throws Exception {
+            CompoundDocsResolver sut = resolver(ErrorStrategy.IGNORE, 200);
+            stubDownstreamSlow("users", 1000);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives", "placeOfBirth")),
+                    request("/users/1", "relatives", "placeOfBirth.currencies"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactly(USA);
+            assertThat(gaps(result)).containsExactly(
+                    IncludedGap.forType(IncompleteReason.DEADLINE_EXCEEDED, "users"),
+                    IncludedGap.forPath(IncompleteReason.DEADLINE_EXCEEDED, "placeOfBirth.currencies")
+            );
+            assertThat(result.cacheControlDirectives().isNoStore()).isTrue();
+        }
+
+        @Test
+        public void resolveCompoundDocs_slowTypeWithFailStrategy_throwsDownstreamTimeoutException() throws Exception {
+            CompoundDocsResolver sut = resolver(ErrorStrategy.FAIL, 200);
+            stubDownstreamSlow("users", 1000);
+
+            assertThatThrownBy(() -> sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives"),
+                    ROUTE_ALL
+            ))
+                    .isInstanceOf(DownstreamTimeoutException.class)
+                    .hasMessage("Includes deadline of 200 ms exceeded fetching 'users' resources");
+        }
+
+        @Test
+        public void resolveCompoundDocs_noDeadline_waitsForSlowType() throws Exception {
+            CompoundDocsResolver sut = resolver(ErrorStrategy.IGNORE, 0);
+            stubDownstreamSlow("users", 300);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(included(result)).containsExactlyInAnyOrder(USER_2, USER_3);
+            assertThat(gaps(result)).isEmpty();
+        }
+
+        @Test
+        public void resolveCompoundDocs_passesDeadlineToFetches() throws Exception {
+            CompoundDocsResolver sut = resolver(ErrorStrategy.IGNORE, 60_000);
+            List<Deadline> deadlines = Collections.synchronizedList(new ArrayList<>());
+            when(fetcher.fetch(any(), any())).thenAnswer(invocation -> {
+                BatchFetch<DomainSettings> batch = invocation.getArgument(0);
+                deadlines.add(batch.deadline());
+                return respond(batch);
+            });
+
+            sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives.placeOfBirth"),
+                    ROUTE_ALL
+            );
+
+            assertThat(deadlines).hasSize(2);
+            assertThat(deadlines.get(0)).isSameAs(deadlines.get(1));
+            assertThat(deadlines.get(0).isNone()).isFalse();
+        }
+
+    }
+
+    @Nested
     class Routing {
 
         @Test
@@ -642,9 +717,22 @@ public class CompoundDocsResolverTests {
                                           int maxIncludedResources,
                                           Deduplication deduplication,
                                           ErrorStrategy errorStrategy) {
+        return resolver(maxHops, unsupportedIncludes, maxIncludedResources, deduplication, errorStrategy, 0);
+    }
+
+    private CompoundDocsResolver resolver(ErrorStrategy errorStrategy, long includesTimeoutMs) {
+        return resolver(3, UnsupportedIncludeStrategy.FAIL, 100, Deduplication.DATA_AND_INCLUDED, errorStrategy, includesTimeoutMs);
+    }
+
+    private CompoundDocsResolver resolver(int maxHops,
+                                          UnsupportedIncludeStrategy unsupportedIncludes,
+                                          int maxIncludedResources,
+                                          Deduplication deduplication,
+                                          ErrorStrategy errorStrategy,
+                                          long includesTimeoutMs) {
         CompoundDocsResolverConfig config = new CompoundDocsResolverConfig(
                 true, maxHops, unsupportedIncludes, maxIncludedResources, errorStrategy, List.of(), Set.of(), deduplication,
-                1000, 1000, false, 1
+                1000, 1000, includesTimeoutMs, false, 1
         );
         return new CompoundDocsResolver(config, MAPPER, executorService, fetcher);
     }
@@ -656,6 +744,16 @@ public class CompoundDocsResolverTests {
             if (batch.resourceType().equals(rejectingType) && batch.includes().contains(unknownRelationship)) {
                 fetchCalls.add(new FetchCall(batch.resourceType(), Set.copyOf(batch.ids()), Set.copyOf(batch.includes())));
                 throw new RejectedIncludesException(rejectingType, Set.of(unknownRelationship));
+            }
+            return respond(batch);
+        });
+    }
+
+    private void stubDownstreamSlow(String slowType, long delayMs) {
+        when(fetcher.fetch(any(), any())).thenAnswer(invocation -> {
+            BatchFetch<DomainSettings> batch = invocation.getArgument(0);
+            if (batch.resourceType().equals(slowType)) {
+                Thread.sleep(delayMs);
             }
             return respond(batch);
         });

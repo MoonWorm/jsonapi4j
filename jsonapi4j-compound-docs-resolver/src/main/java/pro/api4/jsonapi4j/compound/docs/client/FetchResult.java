@@ -44,6 +44,14 @@ public record FetchResult(List<ParsedResource> resources,
     }
 
     /**
+     * @return the result of a fetch that didn't finish before the include resolution deadline, which is being ignored.
+     * It carries {@code no-store}: a compound document missing these resources must not be stored by any cache.
+     */
+    public static FetchResult deadlineExceeded() {
+        return new FetchResult(List.of(), CacheControlDirectives.NO_STORE, IncompleteReason.DEADLINE_EXCEEDED);
+    }
+
+    /**
      * @return the result for resources that are skipped without a fetch, because there is no route to their type.
      * It carries {@code no-store}: a compound document missing these resources must not be stored by any cache.
      */
