@@ -38,6 +38,32 @@ public class JsonApi4jPropertiesTests {
     }
 
     @Nested
+    class Diagnostics {
+
+        @Test
+        public void validate_diagnosticsIsNotSet_reportsError() {
+            sut.setDiagnostics(null);
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.diagnostics");
+        }
+
+        @Test
+        public void validate_serverTimingIsNotSet_reportsError() {
+            sut.getDiagnostics().setServerTiming(null);
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.diagnostics.serverTiming");
+        }
+
+        @Test
+        public void validate_startupReportIsNotSet_reportsError() {
+            sut.getDiagnostics().setStartupReport(null);
+
+            assertThat(sut.validate().getPropertyErrors()).containsOnlyKeys("jsonapi4j.diagnostics.startupReport");
+        }
+
+    }
+
+    @Nested
     class Validation {
 
         @Test

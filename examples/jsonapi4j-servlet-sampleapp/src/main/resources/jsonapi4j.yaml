@@ -5,6 +5,13 @@ rootPath: /jsonapi
 meta:
   enabled: true
 
+# Developer-facing diagnostics
+diagnostics:
+  serverTiming:
+    enabled: false
+  startupReport:
+    enabled: true
+
 # Validation
 validation:
   maxNumberFilterParams: 5

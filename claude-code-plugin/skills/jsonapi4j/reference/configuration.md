@@ -6,6 +6,11 @@ apply only when the plugin is on the classpath.
 ```yaml
 jsonapi4j:
   rootPath: /jsonapi            # base path all resources are served under
+  diagnostics:
+    serverTiming:
+      enabled: false            # Server-Timing: primary (+ includes, includes-<type> with CD); dev only
+    startupReport:
+      enabled: false            # log registered resources/operations/plugins at startup
 
   cd:                           # Compound Documents (?include=)
     enabled: true

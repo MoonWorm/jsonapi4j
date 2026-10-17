@@ -20,6 +20,7 @@ import pro.api4.jsonapi4j.http.cache.CacheControlParser;
 import pro.api4.jsonapi4j.compound.docs.cache.CompoundDocsResourceCache;
 import pro.api4.jsonapi4j.compound.docs.config.CompoundDocsResolverConfig;
 import pro.api4.jsonapi4j.plugin.cd.config.CompoundDocsProperties;
+import pro.api4.jsonapi4j.servlet.response.ServerTiming;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
@@ -35,12 +36,19 @@ import static pro.api4.jsonapi4j.plugin.cd.init.JsonApi4jCompoundDocsServletCont
 @Slf4j
 public class CompoundDocsFilter implements Filter {
 
+    /**
+     * How long resolving the includes of a request took - see {@link ServerTiming}. Each resource type fetched for them
+     * gets a metric of its own, named after it under this prefix: {@code includes-countries}.
+     */
+    static final String INCLUDES_METRIC = "includes";
+
     private CompoundDocsRequestSupplier requestSupplier;
     private SelfFallbackRouting routing;
     private ErrorsDocResponseWriter errorsDocResponseWriter;
     private IncludesChecker includesChecker;
     private JsonApiResponseParser responseParser;
     private CompoundDocsResolver resolver;
+    private ServerTiming serverTiming;
 
     public CompoundDocsFilter() {
     }
@@ -50,13 +58,15 @@ public class CompoundDocsFilter implements Filter {
                        ErrorsDocResponseWriter errorsDocResponseWriter,
                        IncludesChecker includesChecker,
                        JsonApiResponseParser responseParser,
-                       CompoundDocsResolver resolver) {
+                       CompoundDocsResolver resolver,
+                       ServerTiming serverTiming) {
         this.requestSupplier = requestSupplier;
         this.routing = routing;
         this.errorsDocResponseWriter = errorsDocResponseWriter;
         this.includesChecker = includesChecker;
         this.responseParser = responseParser;
         this.resolver = resolver;
+        this.serverTiming = serverTiming;
     }
 
     @Override
@@ -117,6 +127,7 @@ public class CompoundDocsFilter implements Filter {
                     new InProcessBatchFetcher(jsonApi4j, objectMapper, config.getPropagation())
             );
             log.debug("{} has been successfully composed", CompoundDocsResolver.class.getSimpleName());
+            this.serverTiming = ServerTiming.of(jsonApi4j.getProperties().diagnostics().serverTiming().enabled());
 
             log.info("{} has been initialized", CompoundDocsFilter.class.getSimpleName());
         } else {
@@ -157,6 +168,7 @@ public class CompoundDocsFilter implements Filter {
                     return;
                 }
                 CompoundDocsResult result;
+                long resolutionStartedAt = System.nanoTime();
                 try {
                     result = resolver.resolveCompoundDocs(
                             responseWrapper.getCapturedBodyAsString(),
@@ -164,6 +176,7 @@ public class CompoundDocsFilter implements Filter {
                             routing
                     );
                 } catch (RuntimeException e) {
+                    serverTiming.add(httpServletResponse, INCLUDES_METRIC, resolutionStartedAt);
                     httpServletResponse.setHeader(
                             CACHE_CONTROL.getName(),
                             CacheControlParser.format(CacheControlDirectives.NO_STORE)
@@ -171,6 +184,8 @@ public class CompoundDocsFilter implements Filter {
                     errorsDocResponseWriter.write(httpServletResponse, e);
                     return;
                 }
+                serverTiming.add(httpServletResponse, INCLUDES_METRIC, resolutionStartedAt);
+                serverTiming.addAll(httpServletResponse, INCLUDES_METRIC + "-", result.fetchDurations());
                 applyCacheControlHeader(httpServletResponse, responseWrapper, result);
                 writeBody(httpServletResponse, result.responseBody().getBytes(StandardCharsets.UTF_8));
             } else {

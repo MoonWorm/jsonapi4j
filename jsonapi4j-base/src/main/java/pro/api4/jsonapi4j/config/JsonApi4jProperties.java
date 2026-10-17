@@ -5,7 +5,8 @@ import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 
 /**
  * The root jsonapi4j configuration - everything bound from the {@code jsonapi4j} prefix that is not owned by a
- * plugin: the JSON:API root path, the built-in request validation limits and the meta API switch.
+ * plugin: the JSON:API root path, the built-in request validation limits, the meta API switch and the
+ * developer-facing diagnostics.
  */
 public interface JsonApi4jProperties extends ValidatableProperties {
 
@@ -14,6 +15,7 @@ public interface JsonApi4jProperties extends ValidatableProperties {
     String ROOT_PATH_PROPERTY = "rootPath";
     String VALIDATION_PROPERTY = "validation";
     String META_PROPERTY = "meta";
+    String DIAGNOSTICS_PROPERTY = "diagnostics";
 
     String DEFAULT_ROOT_PATH = "/jsonapi";
 
@@ -30,14 +32,36 @@ public interface JsonApi4jProperties extends ValidatableProperties {
 
     MetaProperties meta();
 
+    DiagnosticsProperties diagnostics();
+
     @Override
     default PropertiesValidationResult validate() {
         PropertiesValidationResultBuilder builder = PropertiesValidationResult.builder()
                 .requireServletPath(propertyPath(ROOT_PATH_PROPERTY), rootPath())
                 .requireNotNull(propertyPath(VALIDATION_PROPERTY), validation())
-                .requireNotNull(propertyPath(META_PROPERTY), meta());
+                .requireNotNull(propertyPath(META_PROPERTY), meta())
+                .requireNotNull(propertyPath(DIAGNOSTICS_PROPERTY), diagnostics());
         validateLimits(builder);
+        validateDiagnostics(builder);
         return builder.build();
+    }
+
+    /**
+     * A key left empty in a config file binds its section to {@code null} rather than to its defaults.
+     */
+    private void validateDiagnostics(PropertiesValidationResultBuilder builder) {
+        DiagnosticsProperties diagnostics = diagnostics();
+        if (diagnostics == null) {
+            return;
+        }
+        builder.requireNotNull(
+                        propertyPath(DIAGNOSTICS_PROPERTY, DiagnosticsProperties.SERVER_TIMING_PROPERTY),
+                        diagnostics.serverTiming()
+                )
+                .requireNotNull(
+                        propertyPath(DIAGNOSTICS_PROPERTY, DiagnosticsProperties.STARTUP_REPORT_PROPERTY),
+                        diagnostics.startupReport()
+                );
     }
 
     /**

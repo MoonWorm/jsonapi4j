@@ -1,6 +1,10 @@
 package pro.api4.jsonapi4j.compound.docs;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * The point in time by which the whole include resolution of a request must finish - see {@code includesTimeoutMs}.
@@ -42,9 +46,22 @@ public final class Deadline {
     }
 
     /**
+     * Waits for {@code future} at most until this deadline - for as long as it takes when there is none.
+     *
+     * @throws TimeoutException when the deadline passes first, or has passed already
+     */
+    public <RESULT> RESULT await(Future<RESULT> future)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        if (isNone()) {
+            return future.get();
+        }
+        return future.get(remaining().toNanos(), TimeUnit.NANOSECONDS);
+    }
+
+    /**
      * @return the time left - {@link Duration#ZERO} once expired - or {@code null} when there is no deadline
      */
-    public Duration remaining() {
+    private Duration remaining() {
         if (isNone()) {
             return null;
         }

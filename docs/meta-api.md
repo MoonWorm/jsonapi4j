@@ -45,8 +45,8 @@ Set `jsonapi4j.meta.enabled` to `true`. Like every other property, the format fo
   </div>
 </div>
 
-When enabled, the framework prints a **Live introspection** URL in the startup banner so you can find the entry
-point immediately:
+When enabled, the [startup report](/configuration/#core-properties) (`jsonapi4j.diagnostics.startupReport.enabled`, off by default)
+includes a **Live introspection** URL so you can find the entry point immediately:
 
 ```
 Live introspection: /jsonapi/state/this?include=plugins,resources,relationships,operations,config

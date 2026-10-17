@@ -31,12 +31,13 @@ import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException.UnsupportedInclude;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -131,202 +132,11 @@ public class CompoundDocsResolver {
         ParseResult parseResult = relationshipName == null
                 ? jsonApiResponseParser.parsePrimaryResourceDoc(originalJsonApiResponse)
                 : jsonApiResponseParser.parseRelationshipDoc(originalJsonApiResponse, relationshipName);
-        return resolveCompoundDocsInternal(
+        return new Resolution(compoundDocsRequest, domainSettingsResolver).resolve(
                 originalJsonApiResponse,
                 parseResult,
-                includes,
-                compoundDocsRequest,
-                domainSettingsResolver
+                includes
         );
-    }
-
-    private CompoundDocsResult resolveCompoundDocsInternal(String originalJsonApiResponse,
-                                                           ParseResult originalParseResult,
-                                                           CheckedIncludes includes,
-                                                           CompoundDocsRequest request,
-                                                           DomainSettingsResolver domainSettingsResolver) throws ErrorJsonApiResponseException {
-
-        Deadline deadline = Deadline.after(config.getIncludesTimeoutMs());
-        IncludeTree includeTree = IncludeTree.of(includes.paths());
-        CacheControlAggregator aggregator = new CacheControlAggregator();
-
-        Map<IdAndType, Set<String>> requestedIncludes = new HashMap<>();
-        Map<IdAndType, ResourceLinkage> linkages = new HashMap<>();
-        Map<IdAndType, String> primaryResourceJsons = new HashMap<>();
-        for (ParsedResource primaryResource : originalParseResult.primaryResources()) {
-            ResourceLinkage resourceLinkage = primaryResource.linkage();
-            IdAndType idAndType = resourceLinkage.idAndType();
-            linkages.put(idAndType, resourceLinkage);
-            requestedIncludes.put(idAndType, includeTree.children(IncludeTree.ROOT));
-            primaryResourceJsons.put(idAndType, primaryResource.json());
-        }
-        IncludedResources included = new IncludedResources(config.getDeduplication(), primaryResourceJsons);
-        Set<IncludedGap> gaps = new HashSet<>(includes.gaps());
-
-        IncludeFrontier frontier = IncludeFrontier.start(includeTree, originalParseResult.relationships());
-
-        int currentLevel = 1;
-        while (!frontier.isEmpty()) {
-            log.debug("Compound docs resolution hop {}, included resources so far: {}", currentLevel, included.size());
-
-            frontier.resources().forEach(included::reached);
-            List<IdAndType> pending = pendingResources(frontier, requestedIncludes);
-            if (!pending.isEmpty() && included.size() >= config.getMaxIncludedResources()) {
-                log.debug("Stopping compound docs resolution at hop {}: {} included resources reach the maximum of {}",
-                        currentLevel, included.size(), config.getMaxIncludedResources());
-                gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.MAX_INCLUDED_RESOURCES));
-                break;
-            }
-            if (!pending.isEmpty() && deadline.isExpired()) {
-                if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
-                    throw new DownstreamTimeoutException(String.format(
-                            "Includes deadline of %d ms exceeded before hop %d", config.getIncludesTimeoutMs(), currentLevel
-                    ), null);
-                }
-                log.warn("Stopping compound docs resolution at hop {} per error strategy: the includes deadline of {} ms is exceeded",
-                        currentLevel, config.getIncludesTimeoutMs());
-                gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.DEADLINE_EXCEEDED));
-                aggregator.add(CacheControlDirectives.NO_STORE);
-                break;
-            }
-
-            Map<String, Set<String>> idsByType = new HashMap<>();
-            Map<String, Set<String>> includesByType = new HashMap<>();
-            for (IdAndType resource : pending) {
-                Set<String> requiredIncludes = frontier.requiredIncludes(resource);
-                Set<String> alreadyRequestedIncludes = requestedIncludes.get(resource);
-                idsByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>()).add(resource.getId());
-                Set<String> typeIncludes = includesByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>());
-                typeIncludes.addAll(requiredIncludes);
-                if (alreadyRequestedIncludes != null) {
-                    typeIncludes.addAll(alreadyRequestedIncludes);
-                }
-            }
-
-            Map<String, CompletableFuture<FetchResult>> futures = idsByType.keySet().stream()
-                    .collect(Collectors.toMap(
-                            Function.identity(),
-                            resourceType -> fetchAsync(
-                                    resourceType,
-                                    idsByType.get(resourceType),
-                                    includesByType.get(resourceType),
-                                    deadline,
-                                    domainSettingsResolver,
-                                    request
-                            )
-                    ));
-
-            for (Map.Entry<String, CompletableFuture<FetchResult>> e : futures.entrySet()) {
-                String resourceType = e.getKey();
-                TypeFetch typeFetch = awaitFetch(
-                        resourceType,
-                        idsByType.get(resourceType),
-                        includesByType.get(resourceType),
-                        e.getValue(),
-                        frontier,
-                        deadline,
-                        domainSettingsResolver,
-                        request
-                );
-                FetchResult fetchResult = typeFetch.result();
-                aggregator.add(fetchResult.directives());
-                if (fetchResult.incompleteReason() != null) {
-                    gaps.add(IncludedGap.forType(fetchResult.incompleteReason(), resourceType));
-                }
-                typeFetch.rejected().forEach(rejected -> gaps.add(
-                        IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, rejected.path())
-                ));
-                idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
-                        new IdAndType(id, new ResourceType(resourceType)),
-                        typeFetch.includes()
-                ));
-                for (ParsedResource resource : fetchResult.resources()) {
-                    if (resource.idAndType() == null) {
-                        log.warn("Skipping a resource of type '{}' without a textual 'type' and 'id': {}", resourceType, resource.json());
-                        continue;
-                    }
-                    linkages.put(resource.idAndType(), resource.linkage());
-                    included.add(resource.idAndType(), resource.json());
-                }
-            }
-
-            frontier = frontier.next(linkages);
-            currentLevel++;
-        }
-
-        List<String> includedResources = included.toList();
-        log.debug("Compound docs resolution completed. Total hops: {}, total included resources: {}", currentLevel - 1, includedResources.size());
-
-        if (!includedResources.isEmpty() || !gaps.isEmpty()) {
-            String responseBody = jsonApiResponseWriter.compose(
-                    (ObjectNode) originalParseResult.rootNode(),
-                    includedResources,
-                    gaps
-            );
-            return new CompoundDocsResult(responseBody, aggregator.getResult());
-        }
-
-        return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult());
-    }
-
-    /**
-     * Waits for the fetch of {@code ids} of {@code resourceType}. When the downstream service rejects some of
-     * {@code includes} as unknown relationships, they are mapped back to the include paths of the request: under
-     * {@link UnsupportedIncludeStrategy#FAIL} the request fails naming them, under
-     * {@link UnsupportedIncludeStrategy#IGNORE} the resources are fetched again without them.
-     *
-     * @return the fetch result, the includes it was fetched with, and the include paths rejected on the way
-     */
-    private TypeFetch awaitFetch(String resourceType,
-                                 Set<String> ids,
-                                 Set<String> includes,
-                                 CompletableFuture<FetchResult> fetch,
-                                 IncludeFrontier frontier,
-                                 Deadline deadline,
-                                 DomainSettingsResolver domainSettingsResolver,
-                                 CompoundDocsRequest request) {
-        try {
-            return new TypeFetch(join(resourceType, fetch, deadline), includes, List.of());
-        } catch (RejectedIncludesException e) {
-            List<UnsupportedInclude> rejected = e.getRelationshipNames()
-                    .stream()
-                    .flatMap(relationshipName -> ids.stream()
-                            .flatMap(id -> frontier.pathsThrough(new IdAndType(id, new ResourceType(resourceType)), relationshipName).stream())
-                            .distinct()
-                            .map(path -> new UnsupportedInclude(path, String.format(
-                                    "Resource type '%s' has no relationship '%s'", resourceType, relationshipName
-                            ))))
-                    .toList();
-            if (config.getUnsupportedIncludes() == UnsupportedIncludeStrategy.FAIL) {
-                throw new UnsupportedIncludeException(rejected);
-            }
-            log.warn("Resolving '{}' resources without unsupported includes {} per strategy", resourceType, e.getRelationshipNames());
-            Set<String> accepted = includes.stream()
-                    .filter(include -> !e.getRelationshipNames().contains(include))
-                    .collect(Collectors.toSet());
-            TypeFetch retried = awaitFetch(
-                    resourceType,
-                    ids,
-                    accepted,
-                    fetchAsync(resourceType, ids, accepted, deadline, domainSettingsResolver, request),
-                    frontier,
-                    deadline,
-                    domainSettingsResolver,
-                    request
-            );
-            return new TypeFetch(
-                    retried.result(),
-                    retried.includes(),
-                    ListUtils.union(rejected, retried.rejected())
-            );
-        }
-    }
-
-    /**
-     * @param includes the includes the resources were fetched with
-     * @param rejected the include paths the downstream service rejected on the way
-     */
-    private record TypeFetch(FetchResult result, Set<String> includes, List<UnsupportedInclude> rejected) {
     }
 
     /**
@@ -357,45 +167,6 @@ public class CompoundDocsResolver {
     }
 
     /**
-     * @return the fetch of {@code ids} of {@code resourceType}, or an already {@link FetchResult#skipped() skipped}
-     * one when there is no route to the type and {@link ErrorStrategy#IGNORE} lets its resources be skipped
-     */
-    private CompletableFuture<FetchResult> fetchAsync(String resourceType,
-                                                           Set<String> ids,
-                                                           Set<String> includes,
-                                                           Deadline deadline,
-                                                           DomainSettingsResolver domainSettingsResolver,
-                                                           CompoundDocsRequest originalRequest) {
-        Optional<DomainSettings> domainSettings = routeFor(domainSettingsResolver, resourceType);
-        if (domainSettings.isEmpty()) {
-            return CompletableFuture.completedFuture(FetchResult.skipped());
-        }
-        BatchFetch<DomainSettings> batch = new BatchFetch<>(domainSettings.get(), resourceType, ids, includes, deadline);
-        log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
-        return CompletableFuture.supplyAsync(() -> fetcher.fetch(batch, originalRequest), executor);
-    }
-
-    /**
-     * @return where to fetch {@code resourceType} from, or empty when there is no route and
-     * {@link ErrorStrategy#IGNORE} lets its resources be skipped
-     */
-    private Optional<DomainSettings> routeFor(DomainSettingsResolver domainSettingsResolver, String resourceType) {
-        try {
-            return Optional.of(fetchable(domainSettingsResolver.requireDomainSettings(resourceType), resourceType));
-        } catch (DomainResolutionException e) {
-            if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
-                log.error(
-                        "Skipping included resources of type '{}' per error strategy - no route to fetch them from: {}",
-                        resourceType,
-                        e.getMessage()
-                );
-                return Optional.empty();
-            }
-            throw e;
-        }
-    }
-
-    /**
      * A route in-process is usable only when this resolver can fetch in-process - it is created with an in-process
      * {@link BatchFetcher}.
      */
@@ -409,38 +180,278 @@ public class CompoundDocsResolver {
     }
 
     /**
-     * Waits for a fetch at most until {@code deadline}, rethrowing its failure as thrown rather than wrapped in an
-     * {@link ExecutionException}. A fetch still running at the deadline - one in-process, which can't be cut short like
-     * an HTTP call - is no longer waited for: it is reported as {@link FetchResult#deadlineExceeded()} under
-     * {@link ErrorStrategy#IGNORE}, and fails the request with {@link DownstreamTimeoutException} under
-     * {@link ErrorStrategy#FAIL}. Its result, once it comes, is dropped.
+     * @param includes the includes the resources were fetched with
+     * @param rejected the include paths the downstream service rejected on the way
      */
-    private FetchResult join(String resourceType, CompletableFuture<FetchResult> future, Deadline deadline) {
-        try {
-            if (deadline.isNone()) {
-                return future.get();
-            }
-            return future.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
-        } catch (TimeoutException e) {
-            if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
-                throw new DownstreamTimeoutException(String.format(
-                        "Includes deadline of %d ms exceeded fetching '%s' resources", config.getIncludesTimeoutMs(), resourceType
-                ), e);
-            }
-            log.warn("Skipping '{}' resources per error strategy: the includes deadline of {} ms is exceeded",
-                    resourceType, config.getIncludesTimeoutMs());
-            return FetchResult.deadlineExceeded();
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof RuntimeException cause) {
-                throw cause;
-            }
-            throw new CompletionException(e.getCause());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ErrorJsonApiResponseException(
-                    String.format("Interrupted while fetching '%s' resources", resourceType), e
-            );
+    private record TypeFetch(FetchResult result, Set<String> includes, List<UnsupportedInclude> rejected) {
+    }
+
+    /**
+     * Resolving the includes of one request. The resolver is shared by every request, so what belongs to a single one
+     * lives here: where its resources are fetched from, its {@link Deadline}, and how long each fetch took.
+     */
+    private class Resolution {
+
+        private final CompoundDocsRequest request;
+        private final DomainSettingsResolver domainSettingsResolver;
+        private final Deadline deadline;
+        private final Map<String, Long> fetchNanos = new ConcurrentHashMap<>();
+
+        Resolution(CompoundDocsRequest request, DomainSettingsResolver domainSettingsResolver) {
+            this.request = request;
+            this.domainSettingsResolver = domainSettingsResolver;
+            this.deadline = Deadline.after(config.getIncludesTimeoutMs());
         }
+
+        CompoundDocsResult resolve(String originalJsonApiResponse,
+                                   ParseResult originalParseResult,
+                                   CheckedIncludes includes) throws ErrorJsonApiResponseException {
+            IncludeTree includeTree = IncludeTree.of(includes.paths());
+            CacheControlAggregator aggregator = new CacheControlAggregator();
+
+            Map<IdAndType, Set<String>> requestedIncludes = new HashMap<>();
+            Map<IdAndType, ResourceLinkage> linkages = new HashMap<>();
+            Map<IdAndType, String> primaryResourceJsons = new HashMap<>();
+            for (ParsedResource primaryResource : originalParseResult.primaryResources()) {
+                ResourceLinkage resourceLinkage = primaryResource.linkage();
+                IdAndType idAndType = resourceLinkage.idAndType();
+                linkages.put(idAndType, resourceLinkage);
+                requestedIncludes.put(idAndType, includeTree.children(IncludeTree.ROOT));
+                primaryResourceJsons.put(idAndType, primaryResource.json());
+            }
+            IncludedResources included = new IncludedResources(config.getDeduplication(), primaryResourceJsons);
+            Set<IncludedGap> gaps = new HashSet<>(includes.gaps());
+
+            IncludeFrontier frontier = IncludeFrontier.start(includeTree, originalParseResult.relationships());
+
+            int currentLevel = 1;
+            while (!frontier.isEmpty()) {
+                log.debug("Compound docs resolution hop {}, included resources so far: {}", currentLevel, included.size());
+
+                frontier.resources().forEach(included::reached);
+                List<IdAndType> pending = pendingResources(frontier, requestedIncludes);
+                if (!pending.isEmpty() && included.size() >= config.getMaxIncludedResources()) {
+                    log.debug("Stopping compound docs resolution at hop {}: {} included resources reach the maximum of {}",
+                            currentLevel, included.size(), config.getMaxIncludedResources());
+                    gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.MAX_INCLUDED_RESOURCES));
+                    break;
+                }
+                if (!pending.isEmpty() && deadline.isExpired()) {
+                    if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
+                        throw new DownstreamTimeoutException(String.format(
+                                "Includes deadline of %d ms exceeded before hop %d", config.getIncludesTimeoutMs(), currentLevel
+                        ), null);
+                    }
+                    log.warn("Stopping compound docs resolution at hop {} per error strategy: the includes deadline of {} ms is exceeded",
+                            currentLevel, config.getIncludesTimeoutMs());
+                    gaps.addAll(truncatedPaths(frontier, pending, IncompleteReason.DEADLINE_EXCEEDED));
+                    aggregator.add(CacheControlDirectives.NO_STORE);
+                    break;
+                }
+
+                Map<String, Set<String>> idsByType = new HashMap<>();
+                Map<String, Set<String>> includesByType = new HashMap<>();
+                for (IdAndType resource : pending) {
+                    Set<String> requiredIncludes = frontier.requiredIncludes(resource);
+                    Set<String> alreadyRequestedIncludes = requestedIncludes.get(resource);
+                    idsByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>()).add(resource.getId());
+                    Set<String> typeIncludes = includesByType.computeIfAbsent(resource.getType().getType(), t -> new HashSet<>());
+                    typeIncludes.addAll(requiredIncludes);
+                    if (alreadyRequestedIncludes != null) {
+                        typeIncludes.addAll(alreadyRequestedIncludes);
+                    }
+                }
+
+                Map<String, CompletableFuture<FetchResult>> futures = idsByType.keySet().stream()
+                        .collect(Collectors.toMap(
+                                Function.identity(),
+                                resourceType -> fetchAsync(
+                                        resourceType,
+                                        idsByType.get(resourceType),
+                                        includesByType.get(resourceType)
+                                )
+                        ));
+
+                for (Map.Entry<String, CompletableFuture<FetchResult>> e : futures.entrySet()) {
+                    String resourceType = e.getKey();
+                    TypeFetch typeFetch = awaitFetch(
+                            resourceType,
+                            idsByType.get(resourceType),
+                            includesByType.get(resourceType),
+                            e.getValue(),
+                            frontier
+                    );
+                    FetchResult fetchResult = typeFetch.result();
+                    aggregator.add(fetchResult.directives());
+                    if (fetchResult.incompleteReason() != null) {
+                        gaps.add(IncludedGap.forType(fetchResult.incompleteReason(), resourceType));
+                    }
+                    typeFetch.rejected().forEach(rejected -> gaps.add(
+                            IncludedGap.forPath(IncompleteReason.UNSUPPORTED_INCLUDE, rejected.path())
+                    ));
+                    idsByType.get(resourceType).forEach(id -> requestedIncludes.put(
+                            new IdAndType(id, new ResourceType(resourceType)),
+                            typeFetch.includes()
+                    ));
+                    for (ParsedResource resource : fetchResult.resources()) {
+                        if (resource.idAndType() == null) {
+                            log.warn("Skipping a resource of type '{}' without a textual 'type' and 'id': {}", resourceType, resource.json());
+                            continue;
+                        }
+                        linkages.put(resource.idAndType(), resource.linkage());
+                        included.add(resource.idAndType(), resource.json());
+                    }
+                }
+
+                frontier = frontier.next(linkages);
+                currentLevel++;
+            }
+
+            List<String> includedResources = included.toList();
+            log.debug("Compound docs resolution completed. Total hops: {}, total included resources: {}", currentLevel - 1, includedResources.size());
+
+            if (!includedResources.isEmpty() || !gaps.isEmpty()) {
+                String responseBody = jsonApiResponseWriter.compose(
+                        (ObjectNode) originalParseResult.rootNode(),
+                        includedResources,
+                        gaps
+                );
+                return new CompoundDocsResult(responseBody, aggregator.getResult(), fetchDurations());
+            }
+
+            return new CompoundDocsResult(originalJsonApiResponse, aggregator.getResult(), fetchDurations());
+        }
+
+        /**
+         * Waits for the fetch of {@code ids} of {@code resourceType}. When the downstream service rejects some of
+         * {@code includes} as unknown relationships, they are mapped back to the include paths of the request: under
+         * {@link UnsupportedIncludeStrategy#FAIL} the request fails naming them, under
+         * {@link UnsupportedIncludeStrategy#IGNORE} the resources are fetched again without them.
+         *
+         * @return the fetch result, the includes it was fetched with, and the include paths rejected on the way
+         */
+        private TypeFetch awaitFetch(String resourceType,
+                                     Set<String> ids,
+                                     Set<String> includes,
+                                     CompletableFuture<FetchResult> fetch,
+                                     IncludeFrontier frontier) {
+            try {
+                return new TypeFetch(join(resourceType, fetch), includes, List.of());
+            } catch (RejectedIncludesException e) {
+                List<UnsupportedInclude> rejected = e.getRelationshipNames()
+                        .stream()
+                        .flatMap(relationshipName -> ids.stream()
+                                .flatMap(id -> frontier.pathsThrough(new IdAndType(id, new ResourceType(resourceType)), relationshipName).stream())
+                                .distinct()
+                                .map(path -> new UnsupportedInclude(path, String.format(
+                                        "Resource type '%s' has no relationship '%s'", resourceType, relationshipName
+                                ))))
+                        .toList();
+                if (config.getUnsupportedIncludes() == UnsupportedIncludeStrategy.FAIL) {
+                    throw new UnsupportedIncludeException(rejected);
+                }
+                log.warn("Resolving '{}' resources without unsupported includes {} per strategy", resourceType, e.getRelationshipNames());
+                Set<String> accepted = includes.stream()
+                        .filter(include -> !e.getRelationshipNames().contains(include))
+                        .collect(Collectors.toSet());
+                TypeFetch retried = awaitFetch(
+                        resourceType,
+                        ids,
+                        accepted,
+                        fetchAsync(resourceType, ids, accepted),
+                        frontier
+                );
+                return new TypeFetch(
+                        retried.result(),
+                        retried.includes(),
+                        ListUtils.union(rejected, retried.rejected())
+                );
+            }
+        }
+
+        /**
+         * The time a fetch takes, counted from queueing it - waiting for a free executor thread is part of what an
+         * include costs - is added up per resource type. A fetch that completes only after resolution stopped waiting
+         * for it at the {@link Deadline} comes too late to be reported.
+         *
+         * @return the fetch of {@code ids} of {@code resourceType}, or an already {@link FetchResult#skipped() skipped}
+         * one when there is no route to the type and {@link ErrorStrategy#IGNORE} lets its resources be skipped
+         */
+        private CompletableFuture<FetchResult> fetchAsync(String resourceType, Set<String> ids, Set<String> includes) {
+            Optional<DomainSettings> domainSettings = routeFor(resourceType);
+            if (domainSettings.isEmpty()) {
+                return CompletableFuture.completedFuture(FetchResult.skipped());
+            }
+            BatchFetch<DomainSettings> batch = new BatchFetch<>(domainSettings.get(), resourceType, ids, includes, deadline);
+            log.debug("Queued batch fetch for type '{}', ids: {}, includes: {}", resourceType, ids, includes);
+            long queuedAt = System.nanoTime();
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    return fetcher.fetch(batch, request);
+                } finally {
+                    fetchNanos.merge(resourceType, System.nanoTime() - queuedAt, Long::sum);
+                }
+            }, executor);
+        }
+
+        /**
+         * @return where to fetch {@code resourceType} from, or empty when there is no route and
+         * {@link ErrorStrategy#IGNORE} lets its resources be skipped
+         */
+        private Optional<DomainSettings> routeFor(String resourceType) {
+            try {
+                return Optional.of(fetchable(domainSettingsResolver.requireDomainSettings(resourceType), resourceType));
+            } catch (DomainResolutionException e) {
+                if (config.getErrorStrategy() == ErrorStrategy.IGNORE) {
+                    log.error(
+                            "Skipping included resources of type '{}' per error strategy - no route to fetch them from: {}",
+                            resourceType,
+                            e.getMessage()
+                    );
+                    return Optional.empty();
+                }
+                throw e;
+            }
+        }
+
+        /**
+         * Waits for a fetch at most until the {@link Deadline}, rethrowing its failure as thrown rather than wrapped in
+         * an {@link ExecutionException}. A fetch still running at the deadline - one in-process, which can't be cut short
+         * like an HTTP call - is no longer waited for: it is reported as {@link FetchResult#deadlineExceeded()} under
+         * {@link ErrorStrategy#IGNORE}, and fails the request with {@link DownstreamTimeoutException} under
+         * {@link ErrorStrategy#FAIL}. Its result, once it comes, is dropped.
+         */
+        private FetchResult join(String resourceType, CompletableFuture<FetchResult> future) {
+            try {
+                return deadline.await(future);
+            } catch (TimeoutException e) {
+                if (config.getErrorStrategy() == ErrorStrategy.FAIL) {
+                    throw new DownstreamTimeoutException(String.format(
+                            "Includes deadline of %d ms exceeded fetching '%s' resources", config.getIncludesTimeoutMs(), resourceType
+                    ), e);
+                }
+                log.warn("Skipping '{}' resources per error strategy: the includes deadline of {} ms is exceeded",
+                        resourceType, config.getIncludesTimeoutMs());
+                return FetchResult.deadlineExceeded();
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof RuntimeException cause) {
+                    throw cause;
+                }
+                throw new CompletionException(e.getCause());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new ErrorJsonApiResponseException(
+                        String.format("Interrupted while fetching '%s' resources", resourceType), e
+                );
+            }
+        }
+
+        private Map<String, Duration> fetchDurations() {
+            Map<String, Duration> fetchDurations = new HashMap<>();
+            fetchNanos.forEach((resourceType, nanos) -> fetchDurations.put(resourceType, Duration.ofNanos(nanos)));
+            return fetchDurations;
+        }
+
     }
 
 }

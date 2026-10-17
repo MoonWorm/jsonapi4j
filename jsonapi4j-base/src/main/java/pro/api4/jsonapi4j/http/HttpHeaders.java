@@ -25,6 +25,8 @@ public enum HttpHeaders {
     IF_NONE_MATCH("If-None-Match"),
     /** The standard {@code Allow} response header, listing the methods a resource accepts. */
     ALLOW("Allow"),
+    /** The standard {@code Server-Timing} response header, reporting how long parts of serving the request took. */
+    SERVER_TIMING("Server-Timing"),
     /**
      * Custom header that instructs the compound-documents resolver to skip
      * {@code included} relationship expansion for the current request.

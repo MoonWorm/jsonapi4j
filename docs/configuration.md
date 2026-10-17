@@ -149,6 +149,8 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 |----------|---------|-------------|
 | `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. Must be an absolute path with no trailing slash — it is mounted as a servlet mapping, and is [validated at startup](#startup-validation). |
 | `jsonapi4j.meta.enabled` | `false` | Enables the built-in [Meta API](/meta-api/) — a runtime introspection endpoint exposing the app's resources, relationships, operations, plugins, and effective config. Opt-in. |
+| `jsonapi4j.diagnostics.serverTiming.enabled` | `false` | Adds a [`Server-Timing`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing) header, shown in browser devtools and read by many APM tools: `primary` — how long the framework took to serve the request, up to writing the body — plus, when the [Compound Documents plugin](/compound-docs-plugin/) resolves includes, `includes` for the whole resolution and `includes-<resourceType>` for each type fetched, summed over hops. When an unsupported include path is dropped under `unsupportedIncludes: IGNORE`, the request is served twice, so `primary` appears once per attempt. It tells every client how long your app's internals take, so enable it for development rather than production. |
+| `jsonapi4j.diagnostics.startupReport.enabled` | `false` | Logs a report once the framework starts: the registered resources, relationships, operations and plugins, with links to the [Meta API](/meta-api/) when it is enabled. Handy while developing; warnings about missing registries are logged either way. |
 
 ## Validation Properties
 

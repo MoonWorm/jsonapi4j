@@ -30,6 +30,7 @@ import pro.api4.jsonapi4j.http.cache.CacheControlDirectives;
 import pro.api4.jsonapi4j.processor.IdAndType;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -694,6 +695,56 @@ public class CompoundDocsResolverTests {
             ))
                     .isInstanceOf(DomainResolutionException.class)
                     .hasMessage("Resource type 'currencies' has no mapping");
+        }
+
+    }
+
+    @Nested
+    class FetchDurations {
+
+        @Test
+        public void resolveCompoundDocs_typesFetched_reportsHowLongEachTook() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED);
+            stubDownstreamSlow("countries", 50);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    ROUTE_ALL
+            );
+
+            assertThat(result.fetchDurations()).containsOnlyKeys("countries", "currencies");
+            assertThat(result.fetchDurations().get("countries")).isGreaterThanOrEqualTo(Duration.ofMillis(50));
+        }
+
+        @Test
+        public void resolveCompoundDocs_typeWithoutRouteUnderIgnore_reportsOnlyFetchedTypes() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.DATA_AND_INCLUDED, ErrorStrategy.IGNORE);
+            stubDownstream();
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("placeOfBirth")),
+                    request("/users/1", "placeOfBirth.currencies"),
+                    resourceType -> "countries".equals(resourceType)
+                            ? Optional.of(DomainSettings.overHttp(BASE_URL))
+                            : Optional.empty()
+            );
+
+            assertThat(result.fetchDurations()).containsOnlyKeys("countries");
+        }
+
+        @Test
+        public void resolveCompoundDocs_typeFetchedInTwoHops_reportsTheirSum() throws Exception {
+            CompoundDocsResolver sut = resolver(3, Deduplication.NONE);
+            stubDownstreamSlow("users", 30);
+
+            CompoundDocsResult result = sut.resolveCompoundDocs(
+                    primaryDoc(USER_1, Set.of("relatives")),
+                    request("/users/1", "relatives.relatives"),
+                    ROUTE_ALL
+            );
+
+            assertThat(result.fetchDurations().get("users")).isGreaterThanOrEqualTo(Duration.ofMillis(60));
         }
 
     }

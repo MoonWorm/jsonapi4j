@@ -16,10 +16,12 @@ import pro.api4.jsonapi4j.compound.docs.IncludesChecker;
 import pro.api4.jsonapi4j.compound.docs.exception.ErrorJsonApiResponseException;
 import pro.api4.jsonapi4j.compound.docs.json.JsonApiResponseParser;
 import pro.api4.jsonapi4j.exception.UnsupportedIncludeException;
+import pro.api4.jsonapi4j.servlet.response.ServerTiming;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -50,7 +53,7 @@ class CompoundDocsFilterTests {
     private final ByteArrayOutputStream sent = new ByteArrayOutputStream();
 
     private final CompoundDocsFilter sut = new CompoundDocsFilter(
-            requestSupplier, routing, errorsDocResponseWriter, includesChecker, new JsonApiResponseParser(new ObjectMapper()), resolver
+            requestSupplier, routing, errorsDocResponseWriter, includesChecker, new JsonApiResponseParser(new ObjectMapper()), resolver, ServerTiming.of(false)
     );
 
     @BeforeEach
@@ -137,6 +140,62 @@ class CompoundDocsFilterTests {
             verify(response).setHeader("Cache-Control", "no-store");
             verify(errorsDocResponseWriter).write(response, failure);
             assertThat(sent.size()).isZero();
+        }
+
+    }
+
+    @Nested
+    class ServerTimingHeader {
+
+        private final CompoundDocsFilter timingSut = new CompoundDocsFilter(
+                requestSupplier, routing, errorsDocResponseWriter, includesChecker, new JsonApiResponseParser(new ObjectMapper()), resolver, ServerTiming.of(true)
+        );
+
+        @Test
+        void doFilter_serverTimingDisabled_addsNoHeader() throws Exception {
+            when(resolver.resolveCompoundDocs(any(), any(), any())).thenReturn(new CompoundDocsResult(COMPOUND_DOC, null));
+
+            sut.doFilter(request, response, writing(PRIMARY_DOC));
+
+            verify(response, never()).addHeader(eq("Server-Timing"), any());
+        }
+
+        @Test
+        void doFilter_resolved_addsIncludesTiming() throws Exception {
+            when(resolver.resolveCompoundDocs(any(), any(), any())).thenReturn(new CompoundDocsResult(COMPOUND_DOC, null));
+
+            timingSut.doFilter(request, response, writing(PRIMARY_DOC));
+
+            verify(response).addHeader(eq("Server-Timing"), matches("includes;dur=\\d+\\.\\d"));
+        }
+
+        @Test
+        void doFilter_typesFetched_addsTimingOfEachType() throws Exception {
+            when(resolver.resolveCompoundDocs(any(), any(), any())).thenReturn(
+                    new CompoundDocsResult(COMPOUND_DOC, null, Map.of("countries", Duration.ofMillis(3)))
+            );
+
+            timingSut.doFilter(request, response, writing(PRIMARY_DOC));
+
+            verify(response).addHeader("Server-Timing", "includes-countries;dur=3.0");
+        }
+
+        @Test
+        void doFilter_resolutionFails_addsIncludesTiming() throws Exception {
+            when(resolver.resolveCompoundDocs(any(), any(), any())).thenThrow(new ErrorJsonApiResponseException("boom"));
+
+            timingSut.doFilter(request, response, writing(PRIMARY_DOC));
+
+            verify(response).addHeader(eq("Server-Timing"), matches("includes;dur=\\d+\\.\\d"));
+        }
+
+        @Test
+        void doFilter_requestWithoutIncludes_addsNoHeader() throws Exception {
+            when(requestSupplier.toCompoundDocsRequest(request)).thenReturn(requestWithIncludes(null));
+
+            timingSut.doFilter(request, response, mock(FilterChain.class));
+
+            verify(response, never()).addHeader(eq("Server-Timing"), any());
         }
 
     }

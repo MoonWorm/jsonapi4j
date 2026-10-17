@@ -17,6 +17,13 @@ jsonapi4j:
   meta:
     enabled: true
 
+  # Developer-facing diagnostics
+  diagnostics:
+    serverTiming:
+      enabled: false
+    startupReport:
+      enabled: true
+
   # CD Plugin
   cd:
     enabled: true

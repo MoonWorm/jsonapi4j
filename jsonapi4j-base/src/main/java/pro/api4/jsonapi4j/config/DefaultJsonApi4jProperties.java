@@ -15,6 +15,7 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
     private String rootPath = DEFAULT_ROOT_PATH;
     private DefaultValidationProperties validation = new DefaultValidationProperties();
     private DefaultMetaProperties meta = new DefaultMetaProperties();
+    private DefaultDiagnosticsProperties diagnostics = new DefaultDiagnosticsProperties();
 
     @Override
     public String rootPath() {
@@ -31,9 +32,62 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
         return meta;
     }
 
+    @Override
+    public DiagnosticsProperties diagnostics() {
+        return diagnostics;
+    }
+
     @Getter
     @Setter
     public static class DefaultMetaProperties implements MetaProperties {
+
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
+
+        @Override
+        public boolean enabled() {
+            return this.enabled;
+        }
+
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class DefaultDiagnosticsProperties implements DiagnosticsProperties {
+
+        private DefaultServerTimingProperties serverTiming = new DefaultServerTimingProperties();
+        private DefaultStartupReportProperties startupReport = new DefaultStartupReportProperties();
+
+        @Override
+        public ServerTimingProperties serverTiming() {
+            return this.serverTiming;
+        }
+
+        @Override
+        public StartupReportProperties startupReport() {
+            return this.startupReport;
+        }
+
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class DefaultServerTimingProperties implements DiagnosticsProperties.ServerTimingProperties {
+
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
+
+        @Override
+        public boolean enabled() {
+            return this.enabled;
+        }
+
+    }
+
+    @Getter
+    @Setter
+    @ToString
+    public static class DefaultStartupReportProperties implements DiagnosticsProperties.StartupReportProperties {
 
         private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
 

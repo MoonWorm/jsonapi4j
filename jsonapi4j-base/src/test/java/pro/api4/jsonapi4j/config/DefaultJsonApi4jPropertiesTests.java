@@ -25,4 +25,14 @@ public class DefaultJsonApi4jPropertiesTests {
         assertThat(sut.meta().enabled()).isFalse();
     }
 
+    @Test
+    public void diagnostics_notSet_returnsDisabledServerTiming() {
+        assertThat(sut.diagnostics().serverTiming().enabled()).isFalse();
+    }
+
+    @Test
+    public void diagnostics_notSet_returnsDisabledStartupReport() {
+        assertThat(sut.diagnostics().startupReport().enabled()).isFalse();
+    }
+
 }

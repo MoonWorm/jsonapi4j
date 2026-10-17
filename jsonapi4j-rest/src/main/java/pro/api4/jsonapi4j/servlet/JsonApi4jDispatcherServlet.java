@@ -23,6 +23,7 @@ import pro.api4.jsonapi4j.servlet.request.HttpServletRequestJsonApiRequestSuppli
 import pro.api4.jsonapi4j.servlet.request.OperationDetailsResolver;
 import pro.api4.jsonapi4j.servlet.response.ResponseHeaders;
 import pro.api4.jsonapi4j.servlet.response.ResponseStatus;
+import pro.api4.jsonapi4j.servlet.response.ServerTiming;
 import pro.api4.jsonapi4j.servlet.response.errorhandling.ErrorsDocResponseWriter;
 
 import java.io.IOException;
@@ -44,6 +45,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     private ErrorsDocResponseWriter errorsDocResponseWriter;
 
     private JsonApiRequestSupplier<HttpServletRequest> jsonApiRequestSupplier;
+
+    private ServerTiming serverTiming;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -75,9 +78,12 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             );
         }
 
-        log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
+        if (jsonApi4j.getProperties().diagnostics().startupReport().enabled()) {
+            log.info(new JsonApi4jReportGenerator(this.jsonApi4j).generateStateReport());
+        }
 
         this.errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
+        this.serverTiming = ServerTiming.of(jsonApi4j.getProperties().diagnostics().serverTiming().enabled());
 
         this.jsonApiRequestSupplier = composeJsonApiRequestSupplier(
                 objectMapper,
@@ -113,6 +119,7 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     protected void service(HttpServletRequest req,
                            HttpServletResponse resp) {
 
+        long startedAt = System.nanoTime();
         try {
             JsonApiRequest jsonApiRequest = jsonApiRequestSupplier.from(req);
             OperationType targetOperationType = jsonApiRequest.getOperationType();
@@ -136,12 +143,14 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                 }
             }
 
+            serverTiming.add(resp, ServerTiming.PRIMARY_METRIC, startedAt);
             // populate custom headers
             ResponseHeaders.flush(resp);
 
             writeResponseBody(resp, dataDoc);
 
         } catch (Exception e) {
+            serverTiming.add(resp, ServerTiming.PRIMARY_METRIC, startedAt);
             errorsDocResponseWriter.write(resp, e);
         }
     }

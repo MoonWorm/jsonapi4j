@@ -6,9 +6,12 @@ import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultDiagnosticsProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultMetaProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultValidationProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
+import pro.api4.jsonapi4j.config.DiagnosticsProperties.ServerTimingProperties;
+import pro.api4.jsonapi4j.config.DiagnosticsProperties.StartupReportProperties;
 import pro.api4.jsonapi4j.config.MetaProperties;
 import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 
@@ -37,6 +40,53 @@ public interface QuarkusJsonApi4jProperties {
      * Built-in meta (live introspection) API settings. Optional.
      */
     Optional<QuarkusMetaProperties> meta();
+
+    /**
+     * Developer-facing diagnostics, off by default. Optional.
+     */
+    Optional<QuarkusDiagnosticsProperties> diagnostics();
+
+    interface QuarkusDiagnosticsProperties {
+
+        /**
+         * 'Server-Timing' response header settings. Optional.
+         */
+        Optional<QuarkusServerTimingProperties> serverTiming();
+
+        /**
+         * Startup report settings. Optional.
+         */
+        Optional<QuarkusStartupReportProperties> startupReport();
+
+        default DefaultDiagnosticsProperties toJsonApi4jProperties() {
+            DefaultDiagnosticsProperties ddp = new DefaultDiagnosticsProperties();
+            serverTiming().ifPresent(st -> ddp.getServerTiming().setEnabled(st.enabled()));
+            startupReport().ifPresent(sr -> ddp.getStartupReport().setEnabled(sr.enabled()));
+            return ddp;
+        }
+
+    }
+
+    interface QuarkusServerTimingProperties {
+
+        /**
+         * Adds a 'Server-Timing' header with how long serving the request took. Exposes internal timings to every
+         * client, so meant for development.
+         */
+        @WithDefault(ServerTimingProperties.DEFAULT_ENABLED)
+        boolean enabled();
+
+    }
+
+    interface QuarkusStartupReportProperties {
+
+        /**
+         * Logs the registered resources, relationships, operations and plugins once the framework starts.
+         */
+        @WithDefault(StartupReportProperties.DEFAULT_ENABLED)
+        boolean enabled();
+
+    }
 
     interface QuarkusMetaProperties {
 
@@ -110,6 +160,7 @@ public interface QuarkusJsonApi4jProperties {
         properties.setRootPath(rootPath());
         properties.setValidation(validation().map(QuarkusValidationProperties::toJsonApi4jProperties).orElse(new DefaultValidationProperties()));
         properties.setMeta(meta().map(QuarkusMetaProperties::toJsonApi4jProperties).orElse(new DefaultMetaProperties()));
+        properties.setDiagnostics(diagnostics().map(QuarkusDiagnosticsProperties::toJsonApi4jProperties).orElse(new DefaultDiagnosticsProperties()));
         return properties;
     }
 }
