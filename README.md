@@ -221,6 +221,15 @@ Looking for a JSON:API implementation for Java? Here's a quick guide:
 - **Choose [Elide](https://elide.io/)** if your stack is built around JPA/Hibernate and you also need GraphQL support alongside JSON:API.
 - **Consider [crnk](https://www.crnk.io/)** for a mature, feature-rich JSON:API implementation with deep JPA integration.
 
+## Follow Releases
+
+| | |
+|---|---|
+| **Announcements** | [GitHub Discussions](https://github.com/MoonWorm/jsonapi4j/discussions/categories/announcements) — release write-ups and what's coming next |
+| **Release notes** | [GitHub Releases](https://github.com/MoonWorm/jsonapi4j/releases) |
+| **RSS / Atom** | [releases.atom](https://github.com/MoonWorm/jsonapi4j/releases.atom) |
+| **Notifications** | Click **Watch → Custom → Releases** at the top of this repo |
+
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
