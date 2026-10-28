@@ -8,14 +8,18 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import pro.api4.jsonapi4j.EntryPointDocComposer;
 import pro.api4.jsonapi4j.JsonApi4j;
 import pro.api4.jsonapi4j.JsonApi4jReportGenerator;
 import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.ResourceType;
 import pro.api4.jsonapi4j.http.HttpHeaders;
+import pro.api4.jsonapi4j.http.exception.MethodNotSupportedException;
 import pro.api4.jsonapi4j.init.JsonApi4jServletContainerInitializer;
 import pro.api4.jsonapi4j.model.document.data.SingleResourceDoc;
+import pro.api4.jsonapi4j.model.document.meta.MetaDoc;
 import pro.api4.jsonapi4j.operation.OperationType;
+import pro.api4.jsonapi4j.operation.OperationType.Method;
 import pro.api4.jsonapi4j.request.JsonApiMediaType;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.JsonApiRequestSupplier;
@@ -47,6 +51,8 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
     private JsonApiRequestSupplier<HttpServletRequest> jsonApiRequestSupplier;
 
     private ServerTiming serverTiming;
+
+    private MetaDoc entryPointDoc;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
@@ -85,6 +91,13 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
         this.errorsDocResponseWriter = new ErrorsDocResponseWriter(jsonApi4j.getErrorHandlers(), objectMapper);
         this.serverTiming = ServerTiming.of(jsonApi4j.getProperties().diagnostics().serverTiming().enabled());
 
+        if (jsonApi4j.getProperties().entryPoint().enabled()) {
+            this.entryPointDoc = new EntryPointDocComposer(
+                    jsonApi4j.getDomainRegistry(),
+                    jsonApi4j.getOperationsRegistry()
+            ).compose();
+        }
+
         this.jsonApiRequestSupplier = composeJsonApiRequestSupplier(
                 objectMapper,
                 jsonApi4j.getDomainRegistry()
@@ -120,6 +133,10 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
                            HttpServletResponse resp) {
 
         long startedAt = System.nanoTime();
+        if (entryPointDoc != null && isEntryPointRequest(req)) {
+            serveEntryPoint(req, resp, startedAt);
+            return;
+        }
         try {
             JsonApiRequest jsonApiRequest = jsonApiRequestSupplier.from(req);
             OperationType targetOperationType = jsonApiRequest.getOperationType();
@@ -153,6 +170,23 @@ public class JsonApi4jDispatcherServlet extends HttpServlet {
             serverTiming.add(resp, ServerTiming.PRIMARY_METRIC, startedAt);
             errorsDocResponseWriter.write(resp, e);
         }
+    }
+
+    private static boolean isEntryPointRequest(HttpServletRequest req) {
+        String pathInfo = req.getPathInfo();
+        return pathInfo == null || pathInfo.isEmpty() || EntryPointDocComposer.ENTRY_POINT_PATH.equals(pathInfo);
+    }
+
+    private void serveEntryPoint(HttpServletRequest req,
+                                 HttpServletResponse resp,
+                                 long startedAt) {
+        serverTiming.add(resp, ServerTiming.PRIMARY_METRIC, startedAt);
+        if (!Method.GET.name().equalsIgnoreCase(req.getMethod())) {
+            errorsDocResponseWriter.write(resp, new MethodNotSupportedException(req.getMethod(), Method.GET.name()));
+            return;
+        }
+        resp.setStatus(HttpServletResponse.SC_OK);
+        writeResponseBody(resp, entryPointDoc);
     }
 
     private void writeResponseBody(HttpServletResponse resp, Object body) {

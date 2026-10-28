@@ -70,6 +70,9 @@ listing.
 | `GET /relationships` | Descriptors for every registered relationship. |
 | `GET /operations` | Descriptors for every registered operation (filterable by id). |
 
+The [entry-point document](/configuration/#entry-point) at `GET {rootPath}` links here through its `meta` link
+(`/state/this`) whenever the Meta API is enabled.
+
 The reserved singleton id is `this`; requesting any other id (e.g. `GET /state/bogus`) returns a `404`.
 
 ### The `state` resource

@@ -148,9 +148,37 @@ For the Servlet integration, JsonApi4j resolves configuration in the following p
 | Property | Default | Description |
 |----------|---------|-------------|
 | `jsonapi4j.rootPath` | `/jsonapi` | Root path for all JsonApi4j endpoints. All resource and relationship URLs are served under this path. Must be an absolute path with no trailing slash — it is mounted as a servlet mapping, and is [validated at startup](#startup-validation). |
+| `jsonapi4j.entryPoint.enabled` | `true` | Serves the [entry-point document](#entry-point) at `GET {rootPath}`. When disabled, the root path answers with a `404` like any unknown path. |
 | `jsonapi4j.meta.enabled` | `false` | Enables the built-in [Meta API](/meta-api/) — a runtime introspection endpoint exposing the app's resources, relationships, operations, plugins, and effective config. Opt-in. |
 | `jsonapi4j.diagnostics.serverTiming.enabled` | `false` | Adds a [`Server-Timing`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Server-Timing) header, shown in browser devtools and read by many APM tools: `primary` — how long the framework took to serve the request, up to writing the body — plus, when the [Compound Documents plugin](/compound-docs-plugin/) resolves includes, `includes` for the whole resolution and `includes-<resourceType>` for each type fetched, summed over hops. When an unsupported include path is dropped under `unsupportedIncludes: IGNORE`, the request is served twice, so `primary` appears once per attempt. It tells every client how long your app's internals take, so enable it for development rather than production. |
 | `jsonapi4j.diagnostics.startupReport.enabled` | `false` | Logs a report once the framework starts: the registered resources, relationships, operations and plugins, with links to the [Meta API](/meta-api/) when it is enabled. Handy while developing; warnings about missing registries are logged either way. |
+
+### Entry Point
+
+`GET {rootPath}` returns a JSON:API document that links to every resource collection with a read-all operation.
+When the [Meta API](/meta-api/) is enabled, a single `meta` link points to its `state` resource. Links are relative
+to `rootPath`, like every other link the framework generates. Other HTTP methods on the root path return a `405`.
+
+```bash
+curl -s http://localhost:8080/jsonapi
+```
+
+```json
+{
+  "links": {
+    "self": "/",
+    "countries": "/countries",
+    "users": "/users",
+    "meta": "/state/this"
+  },
+  "meta": {},
+  "jsonapi": { "version": "1.1" }
+}
+```
+
+The empty top-level `meta` is required: a JSON:API document must carry at least one of `data`, `errors` or `meta`.
+The document reveals only collection URLs, so it is on by default; set `jsonapi4j.entryPoint.enabled=false` to turn
+it off.
 
 ## Validation Properties
 

@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -37,6 +38,17 @@ public abstract class MetaApiTests {
 
     private String url(String path) {
         return "http://localhost:" + appPort + jsonApiRootPath + path;
+    }
+
+    @Test
+    public void test_readEntryPoint_linksStateSingleton() {
+        given()
+                .get(url(""))
+                .then()
+                .statusCode(200)
+                .body("links.meta", equalTo("/state/this"))
+                .body("links", not(hasKey("state")))
+                .body("links", not(hasKey("operations")));
     }
 
     @Test

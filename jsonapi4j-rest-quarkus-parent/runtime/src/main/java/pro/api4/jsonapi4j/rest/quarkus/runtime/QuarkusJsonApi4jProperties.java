@@ -7,8 +7,10 @@ import io.smallrye.config.WithDefault;
 import jakarta.inject.Singleton;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultDiagnosticsProperties;
+import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultEntryPointProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultMetaProperties;
 import pro.api4.jsonapi4j.config.DefaultJsonApi4jProperties.DefaultValidationProperties;
+import pro.api4.jsonapi4j.config.EntryPointProperties;
 import pro.api4.jsonapi4j.config.JsonApi4jProperties;
 import pro.api4.jsonapi4j.config.DiagnosticsProperties.ServerTimingProperties;
 import pro.api4.jsonapi4j.config.DiagnosticsProperties.StartupReportProperties;
@@ -35,6 +37,11 @@ public interface QuarkusJsonApi4jProperties {
      * Default JsonApi4j validator settings. Optional.
      */
     Optional<QuarkusValidationProperties> validation();
+
+    /**
+     * Entry-point document ({@code GET {rootPath}}) settings. Optional.
+     */
+    Optional<QuarkusEntryPointProperties> entryPoint();
 
     /**
      * Built-in meta (live introspection) API settings. Optional.
@@ -85,6 +92,22 @@ public interface QuarkusJsonApi4jProperties {
          */
         @WithDefault(StartupReportProperties.DEFAULT_ENABLED)
         boolean enabled();
+
+    }
+
+    interface QuarkusEntryPointProperties {
+
+        /**
+         * Whether {@code GET {rootPath}} answers with the entry-point document. Enabled by default.
+         */
+        @WithDefault(EntryPointProperties.DEFAULT_ENABLED)
+        boolean enabled();
+
+        default DefaultEntryPointProperties toJsonApi4jProperties() {
+            DefaultEntryPointProperties depp = new DefaultEntryPointProperties();
+            depp.setEnabled(enabled());
+            return depp;
+        }
 
     }
 
@@ -159,6 +182,7 @@ public interface QuarkusJsonApi4jProperties {
         DefaultJsonApi4jProperties properties = new DefaultJsonApi4jProperties();
         properties.setRootPath(rootPath());
         properties.setValidation(validation().map(QuarkusValidationProperties::toJsonApi4jProperties).orElse(new DefaultValidationProperties()));
+        properties.setEntryPoint(entryPoint().map(QuarkusEntryPointProperties::toJsonApi4jProperties).orElse(new DefaultEntryPointProperties()));
         properties.setMeta(meta().map(QuarkusMetaProperties::toJsonApi4jProperties).orElse(new DefaultMetaProperties()));
         properties.setDiagnostics(diagnostics().map(QuarkusDiagnosticsProperties::toJsonApi4jProperties).orElse(new DefaultDiagnosticsProperties()));
         return properties;

@@ -5,8 +5,8 @@ import pro.api4.jsonapi4j.operation.validation.ValidationProperties;
 
 /**
  * The root jsonapi4j configuration - everything bound from the {@code jsonapi4j} prefix that is not owned by a
- * plugin: the JSON:API root path, the built-in request validation limits, the meta API switch and the
- * developer-facing diagnostics.
+ * plugin: the JSON:API root path, the built-in request validation limits, the entry-point and meta API
+ * switches and the developer-facing diagnostics.
  */
 public interface JsonApi4jProperties extends ValidatableProperties {
 
@@ -14,6 +14,7 @@ public interface JsonApi4jProperties extends ValidatableProperties {
 
     String ROOT_PATH_PROPERTY = "rootPath";
     String VALIDATION_PROPERTY = "validation";
+    String ENTRY_POINT_PROPERTY = "entryPoint";
     String META_PROPERTY = "meta";
     String DIAGNOSTICS_PROPERTY = "diagnostics";
 
@@ -30,6 +31,8 @@ public interface JsonApi4jProperties extends ValidatableProperties {
 
     ValidationProperties validation();
 
+    EntryPointProperties entryPoint();
+
     MetaProperties meta();
 
     DiagnosticsProperties diagnostics();
@@ -39,6 +42,7 @@ public interface JsonApi4jProperties extends ValidatableProperties {
         PropertiesValidationResultBuilder builder = PropertiesValidationResult.builder()
                 .requireServletPath(propertyPath(ROOT_PATH_PROPERTY), rootPath())
                 .requireNotNull(propertyPath(VALIDATION_PROPERTY), validation())
+                .requireNotNull(propertyPath(ENTRY_POINT_PROPERTY), entryPoint())
                 .requireNotNull(propertyPath(META_PROPERTY), meta())
                 .requireNotNull(propertyPath(DIAGNOSTICS_PROPERTY), diagnostics());
         validateLimits(builder);

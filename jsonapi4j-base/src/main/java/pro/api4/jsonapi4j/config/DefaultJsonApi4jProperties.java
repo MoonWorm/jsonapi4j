@@ -14,6 +14,7 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
 
     private String rootPath = DEFAULT_ROOT_PATH;
     private DefaultValidationProperties validation = new DefaultValidationProperties();
+    private DefaultEntryPointProperties entryPoint = new DefaultEntryPointProperties();
     private DefaultMetaProperties meta = new DefaultMetaProperties();
     private DefaultDiagnosticsProperties diagnostics = new DefaultDiagnosticsProperties();
 
@@ -28,6 +29,11 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
     }
 
     @Override
+    public EntryPointProperties entryPoint() {
+        return entryPoint;
+    }
+
+    @Override
     public MetaProperties meta() {
         return meta;
     }
@@ -35,6 +41,19 @@ public class DefaultJsonApi4jProperties implements JsonApi4jProperties {
     @Override
     public DiagnosticsProperties diagnostics() {
         return diagnostics;
+    }
+
+    @Getter
+    @Setter
+    public static class DefaultEntryPointProperties implements EntryPointProperties {
+
+        private boolean enabled = Boolean.parseBoolean(DEFAULT_ENABLED);
+
+        @Override
+        public boolean enabled() {
+            return this.enabled;
+        }
+
     }
 
     @Getter
