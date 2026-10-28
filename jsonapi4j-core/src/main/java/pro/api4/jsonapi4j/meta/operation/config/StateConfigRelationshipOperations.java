@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.meta.operation.config;
 
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.meta.domain.config.StateConfigRelationship;
 import pro.api4.jsonapi4j.meta.domain.state.StateResource.StateAttributes;
 import pro.api4.jsonapi4j.operation.ToOneRelationshipOperations;
@@ -8,7 +8,7 @@ import pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 
 @JsonApiRelationshipOperation(relationship = StateConfigRelationship.class)
-public class StateConfigRelationshipOperations implements ToOneRelationshipOperations<StateAttributes, Ref> {
+public class StateConfigRelationshipOperations implements ToOneRelationshipOperations<StateAttributes, ResourceRef> {
 
     private final ConfigIntrospector introspector;
 
@@ -17,12 +17,12 @@ public class StateConfigRelationshipOperations implements ToOneRelationshipOpera
     }
 
     @Override
-    public Ref readOne(JsonApiRequest relationshipRequest) {
+    public ResourceRef readOne(JsonApiRequest relationshipRequest) {
         return introspector.configRef();
     }
 
     @Override
-    public Ref readOneForResource(JsonApiRequest relationshipRequest, StateAttributes a) {
+    public ResourceRef readOneForResource(JsonApiRequest relationshipRequest, StateAttributes a) {
         return introspector.configRef();
     }
 

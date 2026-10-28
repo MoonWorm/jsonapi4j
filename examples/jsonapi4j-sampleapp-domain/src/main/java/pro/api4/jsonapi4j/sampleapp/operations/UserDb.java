@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.sampleapp.operations;
 
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
@@ -39,15 +39,15 @@ public interface UserDb {
 
     void deleteUser(String userId);
 
-    List<CountryRef> getUserCitizenships(String userId);
+    List<ResourceRef> getUserCitizenships(String userId);
 
-    Map<String, List<CountryRef>> getUsersCitizenships(Set<String> userIds);
+    Map<String, List<ResourceRef>> getUsersCitizenships(Set<String> userIds);
 
-    void updateUserCitizenships(String userId, List<CountryRef> citizenships);
+    void updateUserCitizenships(String userId, List<ResourceRef> citizenships);
 
-    void addUserCitizenships(String userId, List<CountryRef> citizenships);
+    void addUserCitizenships(String userId, List<ResourceRef> citizenships);
 
-    void removeUserCitizenships(String userId, List<CountryRef> citizenships);
+    void removeUserCitizenships(String userId, List<ResourceRef> citizenships);
 
     List<RelativeRef> getUserRelatives(String userId);
 
@@ -59,11 +59,11 @@ public interface UserDb {
 
     void removeUserRelatives(String userId, Set<String> relativeIds);
 
-    CountryRef getUserPlaceOfBirth(String userId);
+    ResourceRef getUserPlaceOfBirth(String userId);
 
-    Map<String, CountryRef> getUsersPlaceOfBirth(Set<String> userIds);
+    Map<String, ResourceRef> getUsersPlaceOfBirth(Set<String> userIds);
 
-    void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth);
+    void updateUserPlaceOfBirth(String userId, ResourceRef placeOfBirth);
 
     DbPage<UserDbEntity> readAllUsers(String cursor, Comparator<UserDbEntity> order);
 

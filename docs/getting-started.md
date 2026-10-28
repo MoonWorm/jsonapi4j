@@ -325,44 +325,29 @@ Now that we've defined our first resources, let's establish a relationship betwe
 We'll define a relationship called `citizenships` between the `UserJsonApiResource` and `CountryJsonApiResource`.
 Each user can have multiple `citizenships`, which makes this a **to-many** relationship (represented by an array of resource identifier objects).
 
-To implement this, we'll create a class that implements the `ToManyRelationship` interface:
+To implement this, we'll create a class that implements the `ToManyRefRelationship` interface:
 
-A relationship only ever emits a resource identifier (`{type, id}`) — it never carries the related resource's attributes, and `RELATIONSHIP_DTO` can be any type since only the `id`/`type` are read. A purpose-built **lightweight ref** like `CountryRef` (just the country id) is the recommended default, so that's what we'll use here — though reusing a fuller DTO you already have is equally valid:
-
-```java
-public record CountryRef(String id) {}
-```
+A relationship only ever emits a resource identifier (`{type, id}`) — it never carries the related resource's attributes. **JsonApi4j** ships a built-in `ResourceRef` interface (`type()` + `id()`, default implementation `DefaultResourceRef`) for exactly that, and `ToManyRefRelationship<REF extends ResourceRef>` is a `ToManyRelationship` that already knows how to read the type and id from it. So the relationship is just a declaration:
 
 ```java
 @JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
-public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
-
-    @Override
-    public String resolveResourceIdentifierType(CountryRef countryRef) {
-        return "countries";
-    }
-
-    @Override
-    public String resolveResourceIdentifierId(CountryRef countryRef) {
-        return countryRef.id();
-    }
-
+public class UserCitizenshipsRelationship implements ToManyRefRelationship<ResourceRef> {
 }
 ```
 
 * `@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)` -  defines the name of the relationship (`citizenships`). Also identifies which resource this relationship belongs to (`users`).
-* `ResourceType resolveResourceIdentifierType(CountryRef countryRef)` - determines the type of the related resource (`countries`). In some cases, a relationship may include multiple resource types - for example, a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`.
-* `String resolveResourceIdentifierId(CountryRef countryRef)` - resolves the unique identifier of each related resource (the country's CCA2 code).
+
+If the linkage needs more than `{type, id}` — e.g. identifier `meta` — use your own DTO that implements `ResourceRef` (`ToManyRefRelationship<YourRef>`) and override just `resolveResourceIdentifierMeta`. The type can even differ per item: a `userProperty` relationship could contain a mix of `cars`, `apartments`, or `yachts`. See [Designing the Domain](/domain/#resourceref) for details.
 
 ### 7. Add the Missing Relationship Operation
 
 The final piece of the puzzle is teaching the framework how to **resolve the declared relationship data**.
 
-To do this, implement `ToManyRelationshipOperations<UserDbEntity, CountryRef>` - this tells **JsonApi4j** how to resolve the citizenship linkage: which countries (by id) each user holds passports from. Because the citizenship country ids are already stored on the user, this is a pure local lookup — no downstream call is needed just to emit `{type, id}`. The full country resource is materialized separately by the `countries` resource (step 8), and only when `?include=citizenships` is requested.
+To do this, implement `ToManyRelationshipOperations<UserDbEntity, ResourceRef>` - this tells **JsonApi4j** how to resolve the citizenship linkage: which countries (by id) each user holds passports from. Because the citizenship country ids are already stored on the user, this is a pure local lookup — no downstream call is needed just to emit `{type, id}`. The full country resource is materialized separately by the `countries` resource (step 8), and only when `?include=citizenships` is requested.
 
 ```java
 @JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)
-public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, CountryRef> {
+public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, ResourceRef> {
 
     private final UserDb userDb;
 
@@ -371,10 +356,10 @@ public class UserCitizenshipsOperations implements ToManyRelationshipOperations<
     }
 
     @Override
-    public PaginationAwareResponse<CountryRef> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest request) {
         return PaginationAwareResponse.inMemoryCursorAware(
                 userDb.getUserCitizenships(request.getResourceId()).stream()
-                        .map(CountryRef::new)
+                        .map(countryId -> DefaultResourceRef.of("countries", countryId))
                         .toList(),
                 request.getCursor(),
                 2 // set limit to 2

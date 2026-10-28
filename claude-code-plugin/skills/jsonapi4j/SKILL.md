@@ -35,7 +35,9 @@ beans (Spring `@Component` / Quarkus CDI / registered in the Servlet context):
 2. **`Relationship<REF>`** — maps to a *resource identifier* (`{type, id}` + optional identifier meta/links).
    It has **no attributes**. Annotated
    `@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)`.
-   Use `ToOneRelationship<REF>` / `ToManyRelationship<REF>`.
+   Default to `ToOneRefRelationship<ResourceRef>` / `ToManyRefRelationship<ResourceRef>` (refs created via
+   `DefaultResourceRef.of(type, id)`; nothing to implement). When the ref needs more (e.g. identifier meta),
+   use your own record implementing `ResourceRef` as the type argument.
 3. **`*Operations`** — the data access. Annotated `@JsonApiResourceOperation(resource = ...)` or
    `@JsonApiRelationshipOperation(relationship = ...)`. Implement the composite
    `ResourceOperations<DTO>` / `ToOneRelationshipOperations<PARENT, CHILD>` /
@@ -64,8 +66,9 @@ public class UserResource implements Resource<UserDbEntity> {
    resource's own data**.
 2. **`ResourceOperations<DTO>`**: `readById`, `readPage` (+ `validateReadById` / `validateReadMultiple`);
    throw `ResourceNotFoundException` on a miss. Choose a pagination strategy for `readPage`.
-3. **Relationships**: `ToOne/ToManyRelationship<Ref>` — **prefer lightweight refs** over heavy DTOs (any
-   type works; only `id`/`type`/meta are read, so it's your call);
+3. **Relationships**: `ToOne/ToManyRefRelationship<ResourceRef>` by default — **prefer it** over heavy
+   DTOs; when the identifier needs meta, use a record implementing `ResourceRef` as the type argument
+   (`ToOne/ToManyRelationship<REF>` for DTOs that can't implement it — only `id`/`type`/meta are read);
    `*Operations` with `readOne`/`readMany` (+ `readOneForResource`/`readManyForResource` and/or batch
    ops to avoid N+1 on includes).
 4. **Security**: add your web framework's URL-prefix rule if the resource is public; layer the AC plugin

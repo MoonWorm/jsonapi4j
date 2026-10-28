@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.meta.operation.operations;
 
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.meta.domain.operations.OperationsResource.OperationDescriptorAttributes;
 
 import java.util.List;
@@ -12,6 +12,6 @@ public interface OperationsIntrospector {
 
     Optional<OperationDescriptorAttributes> operationById(String id);
 
-    List<Ref> operationRefs();
+    List<ResourceRef> operationRefs();
 
 }

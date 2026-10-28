@@ -15,6 +15,9 @@ import pro.api4.jsonapi4j.model.document.LinksObject;
  * This interface declares a number of methods that can be overridden if you need to customize how
  * members like 'meta', 'links' are generated for the given JSON:API relationship. Usually, you can rely on the
  * default behaviour.
+ * <p>
+ * If the relationship DTO is (or can implement) a {@link ResourceRef}, implement {@link ToOneRefRelationship} instead -
+ * it resolves the related resource's "type" and "id" out of the box.
  *
  * @param <RELATIONSHIP_DTO> represents downstream object type, but for a given JSON:API relationship
  */

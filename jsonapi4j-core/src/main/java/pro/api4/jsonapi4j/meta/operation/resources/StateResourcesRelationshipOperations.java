@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.meta.operation.resources;
 
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.meta.domain.resources.StateResourcesRelationship;
 import pro.api4.jsonapi4j.meta.domain.state.StateResource.StateAttributes;
 import pro.api4.jsonapi4j.operation.ToManyRelationshipOperations;
@@ -9,7 +9,7 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
 
 @JsonApiRelationshipOperation(relationship = StateResourcesRelationship.class)
-public class StateResourcesRelationshipOperations implements ToManyRelationshipOperations<StateAttributes, Ref> {
+public class StateResourcesRelationshipOperations implements ToManyRelationshipOperations<StateAttributes, ResourceRef> {
 
     private final ResourcesIntrospector introspector;
 
@@ -18,12 +18,12 @@ public class StateResourcesRelationshipOperations implements ToManyRelationshipO
     }
 
     @Override
-    public PaginationAwareResponse<Ref> readMany(JsonApiRequest relationshipRequest) {
+    public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest relationshipRequest) {
         return PaginationAwareResponse.fromItemsNotPageable(introspector.resourceRefs());
     }
 
     @Override
-    public PaginationAwareResponse<Ref> readManyForResource(JsonApiRequest relationshipRequest,
+    public PaginationAwareResponse<ResourceRef> readManyForResource(JsonApiRequest relationshipRequest,
                                                             StateAttributes a) {
         return PaginationAwareResponse.fromItemsNotPageable(introspector.resourceRefs());
     }

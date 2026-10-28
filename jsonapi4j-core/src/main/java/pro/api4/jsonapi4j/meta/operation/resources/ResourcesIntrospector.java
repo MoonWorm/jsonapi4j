@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.meta.operation.resources;
 
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.meta.domain.resources.ResourcesResource.ResourceDescriptorAttributes;
 
 import java.util.List;
@@ -12,6 +12,6 @@ public interface ResourcesIntrospector {
 
     Optional<ResourceDescriptorAttributes> resourceById(String id);
 
-    List<Ref> resourceRefs();
+    List<ResourceRef> resourceRefs();
 
 }

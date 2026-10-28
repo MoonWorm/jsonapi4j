@@ -8,13 +8,14 @@ As highlighted earlier in the **[Getting Started](/getting-started/)** guide, de
 There are a few extension points that are important to understand when working with **JsonApi4j**.
 In most cases, you'll simply implement one or more predefined interfaces that allow the framework to recognize and apply your domain configuration automatically.
 
-All domain-related interfaces are located in the `jsonapi4j-core` module under the `pro.api4.jsonapi4j.domain` package.
+All domain-related interfaces are located in the `jsonapi4j-base` module under the `pro.api4.jsonapi4j.domain` package.
 
 Here are the most essential ones:
 
 * `Resource<RESOURCE_DTO>` - implement this interface to declare a new **JSON:API resource**
 * `ToOneRelationship<RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-one relationship**
 * `ToManyRelationship<RELATIONSHIP_DTO>` - implement this interface to declare a new **JSON:API to-many relationship**
+* `ToOneRefRelationship<REF extends ResourceRef>` / `ToManyRefRelationship<REF extends ResourceRef>` - shortcuts for relationships whose DTO is a `ResourceRef` (`{type, id}`, or your own record implementing it) - the most common case
 
 ### Resource\<RESOURCE_DTO\>
 
@@ -73,7 +74,7 @@ This interface is used to define a **To-One relationship** between a JSON:API re
 Think of this relationship as a 1-to-1 edge in a graph, where one parent resource can reference a single related resource.
 
 Type parameter:
-* `RELATIONSHIP_DTO` - a reference to the related resource (e.g., `CountryRef`). A relationship only ever emits a resource identifier (`{type, id}` + optional identifier meta) — it has no `resolveAttributes` — and the full target resource is materialized separately by its own `Resource` (and, on `?include=`, by the Compound-Docs plugin). Because only the `id`/`type` (and optional meta) are read, `RELATIONSHIP_DTO` can be **any** type. A purpose-built lightweight ref is the **recommended default** — it keeps the linkage path cheap and avoids partially-populated DTOs — but it isn't required: if you don't control the type or you already hold a fuller object, reusing it is perfectly valid.
+* `RELATIONSHIP_DTO` - a reference to the related resource. A relationship only ever emits a resource identifier (`{type, id}` + optional identifier meta) — it has no `resolveAttributes` — and the full target resource is materialized separately by its own `Resource` (and, on `?include=`, by the Compound-Docs plugin). Because only the `id`/`type` (and optional meta) are read, `RELATIONSHIP_DTO` can be **any** type. The **recommended default** is the built-in `ResourceRef` (see [ResourceRef](#resourceref)) — it keeps the linkage path cheap and avoids partially-populated DTOs. Use your own type when the identifier needs more than `{type, id}` (e.g. identifier meta), when you don't control the type, or when you already hold a fuller object and reusing it is simpler.
 
 #### Annotation
 
@@ -81,8 +82,7 @@ Every relationship must be annotated with `@JsonApiRelationship` to register it 
 
 ```java
 @JsonApiRelationship(relationshipName = "placeOfBirth", parentResource = UserResource.class)
-public class UserPlaceOfBirthRelationship implements ToOneRelationship<CountryRef> {
-    // ...
+public class UserPlaceOfBirthRelationship implements ToOneRefRelationship<ResourceRef> {
 }
 ```
 
@@ -90,7 +90,7 @@ The `relationshipName` attribute defines the name of the relationship field in t
 
 #### Mandatory
 
-These methods are inherited from the `Relationship` base interface:
+These methods are inherited from the `Relationship` base interface (`ToOneRefRelationship` already implements both):
 
 * `resolveResourceIdentifierType(RELATIONSHIP_DTO relationshipDto)` - returns the type of the related resource ("type" member of the resource linkage object). Can return different types if the relationship is polymorphic — for example, a `userProperty` relationship might return `"apartments"`, `"cars"`, or `"yachts"` depending on the DTO.
 * `resolveResourceIdentifierId(RELATIONSHIP_DTO relationshipDto)` - returns the unique identifier of the related resource ("id" member of the resource linkage object).
@@ -114,7 +114,7 @@ This interface is used to define a **To-Many relationship** between a JSON:API r
 Think of this relationship as a 1-to-N edge in a graph, where one parent resource can reference multiple related resources.
 
 Type parameter:
-* `RELATIONSHIP_DTO` - a reference to each related resource (e.g., `CountryRef`) — the same id-only ref recommended for `ToOneRelationship` (any type works; the lightweight ref is the default, not a requirement).
+* `RELATIONSHIP_DTO` - a reference to each related resource — `ResourceRef` by default, same as for `ToOneRelationship` (any type works; `ResourceRef` is the default, not a requirement).
 
 #### Annotation
 
@@ -122,14 +122,13 @@ Same as ToOneRelationship — annotate with `@JsonApiRelationship`:
 
 ```java
 @JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
-public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
-    // ...
+public class UserCitizenshipsRelationship implements ToManyRefRelationship<ResourceRef> {
 }
 ```
 
 #### Mandatory
 
-Same as ToOneRelationship — inherited from the `Relationship` base interface:
+Same as ToOneRelationship — inherited from the `Relationship` base interface (`ToManyRefRelationship` already implements both):
 
 * `resolveResourceIdentifierType(RELATIONSHIP_DTO relationshipDto)` - returns the type of each related resource.
 * `resolveResourceIdentifierId(RELATIONSHIP_DTO relationshipDto)` - returns the unique identifier of each related resource.
@@ -147,3 +146,54 @@ The key difference from ToOneRelationship: `resolveRelationshipLinks` and `resol
 Notes:
 * A To-Many relationship resolves to an array of resource identifier objects in the JSON:API response.
 * Multiple relationships can be defined for the same resource by implementing multiple `ToManyRelationship` instances.
+
+### ResourceRef
+
+`ResourceRef` is the built-in, recommended relationship DTO: an interface with just `type()` and `id()`. `DefaultResourceRef` is its default implementation — create one with `DefaultResourceRef.of(type, id)`, which returns `ResourceRef` so that streams infer `List<ResourceRef>`. It carries exactly what a resource identifier needs, so pairing it with `ToOneRefRelationship<ResourceRef>` / `ToManyRefRelationship<ResourceRef>` leaves nothing to implement — both `resolveResourceIdentifierType` and `resolveResourceIdentifierId` are resolved from the ref:
+
+```java
+@JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
+public class UserCitizenshipsRelationship implements ToManyRefRelationship<ResourceRef> {
+}
+
+@JsonApiRelationshipOperation(relationship = UserCitizenshipsRelationship.class)
+public class UserCitizenshipsOperations implements ToManyRelationshipOperations<UserDbEntity, ResourceRef> {
+
+    @Override
+    public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest request) {
+        return PaginationAwareResponse.inMemoryCursorAware(
+                userDb.getUserCitizenships(request.getResourceId()).stream()
+                        .map(countryId -> DefaultResourceRef.of("countries", countryId))
+                        .toList(),
+                request.getCursor()
+        );
+    }
+}
+```
+
+Use `DefaultResourceRef.from(resourceIdentifierObject)` to map identifiers received in write payloads.
+
+When the identifier needs more than `{type, id}` — typically for identifier `meta` — make your own DTO implement `ResourceRef` (records work well) and use it as the type argument: `ToOneRefRelationship<YourRef>` / `ToManyRefRelationship<YourRef>` still resolve the type and id, and you override only what you need. For example, the sample app's `relatives` relationship carries the kind of family relation on each linkage:
+
+```java
+public record RelativeRef(String id, RelationshipType relationshipType) implements ResourceRef {
+
+    @Override
+    public String type() {
+        return "users";
+    }
+}
+
+@JsonApiRelationship(relationshipName = "relatives", parentResource = UserResource.class)
+public class UserRelativesRelationship implements ToManyRefRelationship<RelativeRef> {
+
+    @Override
+    public RelativeLinkageMeta resolveResourceIdentifierMeta(JsonApiRequest request, RelativeRef relativeRef) {
+        return new RelativeLinkageMeta(relativeRef.relationshipType());
+    }
+}
+```
+
+Because each ref reports its own `type()`, polymorphic relationships work the same way — e.g. a `userProperty` relationship whose refs return `"cars"`, `"apartments"`, or `"yachts"`.
+
+Implement `ToOneRelationship<YourDto>` / `ToManyRelationship<YourDto>` directly (with your own `resolveResourceIdentifierType` / `resolveResourceIdentifierId`) only when the DTO can't implement `ResourceRef`, e.g. a type you don't control.

@@ -390,12 +390,12 @@ In the example below we've configured our entire `UserCitizenshipsRelationship` 
         scopes = @AccessControlScopes(@ScopesGroup("users.citizenships.read")),
         ownership = @AccessControlOwnership(ownerIdExtractor = ResourceIdFromUrlPathExtractor.class)
 )
-public class UserCitizenshipsRelationship implements ToManyRelationship<CountryRef> {
+public class UserCitizenshipsRelationship implements ToManyRefRelationship<ResourceRef> {
 
   @AccessControl(entitlements = @AccessControlEntitlements(@EntitlementsGroup(ADMIN)))
   @Override
   public Object resolveResourceIdentifierMeta(JsonApiRequest relationshipRequest,
-                                              CountryRef countryRef) {
+                                              ResourceRef resourceRef) {
     // ...
   }
 

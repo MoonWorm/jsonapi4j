@@ -1,6 +1,6 @@
 package pro.api4.jsonapi4j.meta.operation.plugins;
 
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.meta.domain.plugins.PluginsResource.PluginAttributes;
 
 import java.util.List;
@@ -12,6 +12,6 @@ public interface PluginsIntrospector {
 
     Optional<PluginAttributes> pluginById(String id);
 
-    List<Ref> pluginRefs();
+    List<ResourceRef> pluginRefs();
 
 }

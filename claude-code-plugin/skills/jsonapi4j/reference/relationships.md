@@ -5,25 +5,29 @@ meta) — it has no `resolveAttributes`. The full target resource is materialize
 target's own `Resource`, and (on `?include=`) by the Compound-Docs plugin fetching it over HTTP. `REF`
 can be **any** type, so the framework leaves the choice to you — it's flexible by design.
 
-The **recommended default** is a lightweight, purpose-built ref rather than a heavy DTO:
+The **recommended default** is the built-in `ResourceRef` interface (`type()` + `id()`; create instances with
+`DefaultResourceRef.of(type, id)`, which returns `ResourceRef` so streams infer `List<ResourceRef>`) paired with
+`ToOneRefRelationship` / `ToManyRefRelationship` — both already resolve the identifier's `type` and `id`
+from the ref, so the relationship class is just its annotations:
 
 ```java
-public record ShowRef(UUID id) {}      // identity only — what a linkage needs
-public record SeasonRef(UUID id) {}
+@Component @JsonApiRelationship(relationshipName = "show", parentResource = SeasonResource.class)
+public class SeasonShowRelationship implements ToOneRefRelationship<ResourceRef> {}
 ```
 
 - Back `readOne` with a thin query (`SELECT show_id FROM seasons WHERE id = ?`), not a full `findById`
   that computes joins/aggregates just to throw everything but one UUID away.
 - Avoids the partially-populated-DTO trap (a `new ShowDto()` with only `id` set is a silent-bug magnet).
-- If the identifier needs **meta** (edge data — see below), the ref carries those fields too — still far
-  lighter than the full DTO.
+- Map write payloads with `DefaultResourceRef.from(resourceIdentifierObject)`.
+- Don't declare per-target ref records (`ShowRef`, `SeasonRef`) that only hold an id — `ResourceRef`
+  already covers that.
 
-That said, it's a guideline, not a rule — weigh it against your situation. If you don't control the DTO
-you're handed (a downstream model, a shared entity), or you already hold the full object and reusing it
-keeps the code simpler with fewer models to maintain, passing that type as `REF` is perfectly valid —
-only its `id`/`type` (and any identifier meta) are read. Optimize for a purpose-built ref when the
-linkage path would otherwise do real work just to discard it; reach for the existing type when simplicity
-wins.
+Reach for a **custom** ref — your own record implementing `ResourceRef`, used as
+`ToOneRefRelationship<MyRef>` / `ToManyRefRelationship<MyRef>` — when the identifier needs **meta** (edge
+data — see below); type/id resolution still comes for free. Implement `ToOneRelationship<REF>` /
+`ToManyRelationship<REF>` with the two `resolveResourceIdentifier*` methods yourself only when the DTO
+can't implement `ResourceRef` (you don't control it / you already hold the full object and reusing it
+keeps the code simpler). Only its `id`/`type` (and any identifier meta) are read.
 
 ## To-one
 
@@ -32,20 +36,20 @@ override `readOneForResource` for N+1 avoidance.
 
 ```java
 @Component @JsonApiRelationship(relationshipName = "show", parentResource = SeasonResource.class)
-public class SeasonShowRelationship implements ToOneRelationship<ShowRef> { /* type "shows", id */ }
+public class SeasonShowRelationship implements ToOneRefRelationship<ResourceRef> {}
 
 @Component @JsonApiRelationshipOperation(relationship = SeasonShowRelationship.class)
-public class SeasonShowOperations implements ToOneRelationshipOperations<SeasonDto, ShowRef> {
+public class SeasonShowOperations implements ToOneRelationshipOperations<SeasonDto, ResourceRef> {
 
-    public ShowRef readOne(JsonApiRequest req) {              // standalone /seasons/{id}/relationships/show
+    public ResourceRef readOne(JsonApiRequest req) {              // standalone /seasons/{id}/relationships/show
         UUID seasonId = UUID.fromString(req.getResourceId()); // path id is the PARENT (season), not the show
         UUID showId = seasonRepo.findShowIdById(seasonId);
         if (showId == null) throw new ResourceNotFoundException(req.getResourceId(), new ResourceType("seasons"));
-        return new ShowRef(showId);
+        return DefaultResourceRef.of("shows", showId.toString());
     }
 
-    public ShowRef readOneForResource(JsonApiRequest req, SeasonDto season) { // embedding / include path
-        return new ShowRef(season.getShowId());               // straight off the parent FK — no DB hit
+    public ResourceRef readOneForResource(JsonApiRequest req, SeasonDto season) { // embedding / include path
+        return DefaultResourceRef.of("shows", season.getShowId().toString()); // straight off the parent FK — no DB hit
     }
 }
 ```
@@ -58,11 +62,11 @@ path.
 
 ```java
 @Component @JsonApiRelationship(relationshipName = "seasons", parentResource = ShowResource.class)
-public class ShowSeasonsRelationship implements ToManyRelationship<SeasonRef> { /* type "seasons", id */ }
+public class ShowSeasonsRelationship implements ToManyRefRelationship<ResourceRef> {}
 
 @Component @JsonApiRelationshipOperation(relationship = ShowSeasonsRelationship.class)
-public class ShowSeasonsOperations implements ToManyRelationshipOperations<ShowDto, SeasonRef> {
-    public PaginationAwareResponse<SeasonRef> readMany(JsonApiRequest req) {
+public class ShowSeasonsOperations implements ToManyRelationshipOperations<ShowDto, ResourceRef> {
+    public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest req) {
         UUID showId = UUID.fromString(req.getResourceId());   // parent id from URL
         long limit = req.getLimit() != null ? req.getLimit() : DEFAULT_LIMIT, offset = ...;
         return PaginationAwareResponse.limitOffsetAware(repo.findRefsByShowId(showId, limit, offset), total);
@@ -97,7 +101,7 @@ Practical notes:
   interface — they share the `ReadTo*RelationshipOperation` supertype, so you add `readBatches` alongside
   `readMany`/`readOne`. The composite still serves the standalone `/relationships/x` endpoint; batch
   serves the collection-primary include. (Real example: `UserPlaceOfBirthOperations` implements
-  `ToOneRelationshipOperations<UserDbEntity, CountryRef>` + `BatchReadToOneRelationshipOperation<…>`.)
+  `ToOneRelationshipOperations<UserDbEntity, ResourceRef>` + `BatchReadToOneRelationshipOperation<…>`.)
 - Batch only fires for a **collection primary + include** — so the parent needs a `filter[id]`
   collection endpoint for it to trigger (a resource only ever read by id can never batch).
 - Don't bother batching a relationship that already resolves **in-house** (`readOneForResource` off the
@@ -115,11 +119,11 @@ in the relationship's **resource-identifier `meta`**, never in either resource's
 test: *does the value change depending on which pairing you look at?* If yes, it's edge data.
 
 ```java
-public record TrackRef(UUID id, int position) {}   // ref carries the edge data
+public record TrackRef(String id, int position) implements ResourceRef {   // ref carries the edge data
+    public String type() { return "tracks"; }
+}
 
-public class AlbumTracksRelationship implements ToManyRelationship<TrackRef> {
-    public String resolveResourceIdentifierType(TrackRef t) { return "tracks"; }
-    public String resolveResourceIdentifierId(TrackRef t)   { return t.id().toString(); }
+public class AlbumTracksRelationship implements ToManyRefRelationship<TrackRef> {
     @Override public Object resolveResourceIdentifierMeta(JsonApiRequest req, TrackRef t) {
         return Map.of("position", t.position());   // -> relationships.tracks.data[i].meta.position
     }

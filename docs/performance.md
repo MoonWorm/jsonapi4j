@@ -42,25 +42,25 @@ When fetching multiple primary resources (e.g., `GET /users`), the framework res
 
 `BatchReadToManyRelationshipOperation` and `BatchReadToOneRelationshipOperation` replace N calls with a single batch call. Implement the `readBatches()` method:
 
-A relationship only ever emits a resource identifier (`{type, id}`), so a batch op can return **lightweight refs** (`CountryRef`) instead of full resources — the recommended default for performance, since the related resources are fetched separately and in bulk (see [Implement Bulk Resource Reads](#implement-bulk-resource-reads)). Either way, the batch turns *N per-user linkage lookups* into one.
+A relationship only ever emits a resource identifier (`{type, id}`), so a batch op can return **lightweight refs** (`ResourceRef`) instead of full resources — the recommended default for performance, since the related resources are fetched separately and in bulk (see [Implement Bulk Resource Reads](#implement-bulk-resource-reads)). Either way, the batch turns *N per-user linkage lookups* into one.
 
 ```java
 public class UserCitizenshipsOperations implements
-        ToManyRelationshipOperations<UserDbEntity, CountryRef>,
-        BatchReadToManyRelationshipOperation<UserDbEntity, CountryRef> {
+        ToManyRelationshipOperations<UserDbEntity, ResourceRef>,
+        BatchReadToManyRelationshipOperation<UserDbEntity, ResourceRef> {
 
     // Standard single-user read (used for GET /users/{id}/relationships/citizenships)
     @Override
-    public PaginationAwareResponse<CountryRef> readMany(JsonApiRequest request) {
+    public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest request) {
         return PaginationAwareResponse.inMemoryCursorAware(
             userDb.getUserCitizenships(request.getResourceId()).stream()
-                .map(CountryRef::new).toList()
+                .map(countryId -> DefaultResourceRef.of("countries", countryId)).toList()
         );
     }
 
     // Batch read for all users at once (used for GET /users when resolving relationships)
     @Override
-    public Map<UserDbEntity, PaginationAwareResponse<CountryRef>> readBatches(
+    public Map<UserDbEntity, PaginationAwareResponse<ResourceRef>> readBatches(
             JsonApiRequest request,
             List<UserDbEntity> users) {
         // One call loads every user's citizenship ids — turning N per-user lookups into 1.
@@ -72,7 +72,7 @@ public class UserCitizenshipsOperations implements
         return citizenshipsPerUser.entrySet().stream().collect(Collectors.toMap(
             e -> usersById.get(e.getKey()),
             e -> PaginationAwareResponse.inMemoryCursorAware(
-                e.getValue().stream().map(CountryRef::new).toList()
+                e.getValue().stream().map(countryId -> DefaultResourceRef.of("countries", countryId)).toList()
             )
         ));
     }
@@ -85,11 +85,11 @@ The same pattern applies to to-one relationships via `BatchReadToOneRelationship
 
 ```java
 public class UserPlaceOfBirthOperations implements
-        ToOneRelationshipOperations<UserDbEntity, CountryRef>,
-        BatchReadToOneRelationshipOperation<UserDbEntity, CountryRef> {
+        ToOneRelationshipOperations<UserDbEntity, ResourceRef>,
+        BatchReadToOneRelationshipOperation<UserDbEntity, ResourceRef> {
 
     @Override
-    public Map<UserDbEntity, CountryRef> readBatches(JsonApiRequest request,
+    public Map<UserDbEntity, ResourceRef> readBatches(JsonApiRequest request,
                                                      List<UserDbEntity> users) {
         // One call loads every user's place-of-birth country id; wrap each in a lightweight ref.
         Map<String, UserDbEntity> usersById = users.stream()
@@ -98,7 +98,7 @@ public class UserPlaceOfBirthOperations implements
 
         return placeOfBirthPerUser.entrySet().stream().collect(Collectors.toMap(
             e -> usersById.get(e.getKey()),
-            e -> new CountryRef(e.getValue())
+            e -> DefaultResourceRef.of("countries", e.getValue())
         ));
     }
 }
@@ -114,20 +114,20 @@ Override `readManyForResource()` or `readOneForResource()` to resolve relationsh
 
 ```java
 public class UserPlaceOfBirthOperations implements
-        ToOneRelationshipOperations<UserDbEntity, CountryRef> {
+        ToOneRelationshipOperations<UserDbEntity, ResourceRef> {
 
     // Called when resolving relationships during parent resource reads
     @Override
-    public CountryRef readOneForResource(JsonApiRequest request, UserDbEntity user) {
+    public ResourceRef readOneForResource(JsonApiRequest request, UserDbEntity user) {
         // Resolve directly from the parent DTO — no downstream call, just the id the linkage needs
         String countryCode = user.getPlaceOfBirthCountryCode();
-        return countryCode != null ? new CountryRef(countryCode) : null;
+        return countryCode != null ? DefaultResourceRef.of("countries", countryCode) : null;
     }
 
     // Called for direct relationship endpoint: GET /users/{id}/relationships/placeOfBirth
     @Override
-    public CountryRef readOne(JsonApiRequest request) {
-        return new CountryRef(userDb.getUserPlaceOfBirth(request.getResourceId()));
+    public ResourceRef readOne(JsonApiRequest request) {
+        return DefaultResourceRef.of("countries", userDb.getUserPlaceOfBirth(request.getResourceId()));
     }
 }
 ```

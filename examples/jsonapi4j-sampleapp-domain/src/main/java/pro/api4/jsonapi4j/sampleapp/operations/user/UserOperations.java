@@ -29,7 +29,8 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest.SortOrder;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.domain.ResourceRef;
+import pro.api4.jsonapi4j.domain.DefaultResourceRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
@@ -233,10 +234,10 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (relationships != null) {
             ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get(CITIZENSHIPS);
             if (citizenships != null) {
-                List<CountryRef> citizenshipRefs = ListUtils.emptyIfNull(citizenships.getData())
+                List<ResourceRef> citizenshipRefs = ListUtils.emptyIfNull(citizenships.getData())
                         .stream()
                         .map(ResourceIdentifierObject::getId)
-                        .map(CountryRef::new)
+                        .map(id -> DefaultResourceRef.of(COUNTRIES, id))
                         .toList();
                 userDb.updateUserCitizenships(userId, citizenshipRefs);
             }
@@ -244,7 +245,7 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
             if (placeOfBirth != null) {
                 userDb.updateUserPlaceOfBirth(
                         userId,
-                        placeOfBirth.getData() == null ? null : new CountryRef(placeOfBirth.getData().getId())
+                        placeOfBirth.getData() == null ? null : DefaultResourceRef.of(COUNTRIES, placeOfBirth.getData().getId())
                 );
             }
             ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get(RELATIVES);

@@ -10,7 +10,8 @@ import pro.api4.jsonapi4j.plugin.ac.annotation.Authenticated;
 import pro.api4.jsonapi4j.plugin.ac.ownership.ResourceIdFromUrlPathExtractor;
 import pro.api4.jsonapi4j.plugin.oas.operation.annotation.OasOperationInfo;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.domain.ResourceRef;
+import pro.api4.jsonapi4j.domain.DefaultResourceRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.domain.user.UserPlaceOfBirthRelationship;
 import pro.api4.jsonapi4j.sampleapp.operations.UserDb;
@@ -31,8 +32,8 @@ import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTR
 )
 @RequiredArgsConstructor
 public class UserPlaceOfBirthOperations implements
-        ToOneRelationshipOperations<UserDbEntity, CountryRef>,
-        BatchReadToOneRelationshipOperation<UserDbEntity, CountryRef> {
+        ToOneRelationshipOperations<UserDbEntity, ResourceRef>,
+        BatchReadToOneRelationshipOperation<UserDbEntity, ResourceRef> {
 
     private final UserDb userDb;
 
@@ -43,7 +44,7 @@ public class UserPlaceOfBirthOperations implements
             )
     )
     @Override
-    public CountryRef readOne(JsonApiRequest request) {
+    public ResourceRef readOne(JsonApiRequest request) {
         // The place-of-birth country ref lives on the user — a relationship only emits {type, id}, so the
         // lightweight ref off the local store is all that is needed. The full country is materialized by
         // CountryResource only when ?include=placeOfBirth is requested.
@@ -51,11 +52,11 @@ public class UserPlaceOfBirthOperations implements
     }
 
     @Override
-    public Map<UserDbEntity, CountryRef> readBatches(JsonApiRequest request,
+    public Map<UserDbEntity, ResourceRef> readBatches(JsonApiRequest request,
                                                      List<UserDbEntity> users) {
         Set<String> userIds = users.stream().map(UserDbEntity::getId).collect(Collectors.toSet());
         Map<String, UserDbEntity> usersGroupedById = users.stream().collect(Collectors.toMap(UserDbEntity::getId, user -> user));
-        Map<String, CountryRef> usersPlaceOfBirthMap = userDb.getUsersPlaceOfBirth(userIds);
+        Map<String, ResourceRef> usersPlaceOfBirthMap = userDb.getUsersPlaceOfBirth(userIds);
         return usersPlaceOfBirthMap.entrySet().stream().collect(
                 CustomCollectors.toMapThatSupportsNullValues(
                         e -> usersGroupedById.get(e.getKey()),
@@ -81,7 +82,7 @@ public class UserPlaceOfBirthOperations implements
         var payload = request.getToOneRelationshipDocPayload();
         userDb.updateUserPlaceOfBirth(
                 request.getResourceId(),
-                payload.getData() == null ? null : new CountryRef(payload.getData().getId())
+                payload.getData() == null ? null : DefaultResourceRef.of(COUNTRIES, payload.getData().getId())
         );
     }
 

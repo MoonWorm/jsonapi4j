@@ -4,7 +4,8 @@ import pro.api4.jsonapi4j.domain.DomainRegistry;
 import pro.api4.jsonapi4j.domain.DomainRegistry.MetaDomain;
 import pro.api4.jsonapi4j.domain.RegisteredRelationship;
 import pro.api4.jsonapi4j.domain.Relationship;
-import pro.api4.jsonapi4j.meta.Ref;
+import pro.api4.jsonapi4j.domain.ResourceRef;
+import pro.api4.jsonapi4j.domain.DefaultResourceRef;
 import pro.api4.jsonapi4j.meta.context.MetaContext;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.meta.domain.config.ConfigResource;
@@ -75,8 +76,8 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     @Override
-    public List<Ref> pluginRefs() {
-        return plugins().stream().map(p -> new Ref(PluginsResource.PLUGINS, pluginId(p))).toList();
+    public List<ResourceRef> pluginRefs() {
+        return plugins().stream().map(p -> DefaultResourceRef.of(PluginsResource.PLUGINS, pluginId(p))).toList();
     }
 
     @Override
@@ -96,8 +97,8 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     @Override
-    public List<Ref> resourceRefs() {
-        return resources().stream().map(r -> new Ref(ResourcesResource.RESOURCES, resourceId(r))).toList();
+    public List<ResourceRef> resourceRefs() {
+        return resources().stream().map(r -> DefaultResourceRef.of(ResourcesResource.RESOURCES, resourceId(r))).toList();
     }
 
     @Override
@@ -121,9 +122,9 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     @Override
-    public List<Ref> relationshipRefs() {
+    public List<ResourceRef> relationshipRefs() {
         return relationships().stream()
-                .map(r -> new Ref(RelationshipsResource.RELATIONSHIPS, relationshipId(r)))
+                .map(r -> DefaultResourceRef.of(RelationshipsResource.RELATIONSHIPS, relationshipId(r)))
                 .toList();
     }
 
@@ -152,9 +153,9 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     @Override
-    public List<Ref> operationRefs() {
+    public List<ResourceRef> operationRefs() {
         return operations().stream()
-                .map(o -> new Ref(OperationsResource.OPERATIONS, operationId(o)))
+                .map(o -> DefaultResourceRef.of(OperationsResource.OPERATIONS, operationId(o)))
                 .toList();
     }
 
@@ -201,8 +202,8 @@ public class MetaIntrospector implements PluginsIntrospector,
     }
 
     @Override
-    public Ref configRef() {
-        return new Ref(ConfigResource.CONFIG, MetaDomain.SINGLETON_ID);
+    public ResourceRef configRef() {
+        return DefaultResourceRef.of(ConfigResource.CONFIG, MetaDomain.SINGLETON_ID);
     }
 
 }

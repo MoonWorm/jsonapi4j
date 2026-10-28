@@ -5,7 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import pro.api4.jsonapi4j.util.CustomCollectors;
 import pro.api4.jsonapi4j.response.pagination.LimitOffsetToCursorAdapter;
-import pro.api4.jsonapi4j.sampleapp.config.datasource.model.country.CountryRef;
+import pro.api4.jsonapi4j.domain.ResourceRef;
+import pro.api4.jsonapi4j.domain.DefaultResourceRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.RelativeRef;
@@ -17,14 +18,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import static pro.api4.jsonapi4j.sampleapp.domain.country.CountryResource.COUNTRIES;
 
 public class UserInMemoryDb implements UserDb {
 
     private static AtomicInteger ID_COUNTER;
 
     private final Map<String, UserDbEntity> users = new ConcurrentHashMap<>();
-    private final Map<String, List<CountryRef>> userCitizenships = new ConcurrentHashMap<>();
-    private final Map<String, CountryRef> userPlaceOfBirth = new ConcurrentHashMap<>();
+    private final Map<String, List<ResourceRef>> userCitizenships = new ConcurrentHashMap<>();
+    private final Map<String, ResourceRef> userPlaceOfBirth = new ConcurrentHashMap<>();
     private final Map<String, List<RelativeRef>> userRalatives = new ConcurrentHashMap<>();
 
     public UserInMemoryDb() {
@@ -44,8 +46,8 @@ public class UserInMemoryDb implements UserDb {
         userPlaceOfBirth.clear();
         userRalatives.clear();
         users.put("1", new UserDbEntity("1", "John", "Doe", "john@doe.com", "123456789", List.of(AddressRow.home("Oslo", "0150", "door-1"))));
-        userCitizenships.put("1", List.of(new CountryRef("NO"), new CountryRef("FI"), new CountryRef("US")));
-        userPlaceOfBirth.put("1", new CountryRef("US"));
+        userCitizenships.put("1", List.of(DefaultResourceRef.of(COUNTRIES, "NO"), DefaultResourceRef.of(COUNTRIES, "FI"), DefaultResourceRef.of(COUNTRIES, "US")));
+        userPlaceOfBirth.put("1", DefaultResourceRef.of(COUNTRIES, "US"));
         userRalatives.put(
                 "1",
                 List.of(
@@ -55,8 +57,8 @@ public class UserInMemoryDb implements UserDb {
         );
 
         users.put("2", new UserDbEntity("2", "Jane", "Doe", "jane@doe.com", "222456789", List.of(AddressRow.home("Bergen", "5003", "door-2"))));
-        userCitizenships.put("2", List.of(new CountryRef("US")));
-        userPlaceOfBirth.put("2", new CountryRef("FI"));
+        userCitizenships.put("2", List.of(DefaultResourceRef.of(COUNTRIES, "US")));
+        userPlaceOfBirth.put("2", DefaultResourceRef.of(COUNTRIES, "FI"));
         userRalatives.put(
                 "2",
                 List.of(
@@ -66,13 +68,13 @@ public class UserInMemoryDb implements UserDb {
         );
 
         users.put("3", new UserDbEntity("3", "Jack", "Doe", "jack@doe.com", "333456789", List.of(AddressRow.of("Helsinki", "00100"))));
-        userCitizenships.put("3", List.of(new CountryRef("US"), new CountryRef("FI")));
-        userPlaceOfBirth.put("3", new CountryRef("NO"));
+        userCitizenships.put("3", List.of(DefaultResourceRef.of(COUNTRIES, "US"), DefaultResourceRef.of(COUNTRIES, "FI")));
+        userPlaceOfBirth.put("3", DefaultResourceRef.of(COUNTRIES, "NO"));
         userRalatives.put("3", Collections.emptyList());
 
         users.put("4", new UserDbEntity("4", "Jessy", "Doe", "jessy@doe.com", "444456789", List.of(AddressRow.of("Tampere", "33100"))));
-        userCitizenships.put("4", List.of(new CountryRef("NO"), new CountryRef("US")));
-        userPlaceOfBirth.put("4", new CountryRef("US"));
+        userCitizenships.put("4", List.of(DefaultResourceRef.of(COUNTRIES, "NO"), DefaultResourceRef.of(COUNTRIES, "US")));
+        userPlaceOfBirth.put("4", DefaultResourceRef.of(COUNTRIES, "US"));
         userRalatives.put(
                 "4",
                 List.of(
@@ -82,8 +84,8 @@ public class UserInMemoryDb implements UserDb {
         );
 
         users.put("5", new UserDbEntity("5", "Jared", "Doe", "jared@doe.com", "555456789", List.of()));
-        userCitizenships.put("5", List.of(new CountryRef("US")));
-        userPlaceOfBirth.put("5", new CountryRef("NO"));
+        userCitizenships.put("5", List.of(DefaultResourceRef.of(COUNTRIES, "US")));
+        userPlaceOfBirth.put("5", DefaultResourceRef.of(COUNTRIES, "NO"));
         userRalatives.put(
                 "5",
                 List.of(
@@ -162,7 +164,7 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public List<CountryRef> getUserCitizenships(String userId) {
+    public List<ResourceRef> getUserCitizenships(String userId) {
         return userCitizenships.get(userId);
     }
 
@@ -172,13 +174,13 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public void updateUserCitizenships(String userId, List<CountryRef> citizenships) {
+    public void updateUserCitizenships(String userId, List<ResourceRef> citizenships) {
         userCitizenships.put(userId, citizenships);
     }
 
     @Override
-    public void addUserCitizenships(String userId, List<CountryRef> citizenships) {
-        List<CountryRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+    public void addUserCitizenships(String userId, List<ResourceRef> citizenships) {
+        List<ResourceRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
         citizenships.stream()
                 .filter(citizenship -> !existing.contains(citizenship))
                 .forEach(existing::add);
@@ -186,14 +188,14 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public void removeUserCitizenships(String userId, List<CountryRef> citizenships) {
-        List<CountryRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
+    public void removeUserCitizenships(String userId, List<ResourceRef> citizenships) {
+        List<ResourceRef> existing = new ArrayList<>(emptyIfNull(userCitizenships.get(userId)));
         existing.removeAll(citizenships);
         userCitizenships.put(userId, existing);
     }
 
     @Override
-    public Map<String, List<CountryRef>> getUsersCitizenships(Set<String> userIds) {
+    public Map<String, List<ResourceRef>> getUsersCitizenships(Set<String> userIds) {
         return userIds.stream().collect(
                 Collectors.toMap(
                         userId -> userId,
@@ -216,8 +218,8 @@ public class UserInMemoryDb implements UserDb {
     public void updateUserRelatives(String userId, List<RelativeRef> relatives) {
         List<RelativeRef> relations = ListUtils.emptyIfNull(relatives)
                 .stream()
-                .filter(r -> StringUtils.isNotBlank(r.getRelativeUserId()))
-                .filter(r -> r.getRelationshipType() != null)
+                .filter(r -> StringUtils.isNotBlank(r.id()))
+                .filter(r -> r.relationshipType() != null)
                 .toList();
         userRalatives.put(userId, relations);
     }
@@ -225,10 +227,10 @@ public class UserInMemoryDb implements UserDb {
     @Override
     public void addUserRelatives(String userId, List<RelativeRef> relatives) {
         List<RelativeRef> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
-        Set<String> existingIds = existing.stream().map(RelativeRef::getRelativeUserId).collect(Collectors.toSet());
+        Set<String> existingIds = existing.stream().map(RelativeRef::id).collect(Collectors.toSet());
         ListUtils.emptyIfNull(relatives).stream()
-                .filter(r -> StringUtils.isNotBlank(r.getRelativeUserId()) && r.getRelationshipType() != null)
-                .filter(r -> !existingIds.contains(r.getRelativeUserId()))
+                .filter(r -> StringUtils.isNotBlank(r.id()) && r.relationshipType() != null)
+                .filter(r -> !existingIds.contains(r.id()))
                 .forEach(existing::add);
         userRalatives.put(userId, existing);
     }
@@ -236,12 +238,12 @@ public class UserInMemoryDb implements UserDb {
     @Override
     public void removeUserRelatives(String userId, Set<String> relativeIds) {
         List<RelativeRef> existing = new ArrayList<>(ListUtils.emptyIfNull(userRalatives.get(userId)));
-        existing.removeIf(info -> relativeIds.contains(info.getRelativeUserId()));
+        existing.removeIf(info -> relativeIds.contains(info.id()));
         userRalatives.put(userId, existing);
     }
 
     @Override
-    public void updateUserPlaceOfBirth(String userId, CountryRef placeOfBirth) {
+    public void updateUserPlaceOfBirth(String userId, ResourceRef placeOfBirth) {
         if (placeOfBirth == null) {
             userPlaceOfBirth.remove(userId);
         } else {
@@ -250,12 +252,12 @@ public class UserInMemoryDb implements UserDb {
     }
 
     @Override
-    public CountryRef getUserPlaceOfBirth(String userId) {
+    public ResourceRef getUserPlaceOfBirth(String userId) {
         return userPlaceOfBirth.get(userId);
     }
 
     @Override
-    public Map<String, CountryRef> getUsersPlaceOfBirth(Set<String> userIds) {
+    public Map<String, ResourceRef> getUsersPlaceOfBirth(Set<String> userIds) {
         return userIds.stream().collect(
                 CustomCollectors.toMapThatSupportsNullValues(
                         userId -> userId,

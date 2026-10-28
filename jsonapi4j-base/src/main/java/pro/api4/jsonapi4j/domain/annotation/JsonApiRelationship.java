@@ -19,11 +19,13 @@ import java.lang.annotation.Target;
  * Example:
  * <pre>{@code
  * @JsonApiRelationship(relationshipName = "citizenships", parentResource = UserResource.class)
- * public class UserCitizenshipsRelationship implements ToManyRelationship<CountryEntity> { ... }
+ * public class UserCitizenshipsRelationship implements ToManyRefRelationship<ResourceRef> { }
  * }</pre>
  *
  * @see pro.api4.jsonapi4j.domain.ToOneRelationship
  * @see pro.api4.jsonapi4j.domain.ToManyRelationship
+ * @see pro.api4.jsonapi4j.domain.ToOneRefRelationship
+ * @see pro.api4.jsonapi4j.domain.ToManyRefRelationship
  * @see pro.api4.jsonapi4j.operation.annotation.JsonApiRelationshipOperation
  */
 @Target({ElementType.TYPE})
