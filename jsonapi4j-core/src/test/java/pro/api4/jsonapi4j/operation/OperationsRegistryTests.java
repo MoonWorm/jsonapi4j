@@ -1,5 +1,6 @@
 package pro.api4.jsonapi4j.operation;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import pro.api4.jsonapi4j.domain.*;
 import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
@@ -13,6 +14,8 @@ import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.plugin.PluginRegistry;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -67,6 +70,123 @@ public class OperationsRegistryTests {
                 .operation(new TestToManyRelationshipOperationWithoutAnnotation()))
                 .isInstanceOf(OperationsMisconfigurationException.class)
                 .hasMessage("(TestToManyRelationshipOperationWithoutAnnotation) operation must be annotated with @JsonApiRelationshipOperation");
+    }
+
+    @Nested
+    class RelationshipDtoTypeValidation {
+
+        @Test
+        void operation_toOneOperationDtoIncompatibleWithRelationshipDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestReadToOneResourceRefOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestReadToOneResourceRefOperation) produces relationship DTOs of type pro.api4.jsonapi4j.domain.ResourceRef, but its relationship (TestToOneCustomRefRelationship) expects pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestCustomRef");
+        }
+
+        @Test
+        void operation_toManyOperationDtoIncompatibleWithRelationshipDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestReadToManyResourceRefOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestReadToManyResourceRefOperation) produces relationship DTOs of type pro.api4.jsonapi4j.domain.ResourceRef, but its relationship (TestToManyCustomRefRelationship) expects pro.api4.jsonapi4j.operation.OperationsRegistryTests$TestCustomRef");
+        }
+
+        @Test
+        void operation_operationDtoSubtypeOfRelationshipDto_registers() {
+            OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestReadToManyCustomRefOperation())
+                    .build();
+
+            assertThat(sut.getAllOperations()).hasSize(1);
+        }
+
+        @Test
+        void operation_rawOperation_skipsValidationAndRegisters() {
+            OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestRawReadToOneOperation())
+                    .build();
+
+            assertThat(sut.getAllOperations()).hasSize(1);
+        }
+
+    }
+
+    @Nested
+    class InheritedImplementations {
+
+        @Test
+        void operation_resourceOperationInheritedFromBaseClass_registersOnlyTheInheritedOperation() {
+            ResourceType fooResource = new ResourceType("foo");
+            OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestInheritingResourceOperations())
+                    .build();
+
+            assertThat(sut.getAllOperations()).hasSize(1);
+            assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_RESOURCE_BY_ID)).isTrue();
+            assertThat(sut.isResourceOperationConfigured(fooResource, OperationType.READ_MULTIPLE_RESOURCES)).isFalse();
+        }
+
+        @Test
+        void operation_relationshipOperationInheritedFromBaseClass_registers() {
+            OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestInheritingToOneRelationshipOperations())
+                    .build();
+
+            assertThat(sut.isToOneRelationshipOperationConfigured(new ResourceType("foo"), new RelationshipName("to1"), OperationType.READ_TO_ONE_RELATIONSHIP)).isTrue();
+            assertThat(sut.isToOneRelationshipOperationConfigured(new ResourceType("foo"), new RelationshipName("to1"), OperationType.UPDATE_TO_ONE_RELATIONSHIP)).isFalse();
+        }
+
+    }
+
+    @Nested
+    class ResourceDtoTypeValidation {
+
+        @Test
+        void operation_readByIdDtoIncompatibleWithResourceDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestIntegerReadByIdOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestIntegerReadByIdOperation) produces resource DTOs of type java.lang.Integer, but its resource (TestFooResource) expects java.lang.String");
+        }
+
+        @Test
+        void operation_createDtoIncompatibleWithResourceDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestIntegerCreateOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestIntegerCreateOperation) produces resource DTOs of type java.lang.Integer, but its resource (TestFooResource) expects java.lang.String");
+        }
+
+    }
+
+    @Nested
+    class ParentResourceDtoTypeValidation {
+
+        @Test
+        void operation_readOneForResourceExpectsIncompatibleParentDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestIntegerParentReadOneForResourceOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestIntegerParentReadOneForResourceOperation) expects parent resource DTOs of type java.lang.Integer, but the parent resource of its relationship (TestFooResource) provides java.lang.String");
+        }
+
+        @Test
+        void operation_batchReadExpectsIncompatibleParentDto_throwsException() {
+            assertThatThrownBy(() -> OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestIntegerParentBatchReadToManyOperation()))
+                    .isInstanceOf(OperationsMisconfigurationException.class)
+                    .hasMessage("(TestIntegerParentBatchReadToManyOperation) expects parent resource DTOs of type java.lang.Integer, but the parent resource of its relationship (TestFooResource) provides java.lang.String");
+        }
+
+        @Test
+        void operation_incompatibleParentDtoNeverReceived_registers() {
+            OperationsRegistry sut = OperationsRegistry.builder(PluginRegistry.empty())
+                    .operation(new TestIntegerParentReadOneOperation())
+                    .build();
+
+            assertThat(sut.getAllOperations()).hasSize(1);
+        }
+
     }
 
     @Test
@@ -405,6 +525,142 @@ public class OperationsRegistryTests {
         @Override
         public void delete(JsonApiRequest request) {
 
+        }
+    }
+
+    private abstract static class TestBaseResourceOperations implements ResourceOperations<String> {
+
+        @Override
+        public String readById(JsonApiRequest request) {
+            return "1";
+        }
+    }
+
+    @JsonApiResourceOperation(resource = TestFooResource.class)
+    private static class TestInheritingResourceOperations extends TestBaseResourceOperations {
+    }
+
+    private abstract static class TestBaseToOneRelationshipOperations implements ToOneRelationshipOperations<String, String> {
+
+        @Override
+        public String readOne(JsonApiRequest relationshipRequest) {
+            return "1";
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToOneRelationship.class)
+    private static class TestInheritingToOneRelationshipOperations extends TestBaseToOneRelationshipOperations {
+    }
+
+    @JsonApiResourceOperation(resource = TestFooResource.class)
+    private static class TestIntegerReadByIdOperation implements ReadResourceByIdOperation<Integer> {
+
+        @Override
+        public Integer readById(JsonApiRequest request) {
+            return 1;
+        }
+    }
+
+    @JsonApiResourceOperation(resource = TestFooResource.class)
+    private static class TestIntegerCreateOperation implements CreateResourceOperation<Integer> {
+
+        @Override
+        public Integer create(JsonApiRequest request) {
+            return 1;
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToOneRelationship.class)
+    private static class TestIntegerParentReadOneOperation implements ReadToOneRelationshipOperation<Integer, String> {
+
+        @Override
+        public String readOne(JsonApiRequest relationshipRequest) {
+            return "1";
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToOneRelationship.class)
+    private static class TestIntegerParentReadOneForResourceOperation implements ReadToOneRelationshipOperation<Integer, String> {
+
+        @Override
+        public String readOne(JsonApiRequest relationshipRequest) {
+            return "1";
+        }
+
+        @Override
+        public String readOneForResource(JsonApiRequest relationshipRequest, Integer resourceDto) {
+            return String.valueOf(resourceDto);
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyRelationship.class)
+    private static class TestIntegerParentBatchReadToManyOperation implements BatchReadToManyRelationshipOperation<Integer, String> {
+
+        @Override
+        public PaginationAwareResponse<String> readMany(JsonApiRequest relationshipRequest) {
+            return PaginationAwareResponse.empty();
+        }
+
+        @Override
+        public Map<Integer, PaginationAwareResponse<String>> readBatches(JsonApiRequest originalRequest, List<Integer> resourceDtos) {
+            return Map.of();
+        }
+    }
+
+    private record TestCustomRef(String id) implements ResourceRef {
+
+        @Override
+        public String type() {
+            return "foo";
+        }
+    }
+
+    @JsonApiRelationship(relationshipName = "to1custom", parentResource = TestFooResource.class)
+    private static class TestToOneCustomRefRelationship implements ToOneRefRelationship<TestCustomRef> {
+    }
+
+    @JsonApiRelationship(relationshipName = "to2custom", parentResource = TestFooResource.class)
+    private static class TestToManyCustomRefRelationship implements ToManyRefRelationship<TestCustomRef> {
+    }
+
+    @JsonApiRelationship(relationshipName = "to2refs", parentResource = TestFooResource.class)
+    private static class TestToManyResourceRefRelationship implements ToManyRefRelationship<ResourceRef> {
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToOneCustomRefRelationship.class)
+    private static class TestReadToOneResourceRefOperation implements ReadToOneRelationshipOperation<String, ResourceRef> {
+
+        @Override
+        public ResourceRef readOne(JsonApiRequest relationshipRequest) {
+            return DefaultResourceRef.of("foo", "1");
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyCustomRefRelationship.class)
+    private static class TestReadToManyResourceRefOperation implements ReadToManyRelationshipOperation<String, ResourceRef> {
+
+        @Override
+        public PaginationAwareResponse<ResourceRef> readMany(JsonApiRequest relationshipRequest) {
+            return PaginationAwareResponse.empty();
+        }
+    }
+
+    @JsonApiRelationshipOperation(relationship = TestToManyResourceRefRelationship.class)
+    private static class TestReadToManyCustomRefOperation implements ReadToManyRelationshipOperation<String, TestCustomRef> {
+
+        @Override
+        public PaginationAwareResponse<TestCustomRef> readMany(JsonApiRequest relationshipRequest) {
+            return PaginationAwareResponse.empty();
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    @JsonApiRelationshipOperation(relationship = TestToOneCustomRefRelationship.class)
+    private static class TestRawReadToOneOperation implements ReadToOneRelationshipOperation {
+
+        @Override
+        public Object readOne(JsonApiRequest relationshipRequest) {
+            return null;
         }
     }
 

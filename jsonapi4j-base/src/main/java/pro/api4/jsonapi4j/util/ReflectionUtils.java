@@ -1,10 +1,13 @@
 package pro.api4.jsonapi4j.util;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.reflect.TypeUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -457,13 +460,18 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Checks whether a method declared in a parent class or interface has been overridden
-     * in the given implementation class.
+     * Checks whether a method is implemented by a class - the given one or any of its superclasses - rather
+     * than inherited as an interface default.
+     * <p>
+     * An implementation inherited from a base class counts, so a class may get its implementation from an
+     * abstract base class. Pass the class through {@link #unwrapProxyClass} first: a container proxy redeclares
+     * every method, including the ones the bean leaves as interface defaults.
      *
      * @param implementationClass the concrete class to check
      * @param methodName          the method name
      * @param parameterTypes      the method parameter types
-     * @return {@code true} if the implementation class overrides the method, {@code false} otherwise
+     * @return {@code true} if a class in the hierarchy implements the method, {@code false} if it's inherited
+     * as an interface default or doesn't exist
      */
     public static boolean isMethodOverridden(Class<?> implementationClass,
                                              String methodName,
@@ -472,9 +480,41 @@ public final class ReflectionUtils {
         Validate.notBlank(methodName, "methodName must not be blank");
         try {
             Method method = implementationClass.getMethod(methodName, parameterTypes);
-            return method.getDeclaringClass().equals(implementationClass);
+            return !method.getDeclaringClass().isInterface();
         } catch (NoSuchMethodException e) {
             return false;
+        }
+    }
+
+    /**
+     * Resolves the actual type argument a class binds to one of the type parameters of a generic supertype,
+     * following the whole hierarchy - e.g. {@code RELATIONSHIP_DTO} of
+     * {@code ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO>} for a class implementing
+     * {@code ToManyRelationshipOperations<UserDbEntity, ResourceRef>} resolves to {@code ResourceRef}.
+     * <p>
+     * Best effort: returns {@code null} whenever the argument can't be resolved to a concrete type - the class
+     * doesn't extend the supertype, implements it raw, leaves the parameter as a type variable, or its generic
+     * signature isn't available at runtime (e.g. a class not registered for reflection in a native image).
+     *
+     * @param type                 the class to inspect
+     * @param genericSupertype     the generic class or interface that declares the type parameter
+     * @param typeParameterIndex   index of the type parameter in {@code genericSupertype}'s declaration
+     * @return the resolved type argument, or {@code null} if it can't be resolved
+     */
+    public static Type resolveTypeArgument(Class<?> type, Class<?> genericSupertype, int typeParameterIndex) {
+        Validate.notNull(type, "type must not be null");
+        Validate.notNull(genericSupertype, "genericSupertype must not be null");
+        TypeVariable<?>[] typeParameters = genericSupertype.getTypeParameters();
+        Validate.validIndex(typeParameters, typeParameterIndex, "%s has no type parameter at index %d", genericSupertype.getName(), typeParameterIndex);
+        try {
+            Map<TypeVariable<?>, Type> typeArguments = TypeUtils.getTypeArguments(type, genericSupertype);
+            if (typeArguments == null) {
+                return null;
+            }
+            Type typeArgument = typeArguments.get(typeParameters[typeParameterIndex]);
+            return typeArgument instanceof TypeVariable<?> ? null : typeArgument;
+        } catch (RuntimeException | LinkageError e) {
+            return null;
         }
     }
 

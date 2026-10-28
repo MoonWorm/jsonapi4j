@@ -29,7 +29,6 @@ import pro.api4.jsonapi4j.plugin.oas.operation.model.PaginationStyle;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.request.SortAwareRequest.SortOrder;
 import pro.api4.jsonapi4j.response.PaginationAwareResponse;
-import pro.api4.jsonapi4j.domain.ResourceRef;
 import pro.api4.jsonapi4j.domain.DefaultResourceRef;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.AddressRow;
 import pro.api4.jsonapi4j.sampleapp.config.datasource.model.user.UserDbEntity;
@@ -234,19 +233,11 @@ public class UserOperations implements ResourceOperations<UserDbEntity> {
         if (relationships != null) {
             ToManyRelationshipObject citizenships = (ToManyRelationshipObject) relationships.get(CITIZENSHIPS);
             if (citizenships != null) {
-                List<ResourceRef> citizenshipRefs = ListUtils.emptyIfNull(citizenships.getData())
-                        .stream()
-                        .map(ResourceIdentifierObject::getId)
-                        .map(id -> DefaultResourceRef.of(COUNTRIES, id))
-                        .toList();
-                userDb.updateUserCitizenships(userId, citizenshipRefs);
+                userDb.updateUserCitizenships(userId, DefaultResourceRef.listFrom(citizenships));
             }
             ToOneRelationshipObject placeOfBirth = (ToOneRelationshipObject) relationships.get(PLACE_OF_BIRTH);
             if (placeOfBirth != null) {
-                userDb.updateUserPlaceOfBirth(
-                        userId,
-                        placeOfBirth.getData() == null ? null : DefaultResourceRef.of(COUNTRIES, placeOfBirth.getData().getId())
-                );
+                userDb.updateUserPlaceOfBirth(userId, DefaultResourceRef.from(placeOfBirth));
             }
             ToManyRelationshipObject relatives = (ToManyRelationshipObject) relationships.get(RELATIVES);
             if (relatives != null) {

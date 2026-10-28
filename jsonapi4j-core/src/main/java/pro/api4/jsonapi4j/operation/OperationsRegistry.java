@@ -4,8 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.reflect.TypeUtils;
+import pro.api4.jsonapi4j.domain.Relationship;
 import pro.api4.jsonapi4j.domain.RelationshipName;
+import pro.api4.jsonapi4j.domain.Resource;
 import pro.api4.jsonapi4j.domain.ResourceType;
+import pro.api4.jsonapi4j.domain.annotation.JsonApiRelationship;
 import pro.api4.jsonapi4j.meta.context.MetaRuntime;
 import pro.api4.jsonapi4j.meta.operation.MetaIntrospector;
 import pro.api4.jsonapi4j.meta.operation.config.ConfigOperations;
@@ -28,6 +32,7 @@ import pro.api4.jsonapi4j.plugin.PluginRegistry;
 import pro.api4.jsonapi4j.request.JsonApiRequest;
 import pro.api4.jsonapi4j.util.ReflectionUtils;
 
+import java.lang.reflect.Type;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -696,6 +701,9 @@ public class OperationsRegistry {
                     throw new OperationsMisconfigurationException(MessageFormat.format("({0}) operation must be annotated with @JsonApiResourceOperation", operation.getClass().getSimpleName()));
                 }
                 resourceType = resolveResourceType(jsonApiResourceOperation.resource());
+                if (operationType == READ_RESOURCE_BY_ID || operationType == READ_MULTIPLE_RESOURCES || operationType == CREATE_RESOURCE) {
+                    validateResourceDtoType(operation, operationClass, jsonApiResourceOperation.resource());
+                }
             } else {
                 JsonApiRelationshipOperation jsonApiRelationshipOperation
                         = ReflectionUtils.findAnnotationForClass(operation.getClass(), JsonApiRelationshipOperation.class);
@@ -704,6 +712,10 @@ public class OperationsRegistry {
                 }
                 resourceType = resolveParentResourceType(jsonApiRelationshipOperation.relationship());
                 relationshipName = resolveRelationshipName(jsonApiRelationshipOperation.relationship());
+                if (operationType == READ_TO_ONE_RELATIONSHIP || operationType == READ_TO_MANY_RELATIONSHIP) {
+                    validateRelationshipDtoType(operation, operationClass, jsonApiRelationshipOperation.relationship());
+                    validateParentResourceDtoType(operation, operationClass, jsonApiRelationshipOperation.relationship());
+                }
             }
             Map<String, Object> pluginsInfo = new HashMap<>();
             for (JsonApi4jPlugin plugin : this.pluginRegistry.getActivePlugins()) {
@@ -724,6 +736,98 @@ public class OperationsRegistry {
                     .build();
         }
 
+    }
+
+    /**
+     * Fails fast when a resource operation produces DTOs its resource can't consume, e.g. a
+     * {@code ResourceOperations<UserDto>} bound to a {@code Resource<UserDbEntity>}. Without this check the
+     * mismatch only surfaces as a {@link ClassCastException} on the first request that reads or creates the
+     * resource.
+     */
+    private static void validateResourceDtoType(ResourceOperation operation,
+                                                Class<?> operationInterface,
+                                                Class<?> resourceClass) {
+        Class<?> operationType = ReflectionUtils.unwrapProxyClass(operation.getClass());
+        Type producedDtoType = ReflectionUtils.resolveTypeArgument(operationType, operationInterface, 0);
+        Type expectedDtoType = ReflectionUtils.resolveTypeArgument(resourceClass, Resource.class, 0);
+        if (isIncompatible(producedDtoType, expectedDtoType)) {
+            throw new OperationsMisconfigurationException(String.format(
+                    "(%s) produces resource DTOs of type %s, but its resource (%s) expects %s",
+                    operationType.getSimpleName(),
+                    producedDtoType.getTypeName(),
+                    resourceClass.getSimpleName(),
+                    expectedDtoType.getTypeName()
+            ));
+        }
+    }
+
+    /**
+     * Fails fast when a read relationship operation produces DTOs its relationship can't consume, e.g. an
+     * operation returning {@code ResourceRef} for a {@code ToManyRefRelationship<RelativeRef>}. Without this check
+     * the mismatch only surfaces as a {@link ClassCastException} on the first request that resolves the
+     * relationship.
+     */
+    private static void validateRelationshipDtoType(ResourceOperation operation,
+                                                    Class<?> readOperationInterface,
+                                                    Class<?> relationshipClass) {
+        Class<?> operationType = ReflectionUtils.unwrapProxyClass(operation.getClass());
+        Type producedDtoType = ReflectionUtils.resolveTypeArgument(operationType, readOperationInterface, 1);
+        Type expectedDtoType = ReflectionUtils.resolveTypeArgument(relationshipClass, Relationship.class, 0);
+        if (isIncompatible(producedDtoType, expectedDtoType)) {
+            throw new OperationsMisconfigurationException(String.format(
+                    "(%s) produces relationship DTOs of type %s, but its relationship (%s) expects %s",
+                    operationType.getSimpleName(),
+                    producedDtoType.getTypeName(),
+                    relationshipClass.getSimpleName(),
+                    expectedDtoType.getTypeName()
+            ));
+        }
+    }
+
+    /**
+     * Fails fast when a read relationship operation can't consume the DTOs of its relationship's parent resource,
+     * e.g. a {@code ToOneRelationshipOperations<UserDto, ResourceRef>} whose relationship belongs to a
+     * {@code Resource<UserDbEntity>}.
+     * <p>
+     * Only checked when the operation actually receives parent DTOs - it overrides {@code readOneForResource} /
+     * {@code readManyForResource} or implements a batch read. The default implementations ignore the parent DTO,
+     * so a mismatching but unused {@code RESOURCE_DTO} is harmless.
+     */
+    private static void validateParentResourceDtoType(ResourceOperation operation,
+                                                      Class<?> readOperationInterface,
+                                                      Class<?> relationshipClass) {
+        Class<?> operationType = ReflectionUtils.unwrapProxyClass(operation.getClass());
+        if (!receivesParentResourceDtos(operation, operationType)) {
+            return;
+        }
+        JsonApiRelationship jsonApiRelationship = ReflectionUtils.findAnnotationForClass(relationshipClass, JsonApiRelationship.class);
+        Class<?> parentResourceClass = jsonApiRelationship.parentResource();
+        Type providedDtoType = ReflectionUtils.resolveTypeArgument(parentResourceClass, Resource.class, 0);
+        Type expectedDtoType = ReflectionUtils.resolveTypeArgument(operationType, readOperationInterface, 0);
+        if (isIncompatible(providedDtoType, expectedDtoType)) {
+            throw new OperationsMisconfigurationException(String.format(
+                    "(%s) expects parent resource DTOs of type %s, but the parent resource of its relationship (%s) provides %s",
+                    operationType.getSimpleName(),
+                    expectedDtoType.getTypeName(),
+                    parentResourceClass.getSimpleName(),
+                    providedDtoType.getTypeName()
+            ));
+        }
+    }
+
+    private static boolean receivesParentResourceDtos(ResourceOperation operation, Class<?> operationType) {
+        return operation instanceof BatchReadToOneRelationshipOperation<?, ?>
+                || operation instanceof BatchReadToManyRelationshipOperation<?, ?>
+                || ReflectionUtils.isMethodOverridden(operationType, ReadToOneRelationshipOperation.READ_ONE_FOR_RESOURCE_METHOD_NAME, JsonApiRequest.class, Object.class)
+                || ReflectionUtils.isMethodOverridden(operationType, ReadToManyRelationshipOperation.READ_MANY_FOR_RESOURCE_METHOD_NAME, JsonApiRequest.class, Object.class);
+    }
+
+    /**
+     * Values of {@code actualType} can't be passed where {@code requiredType} is expected. {@code false} when
+     * either type is unknown ({@code null}), i.e. couldn't be resolved, so unresolvable cases are never rejected.
+     */
+    private static boolean isIncompatible(Type actualType, Type requiredType) {
+        return actualType != null && requiredType != null && !TypeUtils.isAssignable(actualType, requiredType);
     }
 
     private static boolean isOperationImplemented(OperationType operationType, Class<?> operationClass) {

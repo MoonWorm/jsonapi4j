@@ -4,7 +4,9 @@ import lombok.Data;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -456,6 +458,21 @@ public class ReflectionUtilsTests {
         }
 
         @Test
+        void isMethodOverridden_implementationInheritedFromSuperclass_returnsTrue() {
+            assertThat(ReflectionUtils.isMethodOverridden(BeanSubclass.class, "implemented")).isTrue();
+        }
+
+        @Test
+        void isMethodOverridden_onlyInterfaceDefault_returnsFalse() {
+            assertThat(ReflectionUtils.isMethodOverridden(BeanSubclass.class, "unimplemented")).isFalse();
+        }
+
+        @Test
+        void isMethodOverridden_nonExistingMethod_returnsFalse() {
+            assertThat(ReflectionUtils.isMethodOverridden(Bean.class, "nonExisting")).isFalse();
+        }
+
+        @Test
         void isMethodOverridden_containerProxyOverAnImplementedMethod_reportsItImplemented() {
             assertThat(ReflectionUtils.isMethodOverridden(
                     ReflectionUtils.unwrapProxyClass(BeanClientProxy.class), "implemented"
@@ -541,6 +558,63 @@ public class ReflectionUtilsTests {
 
         String childValue() {
             return value;
+        }
+
+    }
+
+    @Nested
+    class ResolveTypeArgument {
+
+        @Test
+        void resolveTypeArgument_directlyBoundArgument_returnsIt() {
+            assertThat(ReflectionUtils.resolveTypeArgument(DirectFunction.class, BiFunction.class, 2))
+                    .isEqualTo(String.class);
+        }
+
+        @Test
+        void resolveTypeArgument_argumentBoundThroughIntermediateInterface_returnsIt() {
+            assertThat(ReflectionUtils.resolveTypeArgument(IndirectFunction.class, BiFunction.class, 2))
+                    .isEqualTo(Long.class);
+        }
+
+        @Test
+        void resolveTypeArgument_parameterizedArgument_returnsParameterizedType() {
+            assertThat(ReflectionUtils.resolveTypeArgument(DirectFunction.class, BiFunction.class, 1).getTypeName())
+                    .isEqualTo("java.util.List<java.lang.String>");
+        }
+
+        @Test
+        void resolveTypeArgument_rawImplementation_returnsNull() {
+            assertThat(ReflectionUtils.resolveTypeArgument(RawFunction.class, BiFunction.class, 0)).isNull();
+        }
+
+        @Test
+        void resolveTypeArgument_unboundTypeVariable_returnsNull() {
+            assertThat(ReflectionUtils.resolveTypeArgument(LongResultFunction.class, BiFunction.class, 0)).isNull();
+        }
+
+        @Test
+        void resolveTypeArgument_unrelatedSupertype_returnsNull() {
+            assertThat(ReflectionUtils.resolveTypeArgument(String.class, BiFunction.class, 0)).isNull();
+        }
+
+        @Test
+        void resolveTypeArgument_indexOutOfRange_throwsException() {
+            assertThatThrownBy(() -> ReflectionUtils.resolveTypeArgument(DirectFunction.class, BiFunction.class, 3))
+                    .isInstanceOf(IndexOutOfBoundsException.class);
+        }
+
+        abstract static class DirectFunction implements BiFunction<Integer, List<String>, String> {
+        }
+
+        interface LongResultFunction<T> extends BiFunction<T, T, Long> {
+        }
+
+        abstract static class IndirectFunction implements LongResultFunction<String> {
+        }
+
+        @SuppressWarnings("rawtypes")
+        abstract static class RawFunction implements BiFunction {
         }
 
     }

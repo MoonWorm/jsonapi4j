@@ -171,7 +171,7 @@ public class UserCitizenshipsOperations implements ToManyRelationshipOperations<
 }
 ```
 
-Use `DefaultResourceRef.from(resourceIdentifierObject)` to map identifiers received in write payloads.
+`DefaultResourceRef` rejects a `null` type or id, since a resource identifier requires both. To map write payloads, use `DefaultResourceRef.from(...)` for a resource identifier or a to-one relationship, and `DefaultResourceRef.listFrom(...)` for a to-many relationship — see [Accessing Request Payload](/operations/#accessing-request-payload).
 
 When the identifier needs more than `{type, id}` — typically for identifier `meta` — make your own DTO implement `ResourceRef` (records work well) and use it as the type argument: `ToOneRefRelationship<YourRef>` / `ToManyRefRelationship<YourRef>` still resolve the type and id, and you override only what you need. For example, the sample app's `relatives` relationship carries the kind of family relation on each linkage:
 

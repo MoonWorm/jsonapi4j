@@ -18,7 +18,10 @@ public class SeasonShowRelationship implements ToOneRefRelationship<ResourceRef>
 - Back `readOne` with a thin query (`SELECT show_id FROM seasons WHERE id = ?`), not a full `findById`
   that computes joins/aggregates just to throw everything but one UUID away.
 - Avoids the partially-populated-DTO trap (a `new ShowDto()` with only `id` set is a silent-bug magnet).
-- Map write payloads with `DefaultResourceRef.from(resourceIdentifierObject)`.
+- Map write payloads with `DefaultResourceRef.from(toOneRelationship)` (`null` = cleared) /
+  `DefaultResourceRef.listFrom(toManyRelationship)`; works for relationship-endpoint docs and resource bodies.
+- DTO types are checked at startup: an op's relationship DTO must match (or subtype) the relationship's, and,
+  if it overrides `read*ForResource` or batches, its parent DTO must accept the parent `Resource`'s DTO.
 - Don't declare per-target ref records (`ShowRef`, `SeasonRef`) that only hold an id — `ResourceRef`
   already covers that.
 

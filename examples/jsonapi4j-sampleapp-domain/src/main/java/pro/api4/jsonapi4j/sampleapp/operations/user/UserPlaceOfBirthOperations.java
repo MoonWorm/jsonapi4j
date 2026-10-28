@@ -80,10 +80,7 @@ public class UserPlaceOfBirthOperations implements
     @Override
     public void update(JsonApiRequest request) {
         var payload = request.getToOneRelationshipDocPayload();
-        userDb.updateUserPlaceOfBirth(
-                request.getResourceId(),
-                payload.getData() == null ? null : DefaultResourceRef.of(COUNTRIES, payload.getData().getId())
-        );
+        userDb.updateUserPlaceOfBirth(request.getResourceId(), DefaultResourceRef.from(payload));
     }
 
     @Override

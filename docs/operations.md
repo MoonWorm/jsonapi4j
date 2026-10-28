@@ -32,7 +32,19 @@ The `resource` attribute references the `@JsonApiResource`-annotated class this 
 
 `readById` and `readPage` support compound documents (`include` query parameter). `readPage` also supports [pagination](/pagination/), [filtering and sorting](/filtering-and-sorting/).
 
-All five operations are assembled into a single interface — `ResourceOperations<RESOURCE_DTO>`. You only need to override the methods you actually need; unimplemented operations throw `OperationNotFoundException` (404) by default.
+All five operations are assembled into a single interface — `ResourceOperations<RESOURCE_DTO>`. You only need to override the methods you actually need; unimplemented operations throw `OperationNotFoundException` (404) by default. An implementation inherited from a base class counts as implemented, so shared logic can live in an abstract base operation class.
+
+### DTO Type Checks at Startup
+
+Operations and the domain classes they serve are linked only by annotations, so a DTO type mismatch compiles fine and would otherwise surface as a `ClassCastException` on the first request. **JsonApi4j** checks the generic types when operations are registered and fails fast with an `OperationsMisconfigurationException`:
+
+| Operation | Must be compatible with | Example of a mismatch |
+|-----------|-------------------------|-----------------------|
+| `readById` / `readPage` / `create` | the resource's `RESOURCE_DTO` — same type or a subtype | `ResourceOperations<UserDto>` bound to a `Resource<UserDbEntity>` |
+| `readOne` / `readMany` | the relationship's `RELATIONSHIP_DTO` — same type or a subtype | an operation returning `ResourceRef` for a `ToManyRefRelationship<RelativeRef>` |
+| `readOneForResource` / `readManyForResource` / batch reads | accept the parent resource's `RESOURCE_DTO` — same type or a supertype | `ToOneRelationshipOperations<UserDto, ResourceRef>` overriding `readOneForResource` under a `Resource<UserDbEntity>` |
+
+The parent DTO is only checked when the operation actually receives it — it overrides `readOneForResource` / `readManyForResource` or implements a batch read; the defaults ignore it. Any check is skipped when a type argument can't be resolved, e.g. for raw types or JDK proxies.
 
 ### To-One Relationship Operations
 
@@ -46,6 +58,7 @@ public class UserPlaceOfBirthOperations implements ToOneRelationshipOperations<U
 ```
 
 The `relationship` attribute references the `@JsonApiRelationship`-annotated class this operation belongs to.
+
 
 | HTTP | Endpoint | Method | Returns | Interface |
 |------|----------|--------|---------|-----------|
@@ -104,6 +117,15 @@ Write operations (POST, PATCH, DELETE on relationships) receive the client's JSO
 | Resource (POST/PATCH) | `request.getSingleResourceDocPayload(attType)` | `SingleResourceDoc<ResourceObject<A, LinkedHashMap>>` |
 | To-One relationship | `request.getToOneRelationshipDocPayload()` | `ToOneRelationshipDoc` |
 | To-Many relationship | `request.getToManyRelationshipDocPayload()` | `ToManyRelationshipsDoc` |
+
+Relationship payloads map straight to refs with `DefaultResourceRef.from(toOneRelationship)` (`null` when the client clears the relationship) and `DefaultResourceRef.listFrom(toManyRelationship)` (empty when `data` is empty). Both accept the relationship-endpoint docs above as well as relationships inside a resource body:
+
+```java
+@Override
+public void update(JsonApiRequest request) {
+    userDb.updateUserPlaceOfBirth(request.getResourceId(), DefaultResourceRef.from(request.getToOneRelationshipDocPayload()));
+}
+```
 
 For resource payloads, pass your attributes class to get typed access. Without a type argument, attributes are deserialized as `LinkedHashMap`:
 

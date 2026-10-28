@@ -28,6 +28,7 @@ import pro.api4.jsonapi4j.model.document.error.ErrorsDoc;
 public interface ReadToManyRelationshipOperation<RESOURCE_DTO, RELATIONSHIP_DTO> extends RelationshipOperation {
 
     String READ_MANY_METHOD_NAME = "readMany";
+    String READ_MANY_FOR_RESOURCE_METHOD_NAME = "readManyForResource";
 
     /**
      * Triggered when the standalone relationship request is sent
