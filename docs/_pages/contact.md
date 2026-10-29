@@ -22,8 +22,6 @@ For technical questions and community conversations, visit [GitHub Discussions](
 <form action="https://formsubmit.co/aliaksei.taliuk@gmail.com" method="POST">
   <!-- Honeypot spam protection -->
   <input type="text" name="_honey" style="display:none">
-  <!-- Disable CAPTCHA (remove this line if you want CAPTCHA enabled) -->
-  <input type="hidden" name="_captcha" value="false">
   <!-- Redirect back to the site after submission -->
   <input type="hidden" name="_next" value="https://api4.pro/contact-thank-you/">
   <!-- Subject line for emails -->
