@@ -188,11 +188,9 @@ Resolves `include` queries with multi-level relationship chaining (e.g., `includ
 
 ## Documentation
 
-| | |
-|---|---|
-| **Full documentation** | [api4.pro](https://api4.pro/) |
-| **Getting Started** | [api4.pro/getting-started](https://api4.pro/getting-started/) |
-| **Maven Central** | [pro.api4](https://mvnrepository.com/artifact/pro.api4) |
+- **Full documentation** — [api4.pro](https://api4.pro/)
+- **Getting Started** — [api4.pro/getting-started](https://api4.pro/getting-started/)
+- **Maven Central** — [pro.api4](https://mvnrepository.com/artifact/pro.api4)
 
 ### Sample Apps
 
@@ -223,12 +221,10 @@ Looking for a JSON:API implementation for Java? Here's a quick guide:
 
 ## Follow Releases
 
-| | |
-|---|---|
-| **Announcements** | [GitHub Discussions](https://github.com/MoonWorm/jsonapi4j/discussions/categories/announcements) — release write-ups and what's coming next |
-| **Release notes** | [GitHub Releases](https://github.com/MoonWorm/jsonapi4j/releases) |
-| **RSS / Atom** | [releases.atom](https://github.com/MoonWorm/jsonapi4j/releases.atom) |
-| **Notifications** | Click **Watch → Custom → Releases** at the top of this repo |
+- **Announcements** — [GitHub Discussions](https://github.com/MoonWorm/jsonapi4j/discussions/categories/announcements): release write-ups and what's coming next
+- **Release notes** — [GitHub Releases](https://github.com/MoonWorm/jsonapi4j/releases)
+- **RSS / Atom** — [releases.atom](https://github.com/MoonWorm/jsonapi4j/releases.atom)
+- **Notifications** — click **Watch → Custom → Releases** at the top of this repo
 
 ## Contributing
 
