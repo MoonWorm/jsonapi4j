@@ -17,8 +17,8 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <jetty.version>12.1.13</jetty.version>
-        <slf4j-simple.version>2.0.19</slf4j-simple.version>
+        <jetty.version>12.1.14</jetty.version>
+        <slf4j-simple.version>2.0.20</slf4j-simple.version>
     </properties>
 
     <dependencies>
