@@ -17,8 +17,8 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
 
-        <jetty.version>12.1.13</jetty.version>
-        <slf4j-simple.version>2.0.19</slf4j-simple.version>
+        <jetty.version>12.1.15</jetty.version>
+        <slf4j-simple.version>2.0.20</slf4j-simple.version>
     </properties>
 
     <dependencies>
@@ -115,7 +115,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.4</version>
+                <version>3.7.0</version>
                 <configuration>
                     <mainClass>pro.api4.jsonapi4j.sampleapp.servlet.ServletJsonapi4jSampleApp</mainClass>
                 </configuration>
